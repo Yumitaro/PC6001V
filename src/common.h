@@ -1,0 +1,224 @@
+#ifndef COMMON_H_INCLUDED
+#define COMMON_H_INCLUDED
+
+#include <filesystem>
+#include <string>
+#include <cstdio>
+#include <vector>
+
+#include "event.h"
+#include "typedef.h"
+#include "vsurface.h"
+
+
+// メッセージ文字列取得用
+enum TextID {
+	T_EMPTY = 0,			// ""
+	
+	// 一般メッセージ
+	T_QUIT,					// "終了してよろしいですか?"
+	T_QUITC,				// "終了確認"
+	T_RESTART0,				// "再起動してよろしいですか?"
+	T_RESTART,				// "変更は再起動後に有効となります。\n今すぐ再起動しますか?"
+	T_RESTARTC,				// "再起動確認"
+	T_RESETI,				// "拡張ROMを挿入してリセットします。"
+	T_RESETE,				// "拡張ROMを排出してリセットします。"
+	T_RESETC,				// "リセット確認"
+	
+	// INIファイル用メッセージ ------
+	// [CONFIG]
+	TINI_TITLE,				// "; === PC6001V 初期設定ファイル ===\n\n"
+	TINI_Model,				// "機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR"
+	TINI_FDD,				// "FDD接続台数 (0-2)"
+	TINI_ExtRam,			// "拡張RAM使用"
+	TINI_TurboTAPE,			// "Turbo TAPE Yes:有効 No:無効"
+	TINI_BoostUp,			// "BoostUp Yes:有効 No:無効"
+	TINI_MaxBoost60,		// "BoostUp 最大倍率(N60モード)"
+	TINI_MaxBoost62,		// "BoostUp 最大倍率(N60m/N66モード)"
+	TINI_StopBit,			// "TAPEストップビット数 (2-10)"
+	TINI_OverClock,			// "オーバークロック率 (1-1000)%"
+	TINI_CheckCRC,			// "CRCチェック Yes:有効 No:無効"
+	TINI_FDDWait,			// "FDDウェイト Yes:有効 No:無効"
+	// [DISPLAY]
+	TINI_Mode4Color,		// "MODE4カラーモード 0:モノクロ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク"
+	TINI_ScanLine,			// "スキャンライン Yes:あり No:なし"
+	TINI_ScanLineBr,		// "スキャンライン輝度 (0-100)%"
+	TINI_Filtering,			// "フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
+	TINI_DispNTSC,			// "4:3表示 Yes:有効 No:無効"
+	TINI_FullScreen,		// "フルスクリーンモード Yes:有効 No:無効"
+	TINI_WindowZoom,		// "ウィンドウ表示倍率(%)"
+	TINI_DispStatus,		// "ステータスバー Yes:表示 No:非表示"
+	TINI_FrameSkip,			// "フレームスキップ"
+	// [SOUND]
+	TINI_SampleRate,		// "サンプリングレート (44100/22050/11025)Hz"
+	TINI_SoundBuffer,		// "サウンドバッファサイズ"
+	TINI_MasterVolume,		// "マスター音量 (0-100)"
+	TINI_PsgVolume,			// "PSG音量 (0-100)"
+	TINI_PsgLPF,			// "PSG LPFカットオフ周波数(0で無効)"
+	TINI_VoiceVolume,		// "音声合成音量 (0-100)"
+	TINI_TapeVolume,		// "TAPEモニタ音量 (0-100)"
+	TINI_TapeLPF,			// "TAPE LPFカットオフ周波数(0で無効)"
+	// [MOVIE]
+	TINI_AviBpp,			// "ビデオキャプチャ色深度 (16,24,32)"
+	// [FILES]
+	TINI_ExtRom,			// "拡張ROMファイル名"
+	TINI_tape,				// "TAPE(LODE)ファイル名(起動時に自動マウント)"
+	TINI_save,				// "TAPE(SAVE)ファイル名(SAVE時に自動マウント)"
+	TINI_disk1,				// "DISK1ファイル名(起動時に自動マウント)"
+	TINI_disk2,				// "DISK2ファイル名(起動時に自動マウント)"
+	TINI_printer,			// "プリンタ出力ファイル名"
+	TINI_fontz,				// "全角フォントファイル名"
+	TINI_fonth,				// "半角フォントファイル名"
+	// [PATH]
+	TINI_RomPath,			// "ROMイメージ格納パス"
+	TINI_TapePath,			// "TAPEイメージ格納パス"
+	TINI_DiskPath,			// "DISKイメージ格納パス"
+	TINI_ExtRomPath,		// "拡張ROMイメージ格納パス"
+	TINI_ImgPath,			// "スナップショット格納パス"
+	TINI_WavePath,			// "WAVEファイル格納パス"
+	TINI_FontPath,			// "FONTファイル格納パス"
+	TINI_DokoSavePath,		// "どこでもSAVE格納パス"
+	// [CHECK]
+	TINI_CkQuit,			// "終了時確認 Yes:する No:しない"
+	TINI_SaveQuit,			// "終了時INIファイルを保存 Yes:する No:しない"
+	// [OPTION]
+	TINI_UseSoldier,		// "戦士のカートリッジ Yes:有効 No:無効"
+	// [KEY]
+	TINI_KeyRepeat,			// "キーリピートの間隔(単位:ms 0で無効)"
+	
+	// どこでもSAVE用メッセージ ------
+	TDOK_TITLE,				// "; === PC6001V どこでもSAVEファイル ===\n\n"
+	
+	// Error用メッセージ ------
+	TERR_ERROR,				// "Error"
+	TERR_NoError,			// "エラーはありません"
+	TERR_Unknown,			// "原因不明のエラーが発生しました"
+	TERR_MemAllocFailed,	// "メモリの確保に失敗しました"
+	TERR_RomChange,			// "指定された機種のROMイメージが見つからないため機種を変更しました\n設定を確認してください"
+	TERR_NoRom,				// "ROMイメージが見つかりません\n設定とファイル名を確認してください"
+	TERR_RomSizeNG,			// "ROMイメージのサイズが不正です"
+	TERR_RomCrcNG,			// "ROMイメージのCRCが不正です\nCRCが一致しないROMを使用すると、予期せぬ不具合を引き起こす可能性があります。\nそれでも起動しますか?"
+	TERR_LibInitFailed,		// "ライブラリの初期化に失敗しました"
+	TERR_InitFailed,		// "初期化に失敗しました\n設定を確認してください"
+	TERR_FontLoadFailed,	// "フォントの読込みに失敗しました"
+	TERR_FontCreateFailed,	// "フォントファイルの作成に失敗しました"
+	TERR_IniDefault,		// "INIファイルの読込みに失敗しました\nデフォルト設定で起動します"
+	TERR_IniReadFailed,		// "INIファイルの読込みに失敗しました"
+	TERR_IniWriteFailed,	// "INIファイルの保存に失敗しました"
+	TERR_TapeMountFailed,	// "TAPEイメージのマウントに失敗しました"
+	TERR_DiskMountFailed,	// "DISKイメージのマウントに失敗しました"
+	TERR_ExtRomMountFailed,	// "拡張ROMイメージのマウントに失敗しました"
+	TERR_DokoReadFailed,	// "どこでもLOADに失敗しました"
+	TERR_DokoWriteFailed,	// "どこでもSAVEに失敗しました"
+	TERR_DokoDiffVersion,	// "どこでもLOADに失敗しました\n保存時とPC6001Vのバージョンが異なります"
+	TERR_ReplayPlayError,	// "リプレイ再生に失敗しました"
+	TERR_ReplayRecError,	// "リプレイ記録に失敗しました"
+	TERR_NoReplayData		// "リプレイデータがありません"
+};
+
+
+
+
+////////////////////////////////////////////////////////////////
+// 汎用計算関数
+////////////////////////////////////////////////////////////////
+// CRC32計算
+DWORD CalcCrc32( BYTE*, int );
+
+
+////////////////////////////////////////////////////////////////
+// 文字コード操作関数
+////////////////////////////////////////////////////////////////
+// SJIS -> P6
+void Sjis2P6( std::string&, const std::string& );
+
+
+////////////////////////////////////////////////////////////////
+// 文字列操作関数
+////////////////////////////////////////////////////////////////
+// 小文字による文字列比較
+int StriCmp( const std::string&, const std::string& );
+
+
+////////////////////////////////////////////////////////////////
+// 画像ファイル操作関数
+////////////////////////////////////////////////////////////////
+// Img SAVE from Data
+bool SaveImgData( const std::filesystem::path&, BYTE*, const int, const int, const int, VRect* );
+// Img SAVE from VSurface
+bool SaveImg( const std::filesystem::path&, VSurface*, VRect* );
+// Img LOAD to VSurface
+VSurface* LoadImg( const std::filesystem::path& );
+
+
+////////////////////////////////////////////////////////////////
+// 文字列取得関数等
+////////////////////////////////////////////////////////////////
+// メッセージ文字列取得
+const std::string& GetText( TextID );
+// 色の名前取得
+const std::string& GetColorName( int );
+// キーの名前取得
+const std::string& GetKeyName( PCKEYsym );
+// キーの文字コード取得
+BYTE GetKeyChar( PCKEYsym, bool );
+
+
+////////////////////////////////////////////////////////////////
+// パス名処理関数
+////////////////////////////////////////////////////////////////
+// パスの末尾にデリミタを追加
+void AddDelimiter( std::filesystem::path& );
+// パスの末尾のデリミタを削除
+void DelDelimiter( std::filesystem::path& );
+// 相対パス化
+void RelativePath( std::filesystem::path& );
+// 絶対パス化
+void AbsolutePath( std::filesystem::path& );
+// パス結合
+void AddPath( std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path& );
+// パスからフォルダ名を取得
+const std::string GetFolderNamePart( const std::filesystem::path& );
+// パスからファイル名を取得
+const std::string GetFileNamePart( const std::filesystem::path& );
+// パスから拡張子名を取得
+const std::string GetFileNameExt( const std::filesystem::path& );
+// 拡張子名を変更
+bool ChangeFileNameExt( std::filesystem::path&, const std::string& );
+
+
+////////////////////////////////////////////////////////////////
+// ファイル操作関数
+////////////////////////////////////////////////////////////////
+// ファイルを開く
+//FILE* Fopen( const std::filesystem::path&, const std::string& );
+// ファイルストリームを開く
+bool FSopen( std::fstream&, const std::filesystem::path&, const std::ios_base::openmode );
+// フォルダを作成
+bool CreateFolder( const std::filesystem::path& );
+// ファイルの存在チェック
+bool FileExist( const std::filesystem::path& );
+// ファイルサイズ取得
+DWORD GetFileSize( const std::filesystem::path& );
+// ファイルの読取り専用チェック
+bool FileReadOnly( const std::filesystem::path& );
+
+
+////////////////////////////////////////////////////////////////
+// std::string 書式出力
+//
+// 引数:	fmt			書式文字列への参照
+//			args		printf相当の引数
+// 返値:	std::string	書式が反映された文字列
+////////////////////////////////////////////////////////////////
+template <typename ... Args> std::string Stringf( const std::string& fmt, Args ... args )
+{
+	size_t len = std::snprintf( nullptr, 0, fmt.c_str(), args ... );
+	std::vector<char> buf(len + 1);
+	std::snprintf( &buf[0], len + 1, fmt.c_str(), args ... );
+	return std::string( &buf[0], &buf[0] + len );
+}
+
+
+
+#endif	// COMMON_H_INCLUDED

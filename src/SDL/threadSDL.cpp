@@ -1,0 +1,113 @@
+// Based on SLibrary.
+// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// This class is produced by AST. Check homepage when you need any help.
+// Mail Address.    ast@qt-space.com
+// Official HP URL. http://ast.qt-space.com/
+
+#include <SDL.h>
+
+
+#include "../thread.h"
+
+
+////////////////////////////////////////////////////////////////
+// Constructor
+////////////////////////////////////////////////////////////////
+cThread::cThread( void ) : m_bCancel(true), m_hThread(nullptr), m_BeginTheadParam(nullptr)
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// Destructor
+////////////////////////////////////////////////////////////////
+cThread::~cThread( void )
+{
+	this->Waiting();
+}
+
+
+////////////////////////////////////////////////////////////////
+// スレッド開始
+//
+// 引数:	スレッドに渡すポインタ
+// 返値:	true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool cThread::BeginThread ( void* lpVoid )
+{
+	if( this->m_hThread != nullptr ) return false;
+	
+	this->m_BeginTheadParam = lpVoid;
+	this->m_bCancel			= false;
+	
+	HTHREAD hThread = (HTHREAD)SDL_CreateThread( (SDL_ThreadFunction)ThreadProc, nullptr, (void*)this );
+	if( !hThread ) return false;
+	
+	this->m_hThread = hThread;
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// スレッド終了を待つ
+//
+// 引数:	なし
+// 返値:	true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool cThread::Waiting( void )
+{
+	if( this->m_hThread == nullptr ) return true;
+	
+	int status = 0;
+	SDL_WaitThread( (SDL_Thread*)this->m_hThread, &status );
+	if( !status ){
+		this->m_hThread = nullptr;
+		return true;
+	}
+	
+	return false;
+}
+
+
+////////////////////////////////////////////////////////////////
+// スレッド終了要求
+////////////////////////////////////////////////////////////////
+void cThread::Cancel( void )
+{
+	this->cMutex::Lock();
+	this->m_bCancel = true;
+	this->cMutex::UnLock();
+}
+
+
+////////////////////////////////////////////////////////////////
+// スレッド終了要求された？
+//
+// 引数:	なし
+// 返値:	true:された false:されない
+////////////////////////////////////////////////////////////////
+bool cThread::IsCancel( void )
+{
+	bool bCancel = false;
+	
+	this->cMutex::Lock();
+	bCancel = this->m_bCancel;
+	this->cMutex::UnLock();
+	return bCancel;
+}
+
+
+////////////////////////////////////////////////////////////////
+// デフォルトスレッド関数
+////////////////////////////////////////////////////////////////
+int cThread::ThreadProc( void* lpVoid )
+{
+	static thread_local cThread* lpThis;
+	
+	if( !lpThis ) lpThis = STATIC_CAST( cThread*, lpVoid );	// 自分自身のオブジェクトポインタ取得
+	lpThis->OnThread( lpThis->m_BeginTheadParam );			// virtual Procedure 
+	lpThis->m_hThread = nullptr;
+	
+	return 0;
+}
