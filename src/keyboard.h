@@ -42,6 +42,7 @@ public:
 	virtual ~KEY6();								// デストラクタ
 	
 	bool Init( int );								// 初期化
+	void Reset();									// リセット
 	
 	void UpdateMatrixKey( PCKEYsym, bool );			// キーマトリクス更新(キー)
 	void UpdateMatrixJoy( BYTE, BYTE );				// キーマトリクス更新(ジョイスティック)

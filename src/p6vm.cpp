@@ -786,6 +786,7 @@ void VM6::Reset( void )
 	vdg->Reset();
 	psg->Reset();
 	PIO6::Reset();
+	KEY6::Reset();
 	CMTL::Rewind();
 	disk->Reset();
 	voice->Reset();
