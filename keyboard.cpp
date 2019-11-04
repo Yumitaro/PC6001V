@@ -436,6 +436,26 @@ bool KEY6::Init( int repeat )
 	PRINTD( KEY_LOG, "[KEY][Init]\n" );
 	
 	// 特殊キー フラグ初期化
+	Reset();
+	
+	// キーリピート設定
+	if( repeat ) OSD_SetKeyRepeat( repeat );
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// リセット
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void KEY6::Reset( void )
+{
+	PRINTD( KEY_LOG, "[KEY][Reset]\n" );
+	
+	// 特殊キー フラグ初期化
 	ON_SHIFT =
 	ON_GRAPH =
 	ON_KANA  =
@@ -443,11 +463,6 @@ bool KEY6::Init( int repeat )
 	ON_CTRL  =
 	ON_STOP  =
 	ON_CAPS  = false;
-	
-	// キーリピート設定
-	if( repeat ) OSD_SetKeyRepeat( repeat );
-	
-	return true;
 }
 
 
