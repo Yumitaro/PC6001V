@@ -153,14 +153,32 @@ void IRQ6::SetTimerIntrHz( BYTE data, BYTE first )
 	TimerCntUp = data;
 	
 	// イベント追加
-//	vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)(2048 / (vm->VdgIsSRmode() ? 32 : 1))*(TimerCntUp + 1), EV_LOOP|EV_STATE );
-
 	// 非SR系は 1[intr] : (2048*(TimerCntUp+1)) [clock]
-	// SR系は500Hzが基本?? ほんと??
+	vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)(2048 * (TimerCntUp + 1)), EV_LOOP|EV_STATE );
+	
+	// 初回周期の指定がある場合の処理
+	if( first ){
+		EVSC::evinfo e;
+		
+		e.devid = this->Device::GetID();
+		e.id    = EID_TIMER;
+		
+		vm->EVSC::GetEvinfo( &e );
+		e.Clock = (e.Clock * first) / 100;
+		vm->EVSC::SetEvinfo( &e );
+	}
+}
+
+void IRQ64::SetTimerIntrHz(BYTE data, BYTE first)
+{
+	TimerCntUp = data;
+	
+	// イベント追加
+	// 八尾さんの検証による推定値
 	if( vm->VdgIsSRmode() )
-		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)(CPUM_CLOCK64 / 2000 * ((TimerCntUp>>5) + 1)), EV_LOOP|EV_STATE );
+		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)((8*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
 	else
-		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)(2048 * (TimerCntUp + 1)), EV_LOOP|EV_STATE );
+		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)((256*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
 	
 	// 初回周期の指定がある場合の処理
 	if( first ){

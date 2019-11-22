@@ -1,12 +1,13 @@
 #include "p6el.h"
 
-#include "log.h"
-#include "status.h"
 #include "common.h"
 #include "cpus.h"
 #include "disk.h"
 #include "keyboard.h"
+#include "log.h"
+#include "osd.h"
 #include "replay.h"
+#include "status.h"
 
 
 //------------------------------------------------------
@@ -56,7 +57,7 @@ void cWndStat::Update( void )
 	ZCons::SPrint( "[TAPE]" );
 	if( vm->CMTL::IsMount() ){
 		ZCons::SetColor( vm->CMTL::IsAutoStart() ? FC_YELLOW : FC_WHITE );
-		ZCons::SPrint( Stringf( " %-16s", vm->CMTL::GetName().empty() ? GetFileNamePart( vm->CMTL::GetFile() ).c_str() : vm->CMTL::GetName().c_str() ) );
+		ZCons::SPrint( Stringf( " %-16s", vm->CMTL::GetName().empty() ? OSD_GetFileNamePart( vm->CMTL::GetFile() ).c_str() : vm->CMTL::GetName().c_str() ) );
 		ZCons::SetColor( FC_WHITE );
 		ZCons::Locate( ZCons::GetXline()-19, 0 );
 		if( vm->IsCmtIntrReady() == LOADOPEN ) ZCons::SetColor( FC_WHITE, FC_MAGENTA );
@@ -72,7 +73,7 @@ void cWndStat::Update( void )
 		ZCons::SPrint( "[DRV1]" );
 		if( vm->DskIsMount( 0 ) ){
 			ZCons::SetColor( vm->DskIsSystem( 0 ) ? FC_YELLOW : FC_WHITE, vm->DskIsProtect( 0 ) ? FC_DRED : FC_GRAY );
-			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 0 ).empty() ? GetFileNamePart( vm->DskGetFile( 0 ) ).c_str() : vm->DskGetName( 0 ).c_str() ) );
+			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 0 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 0 ) ).c_str() : vm->DskGetName( 0 ).c_str() ) );
 		}
 	}
 	if( DrvNum > 1 ){
@@ -82,7 +83,7 @@ void cWndStat::Update( void )
 		ZCons::SPrint( "[DRV2]" );
 		if( vm->DskIsMount( 1 ) ){
 			ZCons::SetColor( vm->DskIsSystem( 1 ) ? FC_YELLOW : FC_WHITE, vm->DskIsProtect( 1 ) ? FC_DRED : FC_GRAY );
-			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 1 ).empty() ? GetFileNamePart( vm->DskGetFile( 1 ) ).c_str() : vm->DskGetName( 1 ).c_str() ) );
+			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 1 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 1 ) ).c_str() : vm->DskGetName( 1 ).c_str() ) );
 		}
 		// アクセスランプ
 	}

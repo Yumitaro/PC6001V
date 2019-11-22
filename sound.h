@@ -9,10 +9,11 @@
 // クラス定義
 ////////////////////////////////////////////////////////////////
 // リングバッファオブジェクト
-class cRing : public cMutex {
+class cRing {
 private:
-	std::queue<int> Buffer;		// バッファ
+	std::queue<int32_t> Buffer;	// バッファ
 	int Size;					// バッファサイズ(データ数)
+	mutable cMutex Mutex;
 	
 public:
 	cRing();								// コンストラクタ
@@ -23,9 +24,9 @@ public:
 	virtual int Get();						// 読込み
 	virtual void Put( int );				// 書込み
 	
-	int ReadySize();						// 未読データ数取得
-	int FreeSize( bool = false );			// 残りバッファ取得
-	int GetSize();							// バッファサイズ取得
+	int ReadySize() const;					// 未読データ数取得
+	int FreeSize( bool = false ) const;		// 残りバッファ取得
+	int GetSize() const;					// バッファサイズ取得
 };
 
 

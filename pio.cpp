@@ -1,8 +1,8 @@
 #include <fstream>
 
-#include "common.h"
 #include "config.h"
 #include "intr.h"
+#include "osd.h"
 #include "p6vm.h"
 #include "pio.h"
 
@@ -142,7 +142,7 @@ void cPRT::Strobe( bool st )
 {
 	std::fstream fs;
 	
-	if( !strb && st && FSopen( fs, FilePath, std::ios_base::out|std::ios_base::binary|std::ios_base::app ) ){
+	if( !strb && st && OSD_FSopen( fs, FilePath, std::ios_base::out|std::ios_base::binary|std::ios_base::app ) ){
 		FSPUTBYTE( pdata, fs );
 		fs.close();
 	}

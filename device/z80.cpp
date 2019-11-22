@@ -552,7 +552,7 @@ int cZ80::Exec( void )
 	#if (CPU_LOG)
 		std::string DisCode;
 		Disasm( DisCode, PC.W );
-		fprintf( stdout, "[CPU][Exec] PC:%04X OP:%02X %s\n", PC.W, ReadMemNW(PC.W), DisCode.c_str() );
+		PRINTD( CPU_LOG, "[CPU][Exec] PC:%04X OP:%02X %s\n", PC.W, ReadMemNW(PC.W), DisCode.c_str() );
 	#endif
 	state = istate = 0;
 	opcode = Fetch( PC.W++, &state );	// 命令フェッチ

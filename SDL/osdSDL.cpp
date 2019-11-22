@@ -14,6 +14,9 @@
 #include "icons2.h"
 
 
+#define	DIR_CONFIG		"P6V"	// 設定ファイルフォルダ
+
+
 ////////////////////////////////////////////////////////////////
 // SDL関連
 ////////////////////////////////////////////////////////////////
@@ -32,14 +35,16 @@
 #define SDLOP_FMT16		SDL_PIXELFORMAT_RGB555
 
 
+////////////////////////////////////////////////////////////////
 // スタティック変数
+////////////////////////////////////////////////////////////////
 static SDL_Texture* sdl_texwx;						// 汎用Texture
 static SDL_Texture* sdl_texbb;						// バックバッファ用Texture
 static SDL_Texture* sdl_texsl;						// スキャンライン用Texture
 static DWORD sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
 static SDL_AudioDeviceID sdl_adev;					// オーディオデバイス
 static DWORD UEVnum = -1;							// 確保済みユーザー定義イベント数
-static std::filesystem::path ModPath = "";			// モジュールパス保存用
+//static std::filesystem::path ConfigPath = "";		// 設定ファイルパス保存用
 
 
 
@@ -237,27 +242,28 @@ void OSD_Quit_Sub( void )
 }
 
 
+
+
+/*
 ////////////////////////////////////////////////////////////////
-// モジュールパス取得
+// 設定ファイルパス取得
 //
 // 引数:	なし
 // 返値:	std::string&	取得した文字列への参照(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& OSD_GetModulePath( void )
+const std::filesystem::path& OSD_GetConfigPath( void )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_GetModulePath] " );
-	
-	if( ModPath.empty() ){
-		char* str = SDL_GetBasePath();	// 末尾には必ずデリミタがつく
+	if( ConfigPath.empty() ){
+		char* str = SDL_GetPrefPath( DIR_CONFIG, DIR_CONFIG );	// 末尾には必ずデリミタがつく
 		if( str ){
-			ModPath = std::filesystem::u8path( str );
+			ConfigPath = std::filesystem::u8path( str );
 			delete [] str;
 		}
 	}
-	PRINTD( OSD_LOG, "%s\n", ModPath.u8string().c_str() );
 	
-	return ModPath;
+	return ConfigPath;
 }
+*/
 
 
 ////////////////////////////////////////////////////////////////
@@ -1250,6 +1256,8 @@ bool OSD_GetEvent( Event* ev )
 				ev->bp.addr			= event.user.code;
 				break;
 			#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+			default:
+				break;
 			}
 		}else{
 			ev->type		= EV_NOEVENT;
@@ -1286,6 +1294,7 @@ bool OSD_PushEvent( EventType ev, ... )
 	case EV_DOKOLOAD:
 	case EV_REPLAY:
 	case EV_FPSUPDATE:
+	case EV_RENDER:
 		event.type		= ev + UEVnum;
 		break;
 		

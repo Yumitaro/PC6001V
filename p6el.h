@@ -1,6 +1,7 @@
 #ifndef P6EL_H_INCLUDED
 #define P6EL_H_INCLUDED
 
+#include <memory>
 #include <string>
 
 #include "typedef.h"
@@ -31,7 +32,6 @@ class cWndMon;
 // エミュレータレイヤークラス
 class EL6 : public cThread, public AVI6, public REPLAY {
 	
-	friend class VM6;
 	friend class DSP6;
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -51,25 +51,26 @@ public:
 	
 protected:
 	// オブジェクトポインタ
-	VM6* vm;					// VM
-	CFG6* cfg;					// 環境設定オブジェクト
-	SCH6* sche;					// スケジューラ
-	DSP6* graph;				// 画面描画
-	SND6* snd;					// サウンド
-	JOY6* joy;					// ジョイスティック
+	CFG6* cfg;						// 環境設定オブジェクト
 	
-	cWndStat* staw;				// ステータスバー
+	std::unique_ptr<VM6>  vm;		// VM
+	std::unique_ptr<SCH6> sche;		// スケジューラ
+	std::unique_ptr<DSP6> graph;	// 画面描画
+	std::unique_ptr<SND6> snd;		// サウンド
+	std::unique_ptr<JOY6> joy;		// ジョイスティック
+	
+	std::unique_ptr<cWndStat> staw;	// ステータスバー
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	cWndReg* regw;				// レジスタウィンドウ
-	cWndMem* memw;				// メモリウィンドウ
-	cWndMon* monw;				// モニタウィンドウ
-	bool MonDisp;				// モニタウィンドウ表示状態 true:表示 false:非表示
+	std::unique_ptr<cWndReg> regw;	// レジスタウィンドウ
+	std::unique_ptr<cWndMem> memw;	// メモリウィンドウ
+	std::unique_ptr<cWndMon> monw;	// モニタウィンドウ
+	bool MonDisp;					// モニタウィンドウ表示状態 true:表示 false:非表示
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
-	TIMERID UpDateFPSID;		// FPS表示タイマID
-	int FSkipCount;				// フレームスキップカウンタ
+	TIMERID UpDateFPSID;			// FPS表示タイマID
+	int FSkipCount;					// フレームスキップカウンタ
 	
-	static int Speed;			// 停止時の速度退避用
+	static int Speed;				// 停止時の速度退避用
 	
 	void DeleteAllObject();								// 全オブジェクト削除
 	

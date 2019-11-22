@@ -357,7 +357,7 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 	bool ret = false;
 	MSG msg;
 	
-	if( FileExist( fullpath ) )
+	if( OSD_FileExist( fullpath ) )
 		std::wcstombs( File, fullpath.c_str(), sizeof(File) );
 	else
 		std::wcstombs( Path, path.c_str(), sizeof(Path) );
@@ -875,43 +875,43 @@ static bool OsdReadINI( HWND hwnd, int page )
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
 		tpath = ecfg.GetRomPath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH1, str );
 		
 		// TAPEパス
 		tpath = ecfg.GetTapePath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH2, str );
 		
 		// DISKパス
 		tpath = ecfg.GetDiskPath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH3, str );
 		
 		// 拡張ROMパス
 		tpath = ecfg.GetExtRomPath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH4, str );
 		
 		// IMGパス
 		tpath = ecfg.GetImgPath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH5, str );
 		
 		// WAVEパス
 		tpath = ecfg.GetWavePath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH6, str );
 		
 		// どこでもSAVEパス
 		tpath = ecfg.GetDokoSavePath();
-		DelDelimiter( tpath );
+		OSD_DelDelimiter( tpath );
 		std::wcstombs( str, tpath.c_str(), sizeof(str) );
 		SetDlgItemText( hwnd, ID_PATH7, str );
 		

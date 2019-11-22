@@ -168,7 +168,7 @@ void VCE6::VSetCommand( BYTE comm )
 		
 	case 0xfe:		// 外部句選択コマンド ----------
 		// フレームバッファ初期化
-		while( !Fbuf.empty() ) Fbuf.pop();
+		std::queue<D7752_SAMPLE>().swap( Fbuf );
 		
 		// フレームイベントをセットする
 		vm->EVSC::Add( Device::GetID(), EID_FRAME, 10000.0/(double)cD7752::GetFrameSize(), EV_LOOP|EV_HZ );
@@ -276,29 +276,6 @@ void VCE6::UpConvert( void )
 		SndDev::cRing::Put( ( dat * SndDev::Volume * 2 ) / 100 );		// 出力レベルが低いのでとりあえず2倍
 	}
 	
-/*
-	int pos = 0;
-	int dat = 0;
-	int i = 0;
-	while( !Fbuf.empty() ){
-		
-		
-		int npos = (i++ * samples) / cD7752::GetFrameSize();
-		int dsam = npos - pos;
-		pos = npos;
-		dat = Fbuf.front() * 4;	// * 4 は 16bit<-14bit のため
-		Fbuf.pop();
-		
-		while( dsam-- )
-//			SndDev::cRing::Put( ( dat * SndDev::Volume ) / 100 );
-			SndDev::cRing::Put( ( dat * SndDev::Volume * 2 ) / 100 );		// 出力レベルが低いのでとりあえず2倍
-		
-		
-	}
-*/
-	
-	
-	
 	PRINTD( VOI_LOG, "\n" );
 }
 
@@ -316,7 +293,7 @@ bool VCE6::LoadVoice( int index )
 	
 	// WAVファイルを読込む
 	std::filesystem::path tpath;
-	AddPath( tpath, FilePath, std::filesystem::u8path( Stringf( "f4%d.wav", index ) ) );
+	OSD_AddPath( tpath, FilePath, std::filesystem::u8path( Stringf( "f4%d.wav", index ) ) );
 	
 	PRINTD( VOI_LOG, "%s ->", tpath.string<char>().c_str() );
 	
@@ -355,7 +332,7 @@ bool VCE6::LoadVoice( int index )
 void VCE6::FreeVoice( void )
 {
 	// バッファ初期化
-	while( !IVBuf.empty() ) IVBuf.pop();
+	std::queue<int32_t>().swap( IVBuf );
 }
 
 
@@ -467,8 +444,6 @@ bool VCE6::DokoSave( cIni* Ini )
 	Ini->PutEntry( "VOICE", "", "Fnum",		"%d",		Fnum );
 	Ini->PutEntry( "VOICE", "", "PReady",	"%s",		PReady ? "Yes" : "No" );
 	
-//	D7752_SAMPLE* Fbuf;				// フレームバッファポインタ(10kHz 1フレーム)
-	
 	return true;
 }
 
@@ -503,8 +478,6 @@ bool VCE6::DokoLoad( cIni* Ini )
 	Ini->GetInt(   "VOICE", "Pnum",			&Pnum,		Pnum );
 	Ini->GetInt(   "VOICE", "Fnum",			&Fnum,		Fnum );
 	Ini->GetTruth( "VOICE", "PReady",		&PReady,	PReady );
-	
-//	D7752_SAMPLE* Fbuf;				// フレームバッファポインタ(10kHz 1フレーム)
 	
 	return true;
 }

@@ -283,7 +283,7 @@ bool SaveImgData( const std::filesystem::path& filepath, BYTE* pixels, const int
 	
 	// イメージデータを2次元配列に配置する
 	image = (png_bytepp)png_malloc( PngPtr, sizeof(png_bytep) * rec.h );
-	ZeroMemory( image, sizeof(image) );
+	ZeroMemory( image, sizeof(png_bytep) * rec.h );
 	BYTE* doff = pixels + rec.x + rec.y * spit;
 	for( int i=0; i<rec.h; i++ ){
 		image[i] = (png_byte*)png_malloc( PngPtr, dpit );
@@ -1001,7 +1001,7 @@ const std::string& GetText( TextID id )
 	try{
 		return MsgString.at( id );
 	}
-	catch( ... ){	// すべての例外
+	catch( std::out_of_range& ){
 		return MsgString.at( T_EMPTY );	// "???"
 	}
 }
@@ -1018,7 +1018,7 @@ const std::string& GetColorName( int num )
 	try{
 		return JColorName.at( num );
 	}
-	catch( ... ){	// すべての例外
+	catch( std::out_of_range& ){
 		return MsgString.at( T_EMPTY );	// "???"
 	}
 }
@@ -1035,7 +1035,7 @@ const std::string& GetKeyName( PCKEYsym sym )
 	try{
 		return VKname.at( sym );
 	}
-	catch( ... ){	// すべての例外
+	catch( std::out_of_range& ){
 		return VKname.at( KVC_UNKNOWN );
 	}
 }
@@ -1053,294 +1053,7 @@ BYTE GetKeyChar( PCKEYsym sym, bool shift )
 	try{
 		return shift ? VKChar1.at( sym ) : VKChar0.at( sym );
 	}
-	catch( ... ){	// すべての例外
+	catch( std::out_of_range& ){
 		return VKChar0.at( KVC_UNKNOWN );
 	}
 }
-
-
-
-
-////////////////////////////////////////////////////////////////
-// パス名処理関数
-////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////
-// パスの末尾にデリミタを追加
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AddDelimiter( std::filesystem::path& path )
-{
-	path /= "";
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスの末尾のデリミタを削除
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void DelDelimiter( std::filesystem::path& path )
-{
-	if( path.filename().empty() ) path = path.parent_path();
-}
-
-
-////////////////////////////////////////////////////////////////
-// 相対パス化
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void RelativePath( std::filesystem::path& path )
-{
-	if( path.empty() ) return;
-	
-	std::error_code ec;
-	std::filesystem::path p = std::filesystem::proximate( path, OSD_GetModulePath(), ec );
-	if( ec ) return;
-	
-	// ../なら絶対パス化
-	if( p.u8string().length() >= 2 && p.u8string().substr( 0, 2 ) == ".." )
-		AbsolutePath( p );
-	
-	path = p;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 絶対パス化
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AbsolutePath( std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][AbsolutePath] %s -> ", path.u8string().c_str() );
-	
-	if( path.empty() ) return;
-	
-	std::filesystem::path p = path;
-	
-	// 既に絶対パスなら正規化のみ実施
-	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative()==true らしい
-		p = OSD_GetModulePath() / p;
-	
-	// パスを結合して正規化
-	path = std::filesystem::weakly_canonical( p );
-	
-	PRINTD( OSD_LOG, "%s\n", path.u8string().c_str() );
-}
-
-
-////////////////////////////////////////////////////////////////
-// パス結合
-//
-// 引数:	cpath			結合後パス
-//			path1			パス1
-//			path2			パス2
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AddPath( std::filesystem::path& cpath, const std::filesystem::path& path1, const std::filesystem::path& path2 )
-{
-	// パスを結合
-	cpath = path1 / path2;
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスからフォルダ名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列
-////////////////////////////////////////////////////////////////
-const std::string GetFolderNamePart( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFolderNamePart]\n" );
-	
-	std::filesystem::path p = path;
-	
-	return p.remove_filename().u8string();
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスからファイル名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列(UTF-8)
-////////////////////////////////////////////////////////////////
-const std::string GetFileNamePart( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFileNamePart]\n" );
-	
-	return path.filename().u8string();
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスから拡張子名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列(UTF-8)
-////////////////////////////////////////////////////////////////
-const std::string GetFileNameExt( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFileNameExt]\n" );
-	
-	std::string ext = path.extension().u8string();
-	ext.erase( ext.begin() );
-	return ext;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 拡張子名を変更
-//
-// 引数:	path			パス
-//			ext				新しい拡張子への参照
-// 返値:	bool			true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool ChangeFileNameExt( std::filesystem::path& path, const std::string& ext )
-{
-	PRINTD( OSD_LOG, "[OSD][ChangeFileNameExt] %s -> %s\n", GetFileNameExt( path ).c_str(), ext.c_str() );
-	
-	path.replace_extension( std::filesystem::u8path( ext ) );
-	return GetFileNameExt( path ) == ext;
-}
-
-
-
-
-////////////////////////////////////////////////////////////////
-// ファイル操作関数
-////////////////////////////////////////////////////////////////
-
-/*
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-////////////////////////////////////////////////////////////////
-// ファイルを開く
-//
-// 引数:	path			パス
-//			mode			モード文字列への参照
-// 返値:	FILE*			ファイルポインタ
-////////////////////////////////////////////////////////////////
-FILE* Fopen( const std::filesystem::path& path, const std::string& mode )
-{
-	PRINTD( OSD_LOG, "[OSD][Fopen] %s(%s) ", path.u8string().c_str(), mode.c_str() );
-	
-	return fopen( path.string<char>().c_str(), mode.c_str() );
-}
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-*/
-
-
-////////////////////////////////////////////////////////////////
-// ファイルストリームを開く
-//
-// 引数:	fs				ファイルストリームへの参照
-//			path			パス
-//			mode			モード
-// 返値:	bool			true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool FSopen( std::fstream& fs, const std::filesystem::path& path, const std::ios_base::openmode mode )
-{
-	PRINTD( OSD_LOG, "[OSD][FSopen] %s\n", path.u8string().c_str() );
-	
-	try{
-		fs.open( path, mode );
-		return fs.is_open() && fs.good();
-	}
-	catch( ... ){}
-	
-	return false;
-}
-
-
-////////////////////////////////////////////////////////////////
-// フォルダを作成
-//
-// 引数:	path			パス
-// 返値:	bool			true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool CreateFolder( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][CreateFolder] %s\n", path.u8string().c_str() );
-	
-	try{
-		std::error_code ec;
-		
-		std::filesystem::path tpath = path;
-		AbsolutePath( tpath );
-		
-		// モジュールパスより外側には作成しない
-		if( tpath.u8string().compare( 0, OSD_GetModulePath().u8string().length(), OSD_GetModulePath().u8string() ) ) return false;
-		
-		return std::filesystem::create_directories( tpath, ec );
-	}
-	catch( ... ){}
-	
-	return false;
-}
-
-
-////////////////////////////////////////////////////////////////
-// ファイルの存在チェック
-//
-// 引数:	fullpath		パス
-// 返値:	bool			true:存在する false:存在しない
-////////////////////////////////////////////////////////////////
-bool FileExist( const std::filesystem::path& fullpath )
-{
-	PRINTD( OSD_LOG, "[OSD][FileExist] %s\n", fullpath.u8string().c_str() );
-	
-	try{
-		return std::filesystem::exists( std::filesystem::status( fullpath ) );
-	}
-	catch( ... ){}
-	
-	return false;
-}
-
-
-////////////////////////////////////////////////////////////////
-// ファイルサイズ取得
-//
-// 引数:	fullpath		パス
-// 返値:	DWORD			ファイルサイズ
-////////////////////////////////////////////////////////////////
-DWORD GetFileSize( const std::filesystem::path& fullpath )
-{
-	try{
-		return std::filesystem::file_size( fullpath );
-	}
-	catch( ... ){}
-	
-	return 0;
-}
-
-
-////////////////////////////////////////////////////////////////
-// ファイルの読取り専用チェック
-//
-// 引数:	fullpath		パス
-// 返値:	bool			true:読取り専用 false:読み書き
-////////////////////////////////////////////////////////////////
-bool FileReadOnly( const std::filesystem::path& fullpath )
-{
-	PRINTD( OSD_LOG, "[OSD][FileReadOnly] %s\n", fullpath.u8string().c_str() );
-	
-	try{
-		std::filesystem::perms perm = std::filesystem::status( fullpath ).permissions();
-		return ( perm & ( std::filesystem::perms::owner_write |
-						  std::filesystem::perms::group_write |
-						  std::filesystem::perms::others_write ) ) == std::filesystem::perms::none ? true : false;
-	}
-	catch( ... ){}
-	
-	return false;
-}
-

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <new>
 #include <string>
+#include <utility>
 
 #include "pc6001v.h"
 #include "id_menu.h"
@@ -41,7 +42,7 @@ int EL6::Speed = 100;
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-EL6::EL6( void ) : vm(nullptr), cfg(nullptr), sche(nullptr), graph(nullptr), snd(nullptr), joy(nullptr), staw(nullptr),
+EL6::EL6( void ) : cfg(nullptr), vm(nullptr), sche(nullptr), graph(nullptr), snd(nullptr), joy(nullptr), staw(nullptr),
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	regw(nullptr), memw(nullptr), monw(nullptr),	MonDisp(false),
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -158,6 +159,7 @@ void EL6::OnThread( void* inst )
 					// 画面更新時期を迎えていたら画面更新
 					// ノーウェイトの時にFPSが変わらないようにする
 					if( p6->sche->IsScreenUpdate() ) p6->ScreenUpdate();
+//					if( p6->sche->IsScreenUpdate() ) OSD_PushEvent( EV_RENDER );
 				}
 				
 				// 自動キー入力
@@ -277,27 +279,27 @@ bool EL6::Init( const CFG6* config )
 	try{
 		// 機種別 VM確保
 		switch( cfg->GetModel() ){
-		case 61: vm = new VM61( this ); break;
-		case 62: vm = new VM62( this ); break;
-		case 66: vm = new VM66( this ); break;
-		case 64: vm = new VM64( this ); break;
-		case 68: vm = new VM68( this ); break;
-		default: vm = new VM60( this );
+		case 61: vm.reset( new VM61( this ) ); break;
+		case 62: vm.reset( new VM62( this ) ); break;
+		case 66: vm.reset( new VM66( this ) ); break;
+		case 64: vm.reset( new VM64( this ) ); break;
+		case 68: vm.reset( new VM68( this ) ); break;
+		default: vm.reset( new VM60( this ) );
 		}
 		
 		// VM初期化
 		if( !vm->Init( cfg ) ) throw Error::GetError();
 		
 		// 各種オブジェクト確保
-		sche   = new SCH6;							// スケジューラ
-		snd    = new SND6;							// サウンド
-		graph  = new DSP6( vm );					// 画面描画
-		joy    = new JOY6;							// ジョイスティック
-		staw   = new cWndStat( vm );				// ステータスバー
+		sche.reset ( new SCH6 );								// スケジューラ
+		snd.reset  ( new SND6 );								// サウンド
+		graph.reset( new DSP6( vm.get() ) );					// 画面描画
+		joy.reset  ( new JOY6 );								// ジョイスティック
+		staw.reset ( new cWndStat( vm.get() ) );				// ステータスバー
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		regw   = new cWndReg( vm, DEV_ID("REGW") );	// レジスタウィンドウ
-		memw   = new cWndMem( vm, DEV_ID("MEMW") );	// メモリウィンドウ
-		monw   = new cWndMon( vm, DEV_ID("MONW") );	// モニタウィンドウ
+		regw.reset ( new cWndReg( vm.get(), DEV_ID("REGW") ) );	// レジスタウィンドウ
+		memw.reset ( new cWndMem( vm.get(), DEV_ID("MEMW") ) );	// メモリウィンドウ
+		monw.reset ( new cWndMon( vm.get(), DEV_ID("MONW") ) );	// モニタウィンドウ
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		
 		
@@ -340,7 +342,7 @@ bool EL6::Init( const CFG6* config )
 		
 		// ストリーム接続
 		snd->ConnectStream( vm->psg );		// PSG/OPN
-		snd->ConnectStream( (CMTL*)vm );	// CMT(LOAD)
+		snd->ConnectStream( (CMTL*)vm.get() );	// CMT(LOAD)
 		snd->ConnectStream( vm->voice );	// 音声合成
 		
 		
@@ -355,7 +357,7 @@ bool EL6::Init( const CFG6* config )
 		UI_Reset();
 		
 	}
-	catch( std::bad_alloc ){	// new に失敗した場合
+	catch( std::bad_alloc& ){	// new に失敗した場合
 		// 全オブジェクト削除
 		DeleteAllObject();
 		Error::SetError( Error::MemAllocFailed );
@@ -501,6 +503,9 @@ EL6::ReturnCode EL6::EventLoop( void )
 				ShowPopupMenu( event.mousebt.x, event.mousebt.y );
 				Start();
 				break;
+				
+			default:
+				break;
 			}
 			break;
 			
@@ -512,9 +517,11 @@ EL6::ReturnCode EL6::EventLoop( void )
 				sche->SetSpeedRatio( -1 );
 			break;
 			
+		case EV_RENDER:				// 画面描画
+			ScreenUpdate();
+			break;
+			
 		case EV_WINDOWSIZECHANGED:	// ウィンドウサイズ変更
-			
-			
 			
 			
 			break;
@@ -540,7 +547,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			delete [] event.drop.file;
 			
 			// 拡張子取得(小文字)
-			std::string ext = GetFileNameExt( tpath );
+			std::string ext = OSD_GetFileNameExt( tpath );
 			std::transform( ext.begin(), ext.end(), ext.begin(), tolower );
 			
 			if( ext == EXT_P6RAW || ext == EXT_CAS || ext == EXT_P6T ){
@@ -687,7 +694,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT, bool OnMETA )
 			UI_ReplayDokoLoad();
 		} else {
 			std::filesystem::path tpath = std::filesystem::u8path( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() ) );
-			if( FileExist( tpath ) ){
+			if( OSD_FileExist( tpath ) ){
 				cfg->SetModel( GetDokoModel( tpath ) );
 				cfg->SetDokoFile( tpath );
 				OSD_PushEvent( EV_DOKOLOAD );
@@ -717,17 +724,17 @@ void EL6::DeleteAllObject( void )
 	}
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	if( monw ) { delete monw;	monw = nullptr; }
-	if( memw ) { delete memw;	memw = nullptr; }
-	if( regw ) { delete regw;	regw = nullptr; }
+//	if( monw ) { delete monw;	monw = nullptr; }
+//	if( memw ) { delete memw;	memw = nullptr; }
+//	if( regw ) { delete regw;	regw = nullptr; }
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
-	if( staw ) { delete staw;	staw  = nullptr; }
-	if( joy )  { delete joy;	joy   = nullptr; }
-	if( snd )  { delete snd;	snd   = nullptr; }
-	if( graph ){ delete graph;	graph = nullptr; }
-	if( sche ) { delete sche;	sche  = nullptr; }
-	if( vm )   { delete vm;		vm    = nullptr; }
+//	if( staw ) { delete staw;	staw  = nullptr; }
+//	if( joy )  { delete joy;	joy   = nullptr; }
+//	if( snd )  { delete snd;	snd   = nullptr; }
+//	if( graph ){ delete graph;	graph = nullptr; }
+//	if( sche ) { delete sche;	sche  = nullptr; }
+//	if( vm )   { delete vm;		vm    = nullptr; }
 	
 	ak.Buffer.clear();
 }
@@ -962,7 +969,7 @@ bool EL6::SetAutoKeyFile( const std::filesystem::path& filepath )
 	std::fstream fs;
 	char lbuf[1024];
 	
-	if( !FSopen( fs, filepath, std::ios_base::in ) ) return false;
+	if( !OSD_FSopen( fs, filepath, std::ios_base::in ) ) return false;
 	
 	ak.Buffer.clear();
 	
@@ -1126,7 +1133,7 @@ bool EL6::DokoDemoSave( const std::filesystem::path& path )
 	try{
 		std::fstream fs;
 		
-		if( !FSopen( fs, path, std::ios_base::out ) ) throw Error::DokoWriteFailed;
+		if( !OSD_FSopen( fs, path, std::ios_base::out ) ) throw Error::DokoWriteFailed;
 		
 		// タイトル行を出力して一旦閉じる
 		fs << GetText( TDOK_TITLE ) << std::endl;
@@ -1229,7 +1236,7 @@ bool EL6::DokoDemoLoad( const std::filesystem::path& path )
 		ak.Buffer.clear();
 		while( ini.GetString( "KEY", Stringf( "AKBuf_%02X", nn++ ), strva, "" ) ){
 			while( strva.length() >= 2 ){
-				ak.Buffer += std::strtoul( strva.substr( 0, 2 ).c_str(), nullptr, 16 );
+				ak.Buffer += std::stoul( strva.substr( 0, 2 ), nullptr, 16 );
 				strva.erase( strva.begin() );
 				strva.erase( strva.begin() );
 			}
@@ -1359,9 +1366,9 @@ bool EL6::ReplayRecResume( const std::filesystem::path& path )
 {
 	// 途中セーブファイルを探す
 	std::filesystem::path tpath = path;
-	ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
+	OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
 	
-	if( FileExist( tpath ) ){
+	if( OSD_FileExist( tpath ) ){
 		cIni save;
 		save.Read( tpath );
 		int frame = 0;
@@ -1404,7 +1411,7 @@ bool EL6::ReplayRecDokoSave( void )
 	if( REPLAY::GetStatus() == REP_RECORD ){
 		// 途中セーブファイルを保存
 		std::filesystem::path tpath = REPLAY::cIni::GetFilePath();
-		ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
+		OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
 		if( !DokoDemoSave( tpath ) ) return false;
 		
 		// 途中セーブ情報を追記
@@ -1479,7 +1486,7 @@ void EL6::UI_TapeInsert( const std::filesystem::path& path )
 	std::filesystem::path fpath = path;
 	
 	if( fpath.empty() ){
-		if( !FileExist( TapePathUI ) )
+		if( !OSD_FileExist( TapePathUI ) )
 			TapePathUI = cfg->GetTapePath();
 		OSD_FileSelect( GetWindowHandle(), FD_TapeLoad, fpath, TapePathUI );
 	}
@@ -1502,7 +1509,7 @@ void EL6::UI_DiskInsert( int drv, const std::filesystem::path& path )
 	std::filesystem::path fpath = path;
 	
 	if( fpath.empty() ){
-		if( !FileExist( DiskPathUI ) )
+		if( !OSD_FileExist( DiskPathUI ) )
 			DiskPathUI = cfg->GetDiskPath();
 		OSD_FileSelect( GetWindowHandle(), FD_Disk, fpath, DiskPathUI );
 	}
@@ -1523,7 +1530,7 @@ void EL6::UI_RomInsert( const std::filesystem::path& path )
 	std::filesystem::path fpath = path;
 	
 	if( fpath.empty() ){
-		if( !FileExist( ExRomPathUI ) )
+		if( !OSD_FileExist( ExRomPathUI ) )
 			ExRomPathUI = cfg->GetExtRomPath();
 		OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI );
 	}
@@ -1564,7 +1571,7 @@ void EL6::UI_DokoSave( const std::filesystem::path& path )
 	std::filesystem::path fpath = path;
 	
 	if( fpath.empty() ){
-		if( !FileExist( DokoPathUI ) )
+		if( !OSD_FileExist( DokoPathUI ) )
 			DokoPathUI = cfg->GetDokoSavePath();
 		OSD_FileSelect( GetWindowHandle(), FD_DokoSave, fpath, DokoPathUI );
 	}
@@ -1585,7 +1592,7 @@ void EL6::UI_DokoLoad( const std::filesystem::path& path )
 	std::filesystem::path fpath = path;
 	
 	if( fpath.empty() ){
-		if( !FileExist( DokoPathUI ) )
+		if( !OSD_FileExist( DokoPathUI ) )
 			DokoPathUI = cfg->GetDokoSavePath();
 		OSD_FileSelect( GetWindowHandle(), FD_DokoLoad, fpath, DokoPathUI );
 	}
@@ -1609,7 +1616,7 @@ void EL6::UI_ReplaySave( const std::filesystem::path& path )
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
-			if( !FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) )
 				DokoPathUI = cfg->GetDokoSavePath();
 			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
 		}
@@ -1636,7 +1643,7 @@ void EL6::UI_ReplayResumeSave( const std::filesystem::path& path )
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
-			if( !FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) )
 				DokoPathUI = cfg->GetDokoSavePath();
 			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
 		}
@@ -1683,7 +1690,7 @@ void EL6::UI_ReplayLoad( const std::filesystem::path& path )
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
-			if( !FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) )
 				DokoPathUI = cfg->GetDokoSavePath();
 			OSD_FileSelect( GetWindowHandle(), FD_RepLoad, fpath, DokoPathUI );
 		}
@@ -1706,7 +1713,7 @@ void EL6::UI_ReplayLoad( const std::filesystem::path& path )
 void EL6::UI_AVISave( void )
 {
 	std::filesystem::path fpath;
-	std::filesystem::path mpath = OSD_GetModulePath();
+	std::filesystem::path mpath = OSD_GetConfigPath();
 	
 	if( !AVI6::IsAVI() ){
 		if( OSD_FileSelect( GetWindowHandle(), FD_AVISave, fpath, mpath ) ){
@@ -1727,7 +1734,7 @@ void EL6::UI_AVISave( void )
 void EL6::UI_AutoType( const std::filesystem::path& path )
 {
 	std::filesystem::path fpath = path;
-	std::filesystem::path mpath = OSD_GetModulePath();
+	std::filesystem::path mpath = OSD_GetConfigPath();
 	
 	if( fpath.empty() ){
 		OSD_FileSelect( GetWindowHandle(), FD_LoadAll, fpath, mpath );

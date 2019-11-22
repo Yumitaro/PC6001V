@@ -73,7 +73,7 @@ bool DeviceList::Add( IDevice* t )
 	
 	if( !t || !(id = t->GetID()) ) return false;
 	
-	auto p = NodeMap.try_emplace( id, std::move( n ) );
+	auto p = NodeMap.emplace( id, std::move( n ) );
 	// p.first  : 要素へのイテレータ
 	// p.second : true:新規挿入された false:すでに存在する
 	p.first->second.count++;
@@ -91,7 +91,7 @@ bool DeviceList::Del( const ID id )
 		if( !--n.count ) NodeMap.erase( id );
 		return true;
 	}
-	catch( ... ){
+	catch( std::out_of_range& ){
 		return false;
 	}
 }
@@ -106,7 +106,7 @@ IDevice* DeviceList::Find( const ID id )
 		Node& n = NodeMap.at( id );
 		return n.entry;
 	}
-	catch( ... ){
+	catch( std::out_of_range& ){
 		return nullptr;
 	}
 }

@@ -22,48 +22,6 @@ enum FileDlg{ FD_TapeLoad, FD_TapeSave, FD_Disk, FD_ExtRom, FD_Printer, FD_FontZ
 
 
 
-/*
-////////////////////////////////////////////////////////////////
-// パス名処理関数
-////////////////////////////////////////////////////////////////
-// パスの末尾にデリミタを追加
-void AddDelimiter( std::filesystem::path& );
-// パスの末尾のデリミタを削除
-void DelDelimiter( std::filesystem::path& );
-// 相対パス化
-void RelativePath( std::filesystem::path& );
-// 絶対パス化
-void AbsolutePath( std::filesystem::path& );
-// パス結合
-void AddPath( std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path& );
-// パスからフォルダ名を取得
-const std::string GetFolderNamePart( const std::filesystem::path& );
-// パスからファイル名を取得
-const std::string GetFileNamePart( const std::filesystem::path& );
-// パスから拡張子名を取得
-const std::string GetFileNameExt( const std::filesystem::path& );
-// 拡張子名を変更
-bool ChangeFileNameExt( std::filesystem::path&, const std::string& );
-
-
-////////////////////////////////////////////////////////////////
-// ファイル操作関数
-////////////////////////////////////////////////////////////////
-// ファイルを開く
-//FILE* Fopen( const std::filesystem::path&, const std::string& );
-// ファイルストリームを開く
-bool FSopen( std::fstream&, const std::filesystem::path&, const std::ios_base::openmode );
-// フォルダを作成
-bool CreateFolder( const std::filesystem::path& );
-// ファイルの存在チェック
-bool FileExist( const std::filesystem::path& );
-// ファイルサイズ取得
-DWORD GetFileSize( const std::filesystem::path& );
-// ファイルの読取り専用チェック
-bool FileReadOnly( const std::filesystem::path& );
-*/
-
-
 ////////////////////////////////////////////////////////////////
 // プロセス管理関数
 ////////////////////////////////////////////////////////////////
@@ -82,8 +40,28 @@ bool OSD_IsWorking();
 ////////////////////////////////////////////////////////////////
 // パス名処理関数
 ////////////////////////////////////////////////////////////////
-// モジュールパス取得
-const std::filesystem::path& OSD_GetModulePath();
+// 設定ファイルパス取得
+const std::filesystem::path& OSD_GetConfigPath();
+// パスの末尾にデリミタを追加
+void OSD_AddDelimiter( std::filesystem::path& );
+// パスの末尾のデリミタを削除
+void OSD_DelDelimiter( std::filesystem::path& );
+// 相対パス化
+void OSD_RelativePath( std::filesystem::path& );
+// 絶対パス化
+void OSD_AbsolutePath( std::filesystem::path& );
+// パス結合
+void OSD_AddPath( std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path& );
+// パスからフォルダ名を取得
+const std::string OSD_GetFolderNamePart( const std::filesystem::path& );
+// パスからファイル名を取得
+const std::string OSD_GetFileNamePart( const std::filesystem::path& );
+// パスから拡張子名を取得
+const std::string OSD_GetFileNameExt( const std::filesystem::path& );
+// 拡張子名を変更
+bool OSD_ChangeFileNameExt( std::filesystem::path&, const std::string& );
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -91,10 +69,22 @@ const std::filesystem::path& OSD_GetModulePath();
 ////////////////////////////////////////////////////////////////
 // ファイルを開く
 FILE* OSD_Fopen( const std::filesystem::path&, const std::string& );
+// ファイルストリームを開く
+bool OSD_FSopen( std::fstream&, const std::filesystem::path&, const std::ios_base::openmode );
+// フォルダを作成
+bool OSD_CreateFolder( const std::filesystem::path& );
+// ファイルの存在チェック
+bool OSD_FileExist( const std::filesystem::path& );
+// ファイルサイズ取得
+DWORD OSD_GetFileSize( const std::filesystem::path& );
+// ファイルの読取り専用チェック
+bool OSD_FileReadOnly( const std::filesystem::path& );
 // フォルダの参照
 bool OSD_FolderDiaog( HWINDOW, std::filesystem::path& );
 // 各種ファイル選択
 bool OSD_FileSelect( HWINDOW, FileDlg, std::filesystem::path&, std::filesystem::path& );
+
+
 
 
 ////////////////////////////////////////////////////////////////

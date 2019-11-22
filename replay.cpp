@@ -215,7 +215,7 @@ bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 		strva.resize( mt.size() * 2, 'F' );
 		int i = 0;
 		for( auto &m : mt )
-			m = std::strtoul( strva.substr( i++ * 2, 2 ).c_str(), nullptr, 16 );
+			m = std::stoul( strva.substr( i++ * 2, 2 ), nullptr, 16 );
 	}
 	
 	if( ++RepFrm >= EndFrm )

@@ -25,8 +25,8 @@ public:
 	cMutex();						// コンストラクタ
 	~cMutex();						// デストラクタ;
 	
-	void Lock();					// Lock
-	void UnLock();					// Unlock
+	void lock();					// Lock
+	void unlock();					// Unlock
 };
 
 

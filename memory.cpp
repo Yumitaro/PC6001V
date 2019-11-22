@@ -4,10 +4,11 @@
 #include <new>
 #include <unordered_map>
 
-#include "log.h"
-#include "memory.h"
 #include "common.h"
 #include "error.h"
+#include "log.h"
+#include "memory.h"
+#include "osd.h"
 #include "p6vm.h"
 
 
@@ -657,7 +658,7 @@ bool MEM6::MountExtRom( const std::filesystem::path& filepath )
 	
 	try{
 		std::fstream fs;
-		if( !FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) throw Error::ExtRomMountFailed;
+		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) throw Error::ExtRomMountFailed;
 		fs.read( (char*)ExtRom, MemTable.ExtRom->Size );
 		fs.close();
 		
@@ -734,16 +735,16 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::
 			
 			// ファイルから読込み
 			std::filesystem::path fpath = path;
-			AddPath( fpath, fpath, std::filesystem::u8path( info->Rinfo[i].FileName ) );
+			OSD_AddPath( fpath, fpath, std::filesystem::u8path( info->Rinfo[i].FileName ) );
 			
 			// ファイルの存在チェック
-			if( !FileExist( fpath ) ) continue;
+			if( !OSD_FileExist( fpath ) ) continue;
 			
 			// ファイルサイズチェック
-			if( GetFileSize( fpath ) != info->Size ) ErrSize = true;
+			if( OSD_GetFileSize( fpath ) != info->Size ) ErrSize = true;
 			
 			std::fstream fs;
-			if( FSopen( fs, fpath, std::ios_base::in|std::ios_base::binary ) ){
+			if( OSD_FSopen( fs, fpath, std::ios_base::in|std::ios_base::binary ) ){
 				fs.read( (char*)*buf, info->Size );
 				// CRCチェック
 				// EnableChkCRC=false または CRC=0の時はチェックしない
@@ -761,7 +762,7 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::
 		else if( ErrSize ) throw Error::RomSizeNG;
 		else               throw Error::NoRom;
 	}
-	catch( std::bad_alloc ){	// new に失敗した場合
+	catch( std::bad_alloc& ){	// new に失敗した場合
 		PRINTD( MEM_LOG, "-> MemAlloc Failed\n" );
 		Error::SetError( Error::MemAllocFailed );
 		return false;
@@ -1894,7 +1895,7 @@ bool MEM6::DokoSave( cIni* Ini )
 	// 拡張ROMがマウントされている場合
 	if( UseExtRom ){
 		std::filesystem::path tpath = FilePath;
-		RelativePath( tpath );
+		OSD_RelativePath( tpath );
 		Ini->PutEntry( "MEMORY", "", "FilePath",	"%s",	tpath.u8string().c_str() );
 	}
 	
@@ -1998,10 +1999,9 @@ bool MEM6::DokoLoad( cIni* Ini )
 	for( int i=0; i<(int)MemTable.IntRam->Size; i+=64 ){
 		std::string strva;
 		if( Ini->GetString( "MEMORY", Stringf( "IntRam_%04X", i ), strva, "" ) ){
-			strva += ( 64 * 2 - strva.length(), '0' );
-			for( int j=0; j<64; j++ ){
-				IntRam[i+j] = std::strtoul( strva.substr( j * 2, 2 ).c_str(), nullptr, 16 );
-			}
+			strva += std::string( 64 * 2 - strva.length(), '0' );
+			for( int j=0; j<64; j++ )
+				IntRam[i+j] = std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 );
 		}
 	}
 	
@@ -2010,10 +2010,9 @@ bool MEM6::DokoLoad( cIni* Ini )
 		for( int i=0; i<(int)MemTable.ExtRam->Size; i+=64 ){
 			std::string strva;
 			if( Ini->GetString( "MEMORY", Stringf( "ExtRam_%06X", i ), strva, "" ) ){
-				strva += ( 64 * 2 - strva.length(), '0' );
-				for( int j=0; j<64; j++ ){
-					ExtRam[i+j] = std::strtoul( strva.substr( j * 2, 2 ).c_str(), nullptr, 16 );
-				}
+				strva += std::string( 64 * 2 - strva.length(), '0' );
+				for( int j=0; j<64; j++ )
+					ExtRam[i+j] = std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 );
 			}
 		}
 	}

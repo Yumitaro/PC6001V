@@ -34,16 +34,16 @@ bool CheckFont( CFG6* cfg )
 {
 	std::filesystem::path FontFile;
 	
-	AddPath( FontFile, cfg->GetFontPath(), std::filesystem::u8path( FILE_FONTH ) );
+	OSD_AddPath( FontFile, cfg->GetFontPath(), std::filesystem::u8path( FILE_FONTH ) );
 	
-	if( !FileExist( FontFile ) )
+	if( !OSD_FileExist( FontFile ) )
 		if( !OSD_CreateFont( FontFile, "", FSIZE ) ){
 			Error::SetError( Error::FontCreateFailed );
 			return false;
 		}
 	
-	AddPath( FontFile, cfg->GetFontPath(), std::filesystem::u8path( FILE_FONTZ ) );
-	if( !FileExist( FontFile ) )
+	OSD_AddPath( FontFile, cfg->GetFontPath(), std::filesystem::u8path( FILE_FONTZ ) );
+	if( !OSD_FileExist( FontFile ) )
 		if( !OSD_CreateFont( "", FontFile, FSIZE ) ){
 			Error::SetError( Error::FontCreateFailed );
 			return false;
@@ -72,8 +72,8 @@ bool SearchRom( CFG6* cfg )
 		for( auto &rom : roms ){
 			bool resf = false;
 			for( auto &file : rom ){
-				AddPath( RomSearch, cfg->GetRomPath(), std::filesystem::u8path( file.FileName ) );
-				if( FileExist( RomSearch ) ) resf = true;
+				OSD_AddPath( RomSearch, cfg->GetRomPath(), std::filesystem::u8path( file.FileName ) );
+				if( OSD_FileExist( RomSearch ) ) resf = true;
 			}
 			if( !resf ) res = false;
 			resf = false;
@@ -95,8 +95,8 @@ bool SearchRom( CFG6* cfg )
 		for( auto &rom : roms ){
 			bool resf = false;
 			for( auto &file : rom ){
-				AddPath( RomSearch, cfg->GetRomPath(), std::filesystem::u8path( file.FileName ) );
-				if( FileExist( RomSearch ) ) resf = true;
+				OSD_AddPath( RomSearch, cfg->GetRomPath(), std::filesystem::u8path( file.FileName ) );
+				if( OSD_FileExist( RomSearch ) ) resf = true;
 			}
 			if( !resf ) res = false;
 			resf = false;
@@ -136,6 +136,9 @@ int main( int argc, char* argv[] )
 		return false;
 	}
 	
+	// 設定ファイルフォルダの存在チェック&作成
+	if( !OSD_FileExist( OSD_GetConfigPath() ) ) OSD_CreateFolder( OSD_GetConfigPath() );
+	
 	// INIファイル読込み
 	if( !Cfg.Init() ){
 		switch( Error::GetError() ){
@@ -151,15 +154,15 @@ int main( int argc, char* argv[] )
 		}
 	}
 	
-	// フォルダの存在チェック&作成
-	if( !FileExist( Cfg.GetRomPath() ) )		CreateFolder( Cfg.GetRomPath() );
-	if( !FileExist( Cfg.GetTapePath() ) )		CreateFolder( Cfg.GetTapePath() );
-	if( !FileExist( Cfg.GetDiskPath() ) )		CreateFolder( Cfg.GetDiskPath() );
-	if( !FileExist( Cfg.GetExtRomPath() ) )		CreateFolder( Cfg.GetExtRomPath() );
-	if( !FileExist( Cfg.GetImgPath() ) )		CreateFolder( Cfg.GetImgPath() );
-	if( !FileExist( Cfg.GetWavePath() ) )		CreateFolder( Cfg.GetWavePath() );
-	if( !FileExist( Cfg.GetFontPath() ) )		CreateFolder( Cfg.GetFontPath() );
-	if( !FileExist( Cfg.GetDokoSavePath() ) )	CreateFolder( Cfg.GetDokoSavePath() );
+	// 各種フォルダの存在チェック&作成
+	if( !OSD_FileExist( Cfg.GetRomPath() ) )		OSD_CreateFolder( Cfg.GetRomPath() );
+	if( !OSD_FileExist( Cfg.GetTapePath() ) )		OSD_CreateFolder( Cfg.GetTapePath() );
+	if( !OSD_FileExist( Cfg.GetDiskPath() ) )		OSD_CreateFolder( Cfg.GetDiskPath() );
+	if( !OSD_FileExist( Cfg.GetExtRomPath() ) )		OSD_CreateFolder( Cfg.GetExtRomPath() );
+	if( !OSD_FileExist( Cfg.GetImgPath() ) )		OSD_CreateFolder( Cfg.GetImgPath() );
+	if( !OSD_FileExist( Cfg.GetWavePath() ) )		OSD_CreateFolder( Cfg.GetWavePath() );
+	if( !OSD_FileExist( Cfg.GetFontPath() ) )		OSD_CreateFolder( Cfg.GetFontPath() );
+	if( !OSD_FileExist( Cfg.GetDokoSavePath() ) )	OSD_CreateFolder( Cfg.GetDokoSavePath() );
 	
 	
 	// フォントファイルチェック&作成
@@ -170,14 +173,12 @@ int main( int argc, char* argv[] )
 	
 	// コンソール用フォント読込み
 	std::filesystem::path FontZ, FontH;
-	AddPath( FontZ, Cfg.GetFontPath(), std::filesystem::u8path( FILE_FONTZ ) );
-	AddPath( FontH, Cfg.GetFontPath(), std::filesystem::u8path( FILE_FONTH ) );
+	OSD_AddPath( FontZ, Cfg.GetFontPath(), std::filesystem::u8path( FILE_FONTZ ) );
+	OSD_AddPath( FontH, Cfg.GetFontPath(), std::filesystem::u8path( FILE_FONTH ) );
 	if( !JFont::OpenFont( FontZ, FontH ) ){
 		OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 		Error::Reset();
 	}
-	
-	
 	
 	// P6オブジェクトを作成して実行
 	do{

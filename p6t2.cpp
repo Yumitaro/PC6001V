@@ -1,5 +1,5 @@
-#include "common.h"
 #include "log.h"
+#include "osd.h"
 #include "p6t2.h"
 #include "pc6001v.h"
 
@@ -444,7 +444,7 @@ bool cP6T::Writef( const std::filesystem::path& filepath )
 	
 	std::fstream fs;
 	
-	if( !FSopen( fs, filepath, std::ios_base::out|std::ios_base::binary ) ) return false;
+	if( !OSD_FSopen( fs, filepath, std::ios_base::out|std::ios_base::binary ) ) return false;
 	
 	// ベタイメージ書込み&サイズ取得
 	DWORD beta = 0;
@@ -488,7 +488,7 @@ bool cP6T::ReadP6T( const std::filesystem::path& filepath )
 	
 	std::fstream fs;
 	
-	if( !FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) return false;
+	if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) return false;
 	
 	// ベタイメージサイズ取得
 	fs.seekg( -4, std::ios_base::end );
@@ -555,7 +555,7 @@ bool cP6T::ConvP6T( const std::filesystem::path& filepath )
 	std::fstream fs;
 	
 	// P6T情報設定
-	SetName( GetFileNamePart( filepath ) );	// データ名はファイル名
+	SetName( OSD_GetFileNamePart( filepath ) );	// データ名はファイル名
 	Version     = 2;						// バージョン(とりあえず2)
 	Ainfo.Start = false;					// オートスタートフラグ(無効)
 	Ainfo.BASIC = 1;						// BASICモード(PC-6001の場合は無意味)(とりあえず1だが無意味)
@@ -570,9 +570,9 @@ bool cP6T::ConvP6T( const std::filesystem::path& filepath )
 	b.SetBaud( DEFAULT_BAUD );				// ボーレート
 	b.SetStopBit( 0 );						// ストップビット(0:DEFAULT)
 	b.SetPeriod( 3400, 6800 );				// 無音部(3400ms),ぴー音(6800ms)時間セット
-	b.SetSize( GetFileSize( filepath ) );	// データサイズ = ベタイメージサイズ
+	b.SetSize( OSD_GetFileSize( filepath ) );	// データサイズ = ベタイメージサイズ
 	
-	if( !FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ){
+	if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ){
 		SetName( "" );
 		Data.clear();
 		return false;

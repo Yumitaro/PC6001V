@@ -1,7 +1,7 @@
-#include "common.h"
 #include "disk.h"
 #include "intr.h"
 #include "log.h"
+#include "osd.h"
 #include "p6el.h"
 #include "p6vm.h"
 #include "pc6001v.h"
@@ -480,7 +480,7 @@ bool CMTS::Mount( void )
 {
 	if( fs.is_open() ) fs.close();
 	
-	return FSopen( fs, FilePath, std::ios_base::out|std::ios_base::binary );
+	return OSD_FSopen( fs, FilePath, std::ios_base::out|std::ios_base::binary );
 }
 
 
@@ -573,7 +573,7 @@ bool CMTL::DokoSave( cIni* Ini )
 	
 	// マウントされていたらP6TオブジェクトをSAVE
 	std::filesystem::path tpath = FilePath;
-	RelativePath( tpath );
+	OSD_RelativePath( tpath );
 	Ini->PutEntry( "TAPE", "", "FilePath",	"%s",	tpath.u8string().c_str() );
 	
 	// P6T
