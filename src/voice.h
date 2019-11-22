@@ -67,7 +67,7 @@ protected:
 	int VStat;						// ステータス
 	
 	// 内部句関係
-	std::queue<int> IVBuf;			// データバッファ
+	std::queue<int32_t> IVBuf;		// データバッファ
 	
 	// パラメータバッファ(1フレームのパラメータ数は7個)
 	BYTE ParaBuf[7];				// パラメータバッファ

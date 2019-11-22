@@ -33,7 +33,7 @@ bool cD88::Init( const std::filesystem::path& filepath )
 	PRINTD( D88_LOG, "[D88][Init] %s\n", filepath.u8string().c_str() )
 	
 	// 読取り専用属性ならプロテクト状態で開く
-	if( FileReadOnly( filepath ) ){
+	if( OSD_FileReadOnly( filepath ) ){
 		mode      = std::ios_base::in | std::ios_base::binary;
 		Protected = true;	// プロテクトシールあり
 	}else{
@@ -41,7 +41,7 @@ bool cD88::Init( const std::filesystem::path& filepath )
 		Protected = false;	// プロテクトシールなし
 	}
 	
-	if( !FSopen( fs, filepath, mode ) ){
+	if( !OSD_FSopen( fs, filepath, mode ) ){
 		FilePath.clear();
 		Protected = false;
 		return false;

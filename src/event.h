@@ -18,6 +18,7 @@ typedef enum {
 	EV_REPLAY,				// (SDL User event)
 	EV_FPSUPDATE,			// (SDL User event)
 	EV_DEBUGMODEBP,			// (SDL User event)
+	EV_RENDER,				// (SDL User event)
 	
 							// Fix order
 	EV_QUIT,				// User-requested quit
@@ -108,6 +109,11 @@ typedef struct {
 	uint16_t addr;
 } Event_BreakPoint;
 
+// 画面描画
+typedef struct {
+	EventType type;		// EV_RENDER
+} Event_Render;
+
 // Drag & Drop
 typedef struct {
 	EventType type;		// EV_DROPFILE
@@ -135,6 +141,7 @@ typedef union Event {
 	Event_Replay replay;
 	Event_FPSUpdate fps;
 	Event_BreakPoint bp;
+	Event_Render render;
 	Event_Drop drop;
 	Event_Window window;
 } Event;

@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "breakpoint.h"
 
 
@@ -50,8 +52,9 @@ BPoint::BPtype BPoint::GetBPType( const int num ) const
 	try{
 		return BP.at( num - 1 ).Type;
 	}
-	catch( ... ){}
-	return BP_NONE;
+	catch( std::out_of_range& ){
+		return BP_NONE;
+	}
 }
 
 
@@ -63,8 +66,9 @@ WORD BPoint::GetBPAddr( const int num ) const
 	try{
 		return BP.at( num - 1 ).Addr;
 	}
-	catch( ... ){}
-	return 0;
+	catch( std::out_of_range& ){
+		return 0;
+	}
 }
 
 

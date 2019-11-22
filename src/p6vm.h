@@ -1,6 +1,7 @@
 #ifndef P6VM_H_INCLUDED
 #define P6VM_H_INCLUDED
 
+#include <memory>
 #include <vector>
 
 #include "cpum.h"

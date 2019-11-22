@@ -95,7 +95,7 @@ struct DISK60 {
 	
 	DISK60() :
 		Type(FDD1D),
-		PD_DAC(false), PD_RFD(false), PD_DAV(false), PD_ATN(false),
+		PD_ATN(false), PD_DAC(false), PD_RFD(false), PD_DAV(false),
 		DP_DAC(false), DP_RFD(false), DP_DAV(false),
 		command(IDLE), step(0),
 		blk(0), drv(0), trk(0), sct(0),

@@ -467,7 +467,7 @@ bool AVI6::WriteHeader( void )
 	DWORD SIZESTRLV	= sizeof(AVISTRMHEADER6) + sizeof(BMPINFOHEADER6) + sizeof(DWORD) * 5 + (ABPP==8 ? (sizeof(RGBPAL6) * 256) : 0);
 	DWORD SIZESTRLA	= sizeof(AVISTRMHEADER6) + sizeof(WAVEFORMATEX6)  + sizeof(DWORD) * 5;
 	DWORD SIZEHDRL  = SIZESTRLV + SIZESTRLA  + sizeof(MAINAVIHEADER6) + sizeof(DWORD) * 7;
-	DWORD SIZEJUNK  = 0x800 - (SIZEHDRL + sizeof(DWORD) * 7) & 0x7ff;
+	DWORD SIZEJUNK  = 0x800 - ((SIZEHDRL + sizeof(DWORD) * 7) & 0x7ff);
 	
 	fseek( vfp, 0, SEEK_SET );
 	

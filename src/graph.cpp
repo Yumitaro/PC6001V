@@ -193,13 +193,13 @@ void DSP6::DrawScreen( void )
 		pos.h = P6WINH;
 		
 		// モニタウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->monw, 0, vm->el->regw->Height()+vm->el->memw->Height()-vm->el->monw->Height() );
+		OSD_BlitToWindow( Wh, vm->el->monw.get(), 0, vm->el->regw->Height()+vm->el->memw->Height()-vm->el->monw->Height() );
 		
 		// レジスタウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->regw, max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), 0 );
+		OSD_BlitToWindow( Wh, vm->el->regw.get(), max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), 0 );
 		
 		// メモリウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->memw, max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), vm->el->regw->Height() );
+		OSD_BlitToWindow( Wh, vm->el->memw.get(), max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), vm->el->regw->Height() );
 	}else
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	{
@@ -214,7 +214,7 @@ void DSP6::DrawScreen( void )
 			// ステータスバー更新/描画
 			// スクリーンサーフェス下端に位置を合わせてblit
 			vm->el->staw->Update();
-			OSD_BlitToWindow( Wh, vm->el->staw, 0, OSD_GetWindowHeight( Wh ) - vm->el->staw->Height() );
+			OSD_BlitToWindow( Wh, vm->el->staw.get(), 0, OSD_GetWindowHeight( Wh ) - vm->el->staw->Height() );
 		}
 	}
 	
@@ -278,14 +278,14 @@ void DSP6::SnapShot( const std::filesystem::path& path )
 	int Index = 0;
 	
 	// スナップショット格納フォルダがなければフォルダを作成
-	if( !FileExist( path ) ){
-		if( !CreateFolder( path ) ) return;
+	if( !OSD_FileExist( path ) ){
+		if( !OSD_CreateFolder( path ) ) return;
 	}
 	
 	// スナップショットファイル名を決める
 	do{
 		tpath = path / std::filesystem::u8path( Stringf( "%s%03d.%s", FILE_SNAP, ++Index, EXT_IMG ) );
-	}while( FileExist( tpath ) || (Index > 999) );
+	}while( OSD_FileExist( tpath ) || (Index > 999) );
 	
 	// 連番が有効なら画像ファイル保存
 	if( !(Index > 999) ){

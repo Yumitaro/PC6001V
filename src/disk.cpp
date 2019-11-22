@@ -6,10 +6,11 @@
 #include <vector>
 
 #include "common.h"
-#include "p6el.h"
-#include "log.h"
 #include "disk.h"
 #include "error.h"
+#include "log.h"
+#include "osd.h"
+#include "p6el.h"
 #include "p6vm.h"
 #include "schedule.h"
 
@@ -191,7 +192,7 @@ bool DSK6::Mount( int drvno, const std::filesystem::path& filepath )
 		Dimg[drvno] = new cD88( DDDrv[drvno] );
 		if( !Dimg[drvno]->Init( filepath ) ) throw Error::DiskMountFailed;
 	}
-	catch( std::bad_alloc ){	// new に失敗した場合
+	catch( std::bad_alloc& ){	// new に失敗した場合
 		Error::SetError( Error::MemAllocFailed );
 		return false;
 	}
@@ -836,10 +837,11 @@ void DSK60::FddOut( BYTE dat )
 							mdisk.error = true;
 							DSK6::AddWait( WAIT_TRACK * 2 );
 						}
-					}else
+					}else{
 						// 失敗したらエラーフラグ立てる
 						mdisk.error = true;
 						DSK6::AddWait( WAIT_TRACK * 2 );
+					}
 				}
 				mdisk.step = 0;
 				break;
@@ -1902,7 +1904,7 @@ bool DSK6::DokoSave( cIni* Ini )
 	for( int i=0; i<DrvNum; i++ ){
 		if( Dimg[i] ){
 			std::filesystem::path tpath = Dimg[i]->GetFileName();
-			RelativePath( tpath );
+			OSD_RelativePath( tpath );
 			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_FileName", i ),	"%s",	tpath.u8string().c_str() );
 			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_trkno", i ),		"%d",	Dimg[i]->Track() );
 			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_secno", i ),		"%d",	Dimg[i]->Sector() );
@@ -2076,19 +2078,17 @@ bool DSK60::DokoLoad( cIni* Ini )
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		if( Ini->GetString( "P60DISK", Stringf( "RBuf_%04X", i ), strva, "" ) ){
-			strva += ( 64*2 - strva.length(), '0' );
-			for( int j=0; j<64; j++ ){
-				RBuf[i+j] = std::strtoul( strva.substr( j*2, 2 ).c_str(), nullptr, 16 );
-			}
+			strva += std::string( 64*2 - strva.length(), '0' );
+			for( int j=0; j<64; j++ )
+				RBuf[i+j] = std::stoul( strva.substr( j*2, 2 ), nullptr, 16 );
 		}
 	}
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		if( Ini->GetString( "P60DISK", Stringf( "WBuf_%04X", i ), strva, "" ) ){
-			strva += ( 64*2 - strva.length(), '0' );
-			for( int j=0; j<64; j++ ){
-				WBuf[i+j] = std::strtoul( strva.substr( j*2, 2 ).c_str(), nullptr, 16 );
-			}
+			strva += std::string( 64*2 - strva.length(), '0' );
+			for( int j=0; j<64; j++ )
+				WBuf[i+j] = std::stoul( strva.substr( j*2, 2 ), nullptr, 16 );
 		}
 	}
 	
@@ -2149,10 +2149,9 @@ bool DSK66::DokoLoad( cIni* Ini )
 		for( int j=0; j<256; j+=64 ){
 			std::string strva;
 			if( Ini->GetString( "P66DISK", Stringf( "FDDBuf_%d_%02X", i, j ), strva, "" ) ){
-				strva += ( 64*2 - strva.length(), '0' );
-				for( int k=0; k<64; k++ ){
-					FDDBuf[i*256+j+k] = std::strtoul( strva.substr( k*2, 2 ).c_str(), nullptr, 16 );
-				}
+				strva += std::string( 64*2 - strva.length(), '0' );
+				for( int k=0; k<64; k++ )
+					FDDBuf[i*256+j+k] = std::stoul( strva.substr( k*2, 2 ), nullptr, 16 );
 			}
 		}
 	}

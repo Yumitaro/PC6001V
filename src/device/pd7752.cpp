@@ -148,7 +148,6 @@ int	cD7752::GetFrameSize( void	)
 //			frame	合成した波形データの格納先。1フレーム分の個数
 // 返値:	int		エラーコード
 ////////////////////////////////////////////////////////////////
-//int	cD7752::Synth( BYTE* param, D7752_SAMPLE* frame )
 int	cD7752::Synth( BYTE* param, std::queue<D7752_SAMPLE>& frame )
 {
 	int	vu;
@@ -156,7 +155,6 @@ int	cD7752::Synth( BYTE* param, std::queue<D7752_SAMPLE>& frame )
 	D7752Coef* curr;
 	D7752Coef incr,	next;
 	
-//	if(	!param || !frame ) return D7752_ERR_PARAM;
 	if(	!param ) return D7752_ERR_PARAM;
 	
 	curr = &Coef;
@@ -222,7 +220,6 @@ int	cD7752::Synth( BYTE* param, std::queue<D7752_SAMPLE>& frame )
 		}
 		
 		// データを保存
-//		*frame++ = y;
 		frame.emplace( y );
 		
 		// パラメータを増分

@@ -3,8 +3,9 @@
 #include <algorithm>
 #include <fstream>
 
-#include "ini.h"
 #include "common.h"
+#include "ini.h"
+#include "osd.h"
 
 
 #define MAX_LINE	1024
@@ -202,7 +203,7 @@ bool cIni::Read( const std::filesystem::path& path )
 	size_t len;
 	
 	// INIファイルを開く
-	if( !FSopen( fs, path, std::ios_base::in ) ){
+	if( !OSD_FSopen( fs, path, std::ios_base::in ) ){
 		IniPath.clear();
 		return false;
 	}
@@ -263,7 +264,7 @@ bool cIni::Write( void )
 	std::fstream fs;
 	
 	// INIファイルを開く
-	if( !FSopen( fs, IniPath, std::ios_base::out ) )
+	if( !OSD_FSopen( fs, IniPath, std::ios_base::out ) )
 		return false;
 	
 	for( auto &node : IniNode ){
@@ -339,11 +340,12 @@ bool cIni::GetInt( const std::string& section, const std::string& entry, int* va
 	}
 	
 	try{
-		*val = std::strtoul( str.c_str(), nullptr, 0 );
+		*val = std::stoul( str, nullptr, 0 );
+		return true;
 	}
-	catch( ... ){}
-	
-	return true;
+	catch( std::logic_error& ){
+		return false;
+	}
 }
 
 
@@ -382,7 +384,7 @@ bool cIni::GetPath( const std::string& section, const std::string& entry, std::f
 	if( !GetString( section, entry, tval, def.u8string() ) ) return false;
 	
 	val = std::filesystem::u8path( tval );
-	AbsolutePath( val );
+	OSD_AbsolutePath( val );
 	
 	return true;
 }

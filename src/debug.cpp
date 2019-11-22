@@ -9,6 +9,7 @@
 #include "breakpoint.h"
 #include "common.h"
 #include "debug.h"
+#include "osd.h"
 #include "p6el.h"
 #include "p6vm.h"
 #include "schedule.h"
@@ -296,17 +297,16 @@ enum MonitorJob	// ジョブ
 	
 	MONITOR_RESET,
 	MONITOR_REG,
-	MONITOR_DISASM,
-	
-	EndofMONITOR
+	MONITOR_DISASM
 };
 
-const struct{
+struct MonCmd{
 	MonitorJob Step;
 	const std::string cmd;
 	const std::string HelpMes;
-}MonitorCmd[]=
-	{
+};
+
+const std::vector<MonCmd> MonitorCmd = {
 	{ MONITOR_HELP,		"help",		"ヘルプを表示" },
 	{ MONITOR_HELP,		"?",		"    〃" },
 	{ MONITOR_GO,		"go",		"実行" },
@@ -328,8 +328,7 @@ const struct{
 	{ MONITOR_SAVEMEM,	"savemem",	"メモリからファイルに書込む" },
 	{ MONITOR_RESET,	"reset",	"PC6001Vをリセット" },
 	{ MONITOR_REG,		"reg",		"CPUレジスタを参照/設定" },
-	{ MONITOR_DISASM,	"disasm",	"逆アセンブル" },
-
+	{ MONITOR_DISASM,	"disasm",	"逆アセンブル" }
 };
 
 
@@ -346,9 +345,7 @@ enum ArgvType{
 	ARGV_SIZE	= 0x00080,	// #1～#0x7fffffff
 	ARGV_REG	= 0x00400,	// RegisterName
 	ARGV_BREAK	= 0x00800,	// BreakAction
-	ARGV_STEP	= 0x04000,	// StepCommand
-	
-	EndofArgvType
+	ARGV_STEP	= 0x04000	// StepCommand
 };
 
 
@@ -370,18 +367,17 @@ enum ArgvName{
 	ARG_CALL,	ARG_JP,		ARG_REP,
 	
 	// reg all
-	ARG_ALL,
-	
-	EndofArgName
+	ARG_ALL
 };
 
 
-const struct{
+struct MonArgv{
 	const std::string Str;
 	int Type;
 	int Val;
-}MonitorArgv[]=
-{
+};
+
+const std::vector<MonArgv> MonitorArgv = {
 	// <reg>
 	{ "AF",		ARGV_REG,	ARG_AF,		},
 	{ "BC",		ARGV_REG,	ARG_BC,		},
@@ -413,7 +409,7 @@ const struct{
 	{ "CALL",	ARGV_STEP,	ARG_CALL,	},
 	{ "JP",		ARGV_STEP,	ARG_JP,		},
 	{ "REP",	ARGV_STEP,	ARG_REP,	},
-	{ "ALL",	ARGV_STEP,	ARG_ALL,	},
+	{ "ALL",	ARGV_STEP,	ARG_ALL,	}
 };
 
 
@@ -609,31 +605,28 @@ int cWndMon::GetArg( void )
 		}
 	}
 	
-	int JobNo;
 	if( !Argv.size() )	// 空行?
-		JobNo = MONITOR_NONE;
-	else{		// 有効命令?
-		int i;
-		for( i=0; i<COUNTOF(MonitorCmd); i++ )
-			if( Argv.front() == MonitorCmd[i].cmd ) break;
-		
-		if( i == COUNTOF( MonitorCmd ) ){	// 無効命令の場合
-			ZCons::SetColor( FC_RED );
-			ZCons::SPrintc( Stringf( "無効なコマンドです : %s\n", Argv.front().c_str() ) );
-			ZCons::SetColor( FC_WHITE );
-			JobNo = MONITOR_NONE;
-		}else{								// 引数が ? の場合
-			if( Argv.size() == 2 && (Argv[1] == "?") ){
-				Help( MonitorCmd[i].Step );
-				JobNo = MONITOR_NONE;
-			}else{							// 通常の命令の場合
-				JobNo = MonitorCmd[i].Step;
+		return MONITOR_NONE;
+	
+	// 有効命令探す
+	for( auto &m : MonitorCmd ){
+		if( !StriCmp( Argv.front(), m.cmd ) ){
+			if( Argv.size() == 2 && (Argv[1] == "?") ){	// 引数が ? の場合
+				Help( m.Step );
+				return MONITOR_NONE;
+			}else{										// 通常の命令の場合
 				Shift();
+				return m.Step;
 			}
 		}
 	}
 	
-	return JobNo;
+	// 無効命令の場合
+	ZCons::SetColor( FC_RED );
+	ZCons::SPrintc( Stringf( "無効なコマンドです : %s\n", Argv.front().c_str() ) );
+	ZCons::SetColor( FC_WHITE );
+	
+	return MONITOR_NONE;
 }
 
 
@@ -668,7 +661,7 @@ void cWndMon::Shift( void )
 		try{
 			argv.Val = std::stoi( argv.Str, &chk, 0 );
 		}
-		catch( ... ){
+		catch( std::logic_error& ){	// 変換失敗
 			chk = 0;
 		}
 		
@@ -688,10 +681,10 @@ void cWndMon::Shift( void )
 			if( size ){		// #で始まる
 				argv.Type = ARGV_STR;
 			}else{			// 字で始まる
-				for( int i=0; i<COUNTOF( MonitorArgv ); i++ ){
-					if( argv.Str == MonitorArgv[i].Str ){
-						argv.Type |= MonitorArgv[i].Type;
-						argv.Val   = MonitorArgv[i].Val;
+				for( auto &m : MonitorArgv ){
+					if( !StriCmp( argv.Str, m.Str ) ){
+						argv.Type |= m.Type;
+						argv.Val   = m.Val;
 					}
 				}
 				if( argv.Type == ARGV_END ) argv.Type = ARGV_STR;
@@ -729,7 +722,6 @@ void cWndMon::Exec( int cmd )
 	//	ヘルプを表示する
 	//--------------------------------------------------------------
 	{
-		int i;
 		std::string cmds = "";
 		
 		if( argv.Type != ARGV_END ){				// [cmd]
@@ -740,15 +732,19 @@ void cWndMon::Exec( int cmd )
 		
 		if( cmds.empty() ){	// 引数なし。全ヘルプ表示
 			ZCons::SPrintc( "help\n" );
-			for( i=0; i<COUNTOF(MonitorCmd); i++ )
-				ZCons::SPrintc( Stringf( "  %-7s %s\n", MonitorCmd[i].cmd.c_str(), MonitorCmd[i].HelpMes.c_str() ) );
+			for( auto &m : MonitorCmd )
+				ZCons::SPrintc( Stringf( "  %-7s %s\n", m.cmd.c_str(), m.HelpMes.c_str() ) );
 			ZCons::SPrintc( "     注: \"help <コマンド名>\" と入力すると\n         更に詳細なヘルプを表示します。\n" );
 		}else{		// 引数のコマンドのヘルプ表示
-			for( i=0; i<COUNTOF(MonitorCmd); i++ ){
-				if( cmds == MonitorCmd[i].cmd ) break;
+			size_t i = 0;
+			for( auto &m : MonitorCmd ){
+				if( !StriCmp( cmds, m.cmd ) ){
+					Help( m.Step );
+					break;
+				}
+				i++;
 			}
-			if( i == COUNTOF(MonitorCmd) ) ErrorMes();
-			Help( MonitorCmd[i].Step );
+			if( i == MonitorCmd.size() ) ErrorMes();
 		}
 		
 		break;
@@ -1176,7 +1172,7 @@ void cWndMon::Exec( int cmd )
 		
 		if( argv.Type != ARGV_END ) ErrorMes();
 		
-		if( !FSopen( fs, fname, std::ios_base::in|std::ios_base::binary ) ){
+		if( !OSD_FSopen( fs, fname, std::ios_base::in|std::ios_base::binary ) ){
 			ZCons::SetColor( FC_RED );
 			ZCons::SPrintc( "Failed : File open error\n" );
 			ZCons::SetColor( FC_WHITE );
@@ -1223,7 +1219,7 @@ void cWndMon::Exec( int cmd )
 		
 		if( argv.Type != ARGV_END ) ErrorMes();
 		
-		if( !FSopen( fs, fname, std::ios_base::out|std::ios_base::binary|std::ios_base::trunc ) ){
+		if( !OSD_FSopen( fs, fname, std::ios_base::out|std::ios_base::binary|std::ios_base::trunc ) ){
 			ZCons::SetColor( FC_RED );
 			ZCons::SPrintc( "Failed : File open error\n" );
 			ZCons::SetColor( FC_WHITE );
@@ -1254,35 +1250,36 @@ void cWndMon::Exec( int cmd )
 	//  reg <name> <value>
 	//  レジスタの内容を変更
 	//--------------------------------------------------------------
-	{	int re = -1, val=0, i;
-		std::string str;
+	{	int re = -1, val=0;
+		std::string str = "XX";
 		cZ80::Register reg;
 		
-		if( argv.Type != ARGV_END ){
-			if( !ArgvIs( ARGV_REG )) ErrorMes();		// <name>
-			re = argv.Val;
-			Shift();
-			if( !ArgvIs( ARGV_INT )) ErrorMes();		// <value>
-			val = argv.Val;
-			Shift();
-		}
+		if( argv.Type == ARGV_END ) ErrorMes();
+		
+		if( !ArgvIs( ARGV_REG ) ) ErrorMes();		// <name>
+		re = argv.Val;
+		Shift();
+		if( !ArgvIs( ARGV_INT ) ) ErrorMes();		// <value>
+		val = argv.Val;
+		Shift();
+		
 		if( argv.Type != ARGV_END ) ErrorMes();
 		
 		vm->CPU6::GetRegister( &reg );
 		
 		switch( re ){
-		case ARG_AF:	reg.AF.W = val;		break;
-		case ARG_BC:	reg.BC.W = val;		break;
-		case ARG_DE:	reg.DE.W = val;		break;
-		case ARG_HL:	reg.HL.W = val;		break;
-		case ARG_IX:	reg.IX.W = val;		break;
-		case ARG_IY:	reg.IY.W = val;		break;
-		case ARG_SP:	reg.SP.W = val;		break;
-		case ARG_PC:	reg.PC.W = val;		break;
-		case ARG_AF1:	reg.AF1.W = val;	break;
-		case ARG_BC1:	reg.BC1.W = val;	break;
-		case ARG_DE1:	reg.DE1.W = val;	break;
-		case ARG_HL1:	reg.HL1.W = val;	break;
+		case ARG_AF:	reg.AF.W  = val;		break;
+		case ARG_BC:	reg.BC.W  = val;		break;
+		case ARG_DE:	reg.DE.W  = val;		break;
+		case ARG_HL:	reg.HL.W  = val;		break;
+		case ARG_IX:	reg.IX.W  = val;		break;
+		case ARG_IY:	reg.IY.W  = val;		break;
+		case ARG_SP:	reg.SP.W  = val;		break;
+		case ARG_PC:	reg.PC.W  = val;		break;
+		case ARG_AF1:	reg.AF1.W = val;		break;
+		case ARG_BC1:	reg.BC1.W = val;		break;
+		case ARG_DE1:	reg.DE1.W = val;		break;
+		case ARG_HL1:	reg.HL1.W = val;		break;
 		case ARG_I:		val &= 0xff; reg.I = val;		break;
 		case ARG_R:		val &= 0xff; reg.R = val;		break;
 		case ARG_IFF:	if(val)   val=1; reg.IFF  = val;	break;
@@ -1292,10 +1289,12 @@ void cWndMon::Exec( int cmd )
 		
 		vm->CPU6::SetRegister( &reg );
 		
-		for( i=0; i<COUNTOF( MonitorArgv ); i++ )
-			if( re == MonitorArgv[i].Val ) break;
-		if( i == COUNTOF( MonitorArgv ) ) str = "";
-		else                              str = MonitorArgv[i].Str;
+		for( auto &m : MonitorArgv ){
+			if( re == m.Val ){
+				str = m.Str;
+				break;
+			}
+		}
 		ZCons::SPrintc( Stringf( "reg %s <- %04X\n", str.c_str(), val ) );
 		
 		break;

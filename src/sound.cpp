@@ -35,7 +35,7 @@ bool cRing::InitBuffer( int size )
 {
 	PRINTD( SND_LOG, "[cRing][Init] Size:%d\n", size );
 	
-	while( !Buffer.empty() ) Buffer.pop();
+	std::queue<int32_t>().swap( Buffer );
 	Size = size;
 	
 	return true;
@@ -50,14 +50,13 @@ bool cRing::InitBuffer( int size )
 ////////////////////////////////////////////////////////////////
 int cRing::Get( void )
 {
-	int ret = 0;
+	std::lock_guard<cMutex> lock( Mutex );
 	
-	cMutex::Lock();
+	int ret = 0;
 	if( !Buffer.empty() ){
 		ret = Buffer.front();
 		Buffer.pop();
 	}
-	cMutex::UnLock();
 	
 	return ret;
 }
@@ -71,10 +70,10 @@ int cRing::Get( void )
 ////////////////////////////////////////////////////////////////
 void cRing::Put( int data )
 {
-	cMutex::Lock();
+	std::lock_guard<cMutex> lock( Mutex );
+	
 	if( (int)Buffer.size() < (Size * MULTI) )
 		Buffer.emplace( data );
-	cMutex::UnLock();
 }
 
 
@@ -84,8 +83,10 @@ void cRing::Put( int data )
 // 引数:	なし
 // 返値:	int			未読サンプル数
 ////////////////////////////////////////////////////////////////
-int cRing::ReadySize( void )
+int cRing::ReadySize( void ) const
 {
+	std::lock_guard<cMutex> lock( Mutex );
+	
 	return Buffer.size();
 }
 
@@ -96,11 +97,11 @@ int cRing::ReadySize( void )
 // 引数:	ml			true:MULTI考慮 false:MULTI非考慮
 // 返値:	int			残りバッファサンプル数
 ////////////////////////////////////////////////////////////////
-int cRing::FreeSize( bool ml )
+int cRing::FreeSize( bool ml ) const
 {
-	cMutex::Lock();
+	std::lock_guard<cMutex> lock( Mutex );
+	
 	int fsize = ml ? Size * MULTI - Buffer.size() : Size - min( Size, Buffer.size() );
-	cMutex::UnLock();
 	
 	return fsize;
 }
@@ -112,8 +113,10 @@ int cRing::FreeSize( bool ml )
 // 引数:	なし
 // 返値:	int			全バッファサンプル数
 ////////////////////////////////////////////////////////////////
-int cRing::GetSize( void )
+int cRing::GetSize( void ) const
 {
+	std::lock_guard<cMutex> lock( Mutex );
+	
 	return Size;
 }
 

@@ -43,10 +43,11 @@ VM6::VM6( EL6* emuobj ) :
 {
 }
 
-VM60::VM60( EL6* emuobj ) : VM6(emuobj),
+VM60::VM60( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	SUB60(this,DEV_ID("8049")),	// SUB CPU
 	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
+	SUB60(this,DEV_ID("8049")),	// SUB CPU
 	KEY60(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK60;
@@ -62,10 +63,11 @@ VM60::VM60( EL6* emuobj ) : VM6(emuobj),
 	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
-VM61::VM61( EL6* emuobj ) : VM6(emuobj),
+VM61::VM61( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	SUB60(this,DEV_ID("8049")),	// SUB CPU
 	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
+	SUB60(this,DEV_ID("8049")),	// SUB CPU
 	KEY60(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK60;
@@ -81,10 +83,11 @@ VM61::VM61( EL6* emuobj ) : VM6(emuobj),
 	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
-VM62::VM62( EL6* emuobj ) : VM6(emuobj),
+VM62::VM62( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
+	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
 	SUB62(this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
 	KEY62(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK60;
@@ -102,10 +105,11 @@ VM62::VM62( EL6* emuobj ) : VM6(emuobj),
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM66::VM66( EL6* emuobj ) : VM6(emuobj),
+VM66::VM66( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	SUB62(this,DEV_ID("8049")),	// SUB CPU
 	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
+	SUB62(this,DEV_ID("8049")),	// SUB CPU
 	KEY62(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK66;
@@ -123,10 +127,11 @@ VM66::VM66( EL6* emuobj ) : VM6(emuobj),
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM64::VM64( EL6* emuobj ) : VM6(emuobj),
+VM64::VM64( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	SUB62(this,DEV_ID("8049")),	// SUB CPU
 	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
+	SUB62(this,DEV_ID("8049")),	// SUB CPU
 	KEY62(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK64;
@@ -144,10 +149,11 @@ VM64::VM64( EL6* emuobj ) : VM6(emuobj),
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM68::VM68( EL6* emuobj ) : VM6(emuobj),
+VM68::VM68( EL6* emuobj ) :
 	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	SUB68(this,DEV_ID("8049")),	// SUB CPU
 	KEY6 (this,DEV_ID("KEYB")),	// キー
+	VM6(emuobj),
+	SUB68(this,DEV_ID("8049")),	// SUB CPU
 	KEY62(this,DEV_ID("KEYB"))	// キー
 {
 	cclock = CPUM_CLOCK64;
@@ -637,7 +643,7 @@ bool VM6::AllocObject( CFG6* cnfg )
 		if( !mem->AllocAllMemory( cnfg->GetRomPath(), flg ) ) throw Error::GetError();
 		
 	}
-	catch( std::bad_alloc ){	// new に失敗した場合
+	catch( std::bad_alloc& ){	// new に失敗した場合
 		// 全オブジェクト削除
 		DeleteAllObject();
 		Error::SetError( Error::MemAllocFailed );

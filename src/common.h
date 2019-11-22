@@ -165,46 +165,6 @@ BYTE GetKeyChar( PCKEYsym, bool );
 
 
 ////////////////////////////////////////////////////////////////
-// パス名処理関数
-////////////////////////////////////////////////////////////////
-// パスの末尾にデリミタを追加
-void AddDelimiter( std::filesystem::path& );
-// パスの末尾のデリミタを削除
-void DelDelimiter( std::filesystem::path& );
-// 相対パス化
-void RelativePath( std::filesystem::path& );
-// 絶対パス化
-void AbsolutePath( std::filesystem::path& );
-// パス結合
-void AddPath( std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path& );
-// パスからフォルダ名を取得
-const std::string GetFolderNamePart( const std::filesystem::path& );
-// パスからファイル名を取得
-const std::string GetFileNamePart( const std::filesystem::path& );
-// パスから拡張子名を取得
-const std::string GetFileNameExt( const std::filesystem::path& );
-// 拡張子名を変更
-bool ChangeFileNameExt( std::filesystem::path&, const std::string& );
-
-
-////////////////////////////////////////////////////////////////
-// ファイル操作関数
-////////////////////////////////////////////////////////////////
-// ファイルを開く
-//FILE* Fopen( const std::filesystem::path&, const std::string& );
-// ファイルストリームを開く
-bool FSopen( std::fstream&, const std::filesystem::path&, const std::ios_base::openmode );
-// フォルダを作成
-bool CreateFolder( const std::filesystem::path& );
-// ファイルの存在チェック
-bool FileExist( const std::filesystem::path& );
-// ファイルサイズ取得
-DWORD GetFileSize( const std::filesystem::path& );
-// ファイルの読取り専用チェック
-bool FileReadOnly( const std::filesystem::path& );
-
-
-////////////////////////////////////////////////////////////////
 // std::string 書式出力
 //
 // 引数:	fmt			書式文字列への参照

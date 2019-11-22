@@ -2,7 +2,8 @@
 #include "vsurface.h"
 
 
-std::vector<DWORD> VSurface::col32( 256, 0 );	// 32bitカラーテーブル
+//std::vector<DWORD> VSurface::col32( 256, 0 );	// 32bitカラーテーブル
+std::array<DWORD,256> VSurface::col32;	// 32bitカラーテーブル
 
 
 ////////////////////////////////////////////////////////////////
@@ -68,14 +69,7 @@ bool VSurface::InitSurface( int ww, int hh )
 	
 	// メモリ確保
 	pitch  = ((ww+3)>>2)<<2;	// 4の倍数
-	try{
-		pixels.resize( pitch * hh );
-	}
-	catch( ... ){
-		pixels.clear();
-		pitch = 0;
-		return false;
-	}
+	pixels.resize( pitch * hh );
 	
 	w = ww;
 	h = hh;
@@ -179,7 +173,7 @@ void VSurface::PSet( int x, int y, BYTE col )
 		try{
 			pixels.at( y * pitch + x ) = col;
 		}
-		catch( ... ){}
+		catch( std::out_of_range& ){}
 	}
 }
 
@@ -198,7 +192,7 @@ BYTE VSurface::PGet( int x, int y )
 		try{
 			res = pixels.at( y * pitch + x );
 		}
-		catch( ... ){
+		catch( std::out_of_range& ){
 			res = 0;
 		}
 	}
@@ -233,7 +227,7 @@ void VSurface::Fill( BYTE col, VRect* rc )
 				try{
 					pixels.at( (rr.y + i) * pitch + rr.x + j ) = col;
 				}
-				catch( ... ){}
+				catch( std::out_of_range& ){}
 			}
 		}
 	}
@@ -276,12 +270,9 @@ void VSurface::Blit( VRect* srect, VSurface* dst, VRect* drect )
 	auto psrc = pixels.begin()           + src2.y * pitch        + src2.x;
 	auto pdst = dst->GetPixels().begin() + drc2.y * dst->Pitch() + drc2.x;
 	for( int i=0; i < src2.h; i++ ){
-		try{
-			std::copy( psrc, psrc + src2.w, pdst );
-			psrc += pitch;
-			pdst += dst->Pitch();
-		}
-		catch( ... ){}
+		std::copy( psrc, psrc + src2.w, pdst );
+		psrc += pitch;
+		pdst += dst->Pitch();
 	}
 }
 
@@ -298,7 +289,7 @@ void VSurface::SetColor( int num, DWORD col )
 	try{
 		col32.at( num&0xff ) = col;
 	}
-	catch( ... ){}
+	catch( std::out_of_range& ){}
 }
 
 
@@ -313,7 +304,7 @@ DWORD VSurface::GetColor( int num )
 	try{
 		return col32.at( num&0xff );
 	}
-	catch( ... ){
+	catch( std::out_of_range& ){
 		return 0;
 	}
 }

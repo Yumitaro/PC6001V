@@ -88,7 +88,6 @@ public:
 	
 	int	Start( int );					// 音声合成開始
 	int	GetFrameSize();					// 1フレーム分のサンプル数取得
-//	int	Synth( BYTE*, D7752_SAMPLE* );	// 1フレーム分の音声を合成
 	int	Synth( BYTE*, std::queue<D7752_SAMPLE>& );	// 1フレーム分の音声を合成
 };
 

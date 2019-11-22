@@ -16,11 +16,14 @@
 #include "../osd.h"
 
 
+#define	DIR_CONFIG		"P6V"	// 設定ファイルフォルダ
+
+
 ////////////////////////////////////////////////////////////////
 // スタティック変数
 ////////////////////////////////////////////////////////////////
-static HANDLE hMutex;				// 多重起動チェック用のミューテックス
-
+static HANDLE hMutex;							// 多重起動チェック用のミューテックス
+static std::filesystem::path ConfigPath = "";	// 設定ファイルパス保存用
 
 
 
@@ -78,37 +81,189 @@ bool OSD_IsWorking( void )
 
 
 
-/*
 ////////////////////////////////////////////////////////////////
 // パス名処理関数
 ////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////
-// モジュールパス取得
+// 設定ファイルパス取得
 //
 // 引数:	なし
-// 返値:	std::string&	取得した文字列への参照(UTF-8)
+// 返値:	std::filesystem::path&	取得した文字列への参照(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& OSD_GetModulePath( void )
+const std::filesystem::path& OSD_GetConfigPath( void )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_GetModulePath]" );
+	PRINTD( OSD_LOG, "[OSD][OSD_GetConfigPath]" );
 	
-	static std::filesystem::path ModPath = "";	// モジュールパス保存用
-	
-	if( ModPath.empty() ){
+	if( ConfigPath.empty() ){
+		// パス取得バッファ
 		char str[PATH_MAX+1];
 		
+		// マイドキュメントを取得する場合
+//		if( SHGetSpecialFolderPath( nullptr, str, CSIDL_PERSONAL, 0 ) ){
+//			ConfigPath = str;
+//			OSD_AddPath( ConfigPath, ConfigPath, std::filesystem::u8path( DIR_CONFIG ) );
+//			OSD_AddDelimiter( ConfigPath );
+//		}
+		// モジュールパスを取得する場合
 		if( GetModuleFileName( nullptr, str, sizeof(str) ) ){
 			PathRemoveFileSpec( str );	// ファイル名とデリミタを削除
 			PathAddBackslash( str );
-			ModPath = str;
+			ConfigPath = str;
 		}
 	}
-	PRINTD( OSD_LOG, "%s\n", ModPath.c_str() );
+	PRINTD( OSD_LOG, "%s\n", ConfigPath.c_str() );
 	
-	return ModPath;
+	return ConfigPath;
 }
-*/
+
+
+////////////////////////////////////////////////////////////////
+// パスの末尾にデリミタを追加
+//
+// 引数:	path			パス
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void OSD_AddDelimiter( std::filesystem::path& path )
+{
+	path /= "";
+}
+
+
+////////////////////////////////////////////////////////////////
+// パスの末尾のデリミタを削除
+//
+// 引数:	path			パス
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void OSD_DelDelimiter( std::filesystem::path& path )
+{
+	if( path.filename().empty() ) path = path.parent_path();
+}
+
+
+////////////////////////////////////////////////////////////////
+// 相対パス化
+//
+// 引数:	path			パス
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void OSD_RelativePath( std::filesystem::path& path )
+{
+	if( path.empty() ) return;
+	
+	std::error_code ec;
+	std::filesystem::path p = std::filesystem::proximate( path, OSD_GetConfigPath(), ec );
+	if( ec ) return;
+	
+	// ../なら絶対パス化
+	if( p.u8string().length() >= 2 && p.u8string().substr( 0, 2 ) == ".." )
+		OSD_AbsolutePath( p );
+	
+	path = p;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 絶対パス化
+//
+// 引数:	path			パス
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void OSD_AbsolutePath( std::filesystem::path& path )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_AbsolutePath] %s -> ", path.u8string().c_str() );
+	
+	if( path.empty() ) return;
+	
+	std::filesystem::path p = path;
+	
+	// 既に絶対パスなら正規化のみ実施
+	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative()==true らしい
+		p = OSD_GetConfigPath() / p;
+	
+	// パスを結合して正規化
+	path = std::filesystem::weakly_canonical( p );
+	
+	PRINTD( OSD_LOG, "%s\n", path.u8string().c_str() );
+}
+
+
+////////////////////////////////////////////////////////////////
+// パス結合
+//
+// 引数:	cpath			結合後パス
+//			path1			パス1
+//			path2			パス2
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void OSD_AddPath( std::filesystem::path& cpath, const std::filesystem::path& path1, const std::filesystem::path& path2 )
+{
+	// パスを結合
+	cpath = path1 / path2;
+}
+
+
+////////////////////////////////////////////////////////////////
+// パスからフォルダ名を取得
+//
+// 引数:	path			パス
+// 返値:	std::string		取得した文字列
+////////////////////////////////////////////////////////////////
+const std::string OSD_GetFolderNamePart( const std::filesystem::path& path )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_GetFolderNamePart]\n" );
+	
+	std::filesystem::path p = path;
+	
+	return p.remove_filename().u8string();
+}
+
+
+////////////////////////////////////////////////////////////////
+// パスからファイル名を取得
+//
+// 引数:	path			パス
+// 返値:	std::string		取得した文字列(UTF-8)
+////////////////////////////////////////////////////////////////
+const std::string OSD_GetFileNamePart( const std::filesystem::path& path )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_GetFileNamePart]\n" );
+	
+	return path.filename().u8string();
+}
+
+
+////////////////////////////////////////////////////////////////
+// パスから拡張子名を取得
+//
+// 引数:	path			パス
+// 返値:	std::string		取得した文字列(UTF-8)
+////////////////////////////////////////////////////////////////
+const std::string OSD_GetFileNameExt( const std::filesystem::path& path )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_GetFileNameExt]\n" );
+	
+	std::string ext = path.extension().u8string();
+	ext.erase( ext.begin() );
+	return ext;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 拡張子名を変更
+//
+// 引数:	path			パス
+//			ext				新しい拡張子への参照
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_ChangeFileNameExt( std::filesystem::path& path, const std::string& ext )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_ChangeFileNameExt] %s -> %s\n", OSD_GetFileNameExt( path ).c_str(), ext.c_str() );
+	
+	path.replace_extension( std::filesystem::u8path( ext ) );
+	return OSD_GetFileNameExt( path ) == ext;
+}
 
 
 
@@ -136,167 +291,6 @@ FILE* OSD_Fopen( const std::filesystem::path& path, const std::string& mode )
 }
 
 
-
-
-/*
-////////////////////////////////////////////////////////////////
-// パス名処理関数
-////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////
-// パスの末尾にデリミタを追加
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AddDelimiter( std::filesystem::path& path )
-{
-	path /= "";
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスの末尾のデリミタを削除
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void DelDelimiter( std::filesystem::path& path )
-{
-	if( path.filename().empty() ) path = path.parent_path();
-}
-
-
-////////////////////////////////////////////////////////////////
-// 相対パス化
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void RelativePath( std::filesystem::path& path )
-{
-	if( path.empty() ) return;
-	
-	std::error_code ec;
-	std::filesystem::path p = std::filesystem::proximate( path, OSD_GetModulePath(), ec );
-	if( ec ) return;
-	
-	// ../なら絶対パス化
-	if( p.u8string().length() >= 2 && p.u8string().substr( 0, 2 ) == ".." )
-		AbsolutePath( p );
-	
-	path = p;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 絶対パス化
-//
-// 引数:	path			パス
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AbsolutePath( std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][AbsolutePath] %s -> ", path.u8string().c_str() );
-	
-	if( path.empty() ) return;
-	
-	std::filesystem::path p = path;
-	
-	// 既に絶対パスなら正規化のみ実施
-	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative()==true らしい
-		p = OSD_GetModulePath() / p;
-	
-	// パスを結合して正規化
-	path = std::filesystem::weakly_canonical( p );
-	
-	PRINTD( OSD_LOG, "%s\n", path.u8string().c_str() );
-}
-
-
-////////////////////////////////////////////////////////////////
-// パス結合
-//
-// 引数:	cpath			結合後パス
-//			path1			パス1
-//			path2			パス2
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void AddPath( std::filesystem::path& cpath, const std::filesystem::path& path1, const std::filesystem::path& path2 )
-{
-	// パスを結合
-	cpath = path1 / path2;
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスからフォルダ名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列
-////////////////////////////////////////////////////////////////
-const std::string GetFolderNamePart( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFolderNamePart]\n" );
-	
-	std::filesystem::path p = path;
-	
-	return p.remove_filename().u8string();
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスからファイル名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列(UTF-8)
-////////////////////////////////////////////////////////////////
-const std::string GetFileNamePart( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFileNamePart]\n" );
-	
-	return path.filename().u8string();
-}
-
-
-////////////////////////////////////////////////////////////////
-// パスから拡張子名を取得
-//
-// 引数:	path			パス
-// 返値:	std::string		取得した文字列(UTF-8)
-////////////////////////////////////////////////////////////////
-const std::string GetFileNameExt( const std::filesystem::path& path )
-{
-	PRINTD( OSD_LOG, "[OSD][GetFileNameExt]\n" );
-	
-	std::string ext = path.extension().u8string();
-	ext.erase( ext.begin() );
-	return ext;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 拡張子名を変更
-//
-// 引数:	path			パス
-//			ext				新しい拡張子への参照
-// 返値:	bool			true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool ChangeFileNameExt( std::filesystem::path& path, const std::string& ext )
-{
-	PRINTD( OSD_LOG, "[OSD][ChangeFileNameExt] %s -> %s\n", GetFileNameExt( path ).c_str(), ext.c_str() );
-	
-	path.replace_extension( std::filesystem::u8path( ext ) );
-	return GetFileNameExt( path ) == ext;
-}
-
-
-
-
-////////////////////////////////////////////////////////////////
-// ファイル操作関数
-////////////////////////////////////////////////////////////////
-
 ////////////////////////////////////////////////////////////////
 // ファイルストリームを開く
 //
@@ -305,9 +299,9 @@ bool ChangeFileNameExt( std::filesystem::path& path, const std::string& ext )
 //			mode			モード
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool FSopen( std::fstream& fs, const std::filesystem::path& path, const std::ios_base::openmode mode )
+bool OSD_FSopen( std::fstream& fs, const std::filesystem::path& path, const std::ios_base::openmode mode )
 {
-	PRINTD( OSD_LOG, "[OSD][FSopen] %s\n", path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FSopen] %s\n", path.u8string().c_str() );
 	
 	fs.open( path, mode );
 	return fs.is_open() && fs.good();
@@ -320,22 +314,22 @@ bool FSopen( std::fstream& fs, const std::filesystem::path& path, const std::ios
 // 引数:	path			パス
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool CreateFolder( const std::filesystem::path& path )
+bool OSD_CreateFolder( const std::filesystem::path& path )
 {
-	PRINTD( OSD_LOG, "[OSD][CreateFolder] %s\n", path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_CreateFolder] %s\n", path.u8string().c_str() );
 	
 	try{
 		std::error_code ec;
 		
 		std::filesystem::path tpath = path;
-		AbsolutePath( tpath );
+		OSD_AbsolutePath( tpath );
 		
-		// モジュールパスより外側には作成しない
-		if( tpath.u8string().compare( 0, OSD_GetModulePath().u8string().length(), OSD_GetModulePath().u8string() ) ) return false;
+		// 設定ファイルパスより外側には作成しない
+		if( tpath.u8string().compare( 0, OSD_GetConfigPath().u8string().length(), OSD_GetConfigPath().u8string() ) ) return false;
 		
 		return std::filesystem::create_directories( tpath, ec );
 	}
-	catch( ... ){
+	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
 }
@@ -347,14 +341,14 @@ bool CreateFolder( const std::filesystem::path& path )
 // 引数:	fullpath		パス
 // 返値:	bool			true:存在する false:存在しない
 ////////////////////////////////////////////////////////////////
-bool FileExist( const std::filesystem::path& fullpath )
+bool OSD_FileExist( const std::filesystem::path& fullpath )
 {
-	PRINTD( OSD_LOG, "[OSD][FileExist] %s\n", fullpath.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileExist] %s\n", fullpath.u8string().c_str() );
 	
 	try{
 		return std::filesystem::exists( std::filesystem::status( fullpath ) );
 	}
-	catch( ... ){
+	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
 }
@@ -366,12 +360,12 @@ bool FileExist( const std::filesystem::path& fullpath )
 // 引数:	fullpath		パス
 // 返値:	DWORD			ファイルサイズ
 ////////////////////////////////////////////////////////////////
-DWORD GetFileSize( const std::filesystem::path& fullpath )
+DWORD OSD_GetFileSize( const std::filesystem::path& fullpath )
 {
 	try{
 		return std::filesystem::file_size( fullpath );
 	}
-	catch( ... ){
+	catch( std::filesystem::filesystem_error& ){
 		return 0;
 	}
 }
@@ -383,9 +377,9 @@ DWORD GetFileSize( const std::filesystem::path& fullpath )
 // 引数:	fullpath		パス
 // 返値:	bool			true:読取り専用 false:読み書き
 ////////////////////////////////////////////////////////////////
-bool FileReadOnly( const std::filesystem::path& fullpath )
+bool OSD_FileReadOnly( const std::filesystem::path& fullpath )
 {
-	PRINTD( OSD_LOG, "[OSD][FileReadOnly] %s\n", fullpath.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileReadOnly] %s\n", fullpath.u8string().c_str() );
 	
 	try{
 		std::filesystem::perms perm = std::filesystem::status( fullpath ).permissions();
@@ -393,11 +387,11 @@ bool FileReadOnly( const std::filesystem::path& fullpath )
 						  std::filesystem::perms::group_write |
 						  std::filesystem::perms::others_write ) ) == std::filesystem::perms::none ? true : false;
 	}
-	catch( ... ){
+	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
 }
-*/
+
 
 
 

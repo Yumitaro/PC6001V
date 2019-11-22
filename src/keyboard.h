@@ -11,9 +11,12 @@
 
 
 // キーボードインジケータ状態
-#define	KI_KANA		(1)
-#define	KI_KKANA	(2)
-#define	KI_CAPS		(4)
+#define	KI_KANA		(0b00000001)
+#define	KI_KKANA	(0b00000010)
+#define	KI_CAPS		(0b00000100)
+#define	KI_SHIFT	(0b00001000)
+#define	KI_GRAPH	(0b00010000)
+#define	KI_CTRL		(0b00100000)
 
 
 ////////////////////////////////////////////////////////////////
@@ -38,27 +41,27 @@ protected:
 								//  いずれも末尾の2byteはジョイスティックの状態保存用
 
 public:
-	KEY6( VM6*, const ID& );						// コンストラクタ
-	virtual ~KEY6();								// デストラクタ
+	KEY6( VM6*, const ID& );							// コンストラクタ
+	virtual ~KEY6();									// デストラクタ
 	
-	bool Init( int );								// 初期化
-	void Reset();									// リセット
+	bool Init( int );									// 初期化
+	void Reset();										// リセット
 	
-	void UpdateMatrixKey( PCKEYsym, bool );			// キーマトリクス更新(キー)
-	void UpdateMatrixJoy( BYTE, BYTE );				// キーマトリクス更新(ジョイスティック)
-	bool ScanMatrix();								// キーマトリクススキャン
-	std::vector<BYTE>& GetMatrix();					// キーマトリクスポインタ取得
-	const std::vector<BYTE>& GetMatrix2() const;	// キーマトリクスポインタ(保存用)取得
+	void UpdateMatrixKey( const PCKEYsym, const bool );	// キーマトリクス更新(キー)
+	void UpdateMatrixJoy( const BYTE, const BYTE );		// キーマトリクス更新(ジョイスティック)
+	bool ScanMatrix();									// キーマトリクススキャン
+	std::vector<BYTE>& GetMatrix();						// キーマトリクス取得
+	const std::vector<BYTE>& GetMatrix2() const;		// キーマトリクス(保存用)取得
 	
-	BYTE GetKeyJoy() const;							// カーソルキー状態取得
-	BYTE GetKeyIndicator() const;					// キーボードインジケータ状態取得
+	BYTE GetKeyJoy() const;								// カーソルキー状態取得
+	BYTE GetKeyIndicator() const;						// キーボードインジケータ状態取得
 	
-	void SetVKeySymbols( std::vector<VKeyConv>& );	// 仮想キーコード -> P6キーコード 設定
+	void SetVKeySymbols( std::vector<VKeyConv>& );		// 仮想キーコード -> P6キーコード 設定
 	
-	BYTE GetJoy( int ) const;						// ジョイスティック状態取得
+	BYTE GetJoy( const int ) const;						// ジョイスティック状態取得
 	
-	void ChangeKana();								// 英字<->かな切換
-	void ChangeKKana();								// かな<->カナ切換
+	void ChangeKana();									// 英字<->かな切換
+	void ChangeKKana();									// かな<->カナ切換
 	
 	
 	// ------------------------------------------
@@ -70,14 +73,14 @@ public:
 
 class KEY60 : virtual public KEY6 {
 public:
-	KEY60( VM6*, const ID& );						// コンストラクタ
-	~KEY60();										// デストラクタ
+	KEY60( VM6*, const ID& );							// コンストラクタ
+	~KEY60();											// デストラクタ
 };
 
 class KEY62 : virtual public KEY6 {
 public:
-	KEY62( VM6*, const ID& );						// コンストラクタ
-	~KEY62();										// デストラクタ
+	KEY62( VM6*, const ID& );							// コンストラクタ
+	~KEY62();											// デストラクタ
 };
 
 

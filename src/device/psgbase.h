@@ -21,8 +21,8 @@ protected:
 	
 	// ポートアクセス関数
 	virtual BYTE PortAread() = 0;
-	virtual BYTE PortBread(){ return 0xff; };
-	virtual void PortAwrite( BYTE ){};
+	virtual BYTE PortBread(){ return 0xff; }
+	virtual void PortAwrite( BYTE ){}
 	virtual void PortBwrite( BYTE ) = 0;
 	
 	virtual void PreWriteReg() = 0;				// レジスタ変更前のストリーム更新

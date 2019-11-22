@@ -28,29 +28,24 @@ IOBus::~IOBus()
 ////////////////////////////////////////////////////////////////
 bool IOBus::Init( int banksize )
 {
-	try{
-		// INポート初期化(ダミーデバイス割当)
-		InBank idummy;
-		idummy.device = &dummyio;
-		idummy.func   = STATIC_CAST( InFuncPtr, &DummyIO::dummyin );
-		ins.resize( banksize );
-		for( auto &i : ins ){
-			i.clear();
-			i.emplace_back( idummy );
-		}
-		
-		// OUTポート初期化(ダミーデバイス割当)
-		OutBank odummy;
-		odummy.device = &dummyio;
-		odummy.func   = STATIC_CAST( OutFuncPtr, &DummyIO::dummyout );
-		outs.resize( banksize );
-		for( auto &i : outs ){
-			i.clear();
-			i.emplace_back( odummy );
-		}
+	// INポート初期化(ダミーデバイス割当)
+	InBank idummy;
+	idummy.device = &dummyio;
+	idummy.func   = STATIC_CAST( InFuncPtr, &DummyIO::dummyin );
+	ins.resize( banksize );
+	for( auto &i : ins ){
+		i.clear();
+		i.emplace_back( idummy );
 	}
-	catch( ... ){
-		return false;
+	
+	// OUTポート初期化(ダミーデバイス割当)
+	OutBank odummy;
+	odummy.device = &dummyio;
+	odummy.func   = STATIC_CAST( OutFuncPtr, &DummyIO::dummyout );
+	outs.resize( banksize );
+	for( auto &i : outs ){
+		i.clear();
+		i.emplace_back( odummy );
 	}
 	
 	return true;
@@ -83,7 +78,7 @@ bool IOBus::Connect( IDevice* device, const std::vector<Connector>* connector )
 				break;
 			}
 		}
-		catch( ... ){
+		catch( std::out_of_range& ){
 			return false;
 		}
 	}
@@ -103,8 +98,8 @@ bool IOBus::ConnectIn( int bank, IDevice* device, InFuncPtr func )
 		ib.func   = func;
 		ins.at( bank ).emplace_back( ib );
 	}
-	catch( ... ){
-		PRINTD( IO_LOG, "Failed\n" );
+	catch( std::out_of_range& ){
+		PRINTD( IO_LOG, "Out of range\n" );
 		return false;
 	}
 	
@@ -125,8 +120,8 @@ bool IOBus::ConnectOut( int bank, IDevice* device, OutFuncPtr func )
 		ob.func   = func;
 		outs.at( bank ).emplace_back( ob );
 	}
-	catch( ... ){
-		PRINTD( IO_LOG, "Failed\n" );
+	catch( std::out_of_range& ){
+		PRINTD( IO_LOG, "Out of range\n" );
 		return false;
 	}
 	
@@ -166,11 +161,10 @@ BYTE IOBus::In( int port )
 {
 	BYTE data = 0xff;
 	
-	try{
-		for( auto &i : ins.at( port&0xff ) )
-			data &= (i.device->*i.func)( port );
+	for( auto &i : ins.at( port&0xff ) ) try{
+		data &= (i.device->*i.func)( port );
 	}
-	catch( ... ){}
+	catch( std::out_of_range& ){}
 	
 	return data;
 }
@@ -181,11 +175,10 @@ BYTE IOBus::In( int port )
 ////////////////////////////////////////////////////////////////
 void IOBus::Out( int port, BYTE data )
 {
-	try{
-		for( auto &i : outs.at( port&0xff ) )
-			(i.device->*i.func)( port, data );
+	for( auto &i : outs.at( port&0xff ) ) try{
+		(i.device->*i.func)( port, data );
 	}
-	catch( ... ){}
+	catch( std::out_of_range& ){}
 }
 
 
@@ -245,10 +238,6 @@ bool IO6::Init( int banksize )
 		
 		for( auto &i : Iwait ) i = 0;
 		for( auto &i : Owait ) i = 0;
-	}
-	catch( std::bad_alloc ){	// new に失敗した場合
-		Error::SetError( Error::MemAllocFailed );
-		return false;
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );

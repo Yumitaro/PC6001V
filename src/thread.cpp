@@ -41,9 +41,10 @@ bool cThread::BeginThread ( void* lpVoid )
 	
 	try{
 		this->m_hThread = std::move( std::thread( this->ThreadProc, this ) );
-	}catch( ... ){}
-	
-	return true;
+		return true;
+	}catch( std::system_error& ){
+		return false;
+	}
 }
 
 
@@ -60,9 +61,9 @@ bool cThread::Waiting( void )
 	try{
 		this->m_hThread.join();
 		return true;
-	}catch( ... ){}
-	
-	return false;
+	}catch( std::system_error& ){
+		return false;
+	}
 }
 
 
