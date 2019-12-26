@@ -1,7 +1,6 @@
 #ifndef MOVIE_H_INCLUDED
 #define MOVIE_H_INCLUDED
 
-#include <filesystem>
 #include <string>
 
 #include "sound.h"
@@ -123,12 +122,12 @@ protected:
 	void putWAVEFORMATEX6( WAVEFORMATEX6* );
 	
 public:
-	AVI6();									// コンストラクタ
-	~AVI6();								// デストラクタ
+	AVI6();
+	~AVI6();
 	
 	bool Init();							// 初期化
 	
-	bool StartAVI( const std::filesystem::path&, int, int, double, int, int );	// ビデオキャプチャ開始
+	bool StartAVI( const P6VPATH&, int, int, double, int, int );	// ビデオキャプチャ開始
 	
 	void StopAVI();							// ビデオキャプチャ停止
 	bool IsAVI();							// ビデオキャプチャ中?

@@ -6,6 +6,7 @@
 #include <winnt.h>
 #include <commctrl.h>
 #include <richedit.h>
+
 #include "../id_menu.h"
 #include "id_config.h"
 #include "id_icon.h"

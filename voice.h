@@ -1,7 +1,7 @@
 #ifndef VOICE_H_INCLUDED
 #define VOICE_H_INCLUDED
 
-#include <filesystem>
+#include <memory>
 #include <queue>
 #include <string>
 
@@ -58,7 +58,7 @@
 ////////////////////////////////////////////////////////////////
 class VCE6 : public Device, public cD7752, public SndDev, public IDoko {
 protected:
-	std::filesystem::path FilePath;	// WAVEファイル格納パス
+	P6VPATH FilePath;				// WAVEファイル格納パス
 	
 	BYTE io_E0H;
 	BYTE io_E2H;
@@ -88,15 +88,15 @@ protected:
 	virtual void ReqIntr();			// 音声合成割込み要求
 	
 public:
-	VCE6( VM6*, const ID& );						// コンストラクタ
-	virtual ~VCE6();								// デストラクタ
+	VCE6( VM6*, const ID& );
+	virtual ~VCE6();
 	
 	void EventCallback( int, int ) override;		// イベントコールバック関数
 	
 	bool Init( int ) override;						// 初期化
 	void Reset( void );								// リセット
 	
-	void SetPath( const std::filesystem::path& );	// WAVEファイル格納パス設定
+	void SetPath( const P6VPATH& );					// WAVEファイル格納パス設定
 	
 	int SoundUpdate( int ) override;				// ストリーム更新
 	
@@ -104,18 +104,18 @@ public:
 	enum IDOut{ outE0H=0, outE2H, outE3H };
 	enum IDIn {  inE0H=0,  inE2H,  inE3H };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 class VCE60 : public VCE6 {
 protected:
 	
 public:
-	VCE60( VM6*, const ID& );			// コンストラクタ
-	virtual ~VCE60();					// デストラクタ
+	VCE60( VM6*, const ID& );
+	virtual ~VCE60();
 };
 
 class VCE62 : public VCE6 {
@@ -129,8 +129,8 @@ protected:
 	BYTE InE3H( int );
 	
 public:
-	VCE62( VM6*, const ID& );			// コンストラクタ
-	virtual ~VCE62();					// デストラクタ
+	VCE62( VM6*, const ID& );
+	virtual ~VCE62();
 };
 
 class VCE64 : public VCE62 {
@@ -138,8 +138,8 @@ protected:
 	void ReqIntr() override;			// 音声合成割込み要求
 	
 public:
-	VCE64( VM6*, const ID& );			// コンストラクタ
-	virtual ~VCE64();					// デストラクタ
+	VCE64( VM6*, const ID& );
+	virtual ~VCE64();
 };
 
 #endif	// VOICE_H_INCLUDED

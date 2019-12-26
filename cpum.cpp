@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-CPU6::CPU6( VM6* vm, const ID& id ) : Device(vm,id)
+CPU6::CPU6( VM6* vm, const ID& id ) : Device( vm, id )
 {
 }
 
@@ -83,7 +83,7 @@ bool CPU6::IsBUSREQ( void )
 {
 	return
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		vm->ElIsMonitor() ? false :
+		vm->IsMonitor() ? false :
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		vm->VdgIsBusReqStop();
 }

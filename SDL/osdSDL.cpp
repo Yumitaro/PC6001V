@@ -1,5 +1,7 @@
 // SDL依存ルーチン
 
+#include <cstdarg>
+#include <cstring>
 #include <string>
 #include <unordered_map>
 
@@ -44,7 +46,7 @@ static SDL_Texture* sdl_texsl;						// スキャンライン用Texture
 static DWORD sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
 static SDL_AudioDeviceID sdl_adev;					// オーディオデバイス
 static DWORD UEVnum = -1;							// 確保済みユーザー定義イベント数
-//static std::filesystem::path ConfigPath = "";		// 設定ファイルパス保存用
+//static P6VPATH ConfigPath = "";					// 設定ファイルパス保存用
 
 
 
@@ -251,12 +253,12 @@ void OSD_Quit_Sub( void )
 // 引数:	なし
 // 返値:	std::string&	取得した文字列への参照(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& OSD_GetConfigPath( void )
+const P6VPATH& OSD_GetConfigPath( void )
 {
 	if( ConfigPath.empty() ){
 		char* str = SDL_GetPrefPath( DIR_CONFIG, DIR_CONFIG );	// 末尾には必ずデリミタがつく
 		if( str ){
-			ConfigPath = std::filesystem::u8path( str );
+			ConfigPath = P6VSTR2PATH( str );
 			delete [] str;
 		}
 	}
@@ -546,11 +548,11 @@ bool OSD_AudioPlaying( void )
 //			freq			サンプリングレート格納ポインタ
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_LoadWAV( const std::filesystem::path& filepath, BYTE** buf, DWORD* len, int* freq )
+bool OSD_LoadWAV( const P6VPATH& filepath, BYTE** buf, DWORD* len, int* freq )
 {
 	SDL_AudioSpec ws;
 	
-	if( !SDL_LoadWAV( filepath.u8string().c_str(), &ws, buf, (Uint32*)len ) ) return false;
+	if( !SDL_LoadWAV( P6VPATH2STR( filepath ).c_str(), &ws, buf, (Uint32*)len ) ) return false;
 	
 	if( ws.freq < 22050 || ws.format != AUDIO_S16 || ws.channels != 1 ){
 		SDL_FreeWAV( *buf );
@@ -732,10 +734,10 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	
 	
 	// フィルタリング設定
-	int rendsq = !filter													? 0
-			   : (strncmp( "direct3d", info.name, strlen(info.name) ) >= 0) ? 2
-			   : (strncmp( "opengl",   info.name, strlen(info.name) ) >= 0) ? 1
-			   :															  0;
+	int rendsq = !filter															  ? 0
+			   : (std::strncmp( "direct3d", info.name, std::strlen(info.name) ) >= 0) ? 2
+			   : (std::strncmp( "opengl",   info.name, std::strlen(info.name) ) >= 0) ? 1
+			   :																		0;
 	SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, RendSQstr[rendsq] );
 	
 	// 汎用Texture作成
@@ -833,7 +835,7 @@ bool OSD_IsFiltering( HWINDOW hwnd )
 {
 	const char* hint = SDL_GetHint( SDL_HINT_RENDER_SCALE_QUALITY );
 	
-	return ( hint && strncmp( hint, "nearest", 7 ) ) ? true : false;
+	return ( hint && std::strncmp( hint, "nearest", 7 ) ) ? true : false;
 }
 
 
@@ -1278,7 +1280,7 @@ bool OSD_GetEvent( Event* ev )
 bool OSD_PushEvent( EventType ev, ... )
 {
 	SDL_Event event;
-	va_list args;
+	std::va_list args;
 	
 	// C的可変長引数展開
 	va_start( args, ev );

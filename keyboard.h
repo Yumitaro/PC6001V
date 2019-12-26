@@ -1,6 +1,7 @@
 #ifndef KEYBOARD_H_INCLUDED
 #define KEYBOARD_H_INCLUDED
 
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -41,8 +42,8 @@ protected:
 								//  いずれも末尾の2byteはジョイスティックの状態保存用
 
 public:
-	KEY6( VM6*, const ID& );							// コンストラクタ
-	virtual ~KEY6();									// デストラクタ
+	KEY6( VM6*, const ID& );
+	virtual ~KEY6();
 	
 	bool Init( int );									// 初期化
 	void Reset();										// リセット
@@ -64,23 +65,23 @@ public:
 	void ChangeKKana();									// かな<->カナ切換
 	
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
-class KEY60 : virtual public KEY6 {
+class KEY60 : public KEY6 {
 public:
-	KEY60( VM6*, const ID& );							// コンストラクタ
-	~KEY60();											// デストラクタ
+	KEY60( VM6*, const ID& );
+	~KEY60();
 };
 
-class KEY62 : virtual public KEY6 {
+class KEY62 : public KEY6 {
 public:
-	KEY62( VM6*, const ID& );							// コンストラクタ
-	~KEY62();											// デストラクタ
+	KEY62( VM6*, const ID& );
+	~KEY62();
 };
 
 

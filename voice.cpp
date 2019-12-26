@@ -1,11 +1,8 @@
-#include <string.h>
-
-#include "pc6001v.h"
-
-#include "log.h"
 #include "common.h"
 #include "intr.h"
+#include "log.h"
 #include "osd.h"
+#include "pc6001v.h"
 #include "p6el.h"
 #include "p6vm.h"
 #include "schedule.h"
@@ -20,19 +17,19 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-VCE6::VCE6( VM6* vm, const ID& id ) : Device(vm,id),
-	FilePath(""), io_E0H(0), io_E2H(0), io_E3H(0), VStat(D7752E_IDL),
-	Pnum(0), Fnum(0), PReady(false)
+VCE6::VCE6( VM6* vm, const ID& id ) : Device( vm, id ),
+	FilePath( "" ), io_E0H( 0 ), io_E2H( 0 ), io_E3H( 0 ), VStat( D7752E_IDL ),
+	Pnum( 0 ), Fnum( 0 ), PReady( false )
 {
 	INITARRAY( ParaBuf, 0 );
 	SndDev::Volume = DEFAULT_VOICEVOL;
 }
 
-VCE60::VCE60( VM6* vm, const ID& id ) : VCE6(vm,id)
+VCE60::VCE60( VM6* vm, const ID& id ) : VCE6( vm, id )
 {
 }
 
-VCE62::VCE62( VM6* vm, const ID& id ) : VCE6(vm,id)
+VCE62::VCE62( VM6* vm, const ID& id ) : VCE6( vm, id )
 {
 	// Dvice Description (Out)
 	descs.outdef.emplace( outE0H, STATIC_CAST( Device::OutFuncPtr, &VCE62::OutE0H ) );
@@ -45,7 +42,7 @@ VCE62::VCE62( VM6* vm, const ID& id ) : VCE6(vm,id)
 	descs.indef.emplace ( inE3H,  STATIC_CAST( Device::InFuncPtr,  &VCE62::InE3H  ) );
 }
 
-VCE64::VCE64( VM6* vm, const ID& id ) : VCE62(vm,id)
+VCE64::VCE64( VM6* vm, const ID& id ) : VCE62( vm, id )
 {
 }
 
@@ -109,7 +106,7 @@ void VCE6::EventCallback( int id, int clock )
 			PRINTD( VOI_LOG, "(INT) " );
 			// 1フレーム分のサンプルをバッファに書込む
 			int num = min( IVBuf.size(), cD7752::GetFrameSize() * SndDev::SampleRate / 10000 );
-			PRINTD( VOI_LOG, "%d/%d\n", num, IVBuf.size() );
+			PRINTD( VOI_LOG, "%d/%lld\n", num, IVBuf.size() );
 			while( num-- ){
 				SndDev::cRing::Put( ( IVBuf.front() * SndDev::Volume ) / 100 );
 				IVBuf.pop();
@@ -162,7 +159,7 @@ void VCE6::VSetCommand( BYTE comm )
 		VStat = D7752E_BSY;
 		
 		// フレームイベントをセットする
-		vm->EVSC::Add( Device::GetID(), EID_FRAME, 10000.0/(double)cD7752::GetFrameSize(), EV_LOOP|EV_HZ );
+		vm->EventAdd( Device::GetID(), EID_FRAME, 10000.0/(double)cD7752::GetFrameSize(), EV_LOOP|EV_HZ );
 		
 		break;
 		
@@ -171,7 +168,7 @@ void VCE6::VSetCommand( BYTE comm )
 		std::queue<D7752_SAMPLE>().swap( Fbuf );
 		
 		// フレームイベントをセットする
-		vm->EVSC::Add( Device::GetID(), EID_FRAME, 10000.0/(double)cD7752::GetFrameSize(), EV_LOOP|EV_HZ );
+		vm->EventAdd( Device::GetID(), EID_FRAME, 10000.0/(double)cD7752::GetFrameSize(), EV_LOOP|EV_HZ );
 		
 		// ステータスを外部句再生モードにセット，パラメータ受付開始
 		VStat = D7752E_BSY | D7752E_EXT | D7752E_REQ;
@@ -242,7 +239,7 @@ void VCE6::AbortVoice( void )
 	PRINTD( VOI_LOG, "[VOICE][AbortVoice]\n" );
 	
 	// フレームイベント停止
-	vm->EVSC::Del( Device::GetID(), EID_FRAME );
+	vm->EventDel( Device::GetID(), EID_FRAME );
 	
 	// 残りのパラメータはキャンセル
 	Pnum = Fnum = 0;
@@ -292,10 +289,10 @@ bool VCE6::LoadVoice( int index )
 	int freq;		// 元データサンプリングレート
 	
 	// WAVファイルを読込む
-	std::filesystem::path tpath;
-	OSD_AddPath( tpath, FilePath, std::filesystem::u8path( Stringf( "f4%d.wav", index ) ) );
+	P6VPATH tpath;
+	OSD_AddPath( tpath, FilePath, P6VSTR2PATH( Stringf( "f4%d.wav", index ) ) );
 	
-	PRINTD( VOI_LOG, "%s ->", tpath.string<char>().c_str() );
+	PRINTD( VOI_LOG, "%s ->", P6VPATH2STR( tpath ).c_str() );
 	
 	if( !OSD_LoadWAV( tpath, &buf, &len, &freq ) ){
 		PRINTD( VOI_LOG, "Error!\n" );
@@ -378,7 +375,7 @@ void VCE6::Reset( void )
 // 引数:	path	WAVEファイル格納パスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void VCE6::SetPath( const std::filesystem::path& path )
+void VCE6::SetPath( const P6VPATH& path )
 {
 	FilePath = path;
 }

@@ -27,29 +27,24 @@
 #include "p6vm.h"
 
 
-
-
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-VM6::VM6( EL6* emuobj ) :
-	CPU6(this,DEV_ID("CPU1")),	// CPU
-	PIO6(this,DEV_ID("8255")),	// 8255
-	CMTL(this,DEV_ID("TAPE")),	// CMT(LOAD)
-	CMTS(this,DEV_ID("SAVE")),	// CMT(SAVE)
-	
-	cclock(0), pclock(0), el(emuobj), iom(nullptr), ios(nullptr), intr(nullptr),
-	mem(nullptr), vdg(nullptr), psg(nullptr), voice(nullptr), disk(nullptr)
+VM6::VM6( void ) : cclock( 0 ), pclock( 0 ), evsc( nullptr ),
+	iom( nullptr ), ios( nullptr ), intr( nullptr ), cpum( nullptr ), cpus( nullptr ),
+	mem( nullptr ), vdg( nullptr ), psg( nullptr ), voice( nullptr ), pio( nullptr ),
+	key( nullptr ), cmtl( nullptr ), cmts( nullptr ), disk( nullptr )
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	, bp( nullptr ), MonDisp( false )
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 {
+	PRINTD( CONST_LOG, "[[VM6-" );
 }
 
-VM60::VM60( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB60(this,DEV_ID("8049")),	// SUB CPU
-	KEY60(this,DEV_ID("KEYB"))	// キー
+VM60::VM60( void )
 {
+	PRINTD( CONST_LOG, "VM60]]\n" );
+	
 	cclock = CPUM_CLOCK60;
 	pclock = PSG_CLOCK60;
 	
@@ -63,13 +58,10 @@ VM60::VM60( EL6* emuobj ) :
 	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
-VM61::VM61( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB60(this,DEV_ID("8049")),	// SUB CPU
-	KEY60(this,DEV_ID("KEYB"))	// キー
+VM61::VM61( void )
 {
+	PRINTD( CONST_LOG, "VM61]]\n" );
+	
 	cclock = CPUM_CLOCK60;
 	pclock = PSG_CLOCK60;
 	
@@ -83,13 +75,10 @@ VM61::VM61( EL6* emuobj ) :
 	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
-VM62::VM62( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB62(this,DEV_ID("8049")),	// SUB CPU
-	KEY62(this,DEV_ID("KEYB"))	// キー
+VM62::VM62( void )
 {
+	PRINTD( CONST_LOG, "VM62]]\n" );
+	
 	cclock = CPUM_CLOCK60;
 	pclock = PSG_CLOCK60;
 	
@@ -105,13 +94,10 @@ VM62::VM62( EL6* emuobj ) :
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM66::VM66( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB62(this,DEV_ID("8049")),	// SUB CPU
-	KEY62(this,DEV_ID("KEYB"))	// キー
+VM66::VM66( void )
 {
+	PRINTD( CONST_LOG, "VM66]]\n" );
+	
 	cclock = CPUM_CLOCK66;
 	pclock = PSG_CLOCK66;
 	
@@ -127,13 +113,10 @@ VM66::VM66( EL6* emuobj ) :
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM64::VM64( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB62(this,DEV_ID("8049")),	// SUB CPU
-	KEY62(this,DEV_ID("KEYB"))	// キー
+VM64::VM64( void )
 {
+	PRINTD( CONST_LOG, "VM64]]\n" );
+	
 	cclock = CPUM_CLOCK64;
 	pclock = PSG_CLOCK64;
 	
@@ -149,13 +132,10 @@ VM64::VM64( EL6* emuobj ) :
 	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
-VM68::VM68( EL6* emuobj ) :
-	SUB6 (this,DEV_ID("8049")),	// SUB CPU
-	KEY6 (this,DEV_ID("KEYB")),	// キー
-	VM6(emuobj),
-	SUB68(this,DEV_ID("8049")),	// SUB CPU
-	KEY62(this,DEV_ID("KEYB"))	// キー
+VM68::VM68( void )
 {
+	PRINTD( CONST_LOG, "VM68]]\n" );
+	
 	cclock = CPUM_CLOCK64;
 	pclock = PSG_CLOCK64;
 	
@@ -172,38 +152,334 @@ VM68::VM68( EL6* emuobj ) :
 }
 
 
-
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
 VM6::~VM6( void )
 {
-	DeleteAllObject();
+	PRINTD( CONST_LOG, "-~VM6]]\n" );
 }
 
 VM60::~VM60( void )
 {
+	PRINTD( CONST_LOG, "[[~VM60" );
 }
 
 VM61::~VM61( void )
 {
+	PRINTD( CONST_LOG, "[[~VM61" );
 }
 
 VM62::~VM62( void )
 {
+	PRINTD( CONST_LOG, "[[~VM62" );
 }
 
 VM66::~VM66( void )
 {
+	PRINTD( CONST_LOG, "[[~VM66" );
 }
 
 VM64::~VM64( void )
 {
+	PRINTD( CONST_LOG, "[[~VM64" );
 }
 
 VM68::~VM68( void )
 {
+	PRINTD( CONST_LOG, "[[~VM68" );
 }
+
+
+////////////////////////////////////////////////////////////////
+// 機種別オブジェクト確保
+////////////////////////////////////////////////////////////////
+void VM60::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB60>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ60>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM60>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG60>( this, DEV_ID("VDG1") );	// VDG
+	key   = std::make_shared<KEY60>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<PSG60>( this, DEV_ID("PSG1") );	// PSG
+	voice = std::make_shared<VCE60>( this, DEV_ID("VCE1") );	// 音声合成
+	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
+}
+
+void VM61::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB60>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ60>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM61>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG60>( this, DEV_ID("VDG1") );	// VDG
+	key   = std::make_shared<KEY60>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<PSG60>( this, DEV_ID("PSG1") );	// PSG
+	voice = std::make_shared<VCE60>( this, DEV_ID("VCE1") );	// 音声合成
+	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
+}
+
+void VM62::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ62>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM62>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG62>( this, DEV_ID("VDG2") );	// VDG
+	key   = std::make_shared<KEY62>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<PSG60>( this, DEV_ID("PSG1") );	// PSG
+	voice = std::make_shared<VCE62>( this, DEV_ID("VCE2") );	// 音声合成
+	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
+}
+
+void VM66::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ62>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM66>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG62>( this, DEV_ID("VDG2") );	// VDG
+	key   = std::make_shared<KEY62>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<PSG60>( this, DEV_ID("PSG1") );	// PSG
+	voice = std::make_shared<VCE62>( this, DEV_ID("VCE2") );	// 音声合成
+	disk  = std::make_shared<DSK66>( this, DEV_ID("DSK3") );	// DISK
+}
+
+void VM64::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ64>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM64>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG64>( this, DEV_ID("VDG3") );	// VDG
+	key   = std::make_shared<KEY62>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<OPN64>( this, DEV_ID("OPN1") );	// OPN
+	voice = std::make_shared<VCE64>( this, DEV_ID("VCE3") );	// 音声合成
+	disk  = std::make_shared<DSK64>( this, DEV_ID("DSK2") );	// DISK
+}
+
+void VM68::AllocObjSpecific( void )
+{
+	cpus  = std::make_shared<SUB68>( this, DEV_ID("8049") );	// SUB CPU
+	intr  = std::make_shared<IRQ64>( this, DEV_ID("INTR") );	// 割込み
+	mem   = std::make_shared<MEM68>( this, DEV_ID("MEM1") );	// メモリ
+	vdg   = std::make_shared<VDG64>( this, DEV_ID("VDG3") );	// VDG
+	key   = std::make_shared<KEY62>( this, DEV_ID("KEYB") );	// キー
+	psg   = std::make_shared<OPN64>( this, DEV_ID("OPN1") );	// OPN
+	voice = std::make_shared<VCE64>( this, DEV_ID("VCE3") );	// 音声合成
+	disk  = std::make_shared<DSK68>( this, DEV_ID("DSK4") );	// DISK
+}
+
+
+////////////////////////////////////////////////////////////////
+// 全オブジェクト確保
+////////////////////////////////////////////////////////////////
+bool VM6::AllocObject( const std::shared_ptr<CFG6>& cnfg )
+{
+	PRINTD( VM_LOG, "[VM][AllocObject]\n" );
+	
+	try{
+		// 各種オブジェクト確保
+		evsc = std::make_unique<EVSC>();						// イベントスケジューラ
+		iom  = std::make_unique<IO6>();  						// I/O(Z80)
+		ios  = std::make_unique<IO6>();  						// I/O(SUB CPU)
+		
+		cpum = std::make_shared<CPU6>( this, DEV_ID("CPU1") );	// CPU
+		pio  = std::make_shared<PIO6>( this, DEV_ID("8255") );	// 8255
+		cmtl = std::make_shared<CMTL>( this, DEV_ID("TAPE") );	// CMT(LOAD)
+		cmts = std::make_shared<CMTS>( this, DEV_ID("SAVE") );	// CMT(SAVE)
+		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		bp   = std::make_unique<BPoint>();			// ブレークポイント
+		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		
+		// 機種別オブジェクト確保
+		AllocObjSpecific();
+		
+		
+		// 全メモリ確保とROMファイル読込み
+		BYTE flg = (cnfg->GetCheckCRC()   ? MCRCCHK   : 0)
+				 | (cnfg->GetUseExtRam()  ? MUSEEXRAM : 0)
+				 | (cnfg->GetUseSoldier() );
+		
+		if( !mem->AllocAllMemory( cnfg->GetRomPath(), flg ) ) throw Error::GetError();
+	}
+	catch( std::bad_alloc& ){	// new に失敗した場合
+		Error::SetError( Error::MemAllocFailed );
+		return false;
+	}
+	catch( Error::Errno i ){	// 例外発生
+		return false;
+	}
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 初期化
+////////////////////////////////////////////////////////////////
+bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
+{
+	// 全オブジェクト確保
+	if( !AllocObject( cnfg ) ) return false;
+	
+	// イベントスケジューラ
+	evsc->SetMasterClock( cclock * cnfg->GetOverClock() / 100 );
+	const std::vector<std::shared_ptr<IDevice>> devs = { intr, cpum, cpus, vdg, psg, voice, pio, key, cmtl, cmts, disk };
+	evsc->Entry( devs );
+	
+	// I/O(Z80)　-----
+	if( !iom->Init( 256 ) ) return false;
+	
+	// I/O(SUB CPU)　-----
+	if( !ios->Init( 10 ) ) return false;
+	
+	// 割込み -----
+	intr->Reset();
+	
+	// CPU -----
+	cpum->Reset();
+	
+	// SUB CPU -----
+	cpus->Reset();
+	
+	// メモリ -----
+	if( !mem->Init() ) return false;
+	mem->Reset();
+	if( !cnfg->GetExtRomFile().empty() ) if( !mem->MountExtRom( cnfg->GetExtRomFile() ) ) return false;
+	
+	// VDG -----
+	if( !vdg->Init() ) return false;
+	vdg->SetMode4Color( cnfg->GetMode4Color() );
+	
+	// PSG/OPN -----
+	psg->SetVolume( cnfg->GetPsgVol() );		// 音量設定
+	psg->SetLPF( cnfg->GetPsgLPF() );			// ローパスフィルタ カットオフ周波数設定
+	for( auto &i : *DevTable.Psg ){				// ウェイト設定
+		if( i.rule == IOBus::portout ) iom->SetOutWait( i.bank, 1 );
+		else						   iom->SetInWait ( i.bank, 1 );
+	}
+	if( !psg->Init( pclock, cnfg->GetSampleRate() ) ) return false;
+	
+	// 8255 -----
+	pio->Reset();
+	pio->cPRT::SetFile( cnfg->GetPrinterFile() );
+	
+	// キー -----
+	if( !key->Init( cnfg->GetKeyRepeat() ) ) return false;
+	std::vector<VKeyConv> vk;
+	if( cnfg->GetVKeyDef( vk ) )				// キー定義配列取得
+		key->SetVKeySymbols( vk );				// 仮想キーコード -> P6キーコード 設定
+	
+	// CMT(LOAD) -----
+	if( !cmtl->Init( cnfg->GetSampleRate() ) ) return false;
+	cmtl->SetVolume( cnfg->GetCmtVol() );		// 音量設定
+	cmtl->SetLPF( cnfg->GetCmtLPF() );			// ローパスフィルタ カットオフ周波数設定
+	cmtl->SetBoost( cnfg->GetBoostUp() );
+	cmtl->SetMaxBoost( cnfg->GetMaxBoost1(), cnfg->GetMaxBoost2() );
+	cmtl->SetStopBit( cnfg->GetStopBit() );		// ストップビット数
+	
+	// CMT(SAVE) -----
+	if( !cmts->Init( cnfg->GetSaveFile() ) ) return false;
+	
+	// DISK -----
+	if( !disk->Init( cnfg->GetFddNum() ) ) return false;
+	disk->WaitEnable( cnfg->GetFddWaitEnable() );
+	
+	// 音声合成 -----
+	if( DevTable.Voice ){
+		if( !voice->Init( cnfg->GetSampleRate() ) ) return false;
+		voice->SetVolume( cnfg->GetVoiceVol() );	// 音量設定
+		voice->SetPath( cnfg->GetWavePath() );
+	}
+	
+	
+	// I/Oポートにデバイスを接続
+	if( !iom->Connect( pio,  *DevTable.M8255 ) ) return false;	// 8255(Z80側)
+	if( !ios->Connect( pio,  *DevTable.S8255 ) ) return false;	// 8255(SUB CPU側)
+	if( !iom->Connect( cmtl, *DevTable.CmtL  ) ) return false;	// CMT(LOAD)
+	if( !iom->Connect( intr, *DevTable.Intr  ) ) return false;	// 割込み
+	if( !iom->Connect( vdg,  *DevTable.Vdg   ) ) return false;	// VDG
+	if( !iom->Connect( psg,  *DevTable.Psg   ) ) return false;	// PSG/OPN
+	if( cnfg->GetFddNum() || (cnfg->GetModel() == 66) || (cnfg->GetModel() == 68) )	// DISK
+		if( !iom->Connect( disk,  *DevTable.Disk   ) ) return false;
+	if( DevTable.Memory )										// メモリ
+		if( !iom->Connect( mem,   *DevTable.Memory ) ) return false;
+	if( DevTable.Voice )										// 音声合成
+		if( !iom->Connect( voice, *DevTable.Voice  ) ) return false;
+	
+	// オプション機能 -----
+	if( cnfg->GetUseSoldier() )									// 戦士のカートリッジ
+		if( !iom->Connect( mem, *DevTable.Soldier ) ) return false;
+	
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// リセット
+////////////////////////////////////////////////////////////////
+void VM6::Reset( void )
+{
+	PRINTD( VM_LOG, "[VM][Reset]\n" );
+	
+	intr->Reset();
+	cpum->Reset();
+	cpus->Reset();
+	mem->Reset();
+	vdg->Reset();
+	psg->Reset();
+	pio->Reset();
+	key->Reset();
+	cmtl->Rewind();
+	disk->Reset();
+	voice->Reset();
+}
+
+
+////////////////////////////////////////////////////////////////
+// 1命令実行
+////////////////////////////////////////////////////////////////
+int VM6::Emu( void )
+{
+	PRINTD( VM_LOG, "[VM][Emu]\n" );
+	
+	return cpum->Exec();	// CPU 1命令実行
+}
+
+
+////////////////////////////////////////////////////////////////
+// CPUクロック取得
+////////////////////////////////////////////////////////////////
+int VM6::GetCPUClock( void ) const
+{
+	PRINTD( VM_LOG, "[VM][GetCPUClock]\n" );
+	
+	return cclock;
+}
+
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+////////////////////////////////////////////////////////////////
+// モニタモード?
+//
+// 引数:	なし
+// 返値:	bool		true:モニタモード false:実行中
+////////////////////////////////////////////////////////////////
+bool VM6::IsMonitor( void ) const
+{
+	return MonDisp;
+}
+
+
+////////////////////////////////////////////////////////////////
+// モニタモード設定
+//
+// 引数:	mon			true:モニタモード false:通常モード
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void VM6::SetMonitor( bool mon )
+{
+	MonDisp = mon;
+}
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 
@@ -213,17 +489,78 @@ VM68::~VM68( void )
 // =============================================================
 
 
-// EL ----------------------------------------------------------
+// EVSC --------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////
-// モニタモード?
+// イベント追加
 ////////////////////////////////////////////////////////////////
-#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-bool VM6::ElIsMonitor( void ) const
+bool VM6::EventAdd( const Device::ID did, int id, double hz, int flag )
 {
-	return el->IsMonitor();
+	return evsc->Add( did, id, hz, flag );
 }
-#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+////////////////////////////////////////////////////////////////
+// イベント削除
+////////////////////////////////////////////////////////////////
+bool VM6::EventDel( const Device::ID did, int id )
+{
+	return evsc->Del( did, id );
+}
+
+
+////////////////////////////////////////////////////////////////
+// イベント更新
+////////////////////////////////////////////////////////////////
+void VM6::EventUpdate( int clk )
+{
+	evsc->Update( clk );
+}
+
+
+////////////////////////////////////////////////////////////////
+// 指定イベントをリセットする
+////////////////////////////////////////////////////////////////
+void VM6::EventReset( Device::ID devid, int id, double ini )
+{
+	evsc->Reset( devid, id, ini );
+}
+
+
+////////////////////////////////////////////////////////////////
+// イベントの進行率を求める
+////////////////////////////////////////////////////////////////
+double VM6::EventGetProgress( Device::ID devid, int id )
+{
+	return evsc->GetProgress( devid, id );
+}
+
+
+////////////////////////////////////////////////////////////////
+// イベント情報取得
+////////////////////////////////////////////////////////////////
+bool VM6::EventGetInfo( EVSC::evinfo* info )
+{
+	return evsc->GetEvinfo( info );
+}
+
+
+////////////////////////////////////////////////////////////////
+// イベント情報設定
+////////////////////////////////////////////////////////////////
+bool VM6::EventSetInfo( EVSC::evinfo* info )
+{
+	return evsc->SetEvinfo( info );
+}
+
+
+////////////////////////////////////////////////////////////////
+// VSYNCを通知する
+////////////////////////////////////////////////////////////////
+void VM6::EventOnVSYNC( void )
+{
+	evsc->OnVSYNC();
+}
 
 
 // IO6 ---------------------------------------------------------
@@ -237,7 +574,7 @@ BYTE VM6::IomIn( int port, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( BPoint::CheckBP( BPoint::BP_IN, port&0xff ) ){
+	if( bp->Check( BPoint::BP_IN, port&0xff ) ){
 		PRINTD( IO_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -260,7 +597,7 @@ void VM6::IomOut( int port, BYTE data, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( BPoint::CheckBP( BPoint::BP_OUT, port&0xff ) ){
+	if( bp->Check( BPoint::BP_OUT, port&0xff ) ){
 		PRINTD( IO_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -310,16 +647,74 @@ bool VM6::IntGetTimerIntr( void )
 }
 
 
+// CPU6 --------------------------------------------------------
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+////////////////////////////////////////////////////////////////
+// 1ライン逆アセンブル
+////////////////////////////////////////////////////////////////
+int VM6::CpumDisasm( std::string& str, WORD pc )
+{
+	return cpum->Disasm( str, pc );
+}
+
+
+////////////////////////////////////////////////////////////////
+// レジスタ値取得
+////////////////////////////////////////////////////////////////
+void VM6::CpumGetRegister( cZ80::Register* reg )
+{
+	cpum->GetRegister( reg );
+}
+
+
+////////////////////////////////////////////////////////////////
+// レジスタ値設定
+////////////////////////////////////////////////////////////////
+void VM6::CpumSetRegister( cZ80::Register* reg )
+{
+	cpum->SetRegister( reg );
+}
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
 // SUB6 --------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// キー割込み要求
+////////////////////////////////////////////////////////////////
+void VM6::CpusReqKeyIntr( int flag, BYTE data )
+{
+	cpus->ReqKeyIntr( flag, data );
+}
+
+
+////////////////////////////////////////////////////////////////
+// 外部割込み要求
+////////////////////////////////////////////////////////////////
+void VM6::CpusExtIntr( void )
+{
+	cpus->ExtIntr();
+}
+
+
+////////////////////////////////////////////////////////////////
+// CMT READ割込み要求
+////////////////////////////////////////////////////////////////
+void VM6::CpusReqCmtIntr( BYTE data )
+{
+	cpus->ReqCmtIntr( data );
+}
+
 
 ////////////////////////////////////////////////////////////////
 // CMT割込み発生可?
 ////////////////////////////////////////////////////////////////
-bool VM6::IsCmtIntrReady( void )
+bool VM6::CpusIsCmtIntrReady( void )
 {
 	// BoostUp有効の場合はワークエリアもチェック
-	return SUB6::IsCmtIntrReady() &&
-			!( CMTL::IsBoostUp() && ( mem->Read( vdg->IsSRmode() ? 0xe6b8 : 0xfa19 ) & 2 ) );
+	return cpus->IsCmtIntrReady() &&
+			!( cmtl->IsBoostUp() && ( mem->Read( vdg->IsSRmode() ? 0xe6b8 : 0xfa19 ) & 2 ) );
 }
 
 
@@ -334,7 +729,7 @@ BYTE VM6::MemFetch( WORD addr, int* m1wait )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( BPoint::CheckBP( BPoint::BP_READ, addr ) ){
+	if( bp->Check( BPoint::BP_READ, addr ) ){
 		PRINTD( MEM_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -352,7 +747,7 @@ BYTE VM6::MemRead( WORD addr, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( BPoint::CheckBP( BPoint::BP_READ, addr ) ){
+	if( bp->Check( BPoint::BP_READ, addr ) ){
 		PRINTD( MEM_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -370,7 +765,7 @@ void VM6::MemWrite( WORD addr, BYTE data, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( BPoint::CheckBP( BPoint::BP_WRITE, addr ) ){
+	if( bp->Check( BPoint::BP_WRITE, addr ) ){
 		PRINTD( MEM_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -494,6 +889,158 @@ WORD VM6::VdgSRGVramAddr( WORD addr ) const
 }
 
 
+// PIO6 --------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// PartA リード
+////////////////////////////////////////////////////////////////
+BYTE VM6::PioReadA( void )
+{
+	return pio->ReadA();
+}
+
+
+// KEY6 --------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// カーソルキー状態取得
+////////////////////////////////////////////////////////////////
+BYTE VM6::KeyGetKeyJoy( void ) const
+{
+	return key->GetKeyJoy();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ジョイスティック状態取得
+////////////////////////////////////////////////////////////////
+BYTE VM6::KeyGetJoy( int JoyNo ) const
+{
+	return key->GetJoy( JoyNo );
+}
+
+
+////////////////////////////////////////////////////////////////
+// キーボードインジケータ状態取得
+////////////////////////////////////////////////////////////////
+BYTE VM6::KeyGetKeyIndicator( void ) const
+{
+	return key->GetKeyIndicator();
+}
+
+
+////////////////////////////////////////////////////////////////
+// 英字<->かな切換
+////////////////////////////////////////////////////////////////
+void VM6::KeyChangeKana( void )
+{
+	key->ChangeKana();
+}
+
+
+////////////////////////////////////////////////////////////////
+// かな<->カナ切換
+////////////////////////////////////////////////////////////////
+void VM6::KeyChangeKKana( void )
+{
+	key->ChangeKKana();
+}
+
+
+// CMTL --------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// マウント済み?
+////////////////////////////////////////////////////////////////
+bool VM6::CmtlIsMount( void ) const
+{
+	return cmtl->IsMount();
+}
+
+
+////////////////////////////////////////////////////////////////
+// オートスタート?
+////////////////////////////////////////////////////////////////
+bool VM6::CmtlIsAutoStart( void ) const
+{
+	return cmtl->IsAutoStart();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ファイルパス取得
+////////////////////////////////////////////////////////////////
+const P6VPATH& VM6::CmtlGetFile() const
+{
+	return cmtl->GetFile();
+}
+
+
+////////////////////////////////////////////////////////////////
+// TAPE名取得
+////////////////////////////////////////////////////////////////
+const std::string& VM6::CmtlGetName( void ) const
+{
+	return cmtl->GetName();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ベタイメージサイズ取得
+////////////////////////////////////////////////////////////////
+DWORD VM6::CmtlGetBetaSize( void ) const
+{
+	return cmtl->GetBetaSize();
+}
+
+
+////////////////////////////////////////////////////////////////
+// カウンタ取得
+////////////////////////////////////////////////////////////////
+int VM6::CmtlGetCount( void ) const
+{
+	return cmtl->GetCount();
+}
+
+
+// CMTS --------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// TAPEマウント
+////////////////////////////////////////////////////////////////
+bool VM6::CmtsMount( void )
+{
+	return cmts->Mount();
+}
+
+
+////////////////////////////////////////////////////////////////
+// TAPEアンマウント
+////////////////////////////////////////////////////////////////
+void VM6::CmtsUnmount( void )
+{
+	cmts->Unmount();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ボーレート設定
+////////////////////////////////////////////////////////////////
+void VM6::CmtsSetBaud( int b )
+{
+	cmts->SetBaud( b );
+}
+
+
+////////////////////////////////////////////////////////////////
+// CMT 1文字書込み
+////////////////////////////////////////////////////////////////
+void VM6::CmtsWriteOne( BYTE data )
+{
+	cmts->WriteOne( data );
+}
+
+
 // DSK ---------------------------------------------------------
 
 ////////////////////////////////////////////////////////////////
@@ -535,7 +1082,7 @@ bool VM6::DskInAccess( int drvno ) const
 ////////////////////////////////////////////////////////////////
 // ファイルパス取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& VM6::DskGetFile( int drvno ) const
+const P6VPATH& VM6::DskGetFile( int drvno ) const
 {
 	return disk->GetFile( drvno );
 }
@@ -550,279 +1097,83 @@ const std::string& VM6::DskGetName( int drvno ) const
 }
 
 
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// BPoint ------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// ブレークポイントを設定
+////////////////////////////////////////////////////////////////
+void VM6::BpSet( const BPoint::BPtype type, const WORD addr )
+{
+	bp->Set( type, addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレークポイントを削除
+////////////////////////////////////////////////////////////////
+void VM6::BpDelete( const int num )
+{
+	bp->Delete( num );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレークポイントのタイプを取得
+////////////////////////////////////////////////////////////////
+BPoint::BPtype VM6::BpGetType( const int num ) const
+{
+	return bp->GetType( num );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレークポイントのアドレスを取得
+////////////////////////////////////////////////////////////////
+WORD VM6::BpGetAddr( const int num ) const
+{
+	return bp->GetAddr( num );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレークポイント登録数取得
+////////////////////////////////////////////////////////////////
+int VM6::BpGetNum( void ) const
+{
+	return bp->GetNum();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレークポイントをチェック
+////////////////////////////////////////////////////////////////
+bool VM6::BpCheck( const BPoint::BPtype type, const WORD addr )
+{
+	return bp->Check( type, addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレーク要求のあったブレークポイントNo.を取得
+////////////////////////////////////////////////////////////////
+int VM6::BpGetReqNum( void ) const
+{
+	return bp->GetReqNum();
+}
+
+
+////////////////////////////////////////////////////////////////
+// ブレーク要求キャンセル
+////////////////////////////////////////////////////////////////
+void VM6::BpReset( void )
+{
+	bp->Reset();
+}
+
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 // =============================================================
-
-
-
-
-////////////////////////////////////////////////////////////////
-// 機種別オブジェクト確保
-////////////////////////////////////////////////////////////////
-void VM60::AllocObjSpecific( void )
-{
-	intr   = new IRQ60( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM60( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG60( this, DEV_ID("VDG1") );		// VDG
-	psg    = new PSG60( this, DEV_ID("PSG1") );		// PSG
-	voice  = new VCE60( this, DEV_ID("VCE1") );		// 音声合成
-	disk   = new DSK60( this, DEV_ID("DSK1") );		// DISK
-}
-
-void VM61::AllocObjSpecific( void )
-{
-	intr   = new IRQ60( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM61( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG60( this, DEV_ID("VDG1") );		// VDG
-	psg    = new PSG60( this, DEV_ID("PSG1") );		// PSG
-	voice  = new VCE60( this, DEV_ID("VCE1") );		// 音声合成
-	disk   = new DSK60( this, DEV_ID("DSK1") );		// DISK
-}
-
-void VM62::AllocObjSpecific( void )
-{
-	intr   = new IRQ62( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM62( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG62( this, DEV_ID("VDG2") );		// VDG
-	psg    = new PSG60( this, DEV_ID("PSG1") );		// PSG
-	voice  = new VCE62( this, DEV_ID("VCE2") );		// 音声合成
-	disk   = new DSK60( this, DEV_ID("DSK1") );		// DISK
-}
-
-void VM66::AllocObjSpecific( void )
-{
-	intr   = new IRQ62( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM66( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG62( this, DEV_ID("VDG2") );		// VDG
-	psg    = new PSG60( this, DEV_ID("PSG1") );		// PSG
-	voice  = new VCE62( this, DEV_ID("VCE2") );		// 音声合成
-	disk   = new DSK66( this, DEV_ID("DSK3") );		// DISK
-}
-
-void VM64::AllocObjSpecific( void )
-{
-	intr   = new IRQ64( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM64( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG64( this, DEV_ID("VDG3") );		// VDG
-	psg    = new OPN64( this, DEV_ID("OPN1") );		// OPN
-	voice  = new VCE64( this, DEV_ID("VCE3") );		// 音声合成
-	disk   = new DSK64( this, DEV_ID("DSK2") );		// DISK
-}
-
-void VM68::AllocObjSpecific( void )
-{
-	intr   = new IRQ64( this, DEV_ID("INTR") );		// 割込み
-	mem    = new MEM68( this, DEV_ID("MEM1") );		// メモリ
-	vdg    = new VDG64( this, DEV_ID("VDG3") );		// VDG
-	psg    = new OPN64( this, DEV_ID("OPN1") );		// OPN
-	voice  = new VCE64( this, DEV_ID("VCE3") );		// 音声合成
-	disk   = new DSK68( this, DEV_ID("DSK4") );		// DISK
-}
-
-
-////////////////////////////////////////////////////////////////
-// 全オブジェクト確保
-////////////////////////////////////////////////////////////////
-bool VM6::AllocObject( CFG6* cnfg )
-{
-	PRINTD( VM_LOG, "[VM][AllocObject]\n" );
-	
-	try{
-		// 各種オブジェクト確保
-		iom = new IO6;		// I/O(Z80)
-		ios = new IO6;		// I/O(SUB CPU)
-		
-		// 機種別オブジェクト確保
-		AllocObjSpecific();
-		
-		
-		// 全メモリ確保とROMファイル読込み
-		BYTE flg = (cnfg->GetCheckCRC()   ? MCRCCHK   : 0)
-				 | (cnfg->GetUseExtRam()  ? MUSEEXRAM : 0)
-				 | (cnfg->GetUseSoldier() );
-		
-		if( !mem->AllocAllMemory( cnfg->GetRomPath(), flg ) ) throw Error::GetError();
-		
-	}
-	catch( std::bad_alloc& ){	// new に失敗した場合
-		// 全オブジェクト削除
-		DeleteAllObject();
-		Error::SetError( Error::MemAllocFailed );
-		return false;
-	}
-	catch( Error::Errno i ){	// 例外発生
-		// 全オブジェクト削除
-		DeleteAllObject();
-		return false;
-	}
-	
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 全オブジェクト削除
-////////////////////////////////////////////////////////////////
-void VM6::DeleteAllObject( void )
-{
-	if( voice ){ delete voice;	voice = nullptr; }
-	if( disk ) { delete disk;	disk  = nullptr; }
-	if( intr ) { delete intr;	intr  = nullptr; }
-	if( vdg )  { delete vdg;	vdg   = nullptr; }
-	if( mem )  { delete mem;	mem   = nullptr; }
-	if( psg )  { delete psg;	psg   = nullptr; }
-	if( ios )  { delete ios;	ios   = nullptr; }
-	if( iom )  { delete iom;	iom   = nullptr; }
-}
-
-
-////////////////////////////////////////////////////////////////
-// 初期化
-////////////////////////////////////////////////////////////////
-bool VM6::Init( CFG6* cnfg  )
-{
-	// 全オブジェクト確保
-	if( !AllocObject( cnfg ) ) return false;
-	
-	// イベントスケジューラ
-	EVSC::SetMasterClock( cclock * cnfg->GetOverClock() / 100 );
-//	std::vector<Device*> devs = { intr, cpum, cpus, vdg, psg, voice, pio, key, cmtl, cmts, disk };
-	std::vector<Device*> devs = { intr, (CPU6*)this, (SUB6*)this, vdg, psg, voice, (PIO6*)this, (KEY6*)this, (CMTL*)this, (CMTS*)this, disk };
-	EVSC::Entry( devs );
-	
-	// I/O(Z80)　-----
-	if( !iom->Init( 256 ) ) return false;
-	
-	// I/O(SUB CPU)　-----
-	if( !ios->Init( 10 ) ) return false;
-	
-	// 割込み -----
-	intr->Reset();
-	
-	// CPU -----
-	CPU6::Reset();
-	
-	// SUB CPU -----
-	SUB6::Reset();
-	
-	// メモリ -----
-	if( !mem->Init() ) return false;
-	mem->Reset();
-	if( !cnfg->GetExtRomFile().empty() ) if( !mem->MountExtRom( cnfg->GetExtRomFile() ) ) return false;
-	
-	// VDG -----
-	if( !vdg->Init() ) return false;
-	vdg->SetMode4Color( cnfg->GetMode4Color() );
-	
-	// PSG/OPN -----
-	psg->SetVolume( cnfg->GetPsgVol() );		// 音量設定
-	psg->SetLPF( cnfg->GetPsgLPF() );			// ローパスフィルタ カットオフ周波数設定
-	for( auto &i : *DevTable.Psg ){				// ウェイト設定
-		if( i.rule == IOBus::portout ) iom->SetOutWait( i.bank, 1 );
-		else						   iom->SetInWait ( i.bank, 1 );
-	}
-	if( !psg->Init( pclock, cnfg->GetSampleRate() ) ) return false;
-	
-	// 8255 -----
-	PIO6::Reset();
-	PIO6::cPRT::SetFile( cnfg->GetPrinterFile() );
-	
-	// キー -----
-	if( !KEY6::Init( cnfg->GetKeyRepeat() ) ) return false;
-	std::vector<VKeyConv> vk;
-	if( cnfg->GetVKeyDef( vk ) )				// キー定義配列取得
-		KEY6::SetVKeySymbols( vk );				// 仮想キーコード -> P6キーコード 設定
-	
-	// CMT(LOAD) -----
-	if( !CMTL::Init( cnfg->GetSampleRate() ) ) return false;
-	CMTL::SetVolume( cnfg->GetCmtVol() );		// 音量設定
-	CMTL::SetLPF( cnfg->GetCmtLPF() );			// ローパスフィルタ カットオフ周波数設定
-	CMTL::SetBoost( cnfg->GetBoostUp() );
-	CMTL::SetMaxBoost( cnfg->GetMaxBoost1(), cnfg->GetMaxBoost2() );
-	CMTL::SetStopBit( cnfg->GetStopBit() );		// ストップビット数
-	
-	// CMT(SAVE) -----
-	if( !CMTS::Init( cnfg->GetSaveFile() ) ) return false;
-	
-	// DISK -----
-	if( !disk->Init( cnfg->GetFddNum() ) ) return false;
-	disk->WaitEnable( cnfg->GetFddWaitEnable() );
-	
-	// 音声合成 -----
-	if( DevTable.Voice ){
-		if( !voice->Init( cnfg->GetSampleRate() ) ) return false;
-		voice->SetVolume( cnfg->GetVoiceVol() );	// 音量設定
-		voice->SetPath( cnfg->GetWavePath() );
-	}
-	
-	
-	// I/Oポートにデバイスを接続
-	if( !iom->Connect( (PIO6*)this, DevTable.M8255 ) ) return false;	// 8255(Z80側)
-	if( !ios->Connect( (PIO6*)this, DevTable.S8255 ) ) return false;	// 8255(SUB CPU側)
-	if( !iom->Connect( (CMTL*)this, DevTable.CmtL  ) ) return false;	// CMT(LOAD)
-	if( !iom->Connect( intr,        DevTable.Intr  ) ) return false;	// 割込み
-	if( !iom->Connect( vdg,         DevTable.Vdg   ) ) return false;	// VDG
-	if( !iom->Connect( psg,         DevTable.Psg   ) ) return false;	// PSG/OPN
-	if( cnfg->GetFddNum() || (cnfg->GetModel() == 66) || (cnfg->GetModel() == 68) )	// DISK
-		if( !iom->Connect( disk,  DevTable.Disk   ) ) return false;
-	if( DevTable.Memory )										// メモリ
-		if( !iom->Connect( mem,   DevTable.Memory ) ) return false;
-	if( DevTable.Voice )										// 音声合成
-		if( !iom->Connect( voice, DevTable.Voice  ) ) return false;
-	
-	// オプション機能 -----
-	if( cnfg->GetUseSoldier() )									// 戦士のカートリッジ
-		if( !iom->Connect( mem, DevTable.Soldier ) ) return false;
-	
-	
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////
-// リセット
-////////////////////////////////////////////////////////////////
-void VM6::Reset( void )
-{
-	PRINTD( VM_LOG, "[VM][Reset]\n" );
-	
-	intr->Reset();
-	CPU6::Reset();
-	SUB6::Reset();
-	mem->Reset();
-	vdg->Reset();
-	psg->Reset();
-	PIO6::Reset();
-	KEY6::Reset();
-	CMTL::Rewind();
-	disk->Reset();
-	voice->Reset();
-}
-
-
-////////////////////////////////////////////////////////////////
-// 1命令実行
-////////////////////////////////////////////////////////////////
-int VM6::Emu( void )
-{
-	PRINTD( VM_LOG, "[VM][Emu]\n" );
-	
-	return CPU6::Exec();	// CPU 1命令実行
-}
-
-
-////////////////////////////////////////////////////////////////
-// CPUクロック取得
-////////////////////////////////////////////////////////////////
-int VM6::GetCPUClock( void ) const
-{
-	PRINTD( VM_LOG, "[VM][GetCPUClock]\n" );
-	
-	return cclock;
-}
-
-
-
-
 
 
 

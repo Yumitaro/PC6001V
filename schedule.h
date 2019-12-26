@@ -52,10 +52,10 @@ protected:
 	const evinfo* Find( Device::ID, int ) const;	// イベント検索
 	
 public:
-	EVSC();										// コンストラクタ
-	virtual ~EVSC();							// デストラクタ
+	EVSC();
+	virtual ~EVSC();
 	
-	bool Entry( std::vector<Device*>& );		// 接続するデバイス候補を登録する
+	bool Entry( std::vector<std::shared_ptr<IDevice>> );		// 接続するデバイス候補を登録する
 	
 	bool Add( Device::ID, int, double, int );	// イベント追加
 	bool Del( Device::ID, int );				// イベント削除
@@ -76,10 +76,10 @@ public:
 	void OnVSYNC();								// VSYNCを通知する
 	void ReVSYNC();								// VSYNCフラグキャンセル
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -106,8 +106,8 @@ protected:
 	void OnThread( void* ) override;			// スレッド関数
 	
 public:
-	SCH6();										// コンストラクタ
-	virtual ~SCH6();							// デストラクタ
+	SCH6();
+	virtual ~SCH6();
 	
 	void SetMasterClock( int );					// マスタクロック設定
 	

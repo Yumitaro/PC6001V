@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "../log.h"
 #include "../vsurface.h"
 #include "mc6847.h"
@@ -183,21 +181,31 @@ const BYTE MC6847core::NJM_TBL[][2] = {
 //青/緑　明←4 1 5→暗
 
 
+const VDGInfo vinfo = { SCRNW, SCRNH, ARATIO };
+
+
+
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
 MC6847core::MC6847core( void ) :
-	CrtDisp(true), BusReq(false), N60Win(true),
-	Mode4Col(0), VAddr(0), HAddr(0), RowCntA(0), RowCntG(0),
-	CharMode(true), GraphMode(false), Css1(1), Css2(1), Css3(1),
-	SRmode(false), SRBusReq(true), SRBitmap(false), SRBMPage(false), SRLine204(false),
-	SRCharLine(true), SRCharWidth(true),
-	SRTextAddr(0), SRRollX(0), SRRollY(0), SRVramAddrY(0),
-	AT_AG(0), AT_AS(0), AT_IE(0), AT_GM(0), AT_CSS(0), AT_INV(0) {}
+	CrtDisp( true ), BusReq( false ), N60Win( true ),
+	Mode4Col( 0 ), VAddr( 0 ), HAddr( 0 ), RowCntA( 0 ), RowCntG( 0 ),
+	CharMode( true ), GraphMode( false ), Css1( 1 ), Css2( 1 ), Css3( 1 ),
+	SRmode( false ), SRBusReq( true ), SRBitmap( false ), SRBMPage( false ), SRLine204( false ),
+	SRCharLine( true ), SRCharWidth( true ),
+	SRTextAddr( 0 ), SRRollX( 0 ), SRRollY( 0 ), SRVramAddrY( 0 ),
+	AT_AG( 0 ), AT_AS( 0 ), AT_IE( 0 ), AT_GM( 0 ), AT_CSS( 0 ), AT_INV( 0 )
+{
+}
 
-MC6847::MC6847( void ){}
+MC6847::MC6847( void )
+{
+}
 
-PCZ80_07::PCZ80_07( void ){}
+PCZ80_07::PCZ80_07( void )
+{
+}
 
 PCZ80_12::PCZ80_12( void )
 {
@@ -309,29 +317,11 @@ void MC6847core::SetMode4Color( int col )
 
 
 ////////////////////////////////////////////////////////////////
-// 水平画面サイズ取得(標準)
+// 画面情報取得
 ////////////////////////////////////////////////////////////////
-int MC6847core::GetW( void ) const
+const VDGInfo& MC6847core::GetVideoInfo( void ) const
 {
-	return SCRNW;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 垂直画面サイズ取得(標準)
-////////////////////////////////////////////////////////////////
-int MC6847core::GetH( void ) const
-{
-	return SCRNH;
-}
-
-
-////////////////////////////////////////////////////////////////
-// アスペクトレシオ取得(幅に対する高さの比)
-////////////////////////////////////////////////////////////////
-double MC6847core::GetVratio() const
-{
-	return ARATIO;
+	return vinfo;
 }
 
 

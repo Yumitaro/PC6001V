@@ -1,5 +1,4 @@
-#include <stdlib.h>
-
+#include <cstring>
 #include <fstream>
 #include <new>
 #include <unordered_map>
@@ -209,8 +208,8 @@ const MEM6::MEMINFO MEM64::IINTRAM   = { NOROM,		0x10000,	0x00,	0 };
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-MemBlock::MemBlock( void ) : Name(""), PRead(nullptr), PWrite(nullptr), FRead(nullptr), FWrite(nullptr),
-							 Inst(nullptr), Wait(0), WPt(false)
+MemBlock::MemBlock( void ) : Name( "" ), PRead( nullptr ), PWrite( nullptr ), FRead( nullptr ), FWrite( nullptr ),
+							 Inst( nullptr ), Wait( 0 ), WPt( false )
 {
 }
 
@@ -218,7 +217,9 @@ MemBlock::MemBlock( void ) : Name(""), PRead(nullptr), PWrite(nullptr), FRead(nu
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-MemBlock::~MemBlock( void ){}
+MemBlock::~MemBlock( void )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -393,14 +394,13 @@ void MemBlock::Write( WORD addr, BYTE data, int* wcnt ) const
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-MEM6::MEM6( VM6* vm, const ID& id ) : Device(vm,id),
-	CGBank(false), UseExtRom(false), UseExtRam(false),
-	MainRom(nullptr), SysRom2(nullptr), ExtRom(nullptr), CGRom1(nullptr), CGRom2(nullptr),
-	KanjiRom(nullptr), VoiceRom(nullptr), IntRam(nullptr), ExtRam(nullptr),
-	FilePath(""), M1Wait(1), EnableChkCRC(true),
-	
-	cgrom(true), kj_rom(true), kj_LR(true), cgenable(true), cgaden(0), cgaddr(3), c2acc(0xff),
-	UseSol(0), Sol60Mode(false), SolBankSet(0)
+MEM6::MEM6( VM6* vm, const ID& id ) : Device( vm, id ),
+	CGBank( false ), UseExtRom( false ), UseExtRam( false ),
+	MainRom( nullptr ), SysRom2( nullptr ), ExtRom( nullptr ), CGRom1( nullptr ), CGRom2( nullptr ),
+	KanjiRom( nullptr ), VoiceRom( nullptr ), IntRam( nullptr ), ExtRam( nullptr ),
+	FilePath( "" ), M1Wait( 1 ), EnableChkCRC( true ),
+	cgrom( true ), kj_rom( true ), kj_LR( true ), cgenable( true ), cgaden( 0 ), cgaddr( 3 ), c2acc( 0xff ),
+	UseSol( 0 ), Sol60Mode( false ), SolBankSet( 0 )
 {
 	Rf[0] = INIT_RF0;
 	Rf[1] = INIT_RF1;
@@ -421,7 +421,7 @@ MEM6::MEM6( VM6* vm, const ID& id ) : Device(vm,id),
 	INITARRAY( SolBank, NONBANK );
 }
 
-MEM60::MEM60( VM6* vm, const ID& id ) : MEM6(vm,id)
+MEM60::MEM60( VM6* vm, const ID& id ) : MEM6( vm, id )
 {
 	MemTable.IntRam  = &MEM60::IINTRAM;
 	MemTable.System1 = &MEM60::ISYSROM1;
@@ -435,14 +435,14 @@ MEM60::MEM60( VM6* vm, const ID& id ) : MEM6(vm,id)
 	descs.outdef.emplace( outF2H, STATIC_CAST( Device::OutFuncPtr, &MEM60::OutF2H ) );	// 戦士のカートリッジ対応
 }
 
-MEM61::MEM61( VM6* vm, const ID& id ) : MEM60(vm,id)
+MEM61::MEM61( VM6* vm, const ID& id ) : MEM60( vm, id )
 {
 	MemTable.IntRam  = &MEM61::IINTRAM;
 	MemTable.System1 = &MEM61::ISYSROM1;
 	MemTable.CGRom1  = &MEM61::ICGROM1;
 }
 
-MEM62::MEM62( VM6* vm, const ID& id ) : MEM6(vm,id)
+MEM62::MEM62( VM6* vm, const ID& id ) : MEM6( vm, id )
 {
 	MemTable.IntRam  = &MEM62::IINTRAM;
 	MemTable.System1 = &MEM62::ISYSROM1;
@@ -473,7 +473,7 @@ MEM62::MEM62( VM6* vm, const ID& id ) : MEM6(vm,id)
 	descs.indef.emplace ( inF3H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF3H  ) );
 }
 
-MEM66::MEM66( VM6* vm, const ID& id ) : MEM62(vm,id)
+MEM66::MEM66( VM6* vm, const ID& id ) : MEM62( vm, id )
 {
 	MemTable.IntRam  = &MEM66::IINTRAM;
 	MemTable.System1 = &MEM66::ISYSROM1;
@@ -484,7 +484,7 @@ MEM66::MEM66( VM6* vm, const ID& id ) : MEM62(vm,id)
 	MemTable.ExtRam  = &MEM6::IEXTRAM64;
 }
 
-MEM64::MEM64( VM6* vm, const ID& id ) : MEM62(vm,id)
+MEM64::MEM64( VM6* vm, const ID& id ) : MEM62( vm, id )
 {
 	MemTable.IntRam  = &MEM64::IINTRAM;
 	MemTable.System1 = &MEM64::ISYSROM1;
@@ -521,7 +521,7 @@ MEM64::MEM64( VM6* vm, const ID& id ) : MEM62(vm,id)
 	descs.indef.emplace ( inB2H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InB2H  ) );
 }
 
-MEM68::MEM68( VM6* vm, const ID& id ) : MEM64(vm,id)
+MEM68::MEM68( VM6* vm, const ID& id ) : MEM64( vm, id )
 {
 }
 
@@ -542,17 +542,29 @@ MEM6::~MEM6( void )
 	if( ExtRam )	delete[] ExtRam;
 }
 
-MEM60::~MEM60( void ){}
+MEM60::~MEM60( void )
+{
+}
 
-MEM61::~MEM61( void ){}
+MEM61::~MEM61( void )
+{
+}
 
-MEM62::~MEM62( void ){}
+MEM62::~MEM62( void )
+{
+}
 
-MEM66::~MEM66( void ){}
+MEM66::~MEM66( void )
+{
+}
 
-MEM64::~MEM64( void ){}
+MEM64::~MEM64( void )
+{
+}
 
-MEM68::~MEM68( void ){}
+MEM68::~MEM68( void )
+{
+}
 
 
 
@@ -649,9 +661,9 @@ void MEM62::IERamWrite( BYTE* ptr, WORD addr, BYTE data )
 ////////////////////////////////////////////////////////////////
 // 拡張ROM マウント
 ////////////////////////////////////////////////////////////////
-bool MEM6::MountExtRom( const std::filesystem::path& filepath )
+bool MEM6::MountExtRom( const P6VPATH& filepath )
 {
-	PRINTD( MEM_LOG, "[MEM][MountExtRom] -> %s -> ", filepath.u8string().c_str() );
+	PRINTD( MEM_LOG, "[MEM][MountExtRom] -> %s -> ", P6VPATH2STR( filepath ).c_str() );
 	
 	// マウント済みなら一旦開放
 	if( UseExtRom ) UnmountExtRom();
@@ -677,7 +689,7 @@ bool MEM6::MountExtRom( const std::filesystem::path& filepath )
 	
 	UseExtRom = true;
 	
-	PRINTD( MEM_LOG, "OK %s\n", FilePath.u8string().c_str() );
+	PRINTD( MEM_LOG, "OK %s\n", P6VPATH2STR( FilePath ).c_str() );
 	
 	return true;
 }
@@ -690,7 +702,7 @@ void MEM6::UnmountExtRom( void )
 {
 	PRINTD( MEM_LOG, "[MEM][UnmountExtRom]\n" );
 	
-	memset( ExtRom, MemTable.ExtRom->Init, MemTable.ExtRom->Size );
+	std::memset( ExtRom, MemTable.ExtRom->Init, MemTable.ExtRom->Size );
 	FilePath.clear();
 	
 	UseExtRom = false;
@@ -700,7 +712,7 @@ void MEM6::UnmountExtRom( void )
 ////////////////////////////////////////////////////////////////
 // 拡張ROMファイルパス取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& MEM6::GetFile( void ) const
+const P6VPATH& MEM6::GetFile( void ) const
 {
 	return FilePath;
 }
@@ -709,7 +721,7 @@ const std::filesystem::path& MEM6::GetFile( void ) const
 ////////////////////////////////////////////////////////////////
 // メモリ確保とROMファイル読込み
 ////////////////////////////////////////////////////////////////
-bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::path& path )
+bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const P6VPATH& path )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocMemory] " );
 	
@@ -724,7 +736,7 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::
 		// メモリ確保(最小サイズ8KB)
 		if( *buf ) delete [] *buf;
 		*buf = new BYTE[max( info->Size, 0x2000 )];
-		memset( *buf, info->Init, info->Size );
+		std::memset( *buf, info->Init, info->Size );
 		
 		// ROM情報なし ならばRAMまたはnullptr
 		if( info->Rinfo.empty() ) return true;
@@ -734,8 +746,8 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::
 			PRINTD( MEM_LOG, "-> %s ", info->Rinfo[i].FileName.c_str() );
 			
 			// ファイルから読込み
-			std::filesystem::path fpath = path;
-			OSD_AddPath( fpath, fpath, std::filesystem::u8path( info->Rinfo[i].FileName ) );
+			P6VPATH fpath = path;
+			OSD_AddPath( fpath, fpath, P6VSTR2PATH( info->Rinfo[i].FileName ) );
 			
 			// ファイルの存在チェック
 			if( !OSD_FileExist( fpath ) ) continue;
@@ -790,7 +802,7 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const std::filesystem::
 ////////////////////////////////////////////////////////////////
 // 全メモリ確保とROMファイル読込み
 ////////////////////////////////////////////////////////////////
-bool MEM6::AllocAllMemory( const std::filesystem::path& path, BYTE data )
+bool MEM6::AllocAllMemory( const P6VPATH& path, BYTE data )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocAllMemory]\n" );
 	
@@ -824,14 +836,14 @@ bool MEM6::AllocAllMemory( const std::filesystem::path& path, BYTE data )
 ////////////////////////////////////////////////////////////////
 // 全メモリ確保とROMファイル読込み(機種別)
 ////////////////////////////////////////////////////////////////
-bool MEM60::AllocMemorySpecific( const std::filesystem::path& path )
+bool MEM60::AllocMemorySpecific( const P6VPATH& path )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocMemorySpecific]\n" );
 	
 	return true;
 }
 
-bool MEM62::AllocMemorySpecific( const std::filesystem::path& path )
+bool MEM62::AllocMemorySpecific( const P6VPATH& path )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocMemorySpecific]\n" );
 	
@@ -842,7 +854,7 @@ bool MEM62::AllocMemorySpecific( const std::filesystem::path& path )
 	return true;
 }
 
-bool MEM64::AllocMemorySpecific( const std::filesystem::path& path )
+bool MEM64::AllocMemorySpecific( const P6VPATH& path )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocMemorySpecific]\n" );
 	
@@ -913,9 +925,9 @@ void MEM68::SetRamValue( void )
 {
 	BYTE* addr = IntRam;
 	for( int i=0; i<128; i++ ){
-		memset( addr, 0,    256 );
+		std::memset( addr, 0,    256 );
 		addr += 256;
-		memset( addr, 0xff, 256 );
+		std::memset( addr, 0xff, 256 );
 		addr += 256;
 	}
 }
@@ -1894,9 +1906,9 @@ bool MEM6::DokoSave( cIni* Ini )
 	
 	// 拡張ROMがマウントされている場合
 	if( UseExtRom ){
-		std::filesystem::path tpath = FilePath;
+		P6VPATH tpath = FilePath;
 		OSD_RelativePath( tpath );
-		Ini->PutEntry( "MEMORY", "", "FilePath",	"%s",	tpath.u8string().c_str() );
+		Ini->PutEntry( "MEMORY", "", "FilePath",	"%s",	P6VPATH2STR( tpath ).c_str() );
 	}
 	
 	// メモリウェイト
@@ -1951,7 +1963,7 @@ bool MEM64::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool MEM6::DokoLoad( cIni* Ini )
 {
-	std::filesystem::path tpath;
+	P6VPATH tpath;
 	int st;
 	
 	PRINTD( MEM_LOG, "[MEM][DokoLoad]\n" );

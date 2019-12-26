@@ -22,7 +22,7 @@ private:
 	std::mutex mtx;
 	
 public:
-	cMutex();						// コンストラクタ
+	cMutex();
 	~cMutex();						// デストラクタ;
 	
 	void lock();					// Lock
@@ -38,7 +38,7 @@ private:
 	int count;
 	
 public:
-	cSemaphore();					// コンストラクタ
+	cSemaphore();
 	~cSemaphore();					// デストラクタ;
 	
 	void Post();					// セマフォ加算

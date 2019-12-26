@@ -1,8 +1,9 @@
-#include "pc6001v.h"
+#include <mutex>
 
 #include "error.h"
 #include "log.h"
 #include "osd.h"
+#include "pc6001v.h"
 #include "sound.h"
 
 
@@ -293,15 +294,15 @@ bool SND6::Init( void* cbdata, void (*callback)(void*, BYTE*, int ), int rate, i
 ////////////////////////////////////////////////////////////////
 // ストリーム接続
 //
-// 引数:	SndDev		バッファポインタ
+// 引数:	buf			バッファポインタ
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool SND6::ConnectStream( SndDev* buf )
+bool SND6::ConnectStream( const std::shared_ptr<SndDev>& sd )
 {
 	PRINTD( SND_LOG, "[SND6][ConnectStream]\n" );
 	
-	if( !buf || !buf->InitBuffer( this->cRing::GetSize() ) ) return false;
-	sdev.emplace_back( buf );
+	if( !sd->InitBuffer( this->cRing::GetSize() ) ) return false;
+	sdev.emplace_back( sd );
 	return true;
 }
 

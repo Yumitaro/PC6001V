@@ -1,5 +1,9 @@
 // OS依存の汎用ルーチン(主にUI用)
 
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 #include <windows.h>
 #include <shlobj.h>
 #include <shlwapi.h>	// ie依存
@@ -109,7 +113,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	SetMenuItemInfo( hsm, ID_AVISAVE, MF_BYCOMMAND, &minfo );
 	// モニタモード or ブレークポインタが設定されていたらビデオキャプチャ無効
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	if( MonDisp || vm->BPoint::GetBPNum() )
+	if( vm->IsMonitor() || vm->bp->GetNum() )
 		EnableMenuItem( hsm, ID_AVISAVE, MF_BYCOMMAND | MF_GRAYED );
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
@@ -123,7 +127,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	// またはリプレイ再生中だったらリプレイ記録無効
 	if( 
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		MonDisp || vm->BPoint::GetBPNum() ||
+		vm->IsMonitor() || vm->bp->GetNum() ||
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		( REPLAY::GetStatus() == REP_REPLAY ) ){
 		EnableMenuItem( hsm, ID_REPLAYSAVE,   MF_BYCOMMAND | MF_GRAYED );
@@ -132,7 +136,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	// 途中保存、やり直しはリプレイ記録中のみ
 	if(
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		MonDisp || vm->BPoint::GetBPNum() ||
+		vm->IsMonitor() || vm->bp->GetNum() ||
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		( REPLAY::GetStatus() != REP_RECORD ) ){
 		EnableMenuItem( hsm, ID_REPLAYDOKOSAVE, MF_BYCOMMAND | MF_GRAYED );
@@ -149,7 +153,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	// またはリプレイ記録中だったらリプレイ再生無効
 	if(
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		MonDisp || vm->BPoint::GetBPNum() ||
+		vm->IsMonitor() || vm->bp->GetNum() ||
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		( REPLAY::GetStatus() == REP_RECORD ) ){
 		EnableMenuItem( hsm, ID_REPLAYLOAD,   MF_BYCOMMAND | MF_GRAYED );
@@ -157,7 +161,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	}
 	
 	// TAPE
-	EnableMenuItem( hsm, ID_TAPEEJECT, MF_BYCOMMAND | vm->CMTL::GetFile().empty() ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem( hsm, ID_TAPEEJECT, MF_BYCOMMAND | vm->cmtl->GetFile().empty() ? MF_GRAYED : MF_ENABLED );
 	
 	// DISK
 	switch( vm->disk->GetDrives() ){
@@ -208,7 +212,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	
 	CheckMenuItem( hsm, ID_NOWAIT,    sche->GetWaitEnable() ? MF_UNCHECKED : MF_CHECKED   );
 	CheckMenuItem( hsm, ID_TURBO,     cfg->GetTurboTAPE()   ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_BOOST,     vm->CMTL::IsBoostUp() ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_BOOST,     vm->cmtl->IsBoostUp() ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_FULLSCRN,  cfg->GetFullScreen()  ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_STATUS,    cfg->GetDispStat()    ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_DISP43,    cfg->GetDispNTSC()    ? MF_CHECKED   : MF_UNCHECKED );
@@ -216,7 +220,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuItem( hsm, ID_FILTERING, cfg->GetFiltering()   ? MF_CHECKED   : MF_UNCHECKED );
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	CheckMenuItem( hsm, ID_MONITOR,   MonDisp     			? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_MONITOR,   vm->IsMonitor()		? MF_CHECKED   : MF_UNCHECKED );
 	#else
 	DeleteMenu( hsm, MDEBUG, MF_BYPOSITION );
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -271,16 +275,17 @@ static int CALLBACK OsdBrowseCallbackProc( HWND hwnd, UINT msg, LPARAM lp1, LPAR
 //			path		パス
 // 返値:	bool		true:選択成功 false:エラーorキャンセル
 ////////////////////////////////////////////////////////////////
-bool FolderDiaog_Win32( HWND hwnd, std::filesystem::path& path )
+bool FolderDiaog_Win32( HWND hwnd, P6VPATH& path )
 {
 	LPMALLOC Memory;
 	LPITEMIDLIST Ret, Root;
-	char Path[PATH_MAX+1];
 	char Buffer[PATH_MAX+1];
 	char stitle[PATH_MAX+1];
 	bool res = false;
+	std::string tpath;
 	
-	std::wcstombs( Path, path.c_str(), sizeof(Path) );
+	tpath = P6VPATH2STR( path );
+	OSD_UTF8toSJIS( tpath );
 	
 	// インスタンス取得
 	HINSTANCE hinst = (HINSTANCE)GetWindowLongPtr( hwnd, GWLP_HINSTANCE);
@@ -303,14 +308,16 @@ bool FolderDiaog_Win32( HWND hwnd, std::filesystem::path& path )
 	OBI.lpszTitle = stitle;						// タイトル(解説文)
 	OBI.pszDisplayName = Buffer;				// (戻り値)フォルダ名
 	OBI.lpfn = OsdBrowseCallbackProc;			// コールバック関数のエントリポイント
-	OBI.lParam = (LPARAM)Path;					// コールバック関数に渡す引数
+	OBI.lParam = (LPARAM)tpath.c_str();			// コールバック関数に渡す引数
    	
 	//「フォルダの参照」ダイアログを表示
 	Ret = SHBrowseForFolder( &OBI );
 	
 	if( SHGetPathFromIDList( Ret, Buffer ) ){
 		PathRemoveBackslash( Buffer );
-		path = Buffer;
+		tpath = Buffer;
+		OSD_SJIStoUTF8( tpath );
+		path = P6VSTR2PATH( tpath );
 		res = true;
 	}
 	
@@ -329,7 +336,7 @@ bool FolderDiaog_Win32( HWND hwnd, std::filesystem::path& path )
 //			path		パス
 // 返値:	bool		true:選択成功 false:エラーorキャンセル
 ////////////////////////////////////////////////////////////////
-bool OSD_FolderDiaog( HWINDOW hwnd, std::filesystem::path& path )
+bool OSD_FolderDiaog( HWINDOW hwnd, P6VPATH& path )
 {
 	return FolderDiaog_Win32( (HWND)OSD_GetWindowHandle( hwnd ), path );
 }
@@ -347,21 +354,29 @@ bool OSD_FolderDiaog( HWINDOW hwnd, std::filesystem::path& path )
 //			ext			拡張子文字列への参照
 // 返値:	bool		true:選択成功 false:エラーorキャンセル
 ////////////////////////////////////////////////////////////////
-bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const char* filter, std::filesystem::path& fullpath, std::filesystem::path& path, const std::string& ext )
+bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const char* filter, P6VPATH& fullpath, P6VPATH& path, const std::string& ext )
 {
-	PRINTD( OSD_LOG, "[OSD][FileDiaog_Win32] (%s)(%s)(%s)\n", fullpath.u8string().c_str(), path.u8string().c_str(), ext.c_str() );
+	PRINTD( OSD_LOG, "[OSD][FileDiaog_Win32] (%s)(%s)(%s)\n", P6VPATH2STR( fullpath ).c_str(), P6VPATH2STR( path ).c_str(), ext.c_str() );
 	
 	OPENFILENAME fname;
-	char File[PATH_MAX+1] = "";
-	char Path[PATH_MAX+1] = "";
+	char File[PATH_MAX+1];
+	char Path[PATH_MAX+1];
 	bool ret = false;
 	MSG msg;
+	std::string tpath;
 	
-	if( OSD_FileExist( fullpath ) )
-		std::wcstombs( File, fullpath.c_str(), sizeof(File) );
-	else
-		std::wcstombs( Path, path.c_str(), sizeof(Path) );
+	ZeroMemory( File, sizeof(File) );
+	ZeroMemory( Path, sizeof(Path) );
 	
+	if( OSD_FileExist( fullpath ) ){
+		tpath = P6VPATH2STR( fullpath );
+		OSD_UTF8toSJIS( tpath );
+		std::strncpy( File, tpath.c_str(), sizeof(File)-1 );
+	}else{
+		tpath = P6VPATH2STR( path );
+		OSD_UTF8toSJIS( tpath );
+		std::strncpy( Path, tpath.c_str(), sizeof(Path)-1 );
+	}
 	ZeroMemory( &fname, sizeof(OPENFILENAME) );
 	
 	fname.lStructSize     = sizeof(OPENFILENAME);
@@ -388,12 +403,16 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 	
 	if( ret ){
 		// フルパスを保存
-		fullpath = File;
+		tpath = File;
+		OSD_SJIStoUTF8( tpath );
+		fullpath = P6VSTR2PATH( tpath );
 		
 		// パスを保存
 		PathRemoveFileSpec( File );
 		PathAddBackslash( File );
-		path = File;
+		tpath = File;
+		OSD_SJIStoUTF8( tpath );
+		path = P6VSTR2PATH( tpath );
 		
 		return true;
 	}
@@ -410,9 +429,9 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 //			path		ファイル検索パス
 // 返値:	bool		true:選択成功 false:エラーorキャンセル
 ////////////////////////////////////////////////////////////////
-bool FileSelect_Win32( HWND hwnd, FileDlg type, std::filesystem::path& fullpath, std::filesystem::path& path )
+bool FileSelect_Win32( HWND hwnd, FileDlg type, P6VPATH& fullpath, P6VPATH& path )
 {
-	PRINTD( OSD_LOG, "[OSD][FileSelect_Win32] (%s)(%s)\n", fullpath.u8string().c_str(), path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][FileSelect_Win32] (%s)(%s)\n", P6VPATH2STR( fullpath ).c_str(), P6VPATH2STR( path ).c_str() );
 	
 	FileMode mode = FM_Load;
 	char title[256];
@@ -533,10 +552,9 @@ bool FileSelect_Win32( HWND hwnd, FileDlg type, std::filesystem::path& fullpath,
 //			path		ファイル検索パス
 // 返値:	bool		true:選択成功 false:エラーorキャンセル
 ////////////////////////////////////////////////////////////////
-bool OSD_FileSelect( HWINDOW hwnd, FileDlg type, std::filesystem::path& fullpath, std::filesystem::path& path )
+bool OSD_FileSelect( HWINDOW hwnd, FileDlg type, P6VPATH& fullpath, P6VPATH& path )
 {
 	return FileSelect_Win32( (HWND)OSD_GetWindowHandle( hwnd ), type, fullpath, path );
-	
 }
 
 
@@ -736,6 +754,73 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 }
 
 
+///////////////////////////////////////////////////////////
+// テキストボックスにパスを設定
+///////////////////////////////////////////////////////////
+void SetTextBoxPath( HWND hwnd, int id, const P6VPATH& path )
+{
+	P6VPATH tpath = path;
+	OSD_DelDelimiter( tpath );
+	std::string str = P6VPATH2STR( tpath );
+	OSD_UTF8toSJIS( str );
+	SetDlgItemText( hwnd, id, str.c_str() );
+}
+
+///////////////////////////////////////////////////////////
+// テキストボックスからパスを取得
+///////////////////////////////////////////////////////////
+P6VPATH GetTextBoxPath( HWND hwnd, int id )
+{
+	char str[PATH_MAX+1];			// 文字列取得用
+	
+	GetDlgItemText( hwnd, id, str, sizeof(str) );
+	std::string tstr = str;
+	OSD_SJIStoUTF8( tstr );
+	return P6VSTR2PATH( tstr );
+}
+
+///////////////////////////////////////////////////////////
+// ファイルを選択してテキストボックスに設定
+///////////////////////////////////////////////////////////
+void FileSelCom( HWND hwnd, int id, FileDlg type, const P6VPATH& path )
+{
+	char str[PATH_MAX+1];			// 文字列取得用
+	std::string tstr;				// 文字列取得用
+	P6VPATH folder, fpath;			// パス取得用
+	
+	GetDlgItemText( hwnd, id, str, sizeof(str) );
+	tstr = str;
+	OSD_SJIStoUTF8( tstr );
+	folder = P6VSTR2PATH( tstr );
+	fpath  = path;
+	if( FileSelect_Win32( hwnd, type, folder, fpath ) ){
+		tstr = P6VPATH2STR( folder );
+		OSD_UTF8toSJIS( tstr );
+		SetDlgItemText( hwnd, id, tstr.c_str() );
+	}
+}
+
+///////////////////////////////////////////////////////////
+// フォルダを選択してテキストボックスに設定
+///////////////////////////////////////////////////////////
+void FolderSelCom( HWND hwnd, int id )
+{
+	char str[PATH_MAX+1];			// 文字列取得用
+	std::string tstr;				// 文字列取得用
+	P6VPATH folder;					// パス取得用
+	
+	GetDlgItemText( hwnd, id, str, sizeof(str) );
+	tstr = str;
+	OSD_SJIStoUTF8( tstr );
+	folder = P6VSTR2PATH( tstr );
+	if( FolderDiaog_Win32( hwnd, folder ) ){
+		tstr = P6VPATH2STR( folder );
+		OSD_UTF8toSJIS( tstr );
+		SetDlgItemText( hwnd, id, tstr.c_str() );
+	}
+}
+
+
 enum { PP_BASE, PP_DISP, PP_SOUND, PP_FILE, PP_FOLDER, PP_COL, PP_ETC, PP_INPUT };
 
 ///////////////////////////////////////////////////////////
@@ -745,8 +830,6 @@ static bool OsdReadINI( HWND hwnd, int page )
 {
 	int st;							// 状態取得用
 	bool yn;						// 状態取得用
-	char str[PATH_MAX+1];			// 文字列取得用
-	std::filesystem::path tpath;	// パス取得用
 	
 	switch( page ){
 	case PP_BASE:	// 基本
@@ -874,73 +957,46 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
-		tpath = ecfg.GetRomPath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH1, str );
+		SetTextBoxPath( hwnd, ID_PATH1, ecfg.GetRomPath() );
 		
 		// TAPEパス
-		tpath = ecfg.GetTapePath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH2, str );
+		SetTextBoxPath( hwnd, ID_PATH2, ecfg.GetTapePath() );
 		
 		// DISKパス
-		tpath = ecfg.GetDiskPath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH3, str );
+		SetTextBoxPath( hwnd, ID_PATH3, ecfg.GetDiskPath() );
 		
 		// 拡張ROMパス
-		tpath = ecfg.GetExtRomPath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH4, str );
+		SetTextBoxPath( hwnd, ID_PATH4, ecfg.GetExtRomPath() );
 		
 		// IMGパス
-		tpath = ecfg.GetImgPath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH5, str );
+		SetTextBoxPath( hwnd, ID_PATH5, ecfg.GetImgPath() );
 		
 		// WAVEパス
-		tpath = ecfg.GetWavePath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH6, str );
+		SetTextBoxPath( hwnd, ID_PATH6, ecfg.GetWavePath() );
 		
 		// どこでもSAVEパス
-		tpath = ecfg.GetDokoSavePath();
-		OSD_DelDelimiter( tpath );
-		std::wcstombs( str, tpath.c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_PATH7, str );
+		SetTextBoxPath( hwnd, ID_PATH7, ecfg.GetDokoSavePath() );
 		
 		break;
 		
 	case PP_FILE:	// ファイル
 		// 拡張ROMファイル
-		std::wcstombs( str, ecfg.GetExtRomFile().c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FEXROM, str );
+		SetTextBoxPath( hwnd, ID_FEXROM, ecfg.GetExtRomFile() );
 		
 		// TAPE(LOAD)ファイル名
-		std::wcstombs( str, ecfg.GetTapeFile().c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FTPLD, str );
+		SetTextBoxPath( hwnd, ID_FTPLD, ecfg.GetTapeFile() );
 		
 		// TAPE(SAVE)ファイル名
-		std::wcstombs( str, ecfg.GetSaveFile().c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FTPSV, str );
+		SetTextBoxPath( hwnd, ID_FTPSV, ecfg.GetSaveFile() );
 		
 		// DISK1ファイル名
-		std::wcstombs( str, ecfg.GetDiskFile( 1 ).c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FDISK1, str );
+		SetTextBoxPath( hwnd, ID_FDISK1, ecfg.GetDiskFile( 1 ) );
 		
 		// DISK2ファイル名
-		std::wcstombs( str, ecfg.GetDiskFile( 2 ).c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FDISK2, str );
+		SetTextBoxPath( hwnd, ID_FDISK2, ecfg.GetDiskFile( 2 ) );
 		
 		// プリンタファイル名
-		std::wcstombs( str, ecfg.GetPrinterFile().c_str(), sizeof(str) );
-		SetDlgItemText( hwnd, ID_FPRINT, str );
+		SetTextBoxPath( hwnd, ID_FPRINT, ecfg.GetPrinterFile() );
 		
 		break;
 		
@@ -1002,7 +1058,6 @@ static bool OsdWriteINI( HWND hwnd, int page )
 {
 	int st;							// 状態取得用
 	char str[PATH_MAX+1];			// 文字列取得用
-	std::filesystem::path tpath;	// パス取得用
 	
 	switch( page ){
 	case PP_BASE:	// 基本
@@ -1049,7 +1104,7 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// スキャンライン輝度
 		GetDlgItemText( hwnd, ID_SCANLINEBR, str, sizeof(str) );
-		st = min( max( MIN_SCANLINEBR, strtol( str, nullptr, 0 ) ), MAX_SCANLINEBR );
+		st = min( max( MIN_SCANLINEBR, std::strtol( str, nullptr, 0 ) ), MAX_SCANLINEBR );
 		ecfg.SetScanLineBr( st );
 		
 		// フィルタリング
@@ -1083,7 +1138,7 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// PSG LPFカットオフ周波数
 		GetDlgItemText( hwnd, ID_EDIT1, str, sizeof(str) );
-		st = min( max( MIN_LPF, strtol( str, nullptr, 0 ) ), MAX_LPF );
+		st = min( max( MIN_LPF, std::strtol( str, nullptr, 0 ) ), MAX_LPF );
 		ecfg.SetPsgLPF( st );
 		
 		// マスター音量
@@ -1107,79 +1162,53 @@ static bool OsdWriteINI( HWND hwnd, int page )
 	case PP_INPUT:	// 入力関係
 		// キーリピート間隔
 		GetDlgItemText( hwnd, ID_KEYREP, str, sizeof(str) );
-		st = min( max( MIN_REPEAT, strtol( str, nullptr, 0 ) ), MAX_REPEAT );
+		st = min( max( MIN_REPEAT, std::strtol( str, nullptr, 0 ) ), MAX_REPEAT );
 		ecfg.SetKeyRepeat( st );
 		
 		break;
 		
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
-		GetDlgItemText( hwnd, ID_PATH1, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetRomPath( tpath );
+		ecfg.SetRomPath( GetTextBoxPath( hwnd, ID_PATH1 ) );
 		
 		// TAPEパス
-		GetDlgItemText( hwnd, ID_PATH2, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetTapePath( tpath );
+		ecfg.SetTapePath( GetTextBoxPath( hwnd, ID_PATH2 ) );
 		
 		// DISKパス
-		GetDlgItemText( hwnd, ID_PATH3, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetDiskPath( tpath );
+		ecfg.SetDiskPath( GetTextBoxPath( hwnd, ID_PATH3 ) );
 		
 		// 拡張ROMパス
-		GetDlgItemText( hwnd, ID_PATH4, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetExtRomPath( tpath );
+		ecfg.SetExtRomPath( GetTextBoxPath( hwnd, ID_PATH4 ) );
 		
 		// IMGパス
-		GetDlgItemText( hwnd, ID_PATH5, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetImgPath( tpath );
+		ecfg.SetImgPath( GetTextBoxPath( hwnd, ID_PATH5 ) );
 		
 		// WAVEパス
-		GetDlgItemText( hwnd, ID_PATH6, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetWavePath( tpath );
+		ecfg.SetWavePath( GetTextBoxPath( hwnd, ID_PATH6 ) );
 		
 		// どこでもSAVEパス
-		GetDlgItemText( hwnd, ID_PATH7, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetDokoSavePath( tpath );
+		ecfg.SetDokoSavePath( GetTextBoxPath( hwnd, ID_PATH7 ) );
 		
 		break;
 		
 	case PP_FILE:	// ファイル
 		// 拡張ROMファイル
-		GetDlgItemText( hwnd, ID_FEXROM, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetExtRomFile( tpath );
+		ecfg.SetExtRomFile( GetTextBoxPath( hwnd, ID_FEXROM ) );
 		
 		// TAPE(LOAD)ファイル名
-		GetDlgItemText( hwnd, ID_FTPLD, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetTapeFile( tpath );
+		ecfg.SetTapeFile( GetTextBoxPath( hwnd, ID_FTPLD ) );
 		
 		// TAPE(SAVE)ファイル名
-		GetDlgItemText( hwnd, ID_FTPSV, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetSaveFile( tpath );
+		ecfg.SetSaveFile( GetTextBoxPath( hwnd, ID_FTPSV ) );
 		
 		// DISK1ファイル名
-		GetDlgItemText( hwnd, ID_FDISK1, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetDiskFile( 1, tpath );
+		ecfg.SetDiskFile( 1, GetTextBoxPath( hwnd, ID_FDISK1 ) );
 		
 		// DISK2ファイル名
-		GetDlgItemText( hwnd, ID_FDISK2, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetDiskFile( 2, tpath );
+		ecfg.SetDiskFile( 2, GetTextBoxPath( hwnd, ID_FDISK2 ) );
 		
 		// プリンタファイル名
-		GetDlgItemText( hwnd, ID_FPRINT, str, sizeof(str) );
-		tpath = str;	// SJIS文字列からPath構築
-		ecfg.SetPrinterFile( tpath );
+		ecfg.SetPrinterFile( GetTextBoxPath( hwnd, ID_FPRINT ) );
 		
 		break;
 		
@@ -1189,7 +1218,7 @@ static bool OsdWriteINI( HWND hwnd, int page )
 	case PP_ETC:	// その他
 		// オーバークロック率
 		GetDlgItemText( hwnd, ID_OVERCLK, str, sizeof(str) );
-		st = min( max( MIN_OVERCLOCK, strtol( str, nullptr, 0 ) ), MAX_OVERCLOCK );
+		st = min( max( MIN_OVERCLOCK, std::strtol( str, nullptr, 0 ) ), MAX_OVERCLOCK );
 		ecfg.SetOverClock( st );
 		
 		// CRCチェック
@@ -1203,17 +1232,17 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// BoostUp 最大倍率(N60モード)
 		GetDlgItemText( hwnd, ID_BOOST60, str, sizeof(str) );
-		st = min( max( MIN_MAXBOOST, strtol( str, nullptr, 0 ) ), MAX_MAXBOOST );
+		st = min( max( MIN_MAXBOOST, std::strtol( str, nullptr, 0 ) ), MAX_MAXBOOST );
 		ecfg.SetMaxBoost1( st );
 		
 		// BoostUp 最大倍率(N60m/N66モード)
 		GetDlgItemText( hwnd, ID_BOOST62, str, sizeof(str) );
-		st = min( max( MIN_MAXBOOST, strtol( str, nullptr, 0 ) ), MAX_MAXBOOST );
+		st = min( max( MIN_MAXBOOST, std::strtol( str, nullptr, 0 ) ), MAX_MAXBOOST );
 		ecfg.SetMaxBoost2( st );
 		
 		// TAPEストップビット数
 		GetDlgItemText( hwnd, ID_STOPBIT, str, sizeof(str) );
-		st = min( max( MIN_STOPBIT, strtol( str, nullptr, 0 ) ), MAX_STOPBIT );
+		st = min( max( MIN_STOPBIT, std::strtol( str, nullptr, 0 ) ), MAX_STOPBIT );
 		ecfg.SetStopBit( st );
 		
 		// FDDウェイト
@@ -1324,9 +1353,6 @@ static INT_PTR CALLBACK OsdCnfgProc4( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 // ファイル
 static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 {
-	char str[PATH_MAX+1];
-	std::filesystem::path folder, fpath;
-	
 	switch( msg ){
 	case WM_INITDIALOG:
 		// 設定を読込む
@@ -1336,68 +1362,27 @@ static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 	case WM_COMMAND:
 		switch( wp ){
 		case ID_B11:	// ファイル参照ボタン(拡張ROMイメージ)
-			GetDlgItemText( hwnd, ID_FEXROM, str, sizeof(str) );
-			folder = str;
-			std::wcstombs( str, ecfg.GetExtRomPath().c_str(), sizeof(str) );
-			fpath  = str;
-			if( FileSelect_Win32( hwnd, FD_ExtRom, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FEXROM, str );
-			}
+			FileSelCom( hwnd, ID_FEXROM, FD_ExtRom, ecfg.GetExtRomPath() );
 			break;
 			
 		case ID_B12:	// ファイル参照ボタン(TAPEイメージ(LOAD))
-			GetDlgItemText( hwnd, ID_FTPLD, str, sizeof(str) );
-			folder = str;
-			std::wcstombs( str, ecfg.GetTapePath().c_str(), sizeof(str) );
-			fpath  = str;
-			if( FileSelect_Win32( hwnd, FD_TapeLoad, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FTPLD, str );
-			}
+			FileSelCom( hwnd, ID_FTPLD, FD_TapeLoad, ecfg.GetTapePath() );
 			break;
 			
 		case ID_B13:	// ファイル参照ボタン(TAPEイメージ(SAVE))
-			GetDlgItemText( hwnd, ID_FTPSV, str, sizeof(str) );
-			folder = str;
-			std::wcstombs( str, ecfg.GetTapePath().c_str(), sizeof(str) );
-			fpath  = str;
-			if( FileSelect_Win32( hwnd, FD_TapeSave, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FTPSV, str );
-			}
+			FileSelCom( hwnd, ID_FTPSV, FD_TapeSave, ecfg.GetTapePath() );
 			break;
 			
 		case ID_B14:	// ファイル参照ボタン(DISK1イメージ)
-			GetDlgItemText( hwnd, ID_FDISK1, str, sizeof(str) );
-			folder = str;
-			std::wcstombs( str, ecfg.GetDiskPath().c_str(), sizeof(str) );
-			fpath  = str;
-			if( FileSelect_Win32( hwnd, FD_Disk, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FDISK1, str );
-			}
+			FileSelCom( hwnd, ID_FDISK1, FD_Disk, ecfg.GetDiskPath() );
 			break;
 			
 		case ID_B15:	// ファイル参照ボタン(DISK2イメージ)
-			GetDlgItemText( hwnd, ID_FDISK2, str, sizeof(str) );
-			folder = str;
-			std::wcstombs( str, ecfg.GetDiskPath().c_str(), sizeof(str) );
-			fpath  = str;
-			if( FileSelect_Win32( hwnd, FD_Disk, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FDISK2, str );
-			}
+			FileSelCom( hwnd, ID_FDISK2, FD_Disk, ecfg.GetDiskPath() );
 			break;
 			
 		case ID_B16:	// ファイル参照ボタン(プリンタ出力ファイル)
-			GetDlgItemText( hwnd, ID_FPRINT, str, sizeof(str) );
-			folder = str;
-			fpath  = "";
-			if( FileSelect_Win32( hwnd, FD_Printer, folder, fpath ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_FPRINT, str );
-			}
+			FileSelCom( hwnd, ID_FPRINT, FD_Printer, OSD_GetConfigPath() );
 			break;
 			
 		case ID_B11E:	// EJECTボタン(拡張ROMイメージ)
@@ -1440,9 +1425,6 @@ static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 // フォルダ
 static INT_PTR CALLBACK OsdCnfgProc6( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 {
-	char str[PATH_MAX+1];
-	std::filesystem::path folder;
-	
 	switch( msg ){
 	case WM_INITDIALOG:
 		// 設定を読込む
@@ -1452,66 +1434,31 @@ static INT_PTR CALLBACK OsdCnfgProc6( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 	case WM_COMMAND:
 		switch( wp ){
 		case ID_B01:	// フォルダ参照ボタン(ROM)
-			GetDlgItemText( hwnd, ID_PATH1, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH1, str );
-			}
+			FolderSelCom( hwnd, ID_PATH1 );
 			break;
 			
 		case ID_B02:	// フォルダ参照ボタン(TAPE)
-			GetDlgItemText( hwnd, ID_PATH2, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH2, str );
-			}
+			FolderSelCom( hwnd, ID_PATH2 );
 			break;
 			
 		case ID_B03:	// フォルダ参照ボタン(DISK)
-			GetDlgItemText( hwnd, ID_PATH3, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH3, str );
-			}
+			FolderSelCom( hwnd, ID_PATH3 );
 			break;
 			
 		case ID_B04:	// フォルダ参照ボタン(拡張ROM)
-			GetDlgItemText( hwnd, ID_PATH4, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH4, str );
-			}
+			FolderSelCom( hwnd, ID_PATH4 );
 			break;
 			
 		case ID_B05:	// フォルダ参照ボタン(IMG)
-			GetDlgItemText( hwnd, ID_PATH5, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH5, str );
-			}
+			FolderSelCom( hwnd, ID_PATH5 );
 			break;
 			
 		case ID_B06:	// フォルダ参照ボタン(WAVE)
-			GetDlgItemText( hwnd, ID_PATH6, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH6, str );
-			}
+			FolderSelCom( hwnd, ID_PATH6 );
 			break;
 			
 		case ID_B07:	// フォルダ参照ボタン(どこでもSAVE)
-			GetDlgItemText( hwnd, ID_PATH7, str, sizeof(str) );
-			folder = str;
-			if( FolderDiaog_Win32( hwnd, folder ) ){
-				std::wcstombs( str, folder.c_str(), sizeof(str) );
-				SetDlgItemText( hwnd, ID_PATH7, str );
-			}
+			FolderSelCom( hwnd, ID_PATH7 );
 			break;
 		}
 		break;

@@ -2,7 +2,6 @@
 #define D88_H_INCLUDED
 
 #include <array>
-#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -79,7 +78,7 @@ private:
 	};
 	
 	std::fstream fs;					// ファイルストリーム
-	std::filesystem::path FilePath;		// ファイル名
+	P6VPATH FilePath;					// ファイル名
 	
 	D88INFO d88;						// D88 情報
 	D88SECTOR secinfo;					// セクタ情報
@@ -91,10 +90,10 @@ private:
 	void ReadSector88();								// D88 セクタ情報読込み
 	
 public:
-	cD88( bool );										// コンストラクタ
-	~cD88();											// デストラクタ
+	cD88( bool );
+	~cD88();
 	
-	bool Init( const std::filesystem::path& );			// 初期化
+	bool Init( const P6VPATH& );						// 初期化
 	
 	BYTE Get8();										// 1byte 読込み
 	bool Put8( BYTE );									// 1byte 書込み
@@ -106,7 +105,7 @@ public:
 	WORD GetSecSize() const;							// 現在のセクタサイズ取得
 	BYTE GetSecStatus() const;							// 現在のステータス取得
 	
-	const std::filesystem::path& GetFileName() const;	// ファイル名取得
+	const P6VPATH& GetFileName() const;					// ファイル名取得
 	const std::string& GetDiskImgName() const;			// DISKイメージ名取得
 	bool IsProtect() const;								// プロテクトシール状態取得
 	int GetType() const;								// メディアタイプ取得

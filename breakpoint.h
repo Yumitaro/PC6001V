@@ -29,15 +29,15 @@ public:
 	BPoint();
 	~BPoint();
 	
-	void SetBP( const BPtype, WORD );			// ブレークポイントを設定
-	void DeleteBP( const int );					// ブレークポイントを削除
-	BPtype GetBPType( const int ) const;		// ブレークポイントのタイプを取得
-	WORD GetBPAddr( const int ) const;			// ブレークポイントのアドレスを取得
-	int GetBPNum() const;						// ブレークポイント登録数取得
+	void Set( const BPtype, WORD );			// ブレークポイントを設定
+	void Delete( const int );				// ブレークポイントを削除
+	BPtype GetType( const int ) const;		// ブレークポイントのタイプを取得
+	WORD GetAddr( const int ) const;		// ブレークポイントのアドレスを取得
+	int GetNum() const;						// ブレークポイント登録数取得
 	
-	bool CheckBP( const BPtype, const WORD );	// ブレークポイントをチェック
-	int GetReqBPNum() const;					// ブレーク要求のあったブレークポイントNo.を取得
-	void ResetBP();								// ブレーク要求キャンセル
+	bool Check( const BPtype, const WORD );	// ブレークポイントをチェック
+	int GetReqNum() const;					// ブレーク要求のあったブレークポイントNo.を取得
+	void Reset();							// ブレーク要求キャンセル
 };
 
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

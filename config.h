@@ -1,7 +1,6 @@
 #ifndef CONFIG_H_INCLUDED
 #define CONFIG_H_INCLUDED
 
-#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -16,25 +15,25 @@
 class CFG6 : public cIni {
 protected:
 	// INIファイルに保存しないメンバ
-	std::filesystem::path IniPath;		// INIファイルパス
-	std::filesystem::path DokoFile;		// どこでもSAVEファイル名
-	std::string Caption;				// ウィンドウキャプション
+	P6VPATH IniPath;		// INIファイルパス
+	P6VPATH DokoFile;		// どこでもSAVEファイル名
+	std::string Caption;	// ウィンドウキャプション
 	
 	// INIファイルに保存するメンバ
-	std::filesystem::path RomPath;		// ROMパス
-	std::filesystem::path ExtRomPath;	// 拡張ROMパス
-	std::filesystem::path ExtRomFile;	// 拡張ROMファイル名
-	std::filesystem::path WavePath;		// WAVEパス
-	std::filesystem::path TapePath;		// TAPEパス
-	std::filesystem::path TapeFile;		// TAPEファイル名
-	std::filesystem::path SaveFile;		// TAPE(SAVE)ファイル名
-	std::filesystem::path DiskPath;		// DISKパス
-	std::filesystem::path DiskFile1;	// DISK1ファイル名
-	std::filesystem::path DiskFile2;	// DISK2ファイル名
-	std::filesystem::path ImgPath;		// スクリーンショット格納パス
-	std::filesystem::path PrinterFile;	// プリンタファイル名
-	std::filesystem::path DokoSavePath;	// どこでもSAVEパス
-	std::filesystem::path FontPath;		// フォントパス
+	P6VPATH RomPath;		// ROMパス
+	P6VPATH ExtRomPath;		// 拡張ROMパス
+	P6VPATH ExtRomFile;		// 拡張ROMファイル名
+	P6VPATH WavePath;		// WAVEパス
+	P6VPATH TapePath;		// TAPEパス
+	P6VPATH TapeFile;		// TAPEファイル名
+	P6VPATH SaveFile;		// TAPE(SAVE)ファイル名
+	P6VPATH DiskPath;		// DISKパス
+	P6VPATH DiskFile1;		// DISK1ファイル名
+	P6VPATH DiskFile2;		// DISK2ファイル名
+	P6VPATH ImgPath;		// スクリーンショット格納パス
+	P6VPATH PrinterFile;	// プリンタファイル名
+	P6VPATH DokoSavePath;	// どこでもSAVEパス
+	P6VPATH FontPath;		// フォントパス
 	
 	void InitIni( bool );									// INIオブジェクト初期値設定
 	
@@ -44,8 +43,8 @@ protected:
 	P6KEYsym GetP6KeyCode( const std::string& );			// キー名称からP6キーコードを取得
 
 public:
-	CFG6();													// コンストラクタ
-	virtual ~CFG6();										// デストラクタ
+	CFG6();
+	~CFG6();
 	
 	bool Init();											// 初期化(INIファイル読込み)
 	bool Write();											// INIファイル書込み
@@ -143,45 +142,45 @@ public:
 	void SetAviBpp( int );									//       設定
 	
 	// [FILES] -----------------------------------------------------
-	const std::filesystem::path& GetExtRomFile();			// 拡張ROMファイル名取得
-	void SetExtRomFile( const std::filesystem::path& );		//                  設定
+	const P6VPATH& GetExtRomFile();							// 拡張ROMファイル名取得
+	void SetExtRomFile( const P6VPATH& );					//                  設定
 	
-	const std::filesystem::path& GetTapeFile();				// TAPEファイル名取得
-	void SetTapeFile( const std::filesystem::path& );		//               設定
+	const P6VPATH& GetTapeFile();							// TAPEファイル名取得
+	void SetTapeFile( const P6VPATH& );						//               設定
 	
-	const std::filesystem::path& GetSaveFile();				// TAPE(SAVE)ファイル名取得
-	void SetSaveFile( const std::filesystem::path& );		//                     設定
+	const P6VPATH& GetSaveFile();							// TAPE(SAVE)ファイル名取得
+	void SetSaveFile( const P6VPATH& );						//                     設定
 	
-	const std::filesystem::path& GetDiskFile( int );		// DISKファイル名取得
-	void SetDiskFile( int, const std::filesystem::path& );	//               設定
+	const P6VPATH& GetDiskFile( int );						// DISKファイル名取得
+	void SetDiskFile( int, const P6VPATH& );				//               設定
 	
-	const std::filesystem::path& GetPrinterFile();			// プリンタファイル名取得
-	void SetPrinterFile( const std::filesystem::path& );	//                   設定
+	const P6VPATH& GetPrinterFile();						// プリンタファイル名取得
+	void SetPrinterFile( const P6VPATH& );					//                   設定
 	
 	// [PATH] ------------------------------------------------------
-	const std::filesystem::path& GetRomPath();				// ROMパス取得
-	void SetRomPath( const std::filesystem::path& );		//        設定
+	const P6VPATH& GetRomPath();							// ROMパス取得
+	void SetRomPath( const P6VPATH& );						//        設定
 	
-	const std::filesystem::path& GetTapePath();				// TAPEパス取得
-	void SetTapePath( const std::filesystem::path& );		//         設定
+	const P6VPATH& GetTapePath();							// TAPEパス取得
+	void SetTapePath( const P6VPATH& );						//         設定
 	
-	const std::filesystem::path& GetDiskPath();				// DISKパス取得
-	void SetDiskPath( const std::filesystem::path& );		//         設定
+	const P6VPATH& GetDiskPath();							// DISKパス取得
+	void SetDiskPath( const P6VPATH& );						//         設定
 	
-	const std::filesystem::path& GetExtRomPath();			// 拡張ROMパス取得
-	void SetExtRomPath( const std::filesystem::path& );		//            設定
+	const P6VPATH& GetExtRomPath();							// 拡張ROMパス取得
+	void SetExtRomPath( const P6VPATH& );					//            設定
 	
-	const std::filesystem::path& GetImgPath();				// スクリーンショット格納パス取得
-	void SetImgPath( const std::filesystem::path& );		//                           設定
+	const P6VPATH& GetImgPath();							// スクリーンショット格納パス取得
+	void SetImgPath( const P6VPATH& );						//                           設定
 	
-	const std::filesystem::path& GetWavePath();				// WAVEパス取得
-	void SetWavePath( const std::filesystem::path& );		//         設定
+	const P6VPATH& GetWavePath();							// WAVEパス取得
+	void SetWavePath( const P6VPATH& );						//         設定
 	
-	const std::filesystem::path& GetFontPath();				// フォントパス取得
-	void SetFontPath( const std::filesystem::path& );		//             設定
+	const P6VPATH& GetFontPath();							// フォントパス取得
+	void SetFontPath( const P6VPATH& );						//             設定
 	
-	const std::filesystem::path& GetDokoSavePath();			// どこでもSAVEパス取得
-	void SetDokoSavePath( const std::filesystem::path& );	//                 設定
+	const P6VPATH& GetDokoSavePath();						// どこでもSAVEパス取得
+	void SetDokoSavePath( const P6VPATH& );					//                 設定
 	
 	// [CHECK] -----------------------------------------------------
 	bool GetCkQuit();										// 終了時確認取得
@@ -211,14 +210,13 @@ public:
 	
 	// その他 ------------------------------------------------------
 	const std::string& GetCaption();						// ウィンドウキャプション取得
+	const P6VPATH GetDokoFile();							// どこでもSAVEファイル名取得
+	void SetDokoFile( const P6VPATH& );						//                       設定
 	
-	const std::filesystem::path GetDokoFile();				// どこでもSAVEファイル名取得
-	void SetDokoFile( const std::filesystem::path& );		//                       設定
-	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* );		// どこでもSAVE
 	bool DokoLoad( cIni* );		// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 #endif	// CONFIG_H_INCLUDED

@@ -1,28 +1,26 @@
 #ifndef GRAPH_H_INCLUDED
 #define GRAPH_H_INCLUDED
 
-#include <filesystem>
+#include <memory>
 #include <string>
 
-#include "typedef.h"
-#include "vsurface.h"
-
 #include "p6vm.h"
+#include "typedef.h"
+
 
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
 class DSP6 {
 protected:
-	VM6* vm;
-	
-	HWINDOW Wh;				// ウィンドウハンドル
+	EL6* el;
+	HWINDOW Wh;
 	
 	bool SetScreenSurface();				// スクリーンサーフェス作成
 	
 public:
-	DSP6( VM6* );							// コンストラクタ
-	~DSP6();								// デストラクタ
+	DSP6( EL6* );
+	~DSP6();
 	
 	bool Init();							// 初期化
 	void SetIcon( const int );				// アイコン設定
@@ -30,7 +28,7 @@ public:
 	bool ResizeScreen();					// スクリーンサイズ変更
 	
 	void DrawScreen();						// 画面更新
-	void SnapShot( const std::filesystem::path& );	// スナップショット
+	void SnapShot( const P6VPATH& );		// スナップショット
 	
 	int ScreenX() const;					// 有効スクリーン幅取得
 	int ScreenY() const;					// 有効スクリーン高さ取得

@@ -1,7 +1,7 @@
 #ifndef TAPE_H_INCLUDED
 #define TAPE_H_INCLUDED
 
-#include <filesystem>
+#include <memory>
 #include <string>
 
 #include "typedef.h"
@@ -22,7 +22,7 @@
 ////////////////////////////////////////////////////////////////
 class CMTL : public Device, public SndDev, public cP6T, public IDoko {
 private:
-	std::filesystem::path FilePath;		// TAPEファイルフルパス
+	P6VPATH FilePath;					// TAPEファイルフルパス
 	bool Relay;							// リレーの状態
 	bool stron;							// ストリーム内部処理用
 	
@@ -39,20 +39,20 @@ private:
 	void OutB0H( int, BYTE );
 	
 public:
-	CMTL( VM6*, const ID& );					// コンストラクタ
-	virtual ~CMTL();							// デストラクタ
+	CMTL( VM6*, const ID& );
+	virtual ~CMTL();
 	
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	
 	bool Init( int ) override;					// 初期化
 	
-	bool Mount( const std::filesystem::path& );	// TAPE マウント
+	bool Mount( const P6VPATH& );				// TAPE マウント
 	void Unmount();								// TAPE アンマウント
 	
 	WORD Update();								// ストリーム更新(1byte分)
 	int SoundUpdate( int ) override;			// ストリーム更新
 	
-	const std::filesystem::path& GetFile() const;	// ファイルパス取得
+	const P6VPATH& GetFile() const;				// ファイルパス取得
 	bool IsMount() const;						// マウント済み?
 	bool IsRelay() const;						// リレーの状態取得
 	
@@ -63,36 +63,28 @@ public:
 	void SetStopBit( int );						// ストップビット数設定
 	int GetStopBit() const;						// ストップビット数取得
 	
-	// cP6Tメンバ関数
-//	void Rewind();								// 巻戻し
-//	bool IsAutoStart() const;					// オートスタート?
-//	const std::string& GetName() const;			// TAPE名取得
-//	DWORD GetBetaSize();						// ベタイメージサイズ取得
-//	int GetCount() const;						// カウンタ取得
-//	const P6TAUTOINFO& GetAutoStartInfo() const;	// オートスタート情報取得
-	
 	// デバイスID
 	enum IDOut{ outB0H=0 };
 	enum IDIn {};
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
 class CMTS : public Device {
 private:
-	std::filesystem::path FilePath;		// TAPEファイルフルパス
+	P6VPATH FilePath;					// TAPEファイルフルパス
 	std::fstream fs;					// ファイルストリーム
 	int Baud;							// ボーレート
 	
 public:
-	CMTS( VM6*, const ID& );			// コンストラクタ
-	~CMTS();							// デストラクタ
+	CMTS( VM6*, const ID& );
+	~CMTS();
 	
-	bool Init( const std::filesystem::path& );	// 初期化
+	bool Init( const P6VPATH& );		// 初期化
 	
 	bool Mount();						// TAPE マウント
 	void Unmount();						// TAPE アンマウント

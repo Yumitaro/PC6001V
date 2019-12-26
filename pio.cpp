@@ -94,7 +94,7 @@ bit6 WIE		CPUに対するデータ書込み要求割り込みの許可フラグ�
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-cPRT::cPRT() : FilePath(""), pdata(0), strb(false)
+cPRT::cPRT() : FilePath( "" ), pdata( 0 ), strb( false )
 {
 }
 
@@ -102,7 +102,9 @@ cPRT::cPRT() : FilePath(""), pdata(0), strb(false)
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-cPRT::~cPRT(){}
+cPRT::~cPRT()
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -111,7 +113,7 @@ cPRT::~cPRT(){}
 // 引数:	filepath	出力ファイルパス
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void cPRT::SetFile( const std::filesystem::path& filepath )
+void cPRT::SetFile( const P6VPATH& filepath )
 {
 	if( !filepath.empty() ){
 		// ファイルパス保存
@@ -154,7 +156,7 @@ void cPRT::Strobe( bool st )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-PIO6::PIO6( VM6* vm, const ID& id ) : Device(vm,id)
+PIO6::PIO6( VM6* vm, const ID& id ) : Device( vm, id )
 {
 	// Dvice Description (Out)
 	descs.outdef.emplace( out90H, STATIC_CAST( Device::OutFuncPtr, &PIO6::Out90H ) );
@@ -191,7 +193,7 @@ void PIO6::JobWriteA( BYTE data )
 {
 	// モード2で DAK=H,OBF=L(つまりWR0立上り) なら8049に対して割込み要求
 	if( ModeA == 2 && HSDAK0 && !HSOBF0 )
-		vm->SUB6::ExtIntr();
+		vm->CpusExtIntr();
 }
 
 

@@ -87,9 +87,9 @@ bool cThread::Waiting( void )
 ////////////////////////////////////////////////////////////////
 void cThread::Cancel( void )
 {
-	this->cMutex::Lock();
+	this->cMutex::lock();
 	this->m_bCancel = true;
-	this->cMutex::UnLock();
+	this->cMutex::unlock();
 }
 
 
@@ -103,9 +103,9 @@ bool cThread::IsCancel( void )
 {
 	bool bCancel = false;
 	
-	this->cMutex::Lock();
+	this->cMutex::lock();
 	bCancel = this->m_bCancel;
-	this->cMutex::UnLock();
+	this->cMutex::unlock();
 	return bCancel;
 }
 

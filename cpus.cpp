@@ -1,12 +1,11 @@
-#include <time.h>
+#include <ctime>
 
 #include "config.h"
-#include "log.h"
 #include "cpus.h"
 #include "intr.h"
-#include "schedule.h"
-
+#include "log.h"
 #include "p6vm.h"
+#include "schedule.h"
 
 
 // イベントID
@@ -73,25 +72,25 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-SUB6::SUB6( VM6* vm, const ID& id ) : Device(vm,id),
-	CmtStatus(CMTCLOSE), Status8049(D8049_IDLE),
-	IntrFlag(0), KeyCode(0), JoyCode(0), CmtData(0), SioData(0),
-	TVRCnt(0), DateCnt(0)
+SUB6::SUB6( VM6* vm, const ID& id ) : Device( vm, id ),
+	CmtStatus( CMTCLOSE ), Status8049( D8049_IDLE ),
+	IntrFlag( 0 ), KeyCode( 0 ), JoyCode( 0 ), CmtData( 0 ), SioData( 0 ),
+	TVRCnt( 0 ), DateCnt( 0 )
 {
 	INITARRAY( TVRData,  0xff );
 	TVRData[0] = 0xa6;
 	INITARRAY( DateData, 0 );
 }
 
-SUB60::SUB60( VM6* vm, const ID& id ) : SUB6(vm,id)
+SUB60::SUB60( VM6* vm, const ID& id ) : SUB6( vm, id )
 {
 }
 
-SUB62::SUB62( VM6* vm, const ID& id ) : SUB6(vm,id)
+SUB62::SUB62( VM6* vm, const ID& id ) : SUB6( vm, id )
 {
 }
 
-SUB68::SUB68( VM6* vm, const ID& id ) : SUB6(vm,id)
+SUB68::SUB68( VM6* vm, const ID& id ) : SUB6( vm, id )
 {
 }
 
@@ -146,7 +145,7 @@ void SUB6::EventCallback( int id, int clock )
 			else if( IntrFlag & IR_DATE ) { Status8049 = D8049_DATE;  }
 			
 			if( Status8049 != D8049_IDLE )
-				vm->EVSC::Add( Device::GetID(), EID_VECTOR, wt, EV_LOOP|EV_STATE );
+				vm->EventAdd( Device::GetID(), EID_VECTOR, wt, EV_LOOP|EV_STATE );
 			
 			PRINTD( SUB_LOG, "%02X\n", Status8049 );
 		}
@@ -155,18 +154,18 @@ void SUB6::EventCallback( int id, int clock )
 	case EID_VECTOR:	// 割込みベクタ出力
 		// T0=IBF=H つまり8255のバッファが空いていなければリトライ
 		if( GetT0() ) break;
-		vm->EVSC::Del( Device::GetID(), EID_VECTOR );
+		vm->EventDel( Device::GetID(), EID_VECTOR );
 		
 		OutVector();	// 割込みベクタ出力
 		
 		// 続いてデータ出力
-		vm->EVSC::Add( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
+		vm->EventAdd( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
 		break;
 		
 	case EID_DATA:		// 割込みデータ出力
 		// T0=IBF=H つまり8255のバッファが空いていなければリトライ
 		if( GetT0() ) break;
-		vm->EVSC::Del( Device::GetID(), EID_DATA );
+		vm->EventDel( Device::GetID(), EID_DATA );
 		
 		OutData();		// 割込みデータ出力
 		break;
@@ -188,7 +187,7 @@ void SUB6::Reset( void )
 	CmtData    = 0;
 	SioData    = 0;
 	
-	vm->EVSC::Add( Device::GetID(), EID_INTCHK, WAIT_INTCHK, EV_LOOP|EV_US );
+	vm->EventAdd( Device::GetID(), EID_INTCHK, WAIT_INTCHK, EV_LOOP|EV_US );
 }
 
 
@@ -262,7 +261,7 @@ void SUB6::ExtIntr( void )
 	case D8049_CMTO:	// CMT 1文字出力
 		PRINTD( SUB_LOG, "CmtPut %02X\n", comm );
 		
-		vm->CMTS::WriteOne( comm );
+		vm->CmtsWriteOne( comm );
 		Status8049 = D8049_IDLE;
 		break;
 		
@@ -317,11 +316,11 @@ void SUB6::ExtIntrExec( BYTE comm )
 		break;
 		
 	case 0x1d:	// ------ CMT(LOAD) 600ボー ----------
-//		vm->CMTL::SetBaud( 600 );
+//		vm->CmtlSetBaud( 600 );
 		break;
 		
 	case 0x1e:	// ------ CMT(LOAD) 1200ボー ----------
-//		vm->CMTL::SetBaud( 1200 );
+//		vm->CmtlSetBaud( 1200 );
 		break;
 		
 	case 0x38:	// ------ CMT 1文字出力 ----------
@@ -329,21 +328,21 @@ void SUB6::ExtIntrExec( BYTE comm )
 		break;
 		
 	case 0x39:	// ------ CMT(SAVE) OPEN ----------
-		vm->CMTS::Mount();
+		vm->CmtsMount();
 		CmtStatus = SAVEOPEN;
 		break;
 		
 	case 0x3a:	// ------ CMT(SAVE) CLOSE ----------
 		CmtStatus = CMTCLOSE;
-		vm->CMTS::Unmount();
+		vm->CmtsUnmount();
 		break;
 		
 	case 0x3d:	// ------ CMT(SAVE) 600ボー ----------
-		vm->CMTS::SetBaud( 600 );
+		vm->CmtsSetBaud( 600 );
 		break;
 		
 	case 0x3e:	// ------ CMT(SAVE) 1200ボー ----------
-		vm->CMTS::SetBaud( 1200 );
+		vm->CmtsSetBaud( 1200 );
 		break;
 	}
 }
@@ -353,11 +352,11 @@ void SUB62::ExtIntrExec( BYTE comm )
 	// コマンド
 	switch( comm ){
 	case 0x04:	// ------ 英字<->かな切換 ----------
-		vm->KEY6::ChangeKana();
+		vm->KeyChangeKana();
 		break;
 		
 	case 0x05:	// ------ かな<->カナ切換 ----------
-		vm->KEY6::ChangeKKana();
+		vm->KeyChangeKKana();
 		break;
 		
 	default:
@@ -370,11 +369,11 @@ void SUB68::ExtIntrExec( BYTE comm )
 	// コマンド
 	switch( comm ){
 	case 0x04:	// ------ 英字<->かな切換 ----------
-		vm->KEY6::ChangeKana();
+		vm->KeyChangeKana();
 		break;
 		
 	case 0x05:	// ------ かな<->カナ切換 ----------
-		vm->KEY6::ChangeKKana();
+		vm->KeyChangeKKana();
 		break;
 		
 	case 0x30:	// ------ TV予約書込み ----------
@@ -464,7 +463,7 @@ void SUB6::ReqJoyIntr( void )
 	if( IntrFlag & IR_JOY ) return;
 	
 	IntrFlag |= IR_JOY;
-	JoyCode   = vm->KEY6::GetKeyJoy();
+	JoyCode   = vm->KeyGetKeyJoy();
 }
 
 
@@ -640,7 +639,7 @@ void SUB6::OutData( void )
 		if( tvd == 0xff ){	// FFHなら終了
 			IntrFlag &= ~IR_TVR;
 		}else{				// FFH以外なら残りのデータ出力
-			vm->EVSC::Add( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
+			vm->EventAdd( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
 			return;
 		}
 		break;
@@ -651,7 +650,7 @@ void SUB6::OutData( void )
 		if( DateCnt > 4 ){	// 5回出力したら終了
 			IntrFlag &= ~IR_DATE;
 		}else{				// 5回未満なら残りのデータ出力
-			vm->EVSC::Add( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
+			vm->EventAdd( Device::GetID(), EID_DATA, WAIT_DATA, EV_LOOP|EV_STATE );
 			return;
 		}
 		break;

@@ -7,17 +7,14 @@
 #ifndef THREAD_H_INCLUDED
 #define THREAD_H_INCLUDED
 
-#include <mutex>
-#include <thread>
-
 #include "typedef.h"
+#include "semaphore.h"
 
 
-class cThread {
+class cThread : public cMutex {
 private:
 	bool m_bCancel;				// for Cancel().
-	std::thread m_hThread;		// for Thread Handle.
-	std::mutex mtx;
+	HTHREAD m_hThread;			// for Thread Handle.
 	
 	void* m_BeginTheadParam;
 	static int ThreadProc( void* );			// デフォルトスレッド関数

@@ -1,6 +1,8 @@
 #ifndef INTR_H_INCLUDED
 #define INTR_H_INCLUDED
 
+#include <memory>
+
 #include "typedef.h"
 #include "device.h"
 #include "ini.h"
@@ -85,8 +87,8 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	
 public:
-	IRQ6( VM6*, const ID& );					// コンストラクタ
-	virtual ~IRQ6();							// デストラクタ
+	IRQ6( VM6*, const ID& );
+	virtual ~IRQ6();
 	
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	
@@ -99,10 +101,10 @@ public:
 	
 	bool GetTimerIntr();						// タイマ割込みスイッチ取得
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -110,8 +112,8 @@ class IRQ60 : public IRQ6 {
 private:
 	
 public:
-	IRQ60( VM6*, const ID& );				// コンストラクタ
-	~IRQ60();								// デストラクタ
+	IRQ60( VM6*, const ID& );
+	~IRQ60();
 	
 	void Reset();							// リセット
 	
@@ -126,8 +128,8 @@ private:
 	void SetIntrEnable( BYTE ) override;	// 割込み許可フラグ設定
 	
 public:
-	IRQ62( VM6*, const ID& );				// コンストラクタ
-	~IRQ62();								// デストラクタ
+	IRQ62( VM6*, const ID& );
+	~IRQ62();
 	
 	void Reset();							// リセット
 	
@@ -151,8 +153,8 @@ private:
 	BYTE InFBH( int );
 	
 public:
-	IRQ64( VM6*, const ID& );				// コンストラクタ
-	~IRQ64();								// デストラクタ
+	IRQ64( VM6*, const ID& );
+	~IRQ64();
 	
 	void Reset();							// リセット
 	

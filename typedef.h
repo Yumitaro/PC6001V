@@ -1,12 +1,10 @@
 #ifndef TYPEDEF_H_INCLUDED
 #define TYPEDEF_H_INCLUDED
 
-#define __STDC_LIMIT_MACROS
-
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <string>
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -20,6 +18,7 @@ typedef uint8_t		BYTE;
 typedef uint16_t	WORD;
 typedef uint32_t	DWORD;
 #endif
+
 
 // OSD関連オブジェクトハンドル
 // 面倒なのでとりあえず何でもvoid *
@@ -36,6 +35,22 @@ typedef DWORD		TIMERID;		// タイマID
 // OSD関連コールバック関数へのポインタ
 typedef void (*CBF_SND)( void *, BYTE *, int );	// サウンドストリーム
 typedef DWORD (*CBF_TMR)( DWORD, void * );		// タイマ
+
+// filesystem
+#ifdef	USEFILESYSTEM
+
+#include <filesystem>
+typedef std::filesystem::path	P6VPATH;
+#define P6VSTR2PATH(st)			std::filesystem::u8path(st)
+#define P6VPATH2STR(st)			(st).u8string()
+
+#else
+
+typedef std::string				P6VPATH;
+#define P6VSTR2PATH(st)			(st)
+#define P6VPATH2STR(st)			(st)
+
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -74,10 +89,10 @@ typedef DWORD (*CBF_TMR)( DWORD, void * );		// タイマ
 #define STATIC_CAST(t, o)	static_cast<t> (o)
 #define CONST_CAST(t, o)	const_cast<t> (o)
 
-#define FGETBYTE(fp)		((BYTE)fgetc(fp))
+#define FGETBYTE(fp)		((BYTE)std::fgetc(fp))
 #define FGETWORD(fp)		((WORD)(FGETBYTE(fp)|(FGETBYTE(fp)<<8)))
 #define FGETDWORD(fp)		((DWORD)(FGETBYTE(fp)|(FGETBYTE(fp)<<8)|(FGETBYTE(fp)<<16)|(FGETBYTE(fp)<<24)))
-#define FPUTBYTE(data,fp)	fputc((data)&0xff,fp)
+#define FPUTBYTE(data,fp)	std::fputc((data)&0xff,fp)
 #define FPUTWORD(data,fp)	{ FPUTBYTE(data,fp); FPUTBYTE(data>>8,fp); }
 #define FPUTDWORD(data,fp)	{ FPUTBYTE(data,fp); FPUTBYTE(data>>8,fp); FPUTBYTE(data>>16,fp); FPUTBYTE(data>>24,fp); }
 
@@ -107,7 +122,7 @@ typedef DWORD (*CBF_TMR)( DWORD, void * );		// タイマ
 #define INITARRAY(arr,val)	{for(int i=0; i<COUNTOF(arr); i++) arr[i] = val;}
 
 #ifndef ZeroMemory
-#define ZeroMemory(d,l)		memset((d), 0, (l))
+#define ZeroMemory(d,l)		std::memset((d), 0, (l))
 #endif
 
 

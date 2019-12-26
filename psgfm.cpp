@@ -20,8 +20,11 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-PSGb::PSGb( VM6* vm, const ID& id ) : Device(vm,id), JoyNo(0), Clock(0) {}
-PSG60::PSG60( VM6* vm, const ID& id ) : PSGb(vm,id)
+PSGb::PSGb( VM6* vm, const ID& id ) : Device( vm, id ), JoyNo( 0 ), Clock( 0 )
+{
+}
+
+PSG60::PSG60( VM6* vm, const ID& id ) : PSGb( vm, id )
 {
 	// Dvice Description (Out)
 	descs.outdef.emplace( outA0H, STATIC_CAST( Device::OutFuncPtr, &PSG60::OutA0H ) );
@@ -32,7 +35,7 @@ PSG60::PSG60( VM6* vm, const ID& id ) : PSGb(vm,id)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &PSG60::InA2H  ) );
 }
 
-OPN64::OPN64( VM6* vm, const ID& id ) : PSGb(vm,id)
+OPN64::OPN64( VM6* vm, const ID& id ) : PSGb( vm, id )
 {
 	// Dvice Description (Out)
 	descs.outdef.emplace( outA0H, STATIC_CAST( Device::OutFuncPtr, &OPN64::OutA0H ) );
@@ -48,9 +51,17 @@ OPN64::OPN64( VM6* vm, const ID& id ) : PSGb(vm,id)
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-PSGb::~PSGb( void ){}
-PSG60::~PSG60( void ){}
-OPN64::~OPN64( void ){}
+PSGb::~PSGb( void )
+{
+}
+
+PSG60::~PSG60( void )
+{
+}
+
+OPN64::~OPN64( void )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -88,8 +99,8 @@ void OPN64::EventCallback( int id, int clock )
 ////////////////////////////////////////////////////////////////
 int PSGb::GetUpdateSamples( void )
 {
-	int samples = (int)( (double)SndDev::SampleRate * vm->EVSC::GetProgress( this->Device::GetID(), EID_PSG ) + 0.5 );
-	vm->EVSC::Reset( this->Device::GetID(), EID_PSG );
+	int samples = (int)( (double)SndDev::SampleRate * vm->EventGetProgress( this->Device::GetID(), EID_PSG ) + 0.5 );
+	vm->EventReset( this->Device::GetID(), EID_PSG );
 	return samples;
 }
 
@@ -119,8 +130,8 @@ void OPN64::SetTimerA( int cnt )
 {
 	double ct = 72. * (1024. - (double)cnt) / (double)Clock * 1000000.;
 	
-	if( cnt ) vm->EVSC::Add( Device::GetID(), EID_TIMERA, ct, EV_LOOP|EV_US );
-	else	  vm->EVSC::Del( Device::GetID(), EID_TIMERA );
+	if( cnt ) vm->EventAdd( Device::GetID(), EID_TIMERA, ct, EV_LOOP|EV_US );
+	else	  vm->EventDel( Device::GetID(), EID_TIMERA );
 }
 
 
@@ -131,8 +142,8 @@ void OPN64::SetTimerB( int cnt )
 {
 	double ct = 1152. * (256. - (double)cnt) / (double)Clock * 1000000.;
 	
-	if( cnt ) vm->EVSC::Add( Device::GetID(), EID_TIMERB, ct, EV_LOOP|EV_US );
-	else	  vm->EVSC::Del( Device::GetID(), EID_TIMERB );
+	if( cnt ) vm->EventAdd( Device::GetID(), EID_TIMERB, ct, EV_LOOP|EV_US );
+	else	  vm->EventDel( Device::GetID(), EID_TIMERB );
 }
 
 
@@ -155,7 +166,7 @@ bool PSG60::Init( int clock, int srate )
 	cAY8910::Reset();
 	
 	// 少なくとも1秒に1回くらいは更新するだろうという前提
-	if( !vm->EVSC::Add( Device::GetID(), EID_PSG, 1000, EV_LOOP|EV_MS ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_PSG, 1000, EV_LOOP|EV_MS ) ) return false;
 	
 	return SndDev::Init( srate );
 }
@@ -177,7 +188,7 @@ bool OPN64::Init( int clock, int srate )
 	cYM2203::Reset();
 	
 	// 少なくとも1秒に1回くらいは更新するだろうという前提
-	if( !vm->EVSC::Add( Device::GetID(), EID_PSG, 1000, EV_LOOP|EV_MS ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_PSG, 1000, EV_LOOP|EV_MS ) ) return false;
 	
 	return SndDev::Init( srate );
 }
@@ -245,10 +256,10 @@ int OPN64::SoundUpdate( int samples )
 ////////////////////////////////////////////////////////////////
 // ポートアクセス関数
 ////////////////////////////////////////////////////////////////
-BYTE PSG60::PortAread( void ){ return vm->KEY6::GetJoy( JoyNo ); }
+BYTE PSG60::PortAread( void ){ return vm->KeyGetJoy( JoyNo ); }
 void PSG60::PortBwrite( BYTE data ){ JoyNo = (~data>>6)&1; }
 
-BYTE OPN64::PortAread( void ){ return vm->KEY6::GetJoy( JoyNo ); }
+BYTE OPN64::PortAread( void ){ return vm->KeyGetJoy( JoyNo ); }
 void OPN64::PortBwrite( BYTE data ){ JoyNo = (~data>>6)&1; }
 
 

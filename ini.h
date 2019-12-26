@@ -1,7 +1,6 @@
 #ifndef INI_H_INCLUDED
 #define INI_H_INCLUDED
 
-#include <filesystem>
 #include <string>
 #include <list>
 
@@ -16,8 +15,8 @@ public:
 	enum NodeType{ NODE_NONE, NODE_COMMENT, NODE_SECTION, NODE_ENTRY };
 	
 public:
-	cNode();					// コンストラクタ
-	~cNode();					// デストラクタ
+	cNode();
+	~cNode();
 	
 	void SetMember( NodeType, const std::string& );
 	
@@ -31,26 +30,26 @@ public:
 class cIni {
 protected:
 	std::list<cNode> IniNode;
-	std::filesystem::path IniPath;	// ファイルパス
+	P6VPATH IniPath;		// ファイルパス
 	
 	std::list<cNode>::iterator FindNode( const std::string&, const std::string& );							// ノード検索
 	
 public:
-	cIni();						// コンストラクタ
-	virtual ~cIni();			// デストラクタ
+	cIni();
+	virtual ~cIni();
 	
 	void Init();																							// 初期化
-	bool Read( const std::filesystem::path& );																// INIファイル読込み
+	bool Read( const P6VPATH& );																			// INIファイル読込み
 	bool Write();																							// INIファイル書込み
 	
 	bool GetString( const std::string&, const std::string&, std::string&, const std::string& );				// 文字列読込み
 	bool GetInt( const std::string&, const std::string&, int*, const int );									// 数値読込み
 	bool GetTruth( const std::string&, const std::string&, bool*, const bool );								// YesNo読込み
-	bool GetPath( const std::string&, const std::string&, std::filesystem::path&, const std::filesystem::path& );	// パス読込み
+	bool GetPath( const std::string&, const std::string&, P6VPATH&, const P6VPATH& );						// パス読込み
 	bool PutEntry( const std::string&, const std::string&, const std::string&, const std::string&, ... );	// エントリ追加
 	bool DeleteBefore( const std::string&, const std::string& );											// エントリ削除(前)
 	bool DeleteAfter( const std::string&, const std::string& );												// エントリ削除(後)
-	const std::filesystem::path& GetFilePath() const;														// ファイルパス取得
+	const P6VPATH& GetFilePath() const;																		// ファイルパス取得
 };
 
 

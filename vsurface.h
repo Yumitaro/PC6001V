@@ -3,6 +3,7 @@
 
 
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "typedef.h"
@@ -63,8 +64,8 @@ protected:
 	void RectAdd( VRect*, VRect*, VRect* );		// 矩形領域合成
 	
 public:
-	VSurface();									// コンストラクタ
-	virtual ~VSurface();						// デストラクタ
+	VSurface();
+	virtual ~VSurface();
 	
 	virtual bool InitSurface( int, int );		// 初期化(サーフェスサイズ指定)
 	void SetRect( int, int, int, int );			// 描画領域設定

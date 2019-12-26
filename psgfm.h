@@ -1,6 +1,8 @@
 #ifndef PSGFM_H_INCLUDED
 #define PSGFM_H_INCLUDED
 
+#include <memory>
+
 #include "typedef.h"
 #include "device.h"
 #include "ini.h"
@@ -21,8 +23,8 @@ protected:
 	int GetUpdateSamples();						// 更新サンプル数取得
 	
 public:
-	PSGb( VM6*, const ID& );					// コンストラクタ
-	virtual ~PSGb();							// デストラクタ
+	PSGb( VM6*, const ID& );
+	virtual ~PSGb();
 	
 	virtual bool Init( int, int ) = 0;			// 初期化
 	virtual void Reset(){};						// リセット
@@ -44,8 +46,8 @@ protected:
 	BYTE InA2H( int );							// PSGリードデータ
 	
 public:
-	PSG60( VM6*, const ID& );					// コンストラクタ
-	virtual ~PSG60();							// デストラクタ
+	PSG60( VM6*, const ID& );
+	virtual ~PSG60();
 	
 	bool Init( int, int ) override;				// 初期化
 	
@@ -57,10 +59,10 @@ public:
 	enum IDOut{ outA0H=0, outA1H, outA3H };
 	enum IDIn {  inA2H=0 };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -82,8 +84,8 @@ protected:
 	BYTE InA3H( int );							// OPNステータスリード
 	
 public:
-	OPN64( VM6*, const ID& );					// コンストラクタ
-	~OPN64();									// デストラクタ
+	OPN64( VM6*, const ID& );
+	~OPN64();
 	
 	bool Init( int, int ) override;				// 初期化
 	
@@ -95,10 +97,10 @@ public:
 	enum IDOut{ outA0H=0, outA1H, outA3H };
 	enum IDIn {  inA2H=0,  inA3H };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 

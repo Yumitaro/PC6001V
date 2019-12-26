@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <stdarg.h>
 #include <algorithm>
+#include <cstdarg>
+#include <cstdio>
 #include <fstream>
 
 #include "common.h"
@@ -196,7 +196,7 @@ void cIni::Init()
 ////////////////////////////////////////////////////////////////
 // INIファイル読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::Read( const std::filesystem::path& path )
+bool cIni::Read( const P6VPATH& path )
 {
 	std::fstream fs;
 	std::string	str;
@@ -376,14 +376,14 @@ bool cIni::GetTruth( const std::string& section, const std::string& entry, bool*
 ////////////////////////////////////////////////////////////////
 // パス読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::GetPath( const std::string& section, const std::string& entry, std::filesystem::path& val, const std::filesystem::path& def )
+bool cIni::GetPath( const std::string& section, const std::string& entry, P6VPATH& val, const P6VPATH& def )
 {
-	std::string tval = val.u8string();
+	std::string tval = P6VPATH2STR( val );
 	
 	// エントリを探す
-	if( !GetString( section, entry, tval, def.u8string() ) ) return false;
+	if( !GetString( section, entry, tval, P6VPATH2STR( def ) ) ) return false;
 	
-	val = std::filesystem::u8path( tval );
+	val = P6VSTR2PATH( tval );
 	OSD_AbsolutePath( val );
 	
 	return true;
@@ -397,11 +397,11 @@ bool cIni::PutEntry( const std::string& section, const std::string& comment, con
 {
 	char rstr[MAX_LINE+1];
 	std::string str;
-	va_list arg;
+	std::va_list arg;
 	
 	// C的可変長引数展開
 	va_start( arg, text );
-	vsnprintf( rstr, sizeof(rstr), text.c_str(), arg );
+	std::vsnprintf( rstr, sizeof(rstr), text.c_str(), arg );
 	va_end( arg );
 	
 	// セクションを探す
@@ -472,7 +472,7 @@ bool cIni::DeleteAfter( const std::string& section, const std::string& entry )
 ////////////////////////////////////////////////////////////////
 // ファイルパス取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& cIni::GetFilePath( void  ) const
+const P6VPATH& cIni::GetFilePath( void  ) const
 {
 	return IniPath;
 }

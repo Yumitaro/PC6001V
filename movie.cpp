@@ -161,7 +161,7 @@ bool AVI6::Init( void )
 //			bpp			色深度(16,24,32)
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool AVI6::StartAVI( const std::filesystem::path& filepath, int sw, int sh, double vrate, int arate, int bpp )
+bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int arate, int bpp )
 {
 	Init();
 	

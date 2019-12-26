@@ -19,13 +19,19 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-EVSC::EVSC( void ) : VSYNC(false), MasterClock(0), NextEvent(-1), SaveClock(0) {}
+EVSC::EVSC( void ) : VSYNC( false ), MasterClock( 0 ), NextEvent( -1 ), SaveClock( 0 )
+{
+	PRINTD( CONST_LOG, "[[EVSC]]\n" );
+}
 
 
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-EVSC::~EVSC( void ){}
+EVSC::~EVSC( void )
+{
+	PRINTD( CONST_LOG, "[[~EVSC]]\n" );
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -49,7 +55,7 @@ const EVSC::evinfo* EVSC::Find( Device::ID devid, int eid ) const
 // 引数:	dev		デバイスオブジェク配列
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EVSC::Entry( std::vector<Device*>& dev )
+bool EVSC::Entry( std::vector<std::shared_ptr<IDevice>> dev )
 {
 	for( auto &i : dev ){
 		if( i && !devlist.Add( i ) ) return false;
@@ -72,7 +78,7 @@ bool EVSC::Entry( std::vector<Device*>& dev )
 ////////////////////////////////////////////////////////////////
 bool EVSC::Add( Device::ID did, int eid, double hz, int flag )
 {
-	PRINTD( TIC_LOG, "[SCHE][Add] :%c%c%c%c ID:%d\n", did&0xff, (did>>8)&0xff, (did>>16)&0xff, did>>24, eid );
+	PRINTD( TIC_LOG, "[SCHE][Add] :%c%c%c%c ID:%d\n", (char)(did&0xff), (char)(did>>8)&0xff, (char)(did>>16)&0xff, (char)(did>>24), eid );
 	
 	// 登録済みの場合は一旦削除して再登録
 	const evinfo* e = Find( did, eid );
@@ -127,7 +133,7 @@ bool EVSC::Add( Device::ID did, int eid, double hz, int flag )
 ////////////////////////////////////////////////////////////////
 bool EVSC::Del( Device::ID did, int eid )
 {
-	PRINTD( TIC_LOG, "[SCHE][Del] DevID:%c%c%c%c ID:%d\n", did&0xff, (did>>8)&0xff, (did>>16)&0xff, did>>24, eid );
+	PRINTD( TIC_LOG, "[SCHE][Del] DevID:%c%c%c%c ID:%d\n", (char)(did&0xff), (char)(did>>8)&0xff, (char)(did>>16)&0xff, (char)(did>>24), eid );
 	
 	evinfo* e = (evinfo*)Find( did, eid );
 	if( !e ) return false;
@@ -173,7 +179,8 @@ void EVSC::Update( int clk )
 				// とりあえず全てこなすまで繰り返すってことでいいのか?
 				if( (*p).Clock <= 0 ){
 					// イベントコールバックを実行
-					devlist.Find( (*p).devid )->EventCallback( (*p).id, (*p).Clock );
+					std::shared_ptr<IDevice>& dev = devlist.Find( (*p).devid );
+					if( dev ) dev->EventCallback( (*p).id, (*p).Clock );
 					
 					// コールバック関数中でイベントが追加・削除される可能性があるためイテレータ再設定
 					// Add : 必ず末尾に追加される
@@ -216,7 +223,7 @@ void EVSC::Update( int clk )
 ////////////////////////////////////////////////////////////////
 void EVSC::Reset( Device::ID devid, int eid, double ini )
 {
-	PRINTD( TIC_LOG, "[SCHE][Reset] DevID:%c%c%c%c ID:%d %3f%%", devid&0xff, (devid>>8)&0xff, (devid>>16)&0xff, devid>>24, eid, ini );
+	PRINTD( TIC_LOG, "[SCHE][Reset] DevID:%c%c%c%c ID:%d %3f%%", (char)(devid&0xff), (char)(devid>>8)&0xff, (char)(devid>>16)&0xff, (char)(devid>>24), eid, ini );
 	
 	evinfo* e = (evinfo*)Find( devid, eid );
 	if( !e ){
@@ -253,7 +260,7 @@ int EVSC::Rest( Device::ID devid, int eid ) const
 ////////////////////////////////////////////////////////////////
 double EVSC::GetProgress( Device::ID devid, int eid ) const
 {
-	PRINTD( TIC_LOG, "[SCHE][GetProgress] DevID:%c%c%c%c ID:%d", devid&0xff, (devid>>8)&0xff, (devid>>16)&0xff, devid>>24, eid );
+	PRINTD( TIC_LOG, "[SCHE][GetProgress] DevID:%c%c%c%c ID:%d", (char)(devid&0xff), (char)(devid>>8)&0xff, (char)(devid>>16)&0xff, (char)(devid>>24), eid );
 	
 	const evinfo* e = Find( devid, eid );
 	// イベントが存在し1周期のクロック数が設定されている?
@@ -453,9 +460,12 @@ bool EVSC::DokoLoad( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-SCH6::SCH6( void ) : WaitEnable(true), PauseEnable(false),
-	EnableScrUpdate(0),	SpeedRatio(100), SpeedCnt1(1), SpeedCnt2(1), MasterClock(0), ClkCnt(0), FPSCnt(0)
-{}
+SCH6::SCH6( void ) : WaitEnable( true ), PauseEnable( false ), EnableScrUpdate( 0 ),
+					 SpeedRatio( 100 ), SpeedCnt1( 1 ), SpeedCnt2( 1 ),
+					 MasterClock( 0 ), ClkCnt( 0 ), FPSCnt( 0 )
+{
+	PRINTD( CONST_LOG, "[[SCH6]]\n" );
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -463,6 +473,8 @@ SCH6::SCH6( void ) : WaitEnable(true), PauseEnable(false),
 ////////////////////////////////////////////////////////////////
 SCH6::~SCH6( void )
 {
+	PRINTD( CONST_LOG, "[[~SCH6]]\n" );
+	
 	Stop();
 }
 
@@ -477,13 +489,12 @@ SCH6::~SCH6( void )
 ////////////////////////////////////////////////////////////////
 void SCH6::OnThread( void* inst )
 {
-	SCH6* ti;
-	double fnext;					// 次の画面更新時間
+	SCH6* ti = STATIC_CAST( SCH6*, inst );	// 自分自身のオブジェクトポインタ取得
+	double fnext;							// 次の画面更新時間
 	DWORD now,next;
 	
-	EnableScrUpdate = 0;
 	
-	ti = STATIC_CAST( SCH6*, inst );	// 自分自身のオブジェクトポインタ取得
+	EnableScrUpdate = 0;
 	
 	// 最初の待ち時間を設定
 	now   = OSD_GetTicks();

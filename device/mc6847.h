@@ -6,6 +6,14 @@
 #include "../typedef.h"
 
 
+// 画面情報構造体
+struct VDGInfo{
+	int w;			// 画面幅  (標準)
+	int h;			// 画面高さ(標準)
+	double ratio;	// アスペクトレシオ(幅に対する高さの比)
+};
+
+
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
@@ -95,10 +103,7 @@ public:
 	int GetMode4Color() const;					// モード4カラーモード取得
 	void SetMode4Color( int );					// モード4カラーモード設定
 	
-	int GetW() const;							// 水平画面サイズ取得(標準)
-	int GetH() const;							// 垂直画面サイズ取得(標準)
-	
-	double GetVratio() const;					// アスペクトレシオ取得(幅に対する高さの比)
+	const VDGInfo& GetVideoInfo() const;		// 画面情報取得
 	
 	bool IsSRmode() const;						// SRモード取得
 	bool IsSRBitmap( WORD ) const;				// SRビットマップモード取得

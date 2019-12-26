@@ -1,6 +1,7 @@
 #ifndef DEVICE_H_INCLUDE
 #define DEVICE_H_INCLUDE
 
+#include <memory>
 #include <unordered_map>
 
 #include "typedef.h"
@@ -43,6 +44,7 @@ struct IDevice {
 class Device : public IDevice {
 protected:
 	VM6* vm;
+	
 	ID id;
 	Descriptor descs;
 
@@ -67,19 +69,20 @@ public:
 
 private:
 	struct Node{
-		IDevice* entry;
+		std::shared_ptr<IDevice> entry;
 		int count;
 	};
 	
 	std::unordered_map<int, Node> NodeMap;
+	std::shared_ptr<IDevice> dummydev;
 
 public:
 	DeviceList();
 	~DeviceList();
 	
-	bool Add( IDevice* );
+	bool Add( const std::shared_ptr<IDevice>& );
 	bool Del( const ID );
-	IDevice* Find( const ID );
+	std::shared_ptr<IDevice>& Find( const ID );
 };
 
 

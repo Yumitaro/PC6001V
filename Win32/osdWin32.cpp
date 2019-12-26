@@ -5,7 +5,10 @@
 #include <shlwapi.h>	// ie依存
 #include <imagehlp.h>
 
+#ifdef	USEFILESYSTEM
 #include <filesystem>
+#endif
+
 #include <fstream>
 #include <string>
 #include <unordered_map>
@@ -22,8 +25,8 @@
 ////////////////////////////////////////////////////////////////
 // スタティック変数
 ////////////////////////////////////////////////////////////////
-static HANDLE hMutex;							// 多重起動チェック用のミューテックス
-static std::filesystem::path ConfigPath = "";	// 設定ファイルパス保存用
+static HANDLE hMutex;			// 多重起動チェック用のミューテックス
+static P6VPATH ConfigPath = "";	// 設定ファイルパス保存用
 
 
 
@@ -89,9 +92,9 @@ bool OSD_IsWorking( void )
 // 設定ファイルパス取得
 //
 // 引数:	なし
-// 返値:	std::filesystem::path&	取得した文字列への参照(UTF-8)
+// 返値:	P6VPATH&		取得した文字列への参照(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& OSD_GetConfigPath( void )
+const P6VPATH& OSD_GetConfigPath( void )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_GetConfigPath]" );
 	
@@ -102,7 +105,7 @@ const std::filesystem::path& OSD_GetConfigPath( void )
 		// マイドキュメントを取得する場合
 //		if( SHGetSpecialFolderPath( nullptr, str, CSIDL_PERSONAL, 0 ) ){
 //			ConfigPath = str;
-//			OSD_AddPath( ConfigPath, ConfigPath, std::filesystem::u8path( DIR_CONFIG ) );
+//			OSD_AddPath( ConfigPath, ConfigPath, P6VSTR2PATH( DIR_CONFIG ) );
 //			OSD_AddDelimiter( ConfigPath );
 //		}
 		// モジュールパスを取得する場合
@@ -112,7 +115,7 @@ const std::filesystem::path& OSD_GetConfigPath( void )
 			ConfigPath = str;
 		}
 	}
-	PRINTD( OSD_LOG, "%s\n", ConfigPath.c_str() );
+	PRINTD( OSD_LOG, "%s\n", P6VPATH2STR( ConfigPath ).c_str() );
 	
 	return ConfigPath;
 }
@@ -124,9 +127,21 @@ const std::filesystem::path& OSD_GetConfigPath( void )
 // 引数:	path			パス
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void OSD_AddDelimiter( std::filesystem::path& path )
+void OSD_AddDelimiter( P6VPATH& path )
 {
+#ifdef	USEFILESYSTEM
 	path /= "";
+#else
+	OSD_UTF8toSJIS( path );
+	
+	char str[path.length()+2];
+	
+	std::strcpy( str, P6VPATH2STR( path ).c_str() );
+	PathAddBackslash( str );
+	path = str;
+	
+	OSD_SJIStoUTF8( path );
+#endif
 }
 
 
@@ -136,9 +151,22 @@ void OSD_AddDelimiter( std::filesystem::path& path )
 // 引数:	path			パス
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void OSD_DelDelimiter( std::filesystem::path& path )
+void OSD_DelDelimiter( P6VPATH& path )
 {
+#ifdef	USEFILESYSTEM
 	if( path.filename().empty() ) path = path.parent_path();
+#else
+	OSD_UTF8toSJIS( path );
+	
+	char str[path.length()+1];
+	
+	std::strcpy( str, P6VPATH2STR( path ).c_str() );
+	PathRemoveBackslash( str );
+	path = str;
+	
+	OSD_SJIStoUTF8( path );
+#endif
+
 }
 
 
@@ -148,19 +176,41 @@ void OSD_DelDelimiter( std::filesystem::path& path )
 // 引数:	path			パス
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void OSD_RelativePath( std::filesystem::path& path )
+void OSD_RelativePath( P6VPATH& path )
 {
+#ifdef	USEFILESYSTEM
 	if( path.empty() ) return;
 	
 	std::error_code ec;
-	std::filesystem::path p = std::filesystem::proximate( path, OSD_GetConfigPath(), ec );
+	P6VPATH p = std::filesystem::proximate( path, OSD_GetConfigPath(), ec );
 	if( ec ) return;
 	
 	// ../なら絶対パス化
-	if( p.u8string().length() >= 2 && p.u8string().substr( 0, 2 ) == ".." )
+	if( P6VPATH2STR( p ).length() >= 2 && P6VPATH2STR( p ).substr( 0, 2 ) == ".." )
 		OSD_AbsolutePath( p );
 	
 	path = p;
+#else
+	char str[PATH_MAX+1];
+	
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	if( tpath.empty() || PathIsRelative( tpath.c_str() ) ) return;
+	
+	std::string mpath = OSD_GetConfigPath();
+	OSD_UTF8toSJIS( mpath );
+	
+	DWORD attr = GetFileAttributes( tpath.c_str() ) & FILE_ATTRIBUTE_DIRECTORY;
+	PathRelativePathTo( str, mpath.c_str(), attr, tpath.c_str(), attr );
+	path = str;
+	OSD_SJIStoUTF8( path );
+	
+	if( path.length() >= 2 && path.substr( 0, 3 ) == "..\\" )
+		OSD_AbsolutePath( path );
+	else if( path.substr( 0, 2 ) == ".\\" )
+		path = &path.c_str()[2];
+#endif
 }
 
 
@@ -170,13 +220,14 @@ void OSD_RelativePath( std::filesystem::path& path )
 // 引数:	path			パス
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void OSD_AbsolutePath( std::filesystem::path& path )
+void OSD_AbsolutePath( P6VPATH& path )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_AbsolutePath] %s -> ", path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_AbsolutePath] %s -> ", P6VPATH2STR( path ).c_str() );
 	
+#ifdef	USEFILESYSTEM
 	if( path.empty() ) return;
 	
-	std::filesystem::path p = path;
+	P6VPATH p = path;
 	
 	// 既に絶対パスなら正規化のみ実施
 	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative()==true らしい
@@ -184,8 +235,23 @@ void OSD_AbsolutePath( std::filesystem::path& path )
 	
 	// パスを結合して正規化
 	path = std::filesystem::weakly_canonical( p );
+#else
+	char str[PATH_MAX+1];
 	
-	PRINTD( OSD_LOG, "%s\n", path.u8string().c_str() );
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	if( tpath.empty() || !PathIsRelative( tpath.c_str() ) ) return;
+	
+	std::string mpath = OSD_GetConfigPath();
+	OSD_UTF8toSJIS( mpath );
+	
+	PathCombine( str, mpath.c_str(), tpath.c_str() );
+	path = str;
+	OSD_SJIStoUTF8( path );
+#endif
+	
+	PRINTD( OSD_LOG, "%s\n", P6VPATH2STR( path ).c_str() );
 }
 
 
@@ -197,10 +263,23 @@ void OSD_AbsolutePath( std::filesystem::path& path )
 //			path2			パス2
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void OSD_AddPath( std::filesystem::path& cpath, const std::filesystem::path& path1, const std::filesystem::path& path2 )
+void OSD_AddPath( P6VPATH& cpath, const P6VPATH& path1, const P6VPATH& path2 )
 {
+#ifdef	USEFILESYSTEM
 	// パスを結合
 	cpath = path1 / path2;
+#else
+	char str[PATH_MAX+1];
+	
+	std::string tpath1 = path1;
+	std::string tpath2 = path2;
+	OSD_UTF8toSJIS( tpath1 );
+	OSD_UTF8toSJIS( tpath2 );
+	
+	PathCombine( str, tpath1.c_str(), tpath2.c_str() );
+	cpath = str;
+	OSD_SJIStoUTF8( cpath );
+#endif
 }
 
 
@@ -210,13 +289,28 @@ void OSD_AddPath( std::filesystem::path& cpath, const std::filesystem::path& pat
 // 引数:	path			パス
 // 返値:	std::string		取得した文字列
 ////////////////////////////////////////////////////////////////
-const std::string OSD_GetFolderNamePart( const std::filesystem::path& path )
+const std::string OSD_GetFolderNamePart( const P6VPATH& path )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_GetFolderNamePart]\n" );
 	
-	std::filesystem::path p = path;
+#ifdef	USEFILESYSTEM
+	P6VPATH p = path;
 	
-	return p.remove_filename().u8string();
+	return P6VPATH2STR( p.remove_filename() );
+#else
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	char str[tpath.length()+1];
+	
+	std::strcpy( str, tpath.c_str() );
+	PathRemoveFileSpec( str );
+	
+	tpath = str;
+	OSD_SJIStoUTF8( tpath );
+	
+	return tpath;
+#endif
 }
 
 
@@ -226,11 +320,25 @@ const std::string OSD_GetFolderNamePart( const std::filesystem::path& path )
 // 引数:	path			パス
 // 返値:	std::string		取得した文字列(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::string OSD_GetFileNamePart( const std::filesystem::path& path )
+const std::string OSD_GetFileNamePart( const P6VPATH& path )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_GetFileNamePart]\n" );
 	
-	return path.filename().u8string();
+#ifdef	USEFILESYSTEM
+	return P6VPATH2STR( path.filename() );
+#else
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	char str[tpath.length()+1];
+	
+	std::strcpy( str, tpath.c_str() );
+	tpath = PathFindFileName( str );
+	
+	OSD_SJIStoUTF8( tpath );
+	
+	return tpath;
+#endif
 }
 
 
@@ -240,13 +348,28 @@ const std::string OSD_GetFileNamePart( const std::filesystem::path& path )
 // 引数:	path			パス
 // 返値:	std::string		取得した文字列(UTF-8)
 ////////////////////////////////////////////////////////////////
-const std::string OSD_GetFileNameExt( const std::filesystem::path& path )
+const std::string OSD_GetFileNameExt( const P6VPATH& path )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_GetFileNameExt]\n" );
 	
-	std::string ext = path.extension().u8string();
+#ifdef	USEFILESYSTEM
+	std::string ext = P6VPATH2STR( path.extension() );
 	ext.erase( ext.begin() );
 	return ext;
+#else
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	char str[tpath.length()+1];
+	
+	std::strcpy( str, tpath.c_str() );
+	tpath = PathFindExtension( str );
+	if( tpath.front() == '.' ) tpath.erase( tpath.begin() );
+	
+	OSD_SJIStoUTF8( tpath );
+	
+	return tpath;
+#endif
 }
 
 
@@ -257,12 +380,29 @@ const std::string OSD_GetFileNameExt( const std::filesystem::path& path )
 //			ext				新しい拡張子への参照
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_ChangeFileNameExt( std::filesystem::path& path, const std::string& ext )
+bool OSD_ChangeFileNameExt( P6VPATH& path, const std::string& ext )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_ChangeFileNameExt] %s -> %s\n", OSD_GetFileNameExt( path ).c_str(), ext.c_str() );
 	
-	path.replace_extension( std::filesystem::u8path( ext ) );
+#ifdef	USEFILESYSTEM
+	path.replace_extension( P6VSTR2PATH( ext ) );
 	return OSD_GetFileNameExt( path ) == ext;
+#else
+	OSD_UTF8toSJIS( path );
+	
+	std::string text = '.' + ext;
+	OSD_UTF8toSJIS( text );
+	
+	char str[path.length()+text.length()+1];
+	
+	std::strcpy( str, path.c_str() );
+	bool res = PathRenameExtension( str, text.c_str() );
+	
+	path = str;
+	OSD_SJIStoUTF8( path );
+	
+	return res;
+#endif
 }
 
 
@@ -279,15 +419,24 @@ bool OSD_ChangeFileNameExt( std::filesystem::path& path, const std::string& ext 
 //			mode			モード文字列への参照
 // 返値:	FILE*			ファイルポインタ
 ////////////////////////////////////////////////////////////////
-FILE* OSD_Fopen( const std::filesystem::path& path, const std::string& mode )
+FILE* OSD_Fopen( const P6VPATH& path, const std::string& mode )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_Fopen] %s(%s) ", path.u8string().c_str(), mode.c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_Fopen] %s(%s) ", P6VPATH2STR( path ).c_str(), mode.c_str() );
 	
+#ifdef	USEFILESYSTEM
 	char str[PATH_MAX+1];
 	
 	// Windowsの場合 native()はwchar_tなのでcharに変換
 	std::wcstombs( str, path.c_str(), sizeof(str) );
 	return fopen( str, mode.c_str() );
+#else
+	std::string str1 = P6VPATH2STR( path );
+	std::string str2 = mode;
+	OSD_UTF8toSJIS( str1 );
+	OSD_UTF8toSJIS( str2 );
+	
+	return fopen( str1.c_str(), str2.c_str() );
+#endif
 }
 
 
@@ -299,12 +448,20 @@ FILE* OSD_Fopen( const std::filesystem::path& path, const std::string& mode )
 //			mode			モード
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_FSopen( std::fstream& fs, const std::filesystem::path& path, const std::ios_base::openmode mode )
+bool OSD_FSopen( std::fstream& fs, const P6VPATH& path, const std::ios_base::openmode mode )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_FSopen] %s\n", path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FSopen] %s\n", P6VPATH2STR( path ).c_str() );
 	
+#ifdef	USEFILESYSTEM
 	fs.open( path, mode );
 	return fs.is_open() && fs.good();
+#else
+	std::string tpath = path;
+	OSD_UTF8toSJIS( tpath );
+	
+	fs.open( tpath, mode );
+	return fs.is_open() && fs.good();
+#endif
 }
 
 
@@ -314,24 +471,39 @@ bool OSD_FSopen( std::fstream& fs, const std::filesystem::path& path, const std:
 // 引数:	path			パス
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_CreateFolder( const std::filesystem::path& path )
+bool OSD_CreateFolder( const P6VPATH& path )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_CreateFolder] %s\n", path.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_CreateFolder] %s\n", P6VPATH2STR( path ).c_str() );
 	
+#ifdef	USEFILESYSTEM
 	try{
 		std::error_code ec;
 		
-		std::filesystem::path tpath = path;
+		P6VPATH tpath = path;
 		OSD_AbsolutePath( tpath );
 		
 		// 設定ファイルパスより外側には作成しない
-		if( tpath.u8string().compare( 0, OSD_GetConfigPath().u8string().length(), OSD_GetConfigPath().u8string() ) ) return false;
+		if( P6VPATH2STR( tpath ).compare( 0, P6VPATH2STR( OSD_GetConfigPath() ).length(), P6VPATH2STR( OSD_GetConfigPath() ) ) ) return false;
 		
 		return std::filesystem::create_directories( tpath, ec );
 	}
 	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
+#else
+	if( path.length() > PATH_MAX ) return false;
+	
+	std::string tpath = path;
+	OSD_AddDelimiter( tpath );	// 念のため
+	OSD_AbsolutePath( tpath );
+	
+	// 設定ファイルパスより外側には作成しない
+	if( !tpath.compare( 0, OSD_GetConfigPath().length(), OSD_GetConfigPath() ) ){
+		OSD_UTF8toSJIS( tpath );
+		return MakeSureDirectoryPathExists( tpath.c_str() );
+	}
+	return false;
+#endif
 }
 
 
@@ -341,16 +513,36 @@ bool OSD_CreateFolder( const std::filesystem::path& path )
 // 引数:	fullpath		パス
 // 返値:	bool			true:存在する false:存在しない
 ////////////////////////////////////////////////////////////////
-bool OSD_FileExist( const std::filesystem::path& fullpath )
+bool OSD_FileExist( const P6VPATH& fullpath )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_FileExist] %s\n", fullpath.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileExist] %s\n", P6VPATH2STR( fullpath ).c_str() );
 	
+#ifdef	USEFILESYSTEM
 	try{
 		return std::filesystem::exists( std::filesystem::status( fullpath ) );
 	}
 	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
+#else
+	WIN32_FIND_DATA FindFileData;
+	HANDLE hFind;
+	bool ret = false;
+	
+	std::string tpath = fullpath;
+	OSD_UTF8toSJIS( tpath );
+	
+	char str[tpath.length()+1];
+	
+	std::strcpy( str, tpath.c_str() );
+	PathRemoveBackslash( str );
+	
+	hFind = FindFirstFile( str, &FindFileData );
+	if( hFind != INVALID_HANDLE_VALUE ) ret = true;
+	FindClose( hFind );
+	
+	return ret;
+#endif
 }
 
 
@@ -360,14 +552,30 @@ bool OSD_FileExist( const std::filesystem::path& fullpath )
 // 引数:	fullpath		パス
 // 返値:	DWORD			ファイルサイズ
 ////////////////////////////////////////////////////////////////
-DWORD OSD_GetFileSize( const std::filesystem::path& fullpath )
+DWORD OSD_GetFileSize( const P6VPATH& fullpath )
 {
+#ifdef	USEFILESYSTEM
 	try{
 		return std::filesystem::file_size( fullpath );
 	}
 	catch( std::filesystem::filesystem_error& ){
 		return 0;
 	}
+#else
+	HANDLE hFile;
+	DWORD fsize;
+	
+	if( fullpath.empty() ) return 0;
+	
+	hFile = CreateFile( fullpath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
+	if( hFile == INVALID_HANDLE_VALUE ) return 0;
+	
+	fsize = GetFileSize( hFile, nullptr );
+	
+	CloseHandle( hFile );
+	
+	return fsize;
+#endif
 }
 
 
@@ -377,10 +585,11 @@ DWORD OSD_GetFileSize( const std::filesystem::path& fullpath )
 // 引数:	fullpath		パス
 // 返値:	bool			true:読取り専用 false:読み書き
 ////////////////////////////////////////////////////////////////
-bool OSD_FileReadOnly( const std::filesystem::path& fullpath )
+bool OSD_FileReadOnly( const P6VPATH& fullpath )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_FileReadOnly] %s\n", fullpath.u8string().c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileReadOnly] %s\n", P6VPATH2STR( fullpath ).c_str() );
 	
+#ifdef	USEFILESYSTEM
 	try{
 		std::filesystem::perms perm = std::filesystem::status( fullpath ).permissions();
 		return ( perm & ( std::filesystem::perms::owner_write |
@@ -390,6 +599,20 @@ bool OSD_FileReadOnly( const std::filesystem::path& fullpath )
 	catch( std::filesystem::filesystem_error& ){
 		return false;
 	}
+#else
+	std::string tpath = fullpath;
+	OSD_UTF8toSJIS( tpath );
+	
+	char str[tpath.length()+1];
+	
+	std::strcpy( str, tpath.c_str() );
+	PathRemoveBackslash( str );
+	
+	DWORD fa = GetFileAttributes( str );
+	
+	if( fa & FILE_ATTRIBUTE_READONLY ) return true;
+	else                               return false;
+#endif
 }
 
 
@@ -407,7 +630,7 @@ bool OSD_FileReadOnly( const std::filesystem::path& fullpath )
 //			size			文字サイズ(半角文字幅ピクセル数)
 // 返値:	bool			true:作成成功 false:作成失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_CreateFont( const std::filesystem::path& hfile, const std::filesystem::path& zfile, int size )
+bool OSD_CreateFont( const P6VPATH& hfile, const P6VPATH& zfile, int size )
 {
 	int ret = 0;
 	int Wscr = size * 2 * 192;

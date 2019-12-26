@@ -91,7 +91,7 @@ namespace FM
 		
 		void	SetVolumeFM(int db);
 		void	SetVolumePSG(int db);
-		void	SetLPFCutoff(uint freq) {}	// obsolete
+//		void	SetLPFCutoff(uint freq) {}	// obsolete
 
 	protected:
 		void	SetParameter(Channel4* ch, uint addr, uint data);

@@ -1,7 +1,6 @@
 #ifndef COMMON_H_INCLUDED
 #define COMMON_H_INCLUDED
 
-#include <filesystem>
 #include <string>
 #include <cstdio>
 #include <vector>
@@ -144,11 +143,11 @@ int StriCmp( const std::string&, const std::string& );
 // 画像ファイル操作関数
 ////////////////////////////////////////////////////////////////
 // Img SAVE from Data
-bool SaveImgData( const std::filesystem::path&, BYTE*, const int, const int, const int, VRect* );
+bool SaveImgData( const P6VPATH&, BYTE*, const int, const int, const int, VRect* );
 // Img SAVE from VSurface
-bool SaveImg( const std::filesystem::path&, VSurface*, VRect* );
+bool SaveImg( const P6VPATH&, VSurface*, VRect* );
 // Img LOAD to VSurface
-VSurface* LoadImg( const std::filesystem::path& );
+VSurface* LoadImg( const P6VPATH& );
 
 
 ////////////////////////////////////////////////////////////////

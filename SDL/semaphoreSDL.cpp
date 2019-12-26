@@ -4,8 +4,9 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 
-#include "../semaphore.h"
 #include <SDL.h>
+
+#include "../semaphore.h"
 
 
 ////////////////////////////////////////////////////////////////

@@ -1,5 +1,6 @@
-#include <stdarg.h>
-#include <ctype.h>
+#include <cctype>
+//#include <cstdarg>
+//#include <cstdio>
 
 #include "common.h"
 #include "console.h"
@@ -34,7 +35,7 @@ JFont::~JFont( void ){}
 ////////////////////////////////////////////////////////////////
 // フォントファイルを開く
 ////////////////////////////////////////////////////////////////
-bool JFont::OpenFont( const std::filesystem::path& zfilename, const std::filesystem::path& hfilename )
+bool JFont::OpenFont( const P6VPATH& zfilename, const P6VPATH& hfilename )
 {
 	VRect ff;
 	
@@ -330,7 +331,7 @@ void ZCons::SPrint( const std::string& text )
 	OSD_UTF8toSJIS( str );
 	
 	for( size_t i=0; i<str.length(); i++ ){
-		if( isprint( str[i] ) )
+		if( std::isprint( str[i] ) )
 			PutCharH( str[i] );
 		else{
 			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
@@ -362,7 +363,7 @@ void ZCons::SPrintc( const std::string& text )
 			break;
 			
 		default:	// 普通の文字
-			if( isprint( str[i] ) )
+			if( std::isprint( str[i] ) )
 				PutCharH( str[i] );
 			else{
 				PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
@@ -397,7 +398,7 @@ void ZCons::SPrintcr( const std::string& text )
 	Locate( -num, y );
 	
 	for( size_t i=0; i<num; i++ ){
-		if( isprint( str[i] ) )
+		if( std::isprint( str[i] ) )
 			PutCharH( str[i] );
 		else{
 			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
@@ -415,19 +416,19 @@ void ZCons::Print( const std::string& text, ... )
 {
 	char str[1024];
 	int num;
-	va_list arg;
+	std::va_list arg;
 	
 	// C的可変長引数展開
-	va_start( arg, text );
-	num = vsnprintf( str, sizeof(str), text.c_str(), arg );
-	va_end( arg );
+	std::va_start( arg, text );
+	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
+	std::va_end( arg );
 	
 	std::string tstr = str;
 	OSD_UTF8toSJIS( tstr );
-	strncpy( str, tstr.c_str(), sizeof(str)-1 );
+	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
 	
 	for( int i=0; i<num; i++ ){
-		if( isprint( str[i] ) )
+		if( std::isprint( str[i] ) )
 			PutCharH( str[i] );
 		else{
 			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
@@ -444,16 +445,16 @@ void ZCons::Printf( const std::string& text, ... )
 {
 	char str[1024];
 	int num;
-	va_list arg;
+	std::va_list arg;
 	
 	// C的可変長引数展開
-	va_start( arg, text );
-	num = vsnprintf( str, sizeof(str), text.c_str(), arg );
-	va_end( arg );
+	std::va_start( arg, text );
+	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
+	std::va_end( arg );
 	
 	std::string tstr = str;
 	OSD_UTF8toSJIS( tstr );
-	strncpy( str, tstr.c_str(), sizeof(str)-1 );
+	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
 	
 	for( int i=0; i<num; i++ ){
 		switch( str[i] ){
@@ -469,7 +470,7 @@ void ZCons::Printf( const std::string& text, ... )
 			break;
 			
 		default:	// 普通の文字
-			if( isprint( str[i] ) )
+			if( std::isprint( str[i] ) )
 				PutCharH( str[i] );
 			else{
 				PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
@@ -499,25 +500,25 @@ void ZCons::Printfr( const std::string& text, ... )
 {
 	char str[1024];
 	int num;
-	va_list arg;
+	std::va_list arg;
 	
 	// C的可変長引数展開
-	va_start( arg, text );
-	num = vsnprintf( str, sizeof(str), text.c_str(), arg );
-	va_end( arg );
+	std::va_start( arg, text );
+	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
+	std::va_end( arg );
 	
 
 
 	std::string tstr = str;
 	OSD_UTF8toSJIS( tstr );
-	strncpy( str, tstr.c_str(), sizeof(str)-1 );
+	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
 
 
 	if( num > Xmax ) num = Xmax;
 	Locate( -num, y );
 	
 	for( int i=0; i<num; i++ ){
-		if( isprint( str[i] ) )
+		if( std::isprint( str[i] ) )
 			PutCharH( str[i] );
 		else{
 			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
