@@ -23,7 +23,7 @@
  * 3. This notice may not be removed or	altered	from any source	distribution.
  */
 
-#include <stdlib.h>
+#include <cstring>
 
 #include "pd7752.h"
 
@@ -232,7 +232,7 @@ int	cD7752::Synth( BYTE* param, std::queue<D7752_SAMPLE>& frame )
 	}
 	
 	// パラメータをシフトする
-	memcpy(	curr, &next, sizeof(D7752Coef) );
+	std::memcpy( curr, &next, sizeof(D7752Coef) );
 	
 	return D7752_ERR_SUCCESS;
 }

@@ -7,9 +7,6 @@
 #ifndef SEMAPHORE_H_INCLUDED
 #define SEMAPHORE_H_INCLUDED
 
-#include <condition_variable>
-#include <mutex>
-
 #include "typedef.h"
 
 
@@ -19,30 +16,28 @@
 // Mutex クラス
 class cMutex {
 private:
-	std::mutex mtx;
+	HCRSECT mcs;
 	
 public:
-	cMutex();						// コンストラクタ
-	~cMutex();						// デストラクタ;
+	cMutex();			// コンストラクタ
+	~cMutex();			// デストラクタ;
 	
-	void lock();					// Lock
-	void unlock();					// Unlock
+	void lock();		// Lock
+	void unlock();		// Unlock
 };
 
 
 // Semaphore クラス
 class cSemaphore {
 private:
-	std::mutex mtx;
-	std::condition_variable cv;
-	int count;
+	HSEMAPHORE sem;
 	
 public:
-	cSemaphore();					// コンストラクタ
-	~cSemaphore();					// デストラクタ;
+	cSemaphore();		// コンストラクタ
+	~cSemaphore();		// デストラクタ;
 	
-	void Post();					// セマフォ加算
-	void Wait();					// セマフォ待つ
+	int Post();			// セマフォ加算
+	int Wait();			// セマフォ待つ
 };
 
 

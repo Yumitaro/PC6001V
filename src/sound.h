@@ -1,7 +1,9 @@
 #ifndef SOUND_H_INCLUDED
 #define SOUND_H_INCLUDED
 
+#include <memory>
 #include <queue>
+
 #include "semaphore.h"
 
 
@@ -16,8 +18,8 @@ private:
 	mutable cMutex Mutex;
 	
 public:
-	cRing();								// コンストラクタ
-	virtual ~cRing();						// デストラクタ
+	cRing();
+	virtual ~cRing();
 	
 	bool InitBuffer( int );					// バッファ初期化
 	
@@ -41,8 +43,8 @@ protected:
 	int LPF( int );							// ローパスフィルタ
 	
 public:
-	SndDev();								// コンストラクタ
-	virtual ~SndDev();						// デストラクタ
+	SndDev();
+	virtual ~SndDev();
 	
 	virtual bool Init( int );				// 初期化
 	
@@ -58,7 +60,7 @@ public:
 // サウンドオブジェクト
 class SND6 : public cRing {
 private:
-	std::vector<SndDev*> sdev;	// ストリームポインタ配列
+	std::vector<std::shared_ptr<SndDev>> sdev;	// ストリームポインタ配列
 	int Volume;					// マスター音量
 	int SampleRate;				// サンプリングレート
 	int BSize;					// バッファサイズ(倍率)
@@ -66,12 +68,12 @@ private:
 	void* CbData;				// コールバック関数に渡すデータ
 	
 public:
-	SND6();									// コンストラクタ
-	~SND6();								// デストラクタ
+	SND6();
+	~SND6();
 	
 	bool Init( void*, CBF_SND, int, int );	// 初期化
 	
-	bool ConnectStream( SndDev* );			// ストリーム接続
+	bool ConnectStream( const std::shared_ptr<SndDev>& );	// ストリーム接続
 	
 	void Play();							// 再生
 	void Pause();							// 停止

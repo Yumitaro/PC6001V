@@ -1,7 +1,7 @@
 #ifndef PIO_H_INCLUDED
 #define PIO_H_INCLUDED
 
-#include <filesystem>
+#include <memory>
 #include <string>
 
 #include "typedef.h"
@@ -13,16 +13,16 @@
 ////////////////////////////////////////////////////////////////
 class cPRT {
 private:
-	std::filesystem::path FilePath;				// PRINTERファイルフルパス
+	P6VPATH FilePath;					// PRINTERファイルフルパス
 	
 	BYTE pdata;							// パラレルポートから受け取ったデータ
 	bool strb;							// ストローブ
 	
 public:
-	cPRT();								// コンストラクタ
-	~cPRT();							// デストラクタ
+	cPRT();
+	~cPRT();
 	
-	void SetFile( const std::filesystem::path& );	// プリンタ出力ファイル名設定
+	void SetFile( const P6VPATH& );		// プリンタ出力ファイル名設定
 	void SetData( BYTE );				// 印刷するデータを受付
 	void Strobe( bool );				// ストローブ受付
 };
@@ -53,17 +53,17 @@ private:
 	BYTE InOBF( int );
 	
 public:
-	PIO6( VM6*, const ID& );		// コンストラクタ
-	~PIO6();						// デストラクタ
+	PIO6( VM6*, const ID& );
+	~PIO6();
 	
 	// デバイスID
 	enum IDOut{ out90H=0, out91H, out92H, out93H, outPBH                 };
 	enum IDIn {  in90H=0,          in92H,  in93H,  inPBH,  inIBF,  inOBF };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 #endif	// PIO_H_INCLUDED

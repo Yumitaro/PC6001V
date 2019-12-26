@@ -12,12 +12,17 @@
 //	  Original     : cisc
 //	  Modification : Yumitaro
 // ---------------------------------------------------------------------------
-IOBus::DummyIO IOBus::dummyio;
-
+////////////////////////////////////////////////////////////////
+// コンストラクタ
+////////////////////////////////////////////////////////////////
 IOBus::IOBus()
 {
 }
 
+
+////////////////////////////////////////////////////////////////
+// デストラクタ
+////////////////////////////////////////////////////////////////
 IOBus::~IOBus()
 {
 }
@@ -56,15 +61,13 @@ bool IOBus::Init( int banksize )
 // デバイス接続
 ////////////////////////////////////////////////////////////////
 // IN/OUT -----------
-bool IOBus::Connect( IDevice* device, const std::vector<Connector>* connector )
+bool IOBus::Connect( const std::shared_ptr<IDevice>& device, const std::vector<Connector>& connector )
 {
-	if( !device || !connector ) return false;
-	
 	devlist.Add( device );
 	
 	const IDevice::Descriptor& desc = device->GetDescriptors();
 	
-	for( auto &i : *connector ){
+	for( auto &i : connector ){
 		try{
 			switch( i.rule ){
 			case portin:
@@ -87,14 +90,14 @@ bool IOBus::Connect( IDevice* device, const std::vector<Connector>* connector )
 
 
 // IN -----------
-bool IOBus::ConnectIn( int bank, IDevice* device, InFuncPtr func )
+bool IOBus::ConnectIn( int bank, const std::shared_ptr<IDevice>& device, InFuncPtr func )
 {
 	PRINTD( IO_LOG, "[IO][ConnectIn] %02XH -> ", bank );
 	
 	try{
 		InBank ib;
 		
-		ib.device = device;
+		ib.device = device.get();
 		ib.func   = func;
 		ins.at( bank ).emplace_back( ib );
 	}
@@ -109,14 +112,14 @@ bool IOBus::ConnectIn( int bank, IDevice* device, InFuncPtr func )
 
 
 // OUT -----------
-bool IOBus::ConnectOut( int bank, IDevice* device, OutFuncPtr func )
+bool IOBus::ConnectOut( int bank, const std::shared_ptr<IDevice>& device, OutFuncPtr func )
 {
 	PRINTD( IO_LOG, "[IO][ConnectOut] %02XH -> ", bank );
 	
 	try{
 		OutBank ob;
 		
-		ob.device = device;
+		ob.device = device.get();
 		ob.func   = func;
 		outs.at( bank ).emplace_back( ob );
 	}
@@ -182,6 +185,26 @@ void IOBus::Out( int port, BYTE data )
 }
 
 
+// ---------------------------------------------------------------------------
+//	DummyIO
+// ---------------------------------------------------------------------------
+IOBus::DummyIO IOBus::dummyio;
+
+////////////////////////////////////////////////////////////////
+// コンストラクタ
+////////////////////////////////////////////////////////////////
+IOBus::DummyIO::DummyIO( void ) : Device( nullptr, 0 )
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// デストラクタ
+////////////////////////////////////////////////////////////////
+IOBus::DummyIO::~DummyIO()
+{
+}
+
 ////////////////////////////////////////////////////////////////
 // ダミーデバイス(IN)
 ////////////////////////////////////////////////////////////////
@@ -245,8 +268,6 @@ bool IO6::Init( int banksize )
 	}
 	
 	return true;
-
-
 }
 
 

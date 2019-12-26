@@ -1,11 +1,10 @@
-#include "p6el.h"
-
 #include "common.h"
 #include "cpus.h"
 #include "disk.h"
 #include "keyboard.h"
 #include "log.h"
 #include "osd.h"
+#include "p6el.h"
 #include "replay.h"
 #include "status.h"
 
@@ -16,13 +15,17 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-cWndStat::cWndStat( VM6* pvm ) : vm(pvm), DrvNum(0), ReplayStatus(0) {}
+cWndStat::cWndStat( void ) : DrvNum( 0 ), ReplayStatus( 0 )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-cWndStat::~cWndStat( void ){}
+cWndStat::~cWndStat( void )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -42,7 +45,7 @@ bool cWndStat::Init( int w, int drv )
 ////////////////////////////////////////////////////////////////
 // ウィンドウ更新
 ////////////////////////////////////////////////////////////////
-void cWndStat::Update( void )
+void cWndStat::Update( const std::shared_ptr<VM6>& vm )
 {
 	PRINTD( WIN_LOG, "[WndStat][Update]\n" );
 	
@@ -55,13 +58,13 @@ void cWndStat::Update( void )
 	// TAPE
 	ZCons::Locate( 0, 0 );
 	ZCons::SPrint( "[TAPE]" );
-	if( vm->CMTL::IsMount() ){
-		ZCons::SetColor( vm->CMTL::IsAutoStart() ? FC_YELLOW : FC_WHITE );
-		ZCons::SPrint( Stringf( " %-16s", vm->CMTL::GetName().empty() ? OSD_GetFileNamePart( vm->CMTL::GetFile() ).c_str() : vm->CMTL::GetName().c_str() ) );
+	if( vm->CmtlIsMount() ){
+		ZCons::SetColor( vm->CmtlIsAutoStart() ? FC_YELLOW : FC_WHITE );
+		ZCons::SPrint( Stringf( " %-16s", vm->CmtlGetName().empty() ? OSD_GetFileNamePart( vm->CmtlGetFile() ).c_str() : vm->CmtlGetName().c_str() ) );
 		ZCons::SetColor( FC_WHITE );
 		ZCons::Locate( ZCons::GetXline()-19, 0 );
-		if( vm->IsCmtIntrReady() == LOADOPEN ) ZCons::SetColor( FC_WHITE, FC_MAGENTA );
-		ZCons::SPrint( Stringf( "[%05d/%05d]", vm->CMTL::GetCount(), vm->CMTL::GetBetaSize() ) );
+		if( vm->CpusIsCmtIntrReady() == LOADOPEN ) ZCons::SetColor( FC_WHITE, FC_MAGENTA );
+		ZCons::SPrint( Stringf( "[%05d/%05d]", vm->CmtlGetCount(), vm->CmtlGetBetaSize() ) );
 		ZCons::SetColor( FC_WHITE, FC_GRAY );
 	}
 	
@@ -91,7 +94,7 @@ void cWndStat::Update( void )
 	
 	// かなキー
 	ZCons::Locate( -5, 0 );
-	switch( vm->KEY6::GetKeyIndicator() & 3 ){
+	switch( vm->KeyGetKeyIndicator() & (KI_KANA|KI_KKANA) ){
 	case KI_KANA:	// かな
 		ZCons::PutCharH( Kana[0] );
 		ZCons::PutCharH( Kana[1] );
@@ -102,8 +105,8 @@ void cWndStat::Update( void )
 	}
 	
 	// CAPSキー
-	if( vm->KEY6::GetKeyIndicator() & 4 ) ZCons::SPrintcr( "ABC" );	// ABC
-	else                                  ZCons::SPrintcr( "abc" );	// abc
+	if( vm->KeyGetKeyIndicator() & KI_CAPS ) ZCons::SPrintcr( "ABC" );	// ABC
+	else                                     ZCons::SPrintcr( "abc" );	// abc
 	
 	// リプレイステータス
 	ZCons::Locate( -2, 0 );

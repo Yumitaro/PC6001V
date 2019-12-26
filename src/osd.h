@@ -3,14 +3,13 @@
 
 // OS依存の汎用ルーチン(主にUI用)
 
-#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 #include "event.h"
-#include "typedef.h"
 #include "keydef.h"
+#include "typedef.h"
 #include "vsurface.h"
 
 
@@ -41,25 +40,25 @@ bool OSD_IsWorking();
 // パス名処理関数
 ////////////////////////////////////////////////////////////////
 // 設定ファイルパス取得
-const std::filesystem::path& OSD_GetConfigPath();
+const P6VPATH& OSD_GetConfigPath();
 // パスの末尾にデリミタを追加
-void OSD_AddDelimiter( std::filesystem::path& );
+void OSD_AddDelimiter( P6VPATH& );
 // パスの末尾のデリミタを削除
-void OSD_DelDelimiter( std::filesystem::path& );
+void OSD_DelDelimiter( P6VPATH& );
 // 相対パス化
-void OSD_RelativePath( std::filesystem::path& );
+void OSD_RelativePath( P6VPATH& );
 // 絶対パス化
-void OSD_AbsolutePath( std::filesystem::path& );
+void OSD_AbsolutePath( P6VPATH& );
 // パス結合
-void OSD_AddPath( std::filesystem::path&, const std::filesystem::path&, const std::filesystem::path& );
+void OSD_AddPath( P6VPATH&, const P6VPATH&, const P6VPATH& );
 // パスからフォルダ名を取得
-const std::string OSD_GetFolderNamePart( const std::filesystem::path& );
+const std::string OSD_GetFolderNamePart( const P6VPATH& );
 // パスからファイル名を取得
-const std::string OSD_GetFileNamePart( const std::filesystem::path& );
+const std::string OSD_GetFileNamePart( const P6VPATH& );
 // パスから拡張子名を取得
-const std::string OSD_GetFileNameExt( const std::filesystem::path& );
+const std::string OSD_GetFileNameExt( const P6VPATH& );
 // 拡張子名を変更
-bool OSD_ChangeFileNameExt( std::filesystem::path&, const std::string& );
+bool OSD_ChangeFileNameExt( P6VPATH&, const std::string& );
 
 
 
@@ -68,21 +67,21 @@ bool OSD_ChangeFileNameExt( std::filesystem::path&, const std::string& );
 // ファイル操作関数
 ////////////////////////////////////////////////////////////////
 // ファイルを開く
-FILE* OSD_Fopen( const std::filesystem::path&, const std::string& );
+FILE* OSD_Fopen( const P6VPATH&, const std::string& );
 // ファイルストリームを開く
-bool OSD_FSopen( std::fstream&, const std::filesystem::path&, const std::ios_base::openmode );
+bool OSD_FSopen( std::fstream&, const P6VPATH&, const std::ios_base::openmode );
 // フォルダを作成
-bool OSD_CreateFolder( const std::filesystem::path& );
+bool OSD_CreateFolder( const P6VPATH& );
 // ファイルの存在チェック
-bool OSD_FileExist( const std::filesystem::path& );
+bool OSD_FileExist( const P6VPATH& );
 // ファイルサイズ取得
-DWORD OSD_GetFileSize( const std::filesystem::path& );
+DWORD OSD_GetFileSize( const P6VPATH& );
 // ファイルの読取り専用チェック
-bool OSD_FileReadOnly( const std::filesystem::path& );
+bool OSD_FileReadOnly( const P6VPATH& );
 // フォルダの参照
-bool OSD_FolderDiaog( HWINDOW, std::filesystem::path& );
+bool OSD_FolderDiaog( HWINDOW, P6VPATH& );
 // 各種ファイル選択
-bool OSD_FileSelect( HWINDOW, FileDlg, std::filesystem::path&, std::filesystem::path& );
+bool OSD_FileSelect( HWINDOW, FileDlg, P6VPATH&, P6VPATH& );
 
 
 
@@ -138,7 +137,7 @@ void OSD_StopAudio();
 // 再生状態取得
 bool OSD_AudioPlaying();
 // Waveファイル読込み
-bool OSD_LoadWAV( const std::filesystem::path&, BYTE**, DWORD*, int* );
+bool OSD_LoadWAV( const P6VPATH&, BYTE**, DWORD*, int* );
 // Waveファイル開放
 void OSD_FreeWAV( BYTE* );
 // オーディオをロックする
@@ -214,7 +213,7 @@ bool OSD_PushEvent( EventType, ... );
 // その他の雑関数
 ////////////////////////////////////////////////////////////////
 // フォントファイル作成
-bool OSD_CreateFont( const std::filesystem::path&, const std::filesystem::path&, int );
+bool OSD_CreateFont( const P6VPATH&, const P6VPATH&, int );
 // ShiftJIS -> UTF-8
 bool OSD_SJIStoUTF8( std::string& );
 // UTF-8 -> ShiftJIS

@@ -45,8 +45,6 @@ bool cThread::BeginThread ( void* lpVoid )
 	}catch( std::system_error& ){
 		return false;
 	}
-	
-	return true;
 }
 
 

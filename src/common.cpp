@@ -1,3 +1,5 @@
+#include <cctype>
+#include <cstring> 
 #include <algorithm>
 #include <new>
 #include <unordered_map>
@@ -184,8 +186,8 @@ int StriCmp( const std::string& s1, const std::string& s2 )
 	std::string str2 = s2;
 	
 	// 小文字化
-	std::transform( str1.begin(), str1.end(), str1.begin(), tolower );
-	std::transform( str2.begin(), str2.end(), str2.begin(), tolower );
+	std::transform( str1.begin(), str1.end(), str1.begin(), ::tolower );
+	std::transform( str2.begin(), str2.end(), str2.begin(), ::tolower );
 	
 	return str1.compare( str2 );
 }
@@ -208,9 +210,9 @@ int StriCmp( const std::string& s1, const std::string& s2 )
 //			pos				保存する領域情報へのポインタ
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool SaveImgData( const std::filesystem::path& filepath, BYTE* pixels, const int bpp, const int ww, const int hh, VRect* pos )
+bool SaveImgData( const P6VPATH& filepath, BYTE* pixels, const int bpp, const int ww, const int hh, VRect* pos )
 {
-	PRINTD( GRP_LOG, "[COMMON][SaveImgData] -> %s\n", filepath.u8string().c_str() );
+	PRINTD( GRP_LOG, "[COMMON][SaveImgData] -> %s\n", P6VPATH2STR( filepath ).c_str() );
 	
 	FILE* fp           = nullptr;
 	png_structp PngPtr = nullptr;
@@ -287,7 +289,7 @@ bool SaveImgData( const std::filesystem::path& filepath, BYTE* pixels, const int
 	BYTE* doff = pixels + rec.x + rec.y * spit;
 	for( int i=0; i<rec.h; i++ ){
 		image[i] = (png_byte*)png_malloc( PngPtr, dpit );
-		memcpy( image[i], doff, dpit );
+		std::memcpy( image[i], doff, dpit );
 		doff += spit;
 	}
 	
@@ -333,7 +335,7 @@ bool SaveImgData( const std::filesystem::path& filepath, BYTE* pixels, const int
 //			pos				保存する領域情報へのポインタ
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool SaveImg( const std::filesystem::path& filepath, VSurface* sur, VRect* pos )
+bool SaveImg( const P6VPATH& filepath, VSurface* sur, VRect* pos )
 {
 	return SaveImgData( filepath, (BYTE*)sur->GetPixels().data(), 8, sur->Width(), sur->Height(), pos );
 }
@@ -348,9 +350,9 @@ bool SaveImg( const std::filesystem::path& filepath, VSurface* sur, VRect* pos )
 // 返値:	VSurface*		読込まれたサーフェスへのポインタ
 //							(問答無用で32bit化)
 ////////////////////////////////////////////////////////////////
-VSurface* LoadImg( const std::filesystem::path& filepath )
+VSurface* LoadImg( const P6VPATH& filepath )
 {
-	PRINTD( GRP_LOG, "[COMMON][LoadImg] <- %s\n", filepath.u8string().c_str() );
+	PRINTD( GRP_LOG, "[COMMON][LoadImg] <- %s\n", P6VPATH2STR( filepath ).c_str() );
 	
 	FILE* fp           = nullptr;
 	png_structp PngPtr = nullptr;
@@ -450,8 +452,6 @@ VSurface* LoadImg( const std::filesystem::path& filepath )
 	
 	return sur;
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////

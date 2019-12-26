@@ -1,6 +1,7 @@
 #ifndef DISK_H_INCLUDED
 #define DISK_H_INCLUDED
 
+#include <memory>
 #include <string>
 
 #include "typedef.h"
@@ -94,13 +95,13 @@ struct DISK60 {
 	bool error;			// エラーフラグ true:エラーあり false:エラーなし
 	
 	DISK60() :
-		Type(FDD1D),
-		PD_ATN(false), PD_DAC(false), PD_RFD(false), PD_DAV(false),
-		DP_DAC(false), DP_RFD(false), DP_DAV(false),
-		command(IDLE), step(0),
-		blk(0), drv(0), trk(0), sct(0),
-		size(0), Fast(false), FastStat(false),
-		retdat(0xff), busy(0), error(false) {}
+		Type( FDD1D ),
+		PD_ATN( false ), PD_DAC( false ), PD_RFD( false ), PD_DAV( false ),
+		DP_DAC( false ), DP_RFD( false ), DP_DAV( false ),
+		command( IDLE ), step( 0 ),
+		blk( 0 ), drv( 0 ), trk( 0 ), sct( 0 ),
+		size( 0 ), Fast( false ), FastStat( false ),
+		retdat( 0xff ), busy( 0 ), error( false ) {}
 };
 
 
@@ -159,11 +160,11 @@ struct PD765 {
 	bool Intr;			// FDC割込み発生フラグ
 	
 		PD765() :
-		command(0), // phase(R_PHASE), step(0),
-		SRT(32), HUT(0), HLT(0), ND(false),
-		MT(0), MF(0), SK(0), HD(0), US(0), C(0), H(0), R(0), N(0),
-		EOT(0), GPL(0), DTL(0),
-		ST0(0), ST1(0), ST2(0), ST3(0), Status(0), Intr(false)
+		command( 0 ), // phase(R_PHASE), step(0),
+		SRT( 32 ), HUT( 0 ), HLT( 0 ), ND( false ),
+		MT( 0 ), MF( 0 ), SK( 0 ), HD( 0 ), US( 0 ), C( 0 ), H( 0 ), R( 0 ), N( 0 ),
+		EOT( 0 ), GPL( 0 ), DTL( 0 ),
+		ST0( 0 ), ST1( 0 ), ST2( 0 ), ST3( 0 ), Status( 0 ), Intr( false )
 		{
 			INITARRAY( SeekSta, SK_STOP );
 			INITARRAY( NCN, 0 );
@@ -179,7 +180,7 @@ class DSK6 : public Device, public IDoko {
 protected:
 	UnitType UType;						// 装置タイプ
 	int DrvNum;							// ドライブ数
-	std::filesystem::path FilePath[MAXDRV];	// ファイルパス
+	P6VPATH FilePath[MAXDRV];			// ファイルパス
 	cD88 *Dimg[MAXDRV];					// ディスクイメージオブジェクトへのポインタ
 	bool Sys[MAXDRV];					// システムディスクフラグ
 	bool DDDrv[MAXDRV];					// 1DDドライブフラグ
@@ -191,15 +192,15 @@ protected:
 	bool SetWait( int, int=0 );					// ウェイト設定
 	
 public:
-	DSK6( VM6 *, const ID& );					// コンストラクタ
-	virtual ~DSK6();							// デストラクタ
+	DSK6( VM6*, const ID& );
+	virtual ~DSK6();
 	
 	virtual void EventCallback( int, int ) override;	// イベントコールバック関数
 	
 	virtual bool Init( int );					// 初期化
 	virtual void Reset();						// リセット
 	
-	bool Mount( int, const std::filesystem::path& );	// DISK マウント
+	bool Mount( int, const P6VPATH& );			// DISK マウント
 	void Unmount( int );						// DISK アンマウント
 	
 	int GetDrives();							// ドライブ数取得
@@ -209,15 +210,15 @@ public:
 	bool IsProtect( int ) const;				// プロテクト?
 	virtual bool InAccess( int ) const;			// アクセス中?
 	
-	const std::filesystem::path& GetFile( int ) const;	// ファイルパス取得
+	const P6VPATH& GetFile( int ) const;		// ファイルパス取得
 	const std::string& GetName( int ) const;	// DISK名取得
 	
 	void WaitEnable( bool );					// ウェイト有効フラグ設定
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
 	bool DokoLoad( cIni * );	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -244,8 +245,8 @@ protected:
 	BYTE InD2H( int );
 	
 public:
-	DSK60( VM6 *, const ID& );					// コンストラクタ
-	virtual ~DSK60();							// デストラクタ
+	DSK60( VM6*, const ID& );
+	virtual ~DSK60();
 	
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	
@@ -257,17 +258,17 @@ public:
 	enum IDOut{           outD1H=0, outD2H, outD3H };
 	enum IDIn {  inD0H=0, inD1H,    inD2H          };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
 	bool DokoLoad( cIni * );	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
 class DSK64 : public DSK60 {
 public:
-	DSK64( VM6 *, const ID& );			// コンストラクタ
-	virtual ~DSK64();					// デストラクタ
+	DSK64( VM6*, const ID& );
+	virtual ~DSK64();
 };
 
 
@@ -335,8 +336,8 @@ private:
 	BYTE InDDH( int );			// FDC データレジスタ
 
 public:
-	DSK66( VM6 *, const ID& );					// コンストラクタ
-	~DSK66();									// デストラクタ
+	DSK66( VM6*, const ID& );
+	~DSK66();
 	
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	
@@ -349,17 +350,17 @@ public:
 				outDAH,   outDDH, outDEH };
 	enum IDIn {  inB2H=0,  inD0H,  inD1H,  inD2H,  inD3H,  inD4H,  inDCH,  inDDH };
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
 	bool DokoLoad( cIni * );	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
 class DSK68 : public DSK66 {
 public:
-	DSK68( VM6 *, const ID& );			// コンストラクタ
-	virtual ~DSK68();					// デストラクタ
+	DSK68( VM6*, const ID& );
+	virtual ~DSK68();
 };
 
 #endif	// DISK_H_INCLUDED

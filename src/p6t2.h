@@ -33,8 +33,8 @@ private:
 	std::vector<BYTE>::const_iterator rp;	// データリード用イテレータ
 	
 public:
-	cP6DATA();										// コンストラクタ
-	~cP6DATA();										// デストラクタ
+	cP6DATA();
+	~cP6DATA();
 	
 	void Rewind();									// 巻戻し
 	
@@ -81,16 +81,16 @@ private:
 	std::list<cP6DATA> Data;				// DATAブロックリスト
 	std::list<cP6DATA>::iterator rd;		// DATAブロック用イテレータ
 	
-	bool ReadP6T( const std::filesystem::path& );	// P6Tを読込み
-	bool ConvP6T( const std::filesystem::path& );	// ベタをP6Tに変換して読込み
+	bool ReadP6T( const P6VPATH& );					// P6Tを読込み
+	bool ConvP6T( const P6VPATH& );					// ベタをP6Tに変換して読込み
 	
 protected:
 	int swait;								// 無音部の待ちbit数
 	int pwait;								// ぴー音の待ちbit数
 	
 public:
-	cP6T();											// コンストラクタ
-	virtual ~cP6T();								// デストラクタ
+	cP6T();
+	virtual ~cP6T();
 	
 	void Clear();									// 初期化
 	void Rewind();									// 巻戻し
@@ -109,8 +109,8 @@ public:
 	
 	BYTE ReadOne();									// 1文字読込み
 	
-	bool Readf( const std::filesystem::path& );		// ファイルから読込み
-	bool Writef( const std::filesystem::path& );	// ファイルに書込み
+	bool Readf( const P6VPATH& );					// ファイルから読込み
+	bool Writef( const P6VPATH& );					// ファイルに書込み
 };
 
 #endif	// P6T2_H_INCLUDED

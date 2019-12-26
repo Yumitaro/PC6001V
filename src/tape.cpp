@@ -51,13 +51,14 @@
 // 1秒毎のテープデータ送信バイト数
 #define CMT_HZ()		(DEFAULT_BAUD/BitsPerByte())
 
+
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-CMTL::CMTL( VM6* vm, const ID& id ) : Device(vm,id),
-	FilePath(""), Relay(false), stron(false),
-	Boost(DEFAULT_BOOST), MaxBoost60(DEFAULT_MAXBOOST60),
-	MaxBoost62(DEFAULT_MAXBOOST62), StopBit(DEFAULT_STOPBIT)
+CMTL::CMTL( VM6* vm, const ID& id ) : Device( vm, id ),
+	FilePath( "" ), Relay( false ), stron( false ),
+	Boost( DEFAULT_BOOST ), MaxBoost60( DEFAULT_MAXBOOST60 ),
+	MaxBoost62( DEFAULT_MAXBOOST62 ), StopBit( DEFAULT_STOPBIT )
 {
 	// Dvice Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &CMTL::OutB0H ) );
@@ -85,12 +86,12 @@ void CMTL::EventCallback( int id, int clock )
 	switch( id ){
 	case EID_TAPE:	// CMT割込み処理
 		// 割込み処理中でない?
-		if( vm->IsCmtIntrReady() ){
+		if( vm->CpusIsCmtIntrReady() ){
 			// CMTアップデート
 			WORD rd = Update();
 			// データならCMT割込み発生
 			if( rd & PG_D ){
-				vm->SUB6::ReqCmtIntr( rd & 0xff );
+				vm->CpusReqCmtIntr( rd & 0xff );
 			}
 		}
 		break;
@@ -111,9 +112,9 @@ bool CMTL::Init( int srate )
 ////////////////////////////////////////////////////////////////
 // TAPEマウント
 ////////////////////////////////////////////////////////////////
-bool CMTL::Mount( const std::filesystem::path& filepath )
+bool CMTL::Mount( const P6VPATH& filepath )
 {
-	PRINTD( TAPE_LOG, "[TAPE][Mount] %s\n", filepath.u8string().c_str()  );
+	PRINTD( TAPE_LOG, "[TAPE][Mount] %s\n", P6VPATH2STR( filepath ).c_str()  );
 	
 	// 一旦アンマウントする
 	Unmount();
@@ -223,7 +224,7 @@ int CMTL::SoundUpdate( int samples )
 ////////////////////////////////////////////////////////////////
 // ファイルパス取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& CMTL::GetFile( void ) const
+const P6VPATH& CMTL::GetFile( void ) const
 {
 	return FilePath;
 }
@@ -300,62 +301,6 @@ int CMTL::GetStopBit( void ) const
 }
 
 
-/*
-////////////////////////////////////////////////////////////////
-// 巻戻し
-////////////////////////////////////////////////////////////////
-void CMTL::Rewind( void )
-{
-	cP6T::Rewind();
-}
-
-
-////////////////////////////////////////////////////////////////
-// オートスタート?
-////////////////////////////////////////////////////////////////
-bool CMTL::IsAutoStart( void ) const
-{
-	return cP6T::IsAutoStart();
-}
-
-
-////////////////////////////////////////////////////////////////
-// TAPE名取得
-////////////////////////////////////////////////////////////////
-const std::string& CMTL::GetName( void ) const
-{
-	return cP6T::GetName();
-}
-
-
-////////////////////////////////////////////////////////////////
-// ベタイメージサイズ取得
-////////////////////////////////////////////////////////////////
-DWORD CMTL::GetBetaSize( void )
-{
-	return cP6T::GetBetaSize();
-}
-
-
-////////////////////////////////////////////////////////////////
-// カウンタ取得
-////////////////////////////////////////////////////////////////
-int CMTL::GetCount( void ) const
-{
-	return cP6T::GetCount();
-}
-
-
-////////////////////////////////////////////////////////////////
-// オートスタート情報取得
-////////////////////////////////////////////////////////////////
-const P6TAUTOINFO& CMTL::GetAutoStartInfo( void ) const
-{
-	return cP6T::GetAutoStartInfo();
-}
-*/
-
-
 ////////////////////////////////////////////////////////////////
 // CMT 1文字読込み
 // 戻り値：上位はデータ種(ぴー,無音,データ) 下位はデータ
@@ -406,9 +351,9 @@ bool CMTL::Remote( bool relay )
 		// SRはmk2/66と同じにしてみる
 		int bst = Boost ? ( vm->VdgGetWinSize() ? MaxBoost60 : MaxBoost62 ) : 1;
 		
-		if( !vm->EVSC::Add( Device::GetID(), EID_TAPE, CMT_HZ() * bst, EV_LOOP|EV_HZ ) ) return false;
+		if( !vm->EventAdd( Device::GetID(), EID_TAPE, CMT_HZ() * bst, EV_LOOP|EV_HZ ) ) return false;
 	}else{			// OFF
-		if( !vm->EVSC::Del( Device::GetID(), EID_TAPE ) ) return false;
+		if( !vm->EventDel( Device::GetID(), EID_TAPE ) ) return false;
 	}
 	return true;
 }
@@ -445,7 +390,7 @@ int CMTL::GetSinCurve( int fq )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-CMTS::CMTS( VM6* vm, const ID& id ) : Device(vm,id), FilePath(""), Baud(1200)
+CMTS::CMTS( VM6* vm, const ID& id ) : Device( vm, id ), FilePath( "" ), Baud( 1200 )
 {
 	fs.clear();
 }
@@ -463,7 +408,7 @@ CMTS::~CMTS( void )
 ////////////////////////////////////////////////////////////////
 // 初期化
 ////////////////////////////////////////////////////////////////
-bool CMTS::Init( const std::filesystem::path& filepath )
+bool CMTS::Init( const P6VPATH& filepath )
 {
 	if( !filepath.empty() ){
 		// ファイルパス保存
@@ -572,9 +517,9 @@ bool CMTL::DokoSave( cIni* Ini )
 	if( !IsMount() ) return true;
 	
 	// マウントされていたらP6TオブジェクトをSAVE
-	std::filesystem::path tpath = FilePath;
+	P6VPATH tpath = FilePath;
 	OSD_RelativePath( tpath );
-	Ini->PutEntry( "TAPE", "", "FilePath",	"%s",	tpath.u8string().c_str() );
+	Ini->PutEntry( "TAPE", "", "FilePath",	"%s",	P6VPATH2STR( tpath ).c_str() );
 	
 	// P6T
 	Ini->PutEntry( "P6T", "", "Counter",	"%d",	cP6T::GetCount() );
@@ -591,7 +536,7 @@ bool CMTL::DokoSave( cIni* Ini )
 bool CMTL::DokoLoad( cIni* Ini )
 {
 	int st;
-	std::filesystem::path fpath;
+	P6VPATH fpath;
 	
 	if( !Ini ) return false;
 	

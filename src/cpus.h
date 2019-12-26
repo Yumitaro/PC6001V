@@ -1,6 +1,8 @@
 #ifndef CPUS_H_INCLUDED
 #define CPUS_H_INCLUDED
 
+#include <memory>
+
 #include "device.h"
 #include "ini.h"
 
@@ -76,8 +78,8 @@ protected:
 	virtual void ExtIntrExec( BYTE );	// 外部割込み処理
 	
 public:
-	SUB6( VM6*, const ID& );			// コンストラクタ
-	virtual ~SUB6();					// デストラクタ
+	SUB6( VM6*, const ID& );
+	virtual ~SUB6();
 	
 	void EventCallback( int, int );		// イベントコールバック関数
 	
@@ -92,10 +94,10 @@ public:
 	int GetCmtStatus() const;			// CMTステータス取得
 	bool IsCmtIntrReady();				// CMT割込み発生可?
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* );		// どこでもSAVE
 	bool DokoLoad( cIni* );		// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -103,8 +105,8 @@ class SUB60 : virtual public SUB6 {
 protected:
 	
 public:
-	SUB60( VM6*, const ID& );			// コンストラクタ
-	virtual ~SUB60();					// デストラクタ
+	SUB60( VM6*, const ID& );
+	virtual ~SUB60();
 };
 
 
@@ -113,8 +115,8 @@ protected:
 	void ExtIntrExec( BYTE ) override;	// 外部割込み処理
 	
 public:
-	SUB62( VM6*, const ID& );			// コンストラクタ
-	virtual ~SUB62();					// デストラクタ
+	SUB62( VM6*, const ID& );
+	virtual ~SUB62();
 };
 
 
@@ -126,8 +128,8 @@ protected:
 	void ExtIntrExec( BYTE ) override;	// 外部割込み処理
 	
 public:
-	SUB68( VM6*, const ID& );			// コンストラクタ
-	~SUB68();							// デストラクタ
+	SUB68( VM6*, const ID& );
+	~SUB68();
 };
 
 

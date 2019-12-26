@@ -378,9 +378,9 @@ enum KeyGroup
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-KEY6::KEY6( VM6* vm, const ID& id ) : Device(vm,id),
-	ON_SHIFT(false), ON_GRAPH(false), ON_KANA(false), ON_KKANA(false),
-	ON_CTRL(false), ON_STOP(false), ON_CAPS(false)
+KEY6::KEY6( VM6* vm, const ID& id ) : Device( vm, id ),
+	ON_SHIFT( false ), ON_GRAPH( false ), ON_KANA( false ), ON_KKANA( false ),
+	ON_CTRL( false ), ON_STOP( false ), ON_CAPS( false )
 {
 	// P6キーコード -> マトリクス 変換テーブル初期化
 	MatTable.clear();
@@ -394,7 +394,7 @@ KEY6::KEY6( VM6* vm, const ID& id ) : Device(vm,id),
 	}
 }
 
-KEY60::KEY60( VM6* vm, const ID& id ) : KEY6(vm,id)
+KEY60::KEY60( VM6* vm, const ID& id ) : KEY6( vm, id )
 {
 	// MODE と CAPS 無効化
 	try{
@@ -404,7 +404,7 @@ KEY60::KEY60( VM6* vm, const ID& id ) : KEY6(vm,id)
 	catch( std::out_of_range& ){}
 }
 
-KEY62::KEY62( VM6* vm, const ID& id ) : KEY6(vm,id)
+KEY62::KEY62( VM6* vm, const ID& id ) : KEY6( vm, id )
 {
 }
 
@@ -645,7 +645,7 @@ bool KEY6::ScanMatrix( void )
 			// bit 2 : ON_FUNC
 			
 			PRINTD( KEY_LOG, "[Intr] %02X", KeyData );
-			vm->SUB6::ReqKeyIntr( ON_STOP ? 1 : 0 | ON_GRAPH ? 2 : 0 | ON_FUNC ? 4 : 0, KeyData );
+			vm->CpusReqKeyIntr( ON_STOP ? 1 : 0 | ON_GRAPH ? 2 : 0 | ON_FUNC ? 4 : 0, KeyData );
 			ON_STOP = false;
 		}
 	}

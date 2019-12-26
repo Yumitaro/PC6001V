@@ -1,7 +1,6 @@
 #ifndef CONSOLE_H_INCLUDED
 #define CONSOLE_H_INCLUDED
 
-#include <filesystem>
 #include <string>
 
 #include "typedef.h"
@@ -40,10 +39,10 @@ protected:
 	static int hWidth, hHeight;	// 半角文字の幅,高さ
 	
 public:
-	JFont();									// コンストラクタ
-	~JFont();									// デストラクタ
+	JFont();
+	~JFont();
 	
-	static bool OpenFont( const std::filesystem::path&, const std::filesystem::path& );	// ファイルファイルを開く
+	static bool OpenFont( const P6VPATH&, const P6VPATH& );	// ファイルファイルを開く
 	static void CloseFont();					// フォントを破棄する
 	
 	static int FontWidth(){ return hWidth; }	// フォントの幅取得(半角)
@@ -66,8 +65,8 @@ protected:
 	void ScrollUp();							// スクロールアップ
 	
 public:
-	ZCons();									// コンストラクタ
-	virtual ~ZCons();							// デストラクタ
+	ZCons();
+	virtual ~ZCons();
 	
 	bool Init   ( int, int, const std::string&, BYTE = FC_WHITE, BYTE = FC_BLACK );	// 初期化(文字数でサイズ指定)
 	bool InitRes( int, int, const std::string&, BYTE = FC_WHITE, BYTE = FC_BLACK );	// 初期化(解像度でサイズ指定)

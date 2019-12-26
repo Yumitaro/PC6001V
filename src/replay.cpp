@@ -62,7 +62,7 @@ int REPLAY::GetStatus( void ) const
 // 引数:	filepath	出力ファイルパス
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool REPLAY::StartRecord( const std::filesystem::path& filepath )
+bool REPLAY::StartRecord( const P6VPATH& filepath )
 {
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
@@ -94,7 +94,7 @@ bool REPLAY::StartRecord( const std::filesystem::path& filepath )
 // 引数:	frame       途中再開するフレーム
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool REPLAY::ResumeRecord( const std::filesystem::path& filepath, int frame )
+bool REPLAY::ResumeRecord( const P6VPATH& filepath, int frame )
 {
 	if( !StartRecord( filepath ) ) return false;
 	
@@ -154,7 +154,7 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 // 引数:	filepath	入力ファイルパス
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool REPLAY::StartReplay( const std::filesystem::path& filepath )
+bool REPLAY::StartReplay( const P6VPATH& filepath )
 {
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
@@ -165,7 +165,7 @@ bool REPLAY::StartReplay( const std::filesystem::path& filepath )
 		
 		if( !cIni::Read( filepath ) ) throw Error::ReplayPlayError;
 		if( !cIni::GetInt( "REPLAY", "EndFrm", &st, EndFrm ) ) throw Error::NoReplayData;
-		else                                                  EndFrm = st;
+		else                                                   EndFrm = st;
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );

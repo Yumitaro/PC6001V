@@ -24,7 +24,7 @@ BPoint::~BPoint( void )
 ////////////////////////////////////////////////////////////////
 // ブレークポイントを設定
 ////////////////////////////////////////////////////////////////
-void BPoint::SetBP( const BPtype type, const WORD addr )
+void BPoint::Set( const BPtype type, const WORD addr )
 {
 	BreakPoint bp;
 	bp.Type  = type;
@@ -38,7 +38,7 @@ void BPoint::SetBP( const BPtype type, const WORD addr )
 ////////////////////////////////////////////////////////////////
 // ブレークポイントを削除
 ////////////////////////////////////////////////////////////////
-void BPoint::DeleteBP( const int num )
+void BPoint::Delete( const int num )
 {
 	BP.erase( BP.begin() + num - 1 );
 }
@@ -47,7 +47,7 @@ void BPoint::DeleteBP( const int num )
 ////////////////////////////////////////////////////////////////
 // ブレークポイントのタイプを取得
 ////////////////////////////////////////////////////////////////
-BPoint::BPtype BPoint::GetBPType( const int num ) const
+BPoint::BPtype BPoint::GetType( const int num ) const
 {
 	try{
 		return BP.at( num - 1 ).Type;
@@ -61,7 +61,7 @@ BPoint::BPtype BPoint::GetBPType( const int num ) const
 ////////////////////////////////////////////////////////////////
 // ブレークポイントのアドレスを取得
 ////////////////////////////////////////////////////////////////
-WORD BPoint::GetBPAddr( const int num ) const
+WORD BPoint::GetAddr( const int num ) const
 {
 	try{
 		return BP.at( num - 1 ).Addr;
@@ -75,7 +75,7 @@ WORD BPoint::GetBPAddr( const int num ) const
 ////////////////////////////////////////////////////////////////
 // ブレークポイント登録数取得
 ////////////////////////////////////////////////////////////////
-int BPoint::GetBPNum( void ) const
+int BPoint::GetNum( void ) const
 {
 	return BP.size();
 }
@@ -84,7 +84,7 @@ int BPoint::GetBPNum( void ) const
 ////////////////////////////////////////////////////////////////
 // ブレークポイントをチェック
 ////////////////////////////////////////////////////////////////
-bool BPoint::CheckBP( const BPtype type, const WORD addr )
+bool BPoint::Check( const BPtype type, const WORD addr )
 {
 	for( auto &i : BP ){
 		if( i.Type == type && i.Addr == addr ){
@@ -99,7 +99,7 @@ bool BPoint::CheckBP( const BPtype type, const WORD addr )
 ////////////////////////////////////////////////////////////////
 // ブレーク要求のあったブレークポイントNo.を取得
 ////////////////////////////////////////////////////////////////
-int BPoint::GetReqBPNum( void ) const
+int BPoint::GetReqNum( void ) const
 {
 	int num = 1;
 	for( auto &i : BP ){
@@ -113,7 +113,7 @@ int BPoint::GetReqBPNum( void ) const
 ////////////////////////////////////////////////////////////////
 // ブレーク要求キャンセル
 ////////////////////////////////////////////////////////////////
-void BPoint::ResetBP( void )
+void BPoint::Reset( void )
 {
 	for( auto &i : BP )
 		i.Break = false;

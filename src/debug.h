@@ -1,6 +1,7 @@
 #ifndef DEBUG_H_INCLUDED
 #define DEBUG_H_INCLUDED
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -11,21 +12,20 @@
 
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-#define MAX_ARGS	(16)
-#define	MAX_CHRS	(256)
-#define	MAX_HIS		(256)
-
 //------------------------------------------------------
 //  モニタモードウィンドウ インターフェース(?)クラス
 //------------------------------------------------------
-class iMon : public Device, public ZCons {
+class iMon : public ZCons {
+protected:
+	std::shared_ptr<VM6> vm;
+	
 private:
 	int x;								// X座標(モニタモード内での表示位置)
 	int y;								// Y座標(モニタモード内での表示位置)
 	
 public:
-	iMon( VM6*, const ID& );			// コンストラクタ
-	~iMon();							// デストラクタ
+	iMon( const std::shared_ptr<VM6>& );
+	~iMon();
 	
 	int X();							// X座標取得
 	int Y();							// Y座標取得
@@ -45,8 +45,8 @@ private:
 	WORD Addr;							// 表示アドレス
 	
 public:
-	cWndMem( VM6*, const ID& );			// コンストラクタ
-	~cWndMem();							// デストラクタ
+	cWndMem( const std::shared_ptr<VM6>& );
+	~cWndMem();
 	
 	bool Init() override;				// 初期化
 	void Update() override;				// ウィンドウ更新
@@ -63,8 +63,8 @@ class cWndReg : public iMon {
 private:
 	
 public:
-	cWndReg( VM6*, const ID& );			// コンストラクタ
-	~cWndReg();							// デストラクタ
+	cWndReg( const std::shared_ptr<VM6>& );
+	~cWndReg();
 	
 	bool Init() override;				// 初期化
 	void Update() override;				// ウィンドウ更新
@@ -94,51 +94,16 @@ private:
 	void Help( int );					// ヘルプ表示
 	
 public:
-	cWndMon( VM6*, const ID& );			// コンストラクタ
-	~cWndMon();							// デストラクタ
+	cWndMon( const std::shared_ptr<VM6>& );
+	~cWndMon();
 	
 	bool Init() override;				// 初期化
 	void Update() override;				// ウィンドウ更新
 	
-	void KeyIn( int, bool, int );		// キー入力処理
+	void KeyIn( int, int );				// キー入力処理
 	
 	void BreakIn( WORD );				// ブレークポイント到達
 };
-
-
-
-
-
-
-
-//------------------------------------------------------
-//  モニタモードクラス
-//------------------------------------------------------
-class Monitor {
-private:
-	VM6* vm;
-	iMon* dcn[3];
-	
-public:
-	Monitor( VM6* );					// コンストラクタ
-	~Monitor();							// デストラクタ
-	
-	bool Init();						// 初期化
-	void Update();						// ウィンドウ更新
-	
-	int Width();						// モニタモード ウィンドウ幅取得
-	int Height();						// モニタモード ウィンドウ高さ取得
-	
-	// メモリウィンドウ
-	void SetAddress( WORD );			// 表示アドレス設定
-	WORD GetAddress();					// 表示アドレス取得
-	
-	// モニタウィンドウ
-	void KeyIn( int, bool, int );		// キー入力処理
-	void BreakIn( WORD );				// ブレークポイント到達
-};
-
-
 
 
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

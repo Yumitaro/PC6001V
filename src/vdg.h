@@ -1,6 +1,7 @@
 #ifndef VDG_H_INCLUDED
 #define VDG_H_INCLUDED
 
+#include <memory>
 #include <vector>
 
 #include "typedef.h"
@@ -63,8 +64,8 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	
 public:
-	VDG6( VM6*, const ID& );					// コンストラクタ
-	virtual ~VDG6();							// デストラクタ
+	VDG6( VM6*, const ID& );
+	virtual ~VDG6();
 	
 	virtual void EventCallback( int, int ) override;	// イベントコールバック関数
 	
@@ -78,10 +79,10 @@ public:
 	bool IsBusReqExec() const;					// バスリクエスト区間実行フラグ取得
 	WORD SRGVramAddr( WORD ) const;				// SRのG-VRAMアドレス取得(ビットマップモード)
 	
-	// ------------------------------------------
+	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
-	// ------------------------------------------
+	// ---------------------------------------------------------
 };
 
 
@@ -91,8 +92,8 @@ protected:
 	BYTE GetVram() const override;				// VRAMデータ取得
 	
 public:
-	VDG60( VM6*, const ID& );					// コンストラクタ
-	virtual ~VDG60();							// デストラクタ
+	VDG60( VM6*, const ID& );
+	virtual ~VDG60();
 	
 	WORD GetVramAddr() const override;			// VRAMアドレス取得
 	WORD GerAttrAddr() const override;			// ATTRアドレス取得
@@ -109,8 +110,8 @@ protected:
 	BYTE GetVram() const override;				// VRAMデータ取得
 	
 public:
-	VDG62( VM6*, const ID& );					// コンストラクタ
-	virtual ~VDG62();							// デストラクタ
+	VDG62( VM6*, const ID& );
+	virtual ~VDG62();
 	
 	WORD GetVramAddr() const override;			// VRAMアドレス取得
 	WORD GerAttrAddr() const override;			// ATTRアドレス取得
@@ -138,8 +139,8 @@ protected:
 	void OutCFH( int, BYTE );
 	
 public:
-	VDG64( VM6*, const ID& );					// コンストラクタ
-	virtual ~VDG64();							// デストラクタ
+	VDG64( VM6*, const ID& );
+	virtual ~VDG64();
 	
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	

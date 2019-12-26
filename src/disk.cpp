@@ -1,7 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-
-#include <filesystem>
 #include <new>
 #include <vector>
 
@@ -81,7 +77,7 @@ static const int Gap4size[] = { 488, 152, 182,  94, 1584, 1760, 2242, 4144 };
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-DSK6::DSK6( VM6* vm, const ID& id ) : Device(vm,id), UType(PC6031), DrvNum(0), waitcnt(0), waiten(true)
+DSK6::DSK6( VM6* vm, const ID& id ) : Device( vm, id ), UType( PC6031 ), DrvNum( 0 ), waitcnt( 0 ), waiten( true )
 {
 	for( int i=0; i<MAXDRV; i++ ){
 		FilePath[i].clear();
@@ -142,7 +138,7 @@ bool DSK6::SetWait( int eid, int cnt )
 		
 		PRINTD( DISK_LOG, "%dus ->", waitcnt );
 		
-		if( waitcnt && vm->EVSC::Add( Device::GetID(), eid, waitcnt, EV_US ) ){
+		if( waitcnt && vm->EventAdd( Device::GetID(), eid, waitcnt, EV_US ) ){
 			waitcnt = 0;
 			PRINTD( DISK_LOG, "OK\n" );
 		}else{
@@ -178,9 +174,9 @@ void DSK6::Reset( void )
 ////////////////////////////////////////////////////////////////
 // DISK マウント
 ////////////////////////////////////////////////////////////////
-bool DSK6::Mount( int drvno, const std::filesystem::path& filepath )
+bool DSK6::Mount( int drvno, const P6VPATH& filepath )
 {
-	PRINTD( DISK_LOG, "[DISK][Mount] Drive:%d Filename:%s\n", drvno, filepath.u8string().c_str() );
+	PRINTD( DISK_LOG, "[DISK][Mount] Drive:%d Filename:%s\n", drvno, P6VPATH2STR( filepath ).c_str() );
 	
 	if( drvno >= DrvNum ) return false;
 	
@@ -299,7 +295,7 @@ bool DSK6::InAccess( int drvno ) const
 ////////////////////////////////////////////////////////////////
 // ファイルパス取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& DSK6::GetFile( int drvno ) const
+const P6VPATH& DSK6::GetFile( int drvno ) const
 {
 	return FilePath[drvno];
 }
@@ -338,8 +334,7 @@ void DSK6::WaitEnable( bool en )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-DSK60::DSK60( VM6* vm, const ID& id ) :
-	DSK6(vm,id), io_D1H(0)
+DSK60::DSK60( VM6* vm, const ID& id ) : DSK6( vm, id ), io_D1H( 0 )
 {
 	INITARRAY( RBuf, 0 );
 	INITARRAY( WBuf, 0 );
@@ -356,7 +351,7 @@ DSK60::DSK60( VM6* vm, const ID& id ) :
 	descs.indef.emplace ( inD2H,  STATIC_CAST( Device::InFuncPtr,  &DSK60::InD2H  ) );
 }
 
-DSK64::DSK64( VM6* vm, const ID& id ) :	DSK60(vm,id)
+DSK64::DSK64( VM6* vm, const ID& id ) :	DSK60( vm, id )
 {
 	UType = PC6031SR;
 	for( int i=0; i<MAXDRV; i++ )
@@ -367,8 +362,13 @@ DSK64::DSK64( VM6* vm, const ID& id ) :	DSK60(vm,id)
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-DSK60::~DSK60( void ){}
-DSK64::~DSK64( void ){}
+DSK60::~DSK60( void )
+{
+}
+
+DSK64::~DSK64( void )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -1079,8 +1079,7 @@ BYTE DSK60::InD2H( int ){ return FddCntIn(); }
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-DSK66::DSK66( VM6* vm, const ID& id ) : DSK6(vm,id),
-	SendBytes(0), ExtDrv(false), B2Dir(false)
+DSK66::DSK66( VM6* vm, const ID& id ) : DSK6( vm, id ),	SendBytes( 0 ), ExtDrv( false ), B2Dir( false )
 {
 	INITARRAY( FDDBuf, 0 );
 	UType = PC6601;
@@ -1109,7 +1108,7 @@ DSK66::DSK66( VM6* vm, const ID& id ) : DSK6(vm,id),
 	descs.indef.emplace ( inDDH,  STATIC_CAST( Device::InFuncPtr,  &DSK66::InDDH  ) );
 }
 
-DSK68::DSK68( VM6* vm, const ID& id ) :	DSK66(vm,id)
+DSK68::DSK68( VM6* vm, const ID& id ) :	DSK66( vm, id )
 {
 	UType = PC6601SR;
 	for( int i=0; i<MAXDRV; i++ )
@@ -1120,8 +1119,13 @@ DSK68::DSK68( VM6* vm, const ID& id ) :	DSK66(vm,id)
 ////////////////////////////////////////////////////////////////
 // デストラクタ
 ////////////////////////////////////////////////////////////////
-DSK66::~DSK66( void ){}
-DSK68::~DSK68( void ){}
+DSK66::~DSK66( void )
+{
+}
+
+DSK68::~DSK68( void )
+{
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -1903,9 +1907,9 @@ bool DSK6::DokoSave( cIni* Ini )
 	// ディスクイメージオブジェクト
 	for( int i=0; i<DrvNum; i++ ){
 		if( Dimg[i] ){
-			std::filesystem::path tpath = Dimg[i]->GetFileName();
+			P6VPATH tpath = Dimg[i]->GetFileName();
 			OSD_RelativePath( tpath );
-			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_FileName", i ),	"%s",	tpath.u8string().c_str() );
+			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_FileName", i ),	"%s",	P6VPATH2STR( tpath ).c_str() );
 			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_trkno", i ),		"%d",	Dimg[i]->Track() );
 			Ini->PutEntry( "DISK", "", Stringf( "DISK_%d_secno", i ),		"%d",	Dimg[i]->Sector() );
 		}
@@ -2034,7 +2038,7 @@ bool DSK6::DokoLoad( cIni* Ini )
 	
 	// ディスクイメージオブジェクト
 	for( int i=0; i<DrvNum; i++ ){
-		std::filesystem::path tpath;
+		P6VPATH tpath;
 		if( Ini->GetPath( "DISK", Stringf( "DISK_%d_FileName", i ), tpath, "" ) && Mount( i, tpath ) ){
 			int tr,sc;
 			Ini->GetInt( "DISK", Stringf( "DISK_%d_trkno", i ),	&tr,	0 );

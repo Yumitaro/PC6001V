@@ -15,8 +15,8 @@ protected:
 	HJOYINFO Jinfo[MAX_JOY];		// ジョイスティック情報
 	
 public:
-	JOY6();							// コンストラクタ
-	virtual ~JOY6();				// デストラクタ
+	JOY6();
+	virtual ~JOY6();
 	
 	bool Init();					// 初期化
 	

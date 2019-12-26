@@ -1,19 +1,15 @@
-#include <stdlib.h>
-
 #include <fstream>
 #include <algorithm>
-
-#include "pc6001v.h"
 
 #include "config.h"
 #include "common.h"
 #include "error.h"
+#include "log.h"
 #include "osd.h"
+#include "pc6001v.h"
 
 
-
-
-const std::filesystem::path DummtPath = "";
+const P6VPATH DummtPath = "";
 
 static const std::vector<P6KeyName> P6KeyNameDef = {
 	{ KP6_UNKNOWN,		"K6_UNKNOWN" },
@@ -497,8 +493,10 @@ CFG6::CFG6( void ) : DokoFile(""), Caption(""),
 	DiskFile1(""), DiskFile2(""), ImgPath(""), PrinterFile(""),
 	DokoSavePath(""), FontPath("")
 {
+	PRINTD( CONST_LOG, "[[CFG6]]\n" );
+	
 	// INIファイルのパスを設定
-	IniPath = std::filesystem::u8path( FILE_CONFIG );
+	IniPath = P6VSTR2PATH( FILE_CONFIG );
 	OSD_AbsolutePath( IniPath );
 }
 
@@ -508,6 +506,7 @@ CFG6::CFG6( void ) : DokoFile(""), Caption(""),
 ////////////////////////////////////////////////////////////////
 CFG6::~CFG6( void )
 {
+	PRINTD( CONST_LOG, "[[~CFG6]]\n" );
 }
 
 
@@ -1034,55 +1033,55 @@ void CFG6::SetAviBpp( int data )
 // [FILES] -----------------------------------------------------
 
 // 拡張ROMファイル名取得
-const std::filesystem::path& CFG6::GetExtRomFile( void )
+const P6VPATH& CFG6::GetExtRomFile( void )
 {
 	cIni::GetPath( "FILES", "ExtRom", ExtRomFile, ExtRomFile );
 	return ExtRomFile;
 }
 
 // 拡張ROMファイル名設定
-void CFG6::SetExtRomFile( const std::filesystem::path& str )
+void CFG6::SetExtRomFile( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_ExtRom ), "ExtRom", tpath.u8string() );
+	cIni::PutEntry( "FILES", GetText( TINI_ExtRom ), "ExtRom", P6VPATH2STR( tpath ) );
 }
 
 
 // TAPEファイル名取得
-const std::filesystem::path& CFG6::GetTapeFile( void )
+const P6VPATH& CFG6::GetTapeFile( void )
 {
 	cIni::GetPath( "FILES", "tape", TapeFile, TapeFile );
 	return TapeFile;
 }
 
 // TAPEファイル名設定
-void CFG6::SetTapeFile( const std::filesystem::path& str )
+void CFG6::SetTapeFile( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_tape ), "tape", tpath.u8string() );
+	cIni::PutEntry( "FILES", GetText( TINI_tape ), "tape", P6VPATH2STR( tpath ) );
 }
 
 
 // TAPE(SAVE)ファイル名取得
-const std::filesystem::path& CFG6::GetSaveFile( void )
+const P6VPATH& CFG6::GetSaveFile( void )
 {
 	cIni::GetPath( "FILES", "save", SaveFile, SaveFile );
 	return SaveFile;
 }
 
 // TAPE(SAVE)ファイル名設定
-void CFG6::SetSaveFile( const std::filesystem::path& str )
+void CFG6::SetSaveFile( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_save ), "save", tpath.u8string() );
+	cIni::PutEntry( "FILES", GetText( TINI_save ), "save", P6VPATH2STR( tpath ) );
 }
 
 
 // DISKファイル名取得
-const std::filesystem::path& CFG6::GetDiskFile( int drv )
+const P6VPATH& CFG6::GetDiskFile( int drv )
 {
 	switch( drv & 1 ){
 	case 1:	cIni::GetPath( "FILES", "disk1", DiskFile1, DiskFile1 );
@@ -1094,30 +1093,30 @@ const std::filesystem::path& CFG6::GetDiskFile( int drv )
 }
 
 // DISKファイル名設定
-void CFG6::SetDiskFile( int drv, const std::filesystem::path& str )
+void CFG6::SetDiskFile( int drv, const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
 	switch( drv ){
-	case 1: cIni::PutEntry( "FILES", GetText( TINI_disk1 ), "disk1", tpath.u8string() ); break;
-	case 2: cIni::PutEntry( "FILES", GetText( TINI_disk2 ), "disk2", tpath.u8string() ); break;
+	case 1: cIni::PutEntry( "FILES", GetText( TINI_disk1 ), "disk1", P6VPATH2STR( tpath ) ); break;
+	case 2: cIni::PutEntry( "FILES", GetText( TINI_disk2 ), "disk2", P6VPATH2STR( tpath ) ); break;
 	}
 }
 
 
 // プリンタファイル名取得
-const std::filesystem::path& CFG6::GetPrinterFile( void )
+const P6VPATH& CFG6::GetPrinterFile( void )
 {
 	cIni::GetPath( "FILES", "printer", PrinterFile, PrinterFile );
 	return PrinterFile;
 }
 
 // プリンタファイル名設定
-void CFG6::SetPrinterFile( const std::filesystem::path& str )
+void CFG6::SetPrinterFile( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_printer ), "printer", tpath.u8string() );
+	cIni::PutEntry( "FILES", GetText( TINI_printer ), "printer", P6VPATH2STR( tpath ) );
 }
 
 
@@ -1129,7 +1128,7 @@ void CFG6::SetPrinterFile( const std::filesystem::path& str )
 // [PATH] ------------------------------------------------------
 
 // ROMパス取得
-const std::filesystem::path& CFG6::GetRomPath( void )
+const P6VPATH& CFG6::GetRomPath( void )
 {
 	cIni::GetPath( "PATH", "RomPath", RomPath, RomPath );
 	OSD_AddDelimiter( RomPath );
@@ -1137,17 +1136,17 @@ const std::filesystem::path& CFG6::GetRomPath( void )
 }
 
 // ROMパス設定
-void CFG6::SetRomPath( const std::filesystem::path& str )
+void CFG6::SetRomPath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_RomPath ), "RomPath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_RomPath ), "RomPath", P6VPATH2STR( tpath ) );
 }
 
 
 // TAPEパス取得
-const std::filesystem::path& CFG6::GetTapePath( void )
+const P6VPATH& CFG6::GetTapePath( void )
 {
 	cIni::GetPath( "PATH", "TapePath", TapePath, TapePath );
 	OSD_AddDelimiter( TapePath );
@@ -1155,17 +1154,17 @@ const std::filesystem::path& CFG6::GetTapePath( void )
 }
 
 // TAPEパス設定
-void CFG6::SetTapePath( const std::filesystem::path& str )
+void CFG6::SetTapePath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_TapePath ), "TapePath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_TapePath ), "TapePath", P6VPATH2STR( tpath ) );
 }
 
 
 // DISKパス取得
-const std::filesystem::path& CFG6::GetDiskPath( void )
+const P6VPATH& CFG6::GetDiskPath( void )
 {
 	cIni::GetPath( "PATH", "DiskPath", DiskPath, DiskPath );
 	OSD_AddDelimiter( DiskPath );
@@ -1173,17 +1172,17 @@ const std::filesystem::path& CFG6::GetDiskPath( void )
 }
 
 // DISKパス設定
-void CFG6::SetDiskPath( const std::filesystem::path& str )
+void CFG6::SetDiskPath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_DiskPath ), "DiskPath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_DiskPath ), "DiskPath", P6VPATH2STR( tpath ) );
 }
 
 
 // 拡張ROMパス取得
-const std::filesystem::path& CFG6::GetExtRomPath( void )
+const P6VPATH& CFG6::GetExtRomPath( void )
 {
 	cIni::GetPath( "PATH", "ExtRomPath", ExtRomPath, ExtRomPath );
 	OSD_AddDelimiter( ExtRomPath );
@@ -1191,17 +1190,17 @@ const std::filesystem::path& CFG6::GetExtRomPath( void )
 }
 
 // 拡張ROMパス設定
-void CFG6::SetExtRomPath( const std::filesystem::path& str )
+void CFG6::SetExtRomPath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_ExtRomPath ), "ExtRomPath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_ExtRomPath ), "ExtRomPath", P6VPATH2STR( tpath ) );
 }
 
 
 // スクリーンショット格納パス取得
-const std::filesystem::path& CFG6::GetImgPath( void )
+const P6VPATH& CFG6::GetImgPath( void )
 {
 	cIni::GetPath( "PATH", "ImgPath", ImgPath, ImgPath );
 	OSD_AddDelimiter( ImgPath );
@@ -1209,17 +1208,17 @@ const std::filesystem::path& CFG6::GetImgPath( void )
 }
 
 // スクリーンショット格納パス設定
-void CFG6::SetImgPath( const std::filesystem::path& str )
+void CFG6::SetImgPath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_ImgPath ), "ImgPath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_ImgPath ), "ImgPath", P6VPATH2STR( tpath ) );
 }
 
 
 // WAVEパス取得
-const std::filesystem::path& CFG6::GetWavePath( void )
+const P6VPATH& CFG6::GetWavePath( void )
 {
 	cIni::GetPath( "PATH", "WavePath", WavePath, WavePath );
 	OSD_AddDelimiter( WavePath );
@@ -1227,17 +1226,17 @@ const std::filesystem::path& CFG6::GetWavePath( void )
 }
 
 // WAVEパス設定
-void CFG6::SetWavePath( const std::filesystem::path& str )
+void CFG6::SetWavePath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_WavePath ), "WavePath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_WavePath ), "WavePath", P6VPATH2STR( tpath ) );
 }
 
 
 // フォントパス取得
-const std::filesystem::path& CFG6::GetFontPath( void )
+const P6VPATH& CFG6::GetFontPath( void )
 {
 	cIni::GetPath( "PATH", "FontPath", FontPath, FontPath );
 	OSD_AddDelimiter( FontPath );
@@ -1245,17 +1244,17 @@ const std::filesystem::path& CFG6::GetFontPath( void )
 }
 
 // フォントパス設定
-void CFG6::SetFontPath( const std::filesystem::path& str )
+void CFG6::SetFontPath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_FontPath ), "FontPath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_FontPath ), "FontPath", P6VPATH2STR( tpath ) );
 }
 
 
 // どこでもSAVEパス取得
-const std::filesystem::path& CFG6::GetDokoSavePath( void )
+const P6VPATH& CFG6::GetDokoSavePath( void )
 {
 	cIni::GetPath( "PATH", "DokoSavePath", DokoSavePath, DokoSavePath );
 	OSD_AddDelimiter( DokoSavePath );
@@ -1263,12 +1262,12 @@ const std::filesystem::path& CFG6::GetDokoSavePath( void )
 }
 
 // どこでもSAVEパス設定
-void CFG6::SetDokoSavePath( const std::filesystem::path& str )
+void CFG6::SetDokoSavePath( const P6VPATH& str )
 {
-	std::filesystem::path tpath = str;
+	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_DokoSavePath ), "DokoSavePath", tpath.u8string() );
+	cIni::PutEntry( "PATH", GetText( TINI_DokoSavePath ), "DokoSavePath", P6VPATH2STR( tpath ) );
 }
 
 
@@ -1423,13 +1422,13 @@ const std::string& CFG6::GetCaption( void )
 
 // 一時保存のみ　INIファイルに書込まない
 // どこでもSAVEファイル名取得
-const std::filesystem::path CFG6::GetDokoFile( void )
+const P6VPATH CFG6::GetDokoFile( void )
 {
 	return DokoFile;
 }
 
 // どこでもSAVEファイル名設定
-void CFG6::SetDokoFile( const std::filesystem::path& path )
+void CFG6::SetDokoFile( const P6VPATH& path )
 {
 	DokoFile = path;
 	OSD_DelDelimiter( DokoFile );
@@ -1445,7 +1444,7 @@ void CFG6::SetDokoFile( const std::filesystem::path& path )
 void CFG6::InitIni( bool over )
 {
 	std::string str;
-	std::filesystem::path tpath;
+	P6VPATH tpath;
 	
 	// [CONFIG] ------------------------------------------------
 	// 機種
@@ -1576,30 +1575,30 @@ void CFG6::InitIni( bool over )
 	// [FILES] -------------------------------------------------
 	// 拡張ROMファイル名(起動時に自動マウント)
 	if( over || !cIni::GetString( "FILES", "ExtRom", str, "" ) )
-		SetExtRomFile( std::filesystem::u8path( "" ) );
+		SetExtRomFile( P6VSTR2PATH( "" ) );
 	
 	// TAPEファイル名(起動時に自動マウント)
 	if( over || !cIni::GetString( "FILES", "tape", str, "" ) )
-		SetTapeFile( std::filesystem::u8path( "" ) );
+		SetTapeFile( P6VSTR2PATH( "" ) );
 	
 	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
 	if( over || !cIni::GetString( "FILES", "save", str, "" ) ){
-		OSD_AddPath( tpath, std::filesystem::u8path( DIR_TAPE ), std::filesystem::u8path( FILE_SAVE ) );
+		OSD_AddPath( tpath, P6VSTR2PATH( DIR_TAPE ), P6VSTR2PATH( FILE_SAVE ) );
 		OSD_AbsolutePath( tpath );
 		SetSaveFile( tpath );
 	}
 	
 	// DISK1ファイル名(起動時に自動マウント)
 	if( over || !cIni::GetString( "FILES", "disk1", str, "" ) )
-		SetDiskFile( 1, std::filesystem::u8path( "" ) );
+		SetDiskFile( 1, P6VSTR2PATH( "" ) );
 	
 	// DISK2ファイル名(起動時に自動マウント)
 	if( over || !cIni::GetString( "FILES", "disk2", str, "" ) )
-		SetDiskFile( 2, std::filesystem::u8path( "" ) );
+		SetDiskFile( 2, P6VSTR2PATH( "" ) );
 	
 	// プリンタファイル名
 	if( over || !cIni::GetString( "FILES", "printer", str, "" ) ){
-		tpath = std::filesystem::u8path( FILE_PRINTER );
+		tpath = P6VSTR2PATH( FILE_PRINTER );
 		OSD_AbsolutePath( tpath );
 		SetPrinterFile( tpath );
 	}
@@ -1608,56 +1607,56 @@ void CFG6::InitIni( bool over )
 	// [PATH] --------------------------------------------------
 	// ROMパス
 	if( over || !cIni::GetString( "PATH", "RomPath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_ROM );
+		tpath = P6VSTR2PATH( DIR_ROM );
 		OSD_AbsolutePath( tpath );
 		SetRomPath( tpath );
 	}
 	
 	// TAPEパス
 	if( over || !cIni::GetString( "PATH", "TapePath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_TAPE );
+		tpath = P6VSTR2PATH( DIR_TAPE );
 		OSD_AbsolutePath( tpath );
 		SetTapePath( tpath );
 	}
 	
 	// DISKパス
 	if( over || !cIni::GetString( "PATH", "DiskPath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_DISK );
+		tpath = P6VSTR2PATH( DIR_DISK );
 		OSD_AbsolutePath( tpath );
 		SetDiskPath( tpath );
 	}
 	
 	// 拡張ROMパス
 	if( over || !cIni::GetString( "PATH", "ExtRomPath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_EXTROM );
+		tpath = P6VSTR2PATH( DIR_EXTROM );
 		OSD_AbsolutePath( tpath );
 		SetExtRomPath( tpath );
 	}
 	
 	// IMGパス
 	if( over || !cIni::GetString( "PATH", "ImgPath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_IMAGE );
+		tpath = P6VSTR2PATH( DIR_IMAGE );
 		OSD_AbsolutePath( tpath );
 		SetImgPath( tpath );
 	}
 	
 	// WAVEパス
 	if( over || !cIni::GetString( "PATH", "WavePath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_WAVE );
+		tpath = P6VSTR2PATH( DIR_WAVE );
 		OSD_AbsolutePath( tpath );
 		SetWavePath( tpath );
 	}
 	
 	// フォントパス設定
 	if( over || !cIni::GetString( "PATH", "FontPath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_FONT );
+		tpath = P6VSTR2PATH( DIR_FONT );
 		OSD_AbsolutePath( tpath );
 		SetFontPath( tpath );
 	}
 	
 	// どこでもSAVEパス
 	if( over || !cIni::GetString( "PATH", "DokoSavePath", str, "" ) ){
-		tpath = std::filesystem::u8path( DIR_DOKO );
+		tpath = P6VSTR2PATH( DIR_DOKO );
 		OSD_AbsolutePath( tpath );
 		SetDokoSavePath( tpath );
 	}

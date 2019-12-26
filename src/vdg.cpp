@@ -94,12 +94,12 @@ const BYTE VDG6::COL62_CG2[][16] = {	// mode 2-3,4 -----
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-VDG6::VDG6( VM6* vm, const ID& id ) : Device(vm,id),
-		AddrOff(0), VSYNC(false), HSYNC(false), VLcnt(VLINES60)
+VDG6::VDG6( VM6* vm, const ID& id ) : Device( vm, id ),
+		AddrOff( 0 ), VSYNC( false ), HSYNC( false ), VLcnt( VLINES60 )
 {
 }
 
-VDG60::VDG60( VM6* vm, const ID& id ) : VDG6(vm,id)
+VDG60::VDG60( VM6* vm, const ID& id ) : VDG6( vm, id )
 {
 	HSdclk = HSDCLK60;
 	Hclk60 = HCLK6060;
@@ -123,7 +123,7 @@ VDG60::VDG60( VM6* vm, const ID& id ) : VDG6(vm,id)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &VDG60::OutB0H ) );
 }
 
-VDG62::VDG62( VM6* vm, const ID& id ) : VDG6(vm,id)
+VDG62::VDG62( VM6* vm, const ID& id ) : VDG6( vm, id )
 {
 	HSdclk = HSDCLK62;
 	Hclk60 = HCLK6062;
@@ -159,7 +159,7 @@ VDG62::VDG62( VM6* vm, const ID& id ) : VDG6(vm,id)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &VDG62::InA2H  ) );
 }
 
-VDG64::VDG64( VM6* vm, const ID& id ) : VDG6(vm,id)
+VDG64::VDG64( VM6* vm, const ID& id ) : VDG6( vm, id )
 {
 	HSdclk = HSDCLK62;
 	Hclk60 = HCLK6064;
@@ -236,10 +236,10 @@ void VDG6::EventCallback( int id, int clock )
 	switch( id ){
 	case EID_VSYNCS:	// VSYNC開始
 		VSYNC = true;
-		vm->EVSC::OnVSYNC();				// VSYNCを通知する
+		vm->EventOnVSYNC();				// VSYNCを通知する
 		VLcnt = N60Win ? VLINES60 : VLINES62;	// 表示ラインカウント初期化
-		vm->EVSC::Reset( this->Device::GetID(), EID_HDISPS, (double)( N60Win ? Hclk60 : HCLOCK62 ) / (double)HSdclk );
-		vm->EVSC::Reset( this->Device::GetID(), EID_HDISPE );
+		vm->EventReset( this->Device::GetID(), EID_HDISPS, (double)( N60Win ? Hclk60 : HCLOCK62 ) / (double)HSdclk );
+		vm->EventReset( this->Device::GetID(), EID_HDISPE );
 		break;
 		
 	case EID_VSYNCE:	// VSYNC終了
@@ -265,10 +265,10 @@ void VDG64::EventCallback( int id, int clock )
 	switch( id ){
 	case EID_VSYNCS:	// VSYNC
 		VSYNC = true;
-		vm->EVSC::OnVSYNC();				// VSYNCを通知する
+		vm->EventOnVSYNC();				// VSYNCを通知する
 		VLcnt = N60Win ? VLINES60 : VLINES62;	// 表示ラインカウント初期化
-		vm->EVSC::Reset( this->Device::GetID(), EID_HDISPS, (double)( N60Win ? Hclk60 : HCLOCK64 ) / (double)HSdclk );
-		vm->EVSC::Reset( this->Device::GetID(), EID_HDISPE );
+		vm->EventReset( this->Device::GetID(), EID_HDISPS, (double)( N60Win ? Hclk60 : HCLOCK64 ) / (double)HSdclk );
+		vm->EventReset( this->Device::GetID(), EID_HDISPE );
 		break;
 		
 	case EID_VSYNCE:	// VSYNC終了
@@ -295,7 +295,7 @@ void VDG64::EventCallback( int id, int clock )
 ////////////////////////////////////////////////////////////////
 bool VDG6::CreateBuffer( void )
 {
-	return VSurface::InitSurface( MC6847core::GetW() * (IsSRHires() ? 2 : 1), MC6847core::GetH() );
+	return VSurface::InitSurface( GetVideoInfo().w * (IsSRHires() ? 2 : 1), GetVideoInfo().h );
 }
 
 
@@ -451,17 +451,17 @@ bool VDG6::Init( void )
 	PRINTD( VDG_LOG, "[VDG][Init]\n" );
 	
 	// イベント追加
-	if( !vm->EVSC::Add( Device::GetID(), EID_VSYNCS, VSYNC_HZ,          EV_LOOP|EV_HZ ) ) return false;
-	if( !vm->EVSC::Add( Device::GetID(), EID_VSYNCE, VSYNC_HZ,          EV_LOOP|EV_HZ ) ) return false;
-	if( !vm->EVSC::Add( Device::GetID(), EID_HDISPS, VSYNC_HZ * VSLINE, EV_LOOP|EV_HZ ) ) return false;
-	if( !vm->EVSC::Add( Device::GetID(), EID_HDISPE, VSYNC_HZ * VSLINE, EV_LOOP|EV_HZ ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_VSYNCS, VSYNC_HZ,          EV_LOOP|EV_HZ ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_VSYNCE, VSYNC_HZ,          EV_LOOP|EV_HZ ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_HDISPS, VSYNC_HZ * VSLINE, EV_LOOP|EV_HZ ) ) return false;
+	if( !vm->EventAdd( Device::GetID(), EID_HDISPE, VSYNC_HZ * VSLINE, EV_LOOP|EV_HZ ) ) return false;
 	
 	// VSYNC終了タイミングを合わせる
 	e.devid = this->Device::GetID();
 	e.id    = EID_VSYNCE;
-	vm->EVSC::GetEvinfo( &e );
+	vm->EventGetInfo( &e );
 	e.Clock = (e.Clock * 3) / VSLINE;
-	vm->EVSC::SetEvinfo( &e );
+	vm->EventSetInfo( &e );
 	
 	// バックバッファ作成
 	return CreateBuffer();

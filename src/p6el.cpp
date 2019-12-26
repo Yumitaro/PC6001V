@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <new>
 #include <string>
 #include <utility>
@@ -42,13 +43,15 @@ int EL6::Speed = 100;
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-EL6::EL6( void ) : cfg(nullptr), vm(nullptr), sche(nullptr), graph(nullptr), snd(nullptr), joy(nullptr), staw(nullptr),
+EL6::EL6( void ) : cfg( nullptr ), vm( nullptr ), sche( nullptr ), snd( nullptr ),
+	joy( nullptr ), graph( nullptr ), staw( nullptr ),
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	regw(nullptr), memw(nullptr), monw(nullptr),	MonDisp(false),
+	regw( nullptr ), memw( nullptr ), monw( nullptr ),
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	UpDateFPSID(0), FSkipCount(0),
-	TapePathUI(""), DiskPathUI(""), ExRomPathUI(""), DokoPathUI("")
+	UpDateFPSID( 0 ), FSkipCount( 0 ),
+	TapePathUI( "" ), DiskPathUI( "" ), ExRomPathUI( "" ), DokoPathUI( "" )
 {
+	PRINTD( CONST_LOG, "[[EL6]]\n" );
 }
 
 
@@ -57,7 +60,7 @@ EL6::EL6( void ) : cfg(nullptr), vm(nullptr), sche(nullptr), graph(nullptr), snd
 ////////////////////////////////////////////////////////////////
 EL6::~EL6( void )
 {
-	DeleteAllObject();
+	PRINTD( CONST_LOG, "[[~EL6]]\n" );
 }
 
 
@@ -67,53 +70,56 @@ EL6::~EL6( void )
 ////////////////////////////////////////////////////////////////
 void EL6::OnThread( void* inst )
 {
-	EL6* p6;
-	int st = 0;
+	EL6* p6 = STATIC_CAST( EL6*, inst );	// 自分自身のオブジェクトポインタ取得
+	int st  = 0;
 	
-	p6 = STATIC_CAST( EL6*, inst );	// 自分自身のオブジェクトポインタ取得
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	if( p6->MonDisp ){
+	if( p6->vm->IsMonitor() ){
 	// モニタモード
 		while( !this->cThread::IsCancel() ){
 			// 画面更新
-			if( p6->sche->IsScreenUpdate() ) p6->ScreenUpdate();
-			p6->Wait();		// ウェイト
+			if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+			
+			// ウェイト
+			p6->Wait();
 		}
 	}else
 	// 通常モード
-		if( p6->vm->BPoint::GetBPNum() ){
+		if( p6->vm->bp->GetNum() ){
 			// ブレークポイントあり
 			while( !this->cThread::IsCancel() ){
-				// ポーズ中なら何もしない
-				if( p6->sche->GetPauseEnable() )
+				// ポーズ中なら画面更新のみ
+				if( p6->sche->GetPauseEnable() ){
+					// 画面更新
+					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+					
 					// ウェイト
 					p6->Wait();
-				else{
+				}else{
 					st = p6->Emu();		// 1命令実行
 					
 					// ブレークポイントチェック(バスリクエスト期間中はチェックしない)
-					if( st > 0 && ( p6->vm->BPoint::CheckBP( BPoint::BP_PC, p6->vm->CPU6::GetPC() ) || p6->vm->BPoint::GetReqBPNum() ) ){
-						p6->vm->BPoint::ResetBP();
-						OSD_PushEvent( EV_DEBUGMODEBP, p6->vm->CPU6::GetPC() );
-						break;	// スレッド抜ける
+					if( st > 0 && ( p6->vm->bp->Check( BPoint::BP_PC, p6->vm->cpum->GetPC() ) || p6->vm->bp->GetReqNum() ) ){
+						p6->vm->bp->Reset();
+						OSD_PushEvent( EV_DEBUGMODEBP, p6->vm->cpum->GetPC() );
+						break;	// ブレーク条件にヒットしたらスレッド抜ける
 					}
 					
-					if( p6->vm->EVSC::IsVSYNC() ){
-						p6->vm->KEY6::ScanMatrix();	// キーマトリクススキャン
+					if( p6->vm->evsc->IsVSYNC() ){
+						p6->vm->key->ScanMatrix();	// キーマトリクススキャン
 						
 						// サウンド更新
 						p6->SoundUpdate( 0 );
-						// 画面更新時期を迎えていたら画面更新
-						// ノーウェイトの時にFPSが変わらないようにする
-						if( p6->sche->IsScreenUpdate() ) p6->ScreenUpdate();
+						// 画面更新
+						if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
 						
 						// 自動キー入力
 						if( IsAutoKey() ){
 							BYTE key = GetAutoKey();
 							if( key ){
-								if( key == 0x14 ) p6->vm->SUB6::ReqKeyIntr( 6, GetAutoKey() );
-								else			  p6->vm->SUB6::ReqKeyIntr( 0, key );
+								if( key == 0x14 ) p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() );
+								else			  p6->vm->cpus->ReqKeyIntr( 0, key );
 							}
 						}
 						
@@ -128,20 +134,19 @@ void EL6::OnThread( void* inst )
 		while( !this->cThread::IsCancel() ){
 			// ポーズ中なら画面更新のみ
 			if( p6->sche->GetPauseEnable() ){
-				// 画面更新時期を迎えていたら画面更新
-				// ノーウェイトの時にFPSが変わらないようにする
-				if( p6->sche->IsScreenUpdate() ) p6->ScreenUpdate();
+				// 画面更新
+				if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
 			}else{
 				// キーマトリクススキャン
-				bool matchg = p6->vm->KEY6::ScanMatrix();
+				bool matchg = p6->vm->key->ScanMatrix();
 				
 				// リプレイ記録中
 				if( REPLAY::GetStatus() == REP_RECORD )
-					REPLAY::ReplayWriteFrame( p6->vm->KEY6::GetMatrix2(), matchg );
+					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix2(), matchg );
 				
 				// リプレイ再生中
 				if( REPLAY::GetStatus() == REP_REPLAY )
-					REPLAY::ReplayReadFrame( p6->vm->KEY6::GetMatrix() );
+					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix() );
 				
 				p6->EmuVSYNC();			// 1画面分実行
 				
@@ -151,23 +156,21 @@ void EL6::OnThread( void* inst )
 					// サウンド更新
 					p6->SoundUpdate( 0, AVI6::GetAudioBuffer() );
 					// 画面更新されたら AVI1画面保存
-					if( p6->ScreenUpdate() ) AVI6::AVIWriteFrame( p6->GetWindowHandle() );
+					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_CAPTURE );
 				}else{
 					// ビデオキャプチャ中でないなら通常の更新
 					// サウンド更新
 					p6->SoundUpdate( 0 );
-					// 画面更新時期を迎えていたら画面更新
-					// ノーウェイトの時にFPSが変わらないようにする
-					if( p6->sche->IsScreenUpdate() ) p6->ScreenUpdate();
-//					if( p6->sche->IsScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+					// 画面更新
+					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
 				}
 				
 				// 自動キー入力
 				if( IsAutoKey() ){
 					BYTE key = GetAutoKey();
 					if( key ){
-						if( key == 0x14 ) p6->vm->SUB6::ReqKeyIntr( 6, GetAutoKey() );
-						else			  p6->vm->SUB6::ReqKeyIntr( 0, key );
+						if( key == 0x14 ) p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() );
+						else			  p6->vm->cpus->ReqKeyIntr( 0, key );
 					}
 				}
 			}
@@ -184,9 +187,9 @@ void EL6::OnThread( void* inst )
 ////////////////////////////////////////////////////////////////
 void EL6::Wait( void )
 {
-	if( sche->GetWaitEnable() && (!cfg->GetTurboTAPE() || (vm->SUB6::GetCmtStatus() == CMTCLOSE)) )
+	if( sche->GetWaitEnable() && (!cfg->GetTurboTAPE() || (vm->cpus->GetCmtStatus() == CMTCLOSE)) )
 		sche->VWait();
-	vm->EVSC::ReVSYNC();
+	vm->evsc->ReVSYNC();
 }
 
 
@@ -197,7 +200,7 @@ int EL6::Emu( void )
 {
 	int st = vm->Emu();				// VM 1命令実行
 	int ste = st <= 0 ? 1 : st;
-	vm->EVSC::Update( ste );			// イベント更新
+	vm->evsc->Update( ste );		// イベント更新
 	sche->Update( ste );
 	
 	return st;
@@ -212,10 +215,10 @@ int EL6::EmuVSYNC( void )
 	int state = 0;
 	
 	// VSYNCが発生するまで繰返し
-	while( !vm->EVSC::IsVSYNC() ){
+	while( !vm->evsc->IsVSYNC() ){
 		int st = vm->Emu();		// VM 1命令実行
 		if( st <= 0 ) st = 1;
-		vm->EVSC::Update( st );	// イベント更新
+		vm->evsc->Update( st );	// イベント更新
 		sche->Update( st );
 		state += st;
 	}
@@ -245,7 +248,7 @@ void EL6::ToggleMonitor( void )
 	Stop();
 	
 	// モニタウィンドウ表示状態切換え
-	MonDisp = !MonDisp;
+	vm->SetMonitor( !vm->IsMonitor() );
 	
 	// スクリーンサイズ変更
 	graph->ResizeScreen();
@@ -262,16 +265,17 @@ void EL6::ToggleMonitor( void )
 ////////////////////////////////////////////////////////////////
 // 初期化
 ////////////////////////////////////////////////////////////////
-bool EL6::Init( const CFG6* config )
+bool EL6::Init( const std::shared_ptr<CFG6>& config )
 {
 	// エラーメッセージ初期値
 	Error::SetError( Error::InitFailed );
 	
-	// 念の為全オブジェクト削除
-	DeleteAllObject();
+	// 念の為
+	StopFPSTimer();
+	ak.Buffer.clear();
 	
 	if( !config ) return false;
-	cfg = (CFG6*)config;
+	cfg = config;
 	
 	// パレット設定
 	SetPalette();
@@ -279,32 +283,32 @@ bool EL6::Init( const CFG6* config )
 	try{
 		// 機種別 VM確保
 		switch( cfg->GetModel() ){
-		case 61: vm.reset( new VM61( this ) ); break;
-		case 62: vm.reset( new VM62( this ) ); break;
-		case 66: vm.reset( new VM66( this ) ); break;
-		case 64: vm.reset( new VM64( this ) ); break;
-		case 68: vm.reset( new VM68( this ) ); break;
-		default: vm.reset( new VM60( this ) );
+		case 61: vm = std::make_unique<VM61>();	break;
+		case 62: vm = std::make_unique<VM62>();	break;
+		case 66: vm = std::make_unique<VM66>();	break;
+		case 64: vm = std::make_unique<VM64>();	break;
+		case 68: vm = std::make_unique<VM68>();	break;
+		default: vm = std::make_unique<VM60>();
 		}
+		
+		// 各種オブジェクト確保
+		sche  = std::make_unique<SCH6>();			// スケジューラ
+		snd   = std::make_unique<SND6>();			// サウンド
+		joy   = std::make_unique<JOY6>();			// ジョイスティック
+		graph = std::make_unique<DSP6>( this );		// 画面描画
+		staw  = std::make_unique<cWndStat>();		// ステータスバー
+		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		regw  = std::make_unique<cWndReg>( vm );	// レジスタウィンドウ
+		memw  = std::make_unique<cWndMem>( vm );	// メモリウィンドウ
+		monw  = std::make_unique<cWndMon>( vm );	// モニタウィンドウ
+		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		
 		
 		// VM初期化
 		if( !vm->Init( cfg ) ) throw Error::GetError();
 		
-		// 各種オブジェクト確保
-		sche.reset ( new SCH6 );								// スケジューラ
-		snd.reset  ( new SND6 );								// サウンド
-		graph.reset( new DSP6( vm.get() ) );					// 画面描画
-		joy.reset  ( new JOY6 );								// ジョイスティック
-		staw.reset ( new cWndStat( vm.get() ) );				// ステータスバー
-		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		regw.reset ( new cWndReg( vm.get(), DEV_ID("REGW") ) );	// レジスタウィンドウ
-		memw.reset ( new cWndMem( vm.get(), DEV_ID("MEMW") ) );	// メモリウィンドウ
-		monw.reset ( new cWndMon( vm.get(), DEV_ID("MONW") ) );	// モニタウィンドウ
-		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		
-		
 		// スケジューラ -----
-		sche->SetMasterClock( vm->EVSC::GetMasterClock() );
+		sche->SetMasterClock( vm->evsc->GetMasterClock() );
 		
 		// サウンド -----
 		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetSampleRate(), cfg->GetSoundBuffer() ) ) throw Error::GetError();
@@ -342,7 +346,7 @@ bool EL6::Init( const CFG6* config )
 		
 		// ストリーム接続
 		snd->ConnectStream( vm->psg );		// PSG/OPN
-		snd->ConnectStream( (CMTL*)vm.get() );	// CMT(LOAD)
+		snd->ConnectStream( vm->cmtl );		// CMT(LOAD)
 		snd->ConnectStream( vm->voice );	// 音声合成
 		
 		
@@ -358,14 +362,10 @@ bool EL6::Init( const CFG6* config )
 		
 	}
 	catch( std::bad_alloc& ){	// new に失敗した場合
-		// 全オブジェクト削除
-		DeleteAllObject();
 		Error::SetError( Error::MemAllocFailed );
 		return false;
 	}
 	catch( Error::Errno i ){	// 例外発生
-		// 全オブジェクト削除
-		DeleteAllObject();
 		return false;
 	}
 	
@@ -449,27 +449,26 @@ EL6::ReturnCode EL6::EventLoop( void )
 		case EV_KEYDOWN:		// キー入力
 			#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			// モニタモード?
-			if( MonDisp ){
-				monw->KeyIn( event.key.sym, event.key.mod & KVM_SHIFT, event.key.unicode );
+			if( vm->IsMonitor() ){
+				CheckMonKey( event.key.sym, event.key.unicode, event.key.mod & KVM_SHIFT ? true : false );
 				break;
-			}else
+			}
 			#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			// 各種機能キーチェック
-			if( CheckFuncKey( event.key.sym,
-							  event.key.mod & KVM_ALT  ? true : false,
-							  event.key.mod & KVM_META ? true : false ) )
+			if( CheckFuncKey( event.key.sym, event.key.mod & KVM_ALT ? true : false ) )
 				break;
+			
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() )
 				// キーマトリクス更新(キー)
-				vm->KEY6::UpdateMatrixKey( event.key.sym, true );
+				vm->key->UpdateMatrixKey( event.key.sym, true );
 			break;
 			
 		case EV_KEYUP:
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() )
 				// キーマトリクス更新(キー)
-				vm->KEY6::UpdateMatrixKey( event.key.sym, false );
+				vm->key->UpdateMatrixKey( event.key.sym, false );
 			break;
 			
 		case EV_JOYAXISMOTION:
@@ -478,14 +477,16 @@ EL6::ReturnCode EL6::EventLoop( void )
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() )
 				// キーマトリクス更新(ジョイスティック)
-				vm->KEY6::UpdateMatrixJoy( joy->GetJoyState( 0 ), joy->GetJoyState( 1 ) );
+				vm->key->UpdateMatrixJoy( joy->GetJoyState( 0 ), joy->GetJoyState( 1 ) );
 			break;
 			
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		case EV_DEBUGMODEBP:	// モニタモード変更(ブレークポイント到達時)
+		case EV_DEBUGMODEBP:		// モニタモード変更(ブレークポイント到達時)
 			monw->BreakIn( event.bp.addr );		// ブレークポイントの情報を表示
-			ToggleMonitor();					// モニタモード変更
+			[[fallthrough]];
 			
+		case EV_DEBUGMODETOGGLE:	// モニタモード変更(モニタモードから通常モードへの復帰)
+			ToggleMonitor();
 			break;
 			
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -518,7 +519,12 @@ EL6::ReturnCode EL6::EventLoop( void )
 			break;
 			
 		case EV_RENDER:				// 画面描画
-			ScreenUpdate();
+			graph->DrawScreen();
+			break;
+			
+		case EV_CAPTURE:			// ビデオキャプチャ
+			graph->DrawScreen();
+			AVI6::AVIWriteFrame( GetWindowHandle() );
 			break;
 			
 		case EV_WINDOWSIZECHANGED:	// ウィンドウサイズ変更
@@ -542,13 +548,13 @@ EL6::ReturnCode EL6::EventLoop( void )
 			return Replay;
 			
 		case EV_DROPFILE:{		// Drag & Drop
-			std::filesystem::path tpath = std::filesystem::u8path( event.drop.file );
+			P6VPATH tpath = P6VSTR2PATH( event.drop.file );
 			// ファイル名を開放
 			delete [] event.drop.file;
 			
 			// 拡張子取得(小文字)
 			std::string ext = OSD_GetFileNameExt( tpath );
-			std::transform( ext.begin(), ext.end(), ext.begin(), tolower );
+			std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower );
 			
 			if( ext == EXT_P6RAW || ext == EXT_CAS || ext == EXT_P6T ){
 				UI_TapeInsert( tpath );
@@ -588,7 +594,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 ////////////////////////////////////////////////////////////////
 // 各種機能キーチェック
 ////////////////////////////////////////////////////////////////
-bool EL6::CheckFuncKey( int kcode, bool OnALT, bool OnMETA )
+bool EL6::CheckFuncKey( int kcode, bool OnALT )
 {
 	switch( kcode ){	// キーコード
 	case KVC_F6:		// モニタモード変更 or スクリーンモード変更
@@ -675,7 +681,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT, bool OnMETA )
 		if( REPLAY::GetStatus() == REP_RECORD ){
 			UI_ReplayDokoSave();
 		}else{
-			std::filesystem::path tpath = std::filesystem::u8path( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() );
+			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() );
 			DokoDemoSave( tpath );
 			
 			cIni save;
@@ -693,7 +699,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT, bool OnMETA )
 		if( REPLAY::GetStatus() == REP_RECORD ){
 			UI_ReplayDokoLoad();
 		} else {
-			std::filesystem::path tpath = std::filesystem::u8path( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() ) );
+			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() ) );
 			if( OSD_FileExist( tpath ) ){
 				cfg->SetModel( GetDokoModel( tpath ) );
 				cfg->SetDokoFile( tpath );
@@ -711,33 +717,31 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT, bool OnMETA )
 }
 
 
-
-
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ////////////////////////////////////////////////////////////////
-// 全オブジェクト削除
+// モニタモードキーチェック
 ////////////////////////////////////////////////////////////////
-void EL6::DeleteAllObject( void )
+void EL6::CheckMonKey( int kcode, int ccode, bool OnSHIFT )
 {
-	if( UpDateFPSID ){
-		OSD_DelTimer( UpDateFPSID );
-		UpDateFPSID = 0;
+	switch( kcode ){		// キーコード
+	case KVC_F6:			// モニタモード変更
+		ToggleMonitor();
+		break;
+		
+	// メモリウィンドウ
+	case KVC_PAGEDOWN:		// PageDown
+		memw->SetAddress( memw->GetAddress() + ( OnSHIFT ? 2048 : 16 ) );
+		break;
+		
+	case KVC_PAGEUP:		// PageUp
+		memw->SetAddress( memw->GetAddress() - ( OnSHIFT ? 2048 : 16 ) );
+		break;
+		
+	default:
+		monw->KeyIn( kcode, ccode );
 	}
-	
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-//	if( monw ) { delete monw;	monw = nullptr; }
-//	if( memw ) { delete memw;	memw = nullptr; }
-//	if( regw ) { delete regw;	regw = nullptr; }
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	
-//	if( staw ) { delete staw;	staw  = nullptr; }
-//	if( joy )  { delete joy;	joy   = nullptr; }
-//	if( snd )  { delete snd;	snd   = nullptr; }
-//	if( graph ){ delete graph;	graph = nullptr; }
-//	if( sche ) { delete sche;	sche  = nullptr; }
-//	if( vm )   { delete vm;		vm    = nullptr; }
-	
-	ak.Buffer.clear();
 }
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 ////////////////////////////////////////////////////////////////
@@ -745,31 +749,39 @@ void EL6::DeleteAllObject( void )
 ////////////////////////////////////////////////////////////////
 bool EL6::ScreenUpdate( void )
 {
+	// 画面更新時期を迎えた?(ビデオキャプチャ中は無視)
+	if( !AVI6::IsAVI() && !sche->IsScreenUpdate() ) return false;
+	
 	// フレームスキップチェック
-	if( ++FSkipCount > cfg->GetFrameSkip() ){
-		// ステータスバー更新
-		staw->SetReplayStatus( REPLAY::GetStatus() );	// リプレイステータス
-		// バックバッファ更新
-		vm->vdg->UpdateBackBuf();
-		// 画面描画
-		graph->DrawScreen();
-		
-		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		if( MonDisp ){
-			regw->Update();
-			memw->Update();
-			monw->Update();
-		}
-		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		
-		// FPSカウントアップ
-		sche->FPSUpdate();
-		
-		FSkipCount = 0;
-		
-		return true;
+	if( FSkipCount++ < cfg->GetFrameSkip() ) return false;
+	
+	
+	// ここではバックバッファの更新のみ
+	// 実際に画面に反映するには「メインスレッドから」graph->DrawScreen()を呼ぶ
+	// (SDLの制約による。この手のフレームワークでは大体同じ制約があるらしい。)
+	
+	// バックバッファ更新
+	vm->vdg->UpdateBackBuf();
+	
+	// ステータスバー更新
+	staw->SetReplayStatus( REPLAY::GetStatus() );	// リプレイステータス
+	staw->Update( vm );
+	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// モニタモード画面更新
+	if( vm->IsMonitor() ){
+		regw->Update();
+		memw->Update();
+		monw->Update();
 	}
-	return false;
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	// FPSカウントアップ
+	sche->FPSUpdate();
+	
+	FSkipCount = 0;
+	
+	return true;
 }
 
 
@@ -786,7 +798,7 @@ int EL6::SoundUpdate( int samples, cRing* exbuf )
 	int size = vm->psg->SoundUpdate( samples );
 	
 	// CMT(LOAD)更新
-	vm->CMTL::SoundUpdate( size );
+	vm->cmtl->SoundUpdate( size );
 	
 	// 音声合成更新
 	vm->voice->SoundUpdate( size );
@@ -817,7 +829,7 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 	
 	if( addsam > 0 && !p6->AVI6::IsAVI() && !p6->sche->GetPauseEnable()
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		&& !p6->MonDisp
+		&& !p6->vm->IsMonitor()
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 																		){
 		p6->SoundUpdate( addsam );
@@ -831,7 +843,7 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 ////////////////////////////////////////////////////////////////
 DWORD EL6::UpDateFPS( DWORD interval, void* obj )
 {
-//	EL6* p6 = STATIC_CAST( EL6*, obj );	// 自分自身のオブジェクトポインタ取得
+	// obj未使用
 	
 	OSD_PushEvent( EV_FPSUPDATE );
 	
@@ -848,7 +860,7 @@ bool EL6::StartFPSTimer( void )
 	StopFPSTimer();
 	
 	// タイマ設定
-	UpDateFPSID = OSD_AddTimer( 1000, EL6::UpDateFPS, this );
+	UpDateFPSID = OSD_AddTimer( 1000, EL6::UpDateFPS, nullptr );
 	
 	return UpDateFPSID ? true : false;
 }
@@ -889,13 +901,13 @@ char EL6::GetAutoKey( void )
 {
 	// リレーON待ち
 	if( ak.RelayOn ){
-		if( vm->CMTL::IsRelay() ) ak.RelayOn = false;
+		if( vm->cmtl->IsRelay() ) ak.RelayOn = false;
 		else                      return 0;
 	}
 	
 	// リレーOFF待ち
 	if( ak.Relay ){
-		if( !vm->CMTL::IsRelay() ) ak.Relay = false;
+		if( !vm->cmtl->IsRelay() ) ak.Relay = false;
 		else                       return 0;
 	}
 	
@@ -964,7 +976,7 @@ bool EL6::SetAutoKey( const std::string& str )
 // 引数:	filepath	入力ファイルパス
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::SetAutoKeyFile( const std::filesystem::path& filepath )
+bool EL6::SetAutoKeyFile( const P6VPATH& filepath )
 {
 	std::fstream fs;
 	char lbuf[1024];
@@ -1003,9 +1015,9 @@ void EL6::SetAutoStart( void )
 {
 	std::string kbuf;
 	
-	if( !(vm->CMTL::IsMount() && vm->CMTL::IsAutoStart()) ) return;
+	if( !(vm->cmtl->IsMount() && vm->cmtl->IsAutoStart()) ) return;
 	
-	const P6TAUTOINFO& ainf = vm->CMTL::GetAutoStartInfo();
+	const P6TAUTOINFO& ainf = vm->cmtl->GetAutoStartInfo();
 	
 	// キーバッファに書込み
 	switch( cfg->GetModel() ){
@@ -1089,19 +1101,28 @@ void EL6::SetPalette( void )
 }
 
 
-
 ////////////////////////////////////////////////////////////////
-// モニタモード?
+// バックバッファ取得
 //
 // 引数:	なし
-// 返値:	bool		true:モニタモード false:実行中
+// 返値:	std::shared_ptr<VSurface>	バックバッファ
 ////////////////////////////////////////////////////////////////
-#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-bool EL6::IsMonitor( void ) const
+std::shared_ptr<VSurface> EL6::GetBackBuffer( void )
 {
-	return MonDisp;
+	return vm->vdg;
 }
-#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+////////////////////////////////////////////////////////////////
+// 画面情報取得
+//
+// 引数:	なし
+// 返値:	VDGInfo&	画面情報
+////////////////////////////////////////////////////////////////
+const VDGInfo& EL6::GetVideoInfo( void ) const
+{
+	return vm->vdg->GetVideoInfo();
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -1122,7 +1143,7 @@ HWINDOW EL6::GetWindowHandle( void )
 // 引数:	path		ファイルパスへの参照
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::DokoDemoSave( const std::filesystem::path& path )
+bool EL6::DokoDemoSave( const P6VPATH& path )
 {
 	PRINTD( VM_LOG, "[EL6][DokoDemoSave]\n" );
 	
@@ -1144,16 +1165,16 @@ bool EL6::DokoDemoSave( const std::filesystem::path& path )
 		
 		// 各オブジェクトのパラメータ書込み
 		if( !cfg->DokoSave( &ini )      ||
-			!vm->EVSC::DokoSave( &ini ) ||
+			!vm->evsc->DokoSave( &ini ) ||
 			!vm->intr->DokoSave( &ini ) ||
-			!vm->CPU6::DokoSave( &ini ) ||
-			!vm->SUB6::DokoSave( &ini ) ||
+			!vm->cpum->DokoSave( &ini ) ||
+			!vm->cpus->DokoSave( &ini ) ||
 			!vm->mem->DokoSave( &ini )  ||
 			!vm->vdg->DokoSave( &ini )  ||
 			!vm->psg->DokoSave( &ini )  ||
-			!vm->PIO6::DokoSave( &ini ) ||
-			!vm->KEY6::DokoSave( &ini ) ||
-			!vm->CMTL::DokoSave( &ini ) ||
+			!vm->pio->DokoSave( &ini )  ||
+			!vm->key->DokoSave( &ini )  ||
+			!vm->cmtl->DokoSave( &ini ) ||
 			!vm->disk->DokoSave( &ini ) ||
 			!vm->voice->DokoSave( &ini )
 		) throw Error::GetError();
@@ -1192,7 +1213,7 @@ bool EL6::DokoDemoSave( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::DokoDemoLoad( const std::filesystem::path& path )
+bool EL6::DokoDemoLoad( const P6VPATH& path )
 {
 	PRINTD( VM_LOG, "[EL6][DokoDemoLoad]\n" );
 	
@@ -1212,16 +1233,16 @@ bool EL6::DokoDemoLoad( const std::filesystem::path& path )
 		Init( cfg );
 		
 		// 各オブジェクトのパラメータ読込み
-		if(	!vm->EVSC::DokoLoad( &ini ) ||
+		if(	!vm->evsc->DokoLoad( &ini ) ||
 			!vm->intr->DokoLoad( &ini ) ||
-			!vm->CPU6::DokoLoad( &ini ) ||
-			!vm->SUB6::DokoLoad( &ini ) ||
+			!vm->cpum->DokoLoad( &ini ) ||
+			!vm->cpus->DokoLoad( &ini ) ||
 			!vm->mem->DokoLoad( &ini )  ||
 			!vm->vdg->DokoLoad( &ini )  ||
 			!vm->psg->DokoLoad( &ini )  ||
-			!vm->PIO6::DokoLoad( &ini ) ||
-			!vm->KEY6::DokoLoad( &ini ) ||
-			!vm->CMTL::DokoLoad( &ini ) ||
+			!vm->pio->DokoLoad( &ini )  ||
+			!vm->key->DokoLoad( &ini )  ||
+			!vm->cmtl->DokoLoad( &ini ) ||
 			!vm->disk->DokoLoad( &ini ) ||
 			!vm->voice->DokoLoad( &ini )
 		) throw Error::GetError();
@@ -1261,7 +1282,7 @@ bool EL6::DokoDemoLoad( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	int			機種名(60,61,62,66)
 ////////////////////////////////////////////////////////////////
-int EL6::GetDokoModel( const std::filesystem::path& path )
+int EL6::GetDokoModel( const P6VPATH& path )
 {
 	cIni ini;
 	int st;
@@ -1282,22 +1303,17 @@ int EL6::GetDokoModel( const std::filesystem::path& path )
 }
 
 
-
-
-
-
-
 ////////////////////////////////////////////////////////////////
 // TAPE マウント
 //
 // 引数:	path		ファイルパス
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::TapeMount( const std::filesystem::path& path )
+bool EL6::TapeMount( const P6VPATH& path )
 {
-	if( !vm->CMTL::Mount( path ) ) return false;
+	if( !vm->cmtl->Mount( path ) ) return false;
 	
-	vm->CMTL::SetStopBit( cfg->GetStopBit() );		// ストップビット数
+	vm->cmtl->SetStopBit( cfg->GetStopBit() );		// ストップビット数
 	return true;
 }
 
@@ -1310,7 +1326,7 @@ bool EL6::TapeMount( const std::filesystem::path& path )
 ////////////////////////////////////////////////////////////////
 void EL6::TapeUnmount( void )
 {
-	vm->CMTL::Unmount();
+	vm->cmtl->Unmount();
 }
 
 
@@ -1321,7 +1337,7 @@ void EL6::TapeUnmount( void )
 //			path		ファイルパスへの参照
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::DiskMount( int drv, const std::filesystem::path& path )
+bool EL6::DiskMount( int drv, const P6VPATH& path )
 {
 	if( !vm->disk->Mount( drv, path ) ) return false;
 	return true;
@@ -1350,7 +1366,7 @@ void EL6::DiskUnmount( int drv )
 // 引数:	path		ファイルパス
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::ReplayRecStart( const std::filesystem::path& path )
+bool EL6::ReplayRecStart( const P6VPATH& path )
 {
 	return REPLAY::StartRecord( path );
 }
@@ -1362,10 +1378,10 @@ bool EL6::ReplayRecStart( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool EL6::ReplayRecResume( const std::filesystem::path& path )
+bool EL6::ReplayRecResume( const P6VPATH& path )
 {
 	// 途中セーブファイルを探す
-	std::filesystem::path tpath = path;
+	P6VPATH tpath = path;
 	OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
 	
 	if( OSD_FileExist( tpath ) ){
@@ -1391,7 +1407,7 @@ bool EL6::ReplayRecResume( const std::filesystem::path& path )
 bool EL6::ReplayRecDokoLoad( void )
 {
 	if( REPLAY::GetStatus() == REP_RECORD ){
-		std::filesystem::path tpath = REPLAY::cIni::GetFilePath();
+		P6VPATH tpath = REPLAY::cIni::GetFilePath();
 		REPLAY::StopRecord();
 		return ReplayRecResume( tpath );
 	}else{
@@ -1410,7 +1426,7 @@ bool EL6::ReplayRecDokoSave( void )
 {
 	if( REPLAY::GetStatus() == REP_RECORD ){
 		// 途中セーブファイルを保存
-		std::filesystem::path tpath = REPLAY::cIni::GetFilePath();
+		P6VPATH tpath = REPLAY::cIni::GetFilePath();
 		OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
 		if( !DokoDemoSave( tpath ) ) return false;
 		
@@ -1450,7 +1466,7 @@ void EL6::ReplayRecStop( void )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::ReplayPlayStart( const std::filesystem::path& path )
+void EL6::ReplayPlayStart( const P6VPATH& path )
 {
 	cfg->SetModel( GetDokoModel( path ) );
 	cfg->SetDokoFile( path );
@@ -1481,9 +1497,9 @@ void EL6::ReplayPlayStop( void )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_TapeInsert( const std::filesystem::path& path )
+void EL6::UI_TapeInsert( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( TapePathUI ) )
@@ -1496,7 +1512,6 @@ void EL6::UI_TapeInsert( const std::filesystem::path& path )
 }
 
 
-
 ////////////////////////////////////////////////////////////////
 // UI:DISK 挿入
 //
@@ -1504,9 +1519,9 @@ void EL6::UI_TapeInsert( const std::filesystem::path& path )
 //			path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_DiskInsert( int drv, const std::filesystem::path& path )
+void EL6::UI_DiskInsert( int drv, const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DiskPathUI ) )
@@ -1525,9 +1540,9 @@ void EL6::UI_DiskInsert( int drv, const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_RomInsert( const std::filesystem::path& path )
+void EL6::UI_RomInsert( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( ExRomPathUI ) )
@@ -1566,9 +1581,9 @@ void EL6::UI_RomEject( void )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_DokoSave( const std::filesystem::path& path )
+void EL6::UI_DokoSave( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DokoPathUI ) )
@@ -1587,9 +1602,9 @@ void EL6::UI_DokoSave( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_DokoLoad( const std::filesystem::path& path )
+void EL6::UI_DokoLoad( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DokoPathUI ) )
@@ -1610,9 +1625,9 @@ void EL6::UI_DokoLoad( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplaySave( const std::filesystem::path& path )
+void EL6::UI_ReplaySave( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
@@ -1637,9 +1652,9 @@ void EL6::UI_ReplaySave( const std::filesystem::path& path )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplayResumeSave( const std::filesystem::path& path )
+void EL6::UI_ReplayResumeSave( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
@@ -1684,9 +1699,9 @@ void EL6::UI_ReplayDokoSave()
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplayLoad( const std::filesystem::path& path )
+void EL6::UI_ReplayLoad( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
+	P6VPATH fpath = path;
 	
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
@@ -1712,8 +1727,8 @@ void EL6::UI_ReplayLoad( const std::filesystem::path& path )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_AVISave( void )
 {
-	std::filesystem::path fpath;
-	std::filesystem::path mpath = OSD_GetConfigPath();
+	P6VPATH fpath;
+	P6VPATH mpath = OSD_GetConfigPath();
 	
 	if( !AVI6::IsAVI() ){
 		if( OSD_FileSelect( GetWindowHandle(), FD_AVISave, fpath, mpath ) ){
@@ -1731,10 +1746,10 @@ void EL6::UI_AVISave( void )
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_AutoType( const std::filesystem::path& path )
+void EL6::UI_AutoType( const P6VPATH& path )
 {
-	std::filesystem::path fpath = path;
-	std::filesystem::path mpath = OSD_GetConfigPath();
+	P6VPATH fpath = path;
+	P6VPATH mpath = OSD_GetConfigPath();
 	
 	if( fpath.empty() ){
 		OSD_FileSelect( GetWindowHandle(), FD_LoadAll, fpath, mpath );
@@ -1824,7 +1839,7 @@ void EL6::UI_TurboTape( void )
 void EL6::UI_BoostUp( void )
 {
 	cfg->SetBoostUp( cfg->GetBoostUp() ? false : true );
-	vm->CMTL::SetBoost( vm->CMTL::IsBoostUp() ? false : true );
+	vm->cmtl->SetBoost( vm->cmtl->IsBoostUp() ? false : true );
 }
 
 
@@ -1971,12 +1986,15 @@ void EL6::UI_Config( void )
 		CFG6 ccfg;
 		
 		ccfg.Init();	// 変更したINIを読込み(比較用)
-		bool reb =  cfg->GetModel()      != ccfg.GetModel()      ||	// 機種取得
-					cfg->GetFddNum()     != ccfg.GetFddNum()     ||	// FDD接続台数取得
-					cfg->GetUseExtRam()  != ccfg.GetUseExtRam()  ||	// 拡張RAMを使う取得
-					cfg->GetOverClock()  != ccfg.GetOverClock()  ||	// オーバークロック率
-					cfg->GetUseSoldier() != ccfg.GetUseSoldier() ||	// 戦士のカートリッジ使うフラグ取得
-					cfg->GetExtRomFile() != ccfg.GetExtRomFile();	// 拡張ROMファイル名取得
+		bool reb =  cfg->GetModel()       != ccfg.GetModel()       ||	// 機種取得
+					cfg->GetFddNum()      != ccfg.GetFddNum()      ||	// FDD接続台数取得
+					cfg->GetUseExtRam()   != ccfg.GetUseExtRam()   ||	// 拡張RAMを使う取得
+					cfg->GetOverClock()   != ccfg.GetOverClock()   ||	// オーバークロック率
+					cfg->GetUseSoldier()  != ccfg.GetUseSoldier()  ||	// 戦士のカートリッジ使うフラグ取得
+					cfg->GetExtRomFile()  != ccfg.GetExtRomFile()  ||	// 拡張ROMファイル名取得
+					cfg->GetTapeFile()    != ccfg.GetTapeFile()    ||	// TAPE(LOAD)ファイル名
+					cfg->GetDiskFile( 1 ) != ccfg.GetDiskFile( 1 ) ||	// DISK1ファイル名
+					cfg->GetDiskFile( 2 ) != ccfg.GetDiskFile( 2 );		// DISK2ファイル名
 		
 		cfg->Init();	// 変更したINIを読込み(オリジナル)
 		
@@ -1988,10 +2006,10 @@ void EL6::UI_Config( void )
 		
 		// 設定反映
 		// [CONFIG] ----------------------------------------------------
-		vm->CMTL::SetBoost( cfg->GetBoostUp() );					// BoostUp 有効フラグ
-		vm->CMTL::SetMaxBoost( cfg->GetMaxBoost1(), cfg->GetMaxBoost2() );	// BoostUp 最大倍率
+		vm->cmtl->SetBoost( cfg->GetBoostUp() );					// BoostUp 有効フラグ
+		vm->cmtl->SetMaxBoost( cfg->GetMaxBoost1(), cfg->GetMaxBoost2() );	// BoostUp 最大倍率
 		vm->disk->WaitEnable( cfg->GetFddWaitEnable() );			// FDDウェイト有効フラグ
-		vm->CMTL::SetStopBit( cfg->GetStopBit() );					// ストップビット数
+		vm->cmtl->SetStopBit( cfg->GetStopBit() );					// ストップビット数
 		
 		// [DISPLAY] ---------------------------------------------------
 		vm->vdg->SetMode4Color( cfg->GetMode4Color() );				// モード4カラーモード
@@ -2002,11 +2020,11 @@ void EL6::UI_Config( void )
 		vm->psg->SetVolume( cfg->GetPsgVol() );						// PSG/OPN音量
 		vm->psg->SetLPF( cfg->GetPsgLPF() );						// PSG/OPN LPFカットオフ周波数
 		vm->voice->SetVolume( cfg->GetVoiceVol() );					// 音声合成音量
-		vm->CMTL::SetVolume( cfg->GetCmtVol() );					// TAPEモニタ音量取得
-		vm->CMTL::SetLPF( cfg->GetCmtLPF() );						// TAPE LPFカットオフ周波数取得
+		vm->cmtl->SetVolume( cfg->GetCmtVol() );					// TAPEモニタ音量取得
+		vm->cmtl->SetLPF( cfg->GetCmtLPF() );						// TAPE LPFカットオフ周波数取得
 		
 		// [FILES] -----------------------------------------------------
-		vm->PIO6::cPRT::SetFile( cfg->GetPrinterFile() );			// プリンタファイル名取得
+		vm->pio->cPRT::SetFile( cfg->GetPrinterFile() );			// プリンタファイル名取得
 		
 		// [PATH] ------------------------------------------------------
 		vm->voice->SetPath( cfg->GetWavePath() );					// WAVEパス取得

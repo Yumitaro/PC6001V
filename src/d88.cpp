@@ -26,11 +26,11 @@ cD88::~cD88( void )
 ////////////////////////////////////////////////////////////////
 // 初期化
 ////////////////////////////////////////////////////////////////
-bool cD88::Init( const std::filesystem::path& filepath )
+bool cD88::Init( const P6VPATH& filepath )
 {
 	std::ios_base::openmode mode;
 	
-	PRINTD( D88_LOG, "[D88][Init] %s\n", filepath.u8string().c_str() )
+	PRINTD( D88_LOG, "[D88][Init] %s\n", P6VPATH2STR( filepath ).c_str() )
 	
 	// 読取り専用属性ならプロテクト状態で開く
 	if( OSD_FileReadOnly( filepath ) ){
@@ -396,7 +396,7 @@ BYTE cD88::GetSecStatus( void ) const
 ////////////////////////////////////////////////////////////////
 // ファイル名取得
 ////////////////////////////////////////////////////////////////
-const std::filesystem::path& cD88::GetFileName( void ) const
+const P6VPATH& cD88::GetFileName( void ) const
 {
 	return FilePath;
 }

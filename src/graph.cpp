@@ -1,5 +1,3 @@
-#include "pc6001v.h"
-
 #include "common.h"
 #include "config.h"
 #include "debug.h"
@@ -7,47 +5,54 @@
 #include "log.h"
 #include "osd.h"
 #include "p6el.h"
+#include "pc6001v.h"
 #include "status.h"
 #include "vdg.h"
 
 
 // スクリーン表示倍率(%)
-#define	WSCALE		vm->el->cfg->GetWindowZoom()
+#define	WSCALE		el->cfg->GetWindowZoom()
 
 // スクリーンサイズ(標準)
-#define	P6WINW		vm->vdg->GetW()
-#define	P6WINH		vm->vdg->GetH()
+#define	P6WINW		el->GetVideoInfo().w
+#define	P6WINH		el->GetVideoInfo().h
+
+// アスペクトレシオ(幅に対する高さの比)
+#define	P6RATIO		el->GetVideoInfo().ratio
 
 
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 // モニタモード スクリーン表示マージン
 #define	P6WINMGN	4
 // モニタモードウィンドウサイズ
-#define	P6DEBUGW	(max(P6WINW+P6WINMGN*2,vm->el->monw->Width())+max(vm->el->regw->Width(),vm->el->memw->Width()))
-#define	P6DEBUGH	(max(P6WINH+P6WINMGN*2+vm->el->monw->Height(),vm->el->regw->Height()+vm->el->memw->Height()))
+#define	P6DEBUGW	(max(P6WINW+P6WINMGN*2,el->monw->Width())+max(el->regw->Width(),el->memw->Width()))
+#define	P6DEBUGH	(max(P6WINH+P6WINMGN*2+el->monw->Height(),el->regw->Height()+el->memw->Height()))
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 // モニタモード時はフルスクリーン，スキャンライン，4:3表示禁止
 // フルスクリーンモード時はステータスバー表示禁止
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-#define	DISPMON		vm->el->IsMonitor()
-#define	DISPFULL	(!DISPMON && vm->el->cfg->GetFullScreen())
-#define	DISPSCAN	(!DISPMON && vm->el->cfg->GetScanLine())
-#define	DISPNTSC	(!DISPMON && vm->el->cfg->GetDispNTSC())
+#define	DISPMON		el->vm->IsMonitor()
+#define	DISPFULL	(!DISPMON && el->cfg->GetFullScreen())
+#define	DISPSCAN	(!DISPMON && el->cfg->GetScanLine())
+#define	DISPNTSC	(!DISPMON && el->cfg->GetDispNTSC())
 #else
-#define	DISPFULL	vm->el->cfg->GetFullScreen()
-#define	DISPSCAN	vm->el->cfg->GetScanLine()
-#define	DISPNTSC	vm->el->cfg->GetDispNTSC()
+#define	DISPFULL	el->cfg->GetFullScreen()
+#define	DISPSCAN	el->cfg->GetScanLine()
+#define	DISPNTSC	el->cfg->GetDispNTSC()
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-#define	DISPSTAT	(!DISPFULL && vm->el->cfg->GetDispStat())
+#define	DISPSTAT	(!DISPFULL && el->cfg->GetDispStat())
 
 
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-DSP6::DSP6( VM6 *pvm ) : vm(pvm), Wh(nullptr) {}
+DSP6::DSP6( EL6* el ) : el( el ), Wh( nullptr )
+{
+	PRINTD( CONST_LOG, "[[DSP6]]\n" );
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -55,6 +60,8 @@ DSP6::DSP6( VM6 *pvm ) : vm(pvm), Wh(nullptr) {}
 ////////////////////////////////////////////////////////////////
 DSP6::~DSP6( void )
 {
+	PRINTD( CONST_LOG, "[[~DSP6]]\n" );
+	
 	if( Wh ) OSD_DestroyWindow( Wh );
 }
 
@@ -110,13 +117,13 @@ bool DSP6::SetScreenSurface( void )
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	{
 		x = ScreenX();
-		y = ScreenY() + (DISPSTAT ? vm->el->staw->Height() : 0);
+		y = ScreenY() + (DISPSTAT ? el->staw->Height() : 0);
 		
 		PRINTD( GRP_LOG, " -> %s ( X:%d Y:%d )\n", DISPFULL ? "FullScreen" : "Window", x, y );
 	}
 	
 	// ウィンドウ作成
-	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, vm->el->cfg->GetFiltering(), vm->el->cfg->GetScanLineBr() );
+	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetFiltering(), el->cfg->GetScanLineBr() );
 	
 	PRINTD( GRP_LOG, " -> %s ( %d x %d )\n", Wh ? "OK" : "Failed", Wh ? OSD_GetWindowWidth( Wh ) : 0, Wh ? OSD_GetWindowHeight( Wh ) : 0 );
 	
@@ -150,13 +157,13 @@ bool DSP6::ResizeScreen( void )
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	{
 		x = ScreenX();
-		y = ScreenY() + (DISPSTAT ? vm->el->staw->Height() : 0);
+		y = ScreenY() + (DISPSTAT ? el->staw->Height() : 0);
 	}
 	
 	// ウィンドウサイズ変更 or フィルタリング変更なら作り直す
-	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != vm->el->cfg->GetFiltering() ){
+	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetFiltering() ){
 		if( !SetScreenSurface() ) return false;
-		vm->el->staw->Init( OSD_GetWindowWidth( Wh ) );	// ステータスバーも
+		el->staw->Init( OSD_GetWindowWidth( Wh ) );	// ステータスバーも
 	}else
 		// 作り直さない場合は現在のスクリーンサーフェスをクリア
 		OSD_ClearWindow( Wh );
@@ -176,9 +183,8 @@ void DSP6::DrawScreen( void )
 	PRINTD( GRP_LOG, "[GRP][DrawScreen]\n" );
 	
 	VRect pos;
-	VSurface* BBuf = vm->vdg;		// バックバッファへのポインタ取得
 	
-	if( !Wh || !BBuf ) return;
+	if( !Wh ) return;
 	
 	// スクリーンサーフェスにblit
 	PRINTD( GRP_LOG, " -> Blit" );
@@ -193,13 +199,13 @@ void DSP6::DrawScreen( void )
 		pos.h = P6WINH;
 		
 		// モニタウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->monw.get(), 0, vm->el->regw->Height()+vm->el->memw->Height()-vm->el->monw->Height() );
+		OSD_BlitToWindow( Wh, el->monw.get(), 0, el->regw->Height()+el->memw->Height()-el->monw->Height() );
 		
 		// レジスタウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->regw.get(), max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), 0 );
+		OSD_BlitToWindow( Wh, el->regw.get(), max( P6WINW+P6WINMGN * 2, el->monw->Width() ), 0 );
 		
 		// メモリウィンドウ描画
-		OSD_BlitToWindow( Wh, vm->el->memw.get(), max( P6WINW+P6WINMGN * 2, vm->el->monw->Width() ), vm->el->regw->Height() );
+		OSD_BlitToWindow( Wh, el->memw.get(), max( P6WINW+P6WINMGN * 2, el->monw->Width() ), el->regw->Height() );
 	}else
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	{
@@ -211,15 +217,14 @@ void DSP6::DrawScreen( void )
 		if( DISPSTAT ){
 			PRINTD( GRP_LOG, " -> Statusbar" );
 			
-			// ステータスバー更新/描画
+			// ステータスバー描画
 			// スクリーンサーフェス下端に位置を合わせてblit
-			vm->el->staw->Update();
-			OSD_BlitToWindow( Wh, vm->el->staw.get(), 0, OSD_GetWindowHeight( Wh ) - vm->el->staw->Height() );
+			OSD_BlitToWindow( Wh, el->staw.get(), 0, OSD_GetWindowHeight( Wh ) - el->staw->Height() );
 		}
 	}
 	
 	// バックバッファ描画
-	OSD_BlitToWindowEx( Wh, BBuf, &pos, DISPSCAN );
+	OSD_BlitToWindowEx( Wh, el->GetBackBuffer().get(), &pos, DISPSCAN );
 	
 	PRINTD( GRP_LOG, " -> OK\n" );
 	
@@ -236,7 +241,7 @@ void DSP6::DrawScreen( void )
 ////////////////////////////////////////////////////////////////
 int DSP6::ScreenX( void ) const
 {
-	return (int)((double)(P6WINW * WSCALE) / (DISPNTSC ? vm->vdg->GetVratio() : 100.0) + 0.5);
+	return (int)((double)(P6WINW * WSCALE) / (DISPNTSC ? P6RATIO : 100.0) + 0.5);
 }
 
 
@@ -270,11 +275,11 @@ HWINDOW DSP6::GetWindowHandle( void )
 // 引数:	path	スクリーンショット格納パスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void DSP6::SnapShot( const std::filesystem::path& path )
+void DSP6::SnapShot( const P6VPATH& path )
 {
 	PRINTD( GRP_LOG, "[GRP][SnapShot]\n" );
 	
-	std::filesystem::path tpath;
+	P6VPATH tpath;
 	int Index = 0;
 	
 	// スナップショット格納フォルダがなければフォルダを作成
@@ -284,7 +289,7 @@ void DSP6::SnapShot( const std::filesystem::path& path )
 	
 	// スナップショットファイル名を決める
 	do{
-		tpath = path / std::filesystem::u8path( Stringf( "%s%03d.%s", FILE_SNAP, ++Index, EXT_IMG ) );
+		OSD_AddPath( tpath, path, P6VSTR2PATH( Stringf( "%s%03d.%s", FILE_SNAP, ++Index, EXT_IMG ) ) );
 	}while( OSD_FileExist( tpath ) || (Index > 999) );
 	
 	// 連番が有効なら画像ファイル保存
@@ -307,3 +312,4 @@ void DSP6::SnapShot( const std::filesystem::path& path )
 		delete [] pixels;
 	}
 }
+

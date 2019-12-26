@@ -17,15 +17,15 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-IRQ6::IRQ6( VM6* vm, const ID& id ) : Device(vm,id),
-	IntrFlag(0), TimerIntrEnable(false), TimerCntUp(0), Timer1st(50)
+IRQ6::IRQ6( VM6* vm, const ID& id ) : Device( vm, id ),
+	IntrFlag( 0 ), TimerIntrEnable( false ), TimerCntUp( 0 ), Timer1st( 50 )
 {
 	INITARRAY( IntEnable, false );
 	INITARRAY( VecOutput, false );
 	INITARRAY( IntVector, 0 );
 }
 
-IRQ60::IRQ60( VM6* vm, const ID& id ) : IRQ6(vm,id)
+IRQ60::IRQ60( VM6* vm, const ID& id ) : IRQ6( vm, id )
 {
 	TimerCntUp   = 3;
 	IntEnable[0] = true;
@@ -35,7 +35,7 @@ IRQ60::IRQ60( VM6* vm, const ID& id ) : IRQ6(vm,id)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &IRQ60::OutB0H ) );
 }
 
-IRQ62::IRQ62( VM6* vm, const ID& id ) : IRQ6(vm,id)
+IRQ62::IRQ62( VM6* vm, const ID& id ) : IRQ6( vm, id )
 {
 	Timer1st = 88;
 	
@@ -55,7 +55,7 @@ IRQ62::IRQ62( VM6* vm, const ID& id ) : IRQ6(vm,id)
 	descs.indef.emplace ( inF7H,  STATIC_CAST( Device::InFuncPtr,  &IRQ62::InF7H  ) );
 }
 
-IRQ64::IRQ64( VM6* vm, const ID& id ) : IRQ6(vm,id)
+IRQ64::IRQ64( VM6* vm, const ID& id ) : IRQ6( vm, id )
 {
 	Timer1st = 88;
 	
@@ -154,7 +154,7 @@ void IRQ6::SetTimerIntrHz( BYTE data, BYTE first )
 	
 	// イベント追加
 	// 非SR系は 1[intr] : (2048*(TimerCntUp+1)) [clock]
-	vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)(2048 * (TimerCntUp + 1)), EV_LOOP|EV_STATE );
+	vm->EventAdd( Device::GetID(), EID_TIMER, (double)(2048 * (TimerCntUp + 1)), EV_LOOP|EV_STATE );
 	
 	// 初回周期の指定がある場合の処理
 	if( first ){
@@ -163,9 +163,9 @@ void IRQ6::SetTimerIntrHz( BYTE data, BYTE first )
 		e.devid = this->Device::GetID();
 		e.id    = EID_TIMER;
 		
-		vm->EVSC::GetEvinfo( &e );
+		vm->EventGetInfo( &e );
 		e.Clock = (e.Clock * first) / 100;
-		vm->EVSC::SetEvinfo( &e );
+		vm->EventSetInfo( &e );
 	}
 }
 
@@ -176,9 +176,9 @@ void IRQ64::SetTimerIntrHz(BYTE data, BYTE first)
 	// イベント追加
 	// 八尾さんの検証による推定値
 	if( vm->VdgIsSRmode() )
-		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)((8*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
+		vm->EventAdd( Device::GetID(), EID_TIMER, (double)((8*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
 	else
-		vm->EVSC::Add( Device::GetID(), EID_TIMER, (double)((256*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
+		vm->EventAdd( Device::GetID(), EID_TIMER, (double)((256*7) * (TimerCntUp+1)), EV_LOOP|EV_STATE );
 	
 	// 初回周期の指定がある場合の処理
 	if( first ){
@@ -187,9 +187,9 @@ void IRQ64::SetTimerIntrHz(BYTE data, BYTE first)
 		e.devid = this->Device::GetID();
 		e.id    = EID_TIMER;
 		
-		vm->EVSC::GetEvinfo( &e );
+		vm->EventGetInfo( &e );
 		e.Clock = (e.Clock * first) / 100;
-		vm->EVSC::SetEvinfo( &e );
+		vm->EventSetInfo( &e );
 	}
 }
 
@@ -284,7 +284,7 @@ int IRQ6::IntrCheck( void )
 		PRINTD( INTR_LOG, "(8049)" );
 		
 		CancelIntr( IREQ_8049 );
-		IntrNo = ( VecOutput[0] ? IntVector[0] : vm->PIO6::ReadA() )>>1;
+		IntrNo = ( VecOutput[0] ? IntVector[0] : vm->PioReadA() )>>1;
 	}
 	// INT1:ジョイスティック割込み(7pin)
 	else if( ( IntrFlag & IREQ_JOYSTK ) && IntEnable[1] ){

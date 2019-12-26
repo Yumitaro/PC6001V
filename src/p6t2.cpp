@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "log.h"
 #include "osd.h"
 #include "p6t2.h"
@@ -76,9 +78,9 @@ const P6TBLKINFO& cP6DATA::GetInfo( void )
 int cP6DATA::SetName( const std::string& name )
 {
 	ZeroMemory( Info.Name, sizeof(Info.Name) );
-	strncpy( Info.Name, name.c_str(), min( sizeof(Info.Name)-1, name.length() ) );
+	std::strncpy( Info.Name, name.c_str(), sizeof(Info.Name)-1 );
 	
-	return strlen( Info.Name );
+	return std::strlen( Info.Name );
 }
 
 
@@ -422,9 +424,9 @@ BYTE cP6T::ReadOne( void )
 ////////////////////////////////////////////////////////////////
 // ファイルから読込み
 ////////////////////////////////////////////////////////////////
-bool cP6T::Readf( const std::filesystem::path& filepath )
+bool cP6T::Readf( const P6VPATH& filepath )
 {
-	PRINTD( P6T2_LOG, "[cP6T][Readf] [%s]\n", filepath.u8string().c_str() );
+	PRINTD( P6T2_LOG, "[cP6T][Readf] [%s]\n", P6VPATH2STR( filepath ).c_str() );
 	
 	// P6T読込み→ベタ読込み
 	if( !ReadP6T( filepath ) && !ConvP6T( filepath ) ) return false;
@@ -438,9 +440,9 @@ bool cP6T::Readf( const std::filesystem::path& filepath )
 ////////////////////////////////////////////////////////////////
 // ファイルに書込み
 ////////////////////////////////////////////////////////////////
-bool cP6T::Writef( const std::filesystem::path& filepath )
+bool cP6T::Writef( const P6VPATH& filepath )
 {
-	PRINTD( P6T2_LOG, "[cP6T][Writef] [%s]\n", filepath.u8string().c_str() );
+	PRINTD( P6T2_LOG, "[cP6T][Writef] [%s]\n", P6VPATH2STR( filepath ).c_str() );
 	
 	std::fstream fs;
 	
@@ -482,9 +484,9 @@ bool cP6T::Writef( const std::filesystem::path& filepath )
 ////////////////////////////////////////////////////////////////
 // P6Tを読込み
 ////////////////////////////////////////////////////////////////
-bool cP6T::ReadP6T( const std::filesystem::path& filepath )
+bool cP6T::ReadP6T( const P6VPATH& filepath )
 {
-	PRINTD( P6T2_LOG, "[cP6T][ReadP6T] [%s]\n", filepath.u8string().c_str() );
+	PRINTD( P6T2_LOG, "[cP6T][ReadP6T] [%s]\n", P6VPATH2STR( filepath ).c_str() );
 	
 	std::fstream fs;
 	
@@ -529,7 +531,11 @@ bool cP6T::ReadP6T( const std::filesystem::path& filepath )
 	// DATAブロックを読込み
 	while( bk-- ){
 		// DATAブロック追加
-		cP6DATA& b = Data.emplace_back();
+		// C++14
+		Data.emplace_back();
+		cP6DATA& b = Data.back();
+		// C++17
+//		cP6DATA& b = Data.emplace_back();
 		
 		// ファイルから読込み(フッタ&データ)
 		if( !b.Readff( fs ) || !b.Readfd( fs ) ){
@@ -548,9 +554,9 @@ bool cP6T::ReadP6T( const std::filesystem::path& filepath )
 ////////////////////////////////////////////////////////////////
 // ベタをP6Tに変換して読込み
 ////////////////////////////////////////////////////////////////
-bool cP6T::ConvP6T( const std::filesystem::path& filepath )
+bool cP6T::ConvP6T( const P6VPATH& filepath )
 {
-	PRINTD( P6T2_LOG, "[cP6T][ConvP6T] [%s]\n", filepath.u8string().c_str() );
+	PRINTD( P6T2_LOG, "[cP6T][ConvP6T] [%s]\n", P6VPATH2STR( filepath ).c_str() );
 	
 	std::fstream fs;
 	
@@ -565,7 +571,13 @@ bool cP6T::ConvP6T( const std::filesystem::path& filepath )
 	
 	// DATAブロックを作成
 	Data.clear();
-	cP6DATA& b = Data.emplace_back();
+	
+	// C++14
+	Data.emplace_back();
+	cP6DATA& b = Data.back();
+	// C++17
+//	cP6DATA& b = Data.emplace_back();
+	
 	b.SetName( "BetaImage" );				// データ名はとりあえず"BetaImage"
 	b.SetBaud( DEFAULT_BAUD );				// ボーレート
 	b.SetStopBit( 0 );						// ストップビット(0:DEFAULT)
@@ -582,5 +594,5 @@ bool cP6T::ConvP6T( const std::filesystem::path& filepath )
 	fs.close();
 	
 	return true;
-
 }
+

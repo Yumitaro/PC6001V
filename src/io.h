@@ -1,6 +1,7 @@
 #ifndef IO_H_INCLUDED
 #define IO_H_INCLUDED
 
+#include <memory>
 #include <vector>
 
 #include "typedef.h"
@@ -42,8 +43,8 @@ public:
 private:
 	class DummyIO : public Device{
 	public:
-		DummyIO() : Device( nullptr, 0 ) {}
-		~DummyIO() {}
+		DummyIO();
+		~DummyIO();
 		
 		BYTE dummyin( int );
 		void dummyout( int, BYTE );
@@ -51,8 +52,8 @@ private:
 	
 	static DummyIO dummyio;
 	
-	bool ConnectIn ( int bank, IDevice*, InFuncPtr  );
-	bool ConnectOut( int bank, IDevice*, OutFuncPtr );
+	bool ConnectIn ( int bank, const std::shared_ptr<IDevice>&, InFuncPtr  );
+	bool ConnectOut( int bank, const std::shared_ptr<IDevice>&, OutFuncPtr );
 	
 // ここから本体
 public:
@@ -61,7 +62,7 @@ public:
 	
 	virtual bool Init( int );
 	
-	bool Connect( IDevice*, const std::vector<Connector>* );
+	bool Connect( const std::shared_ptr<IDevice>&, const std::vector<Connector>& );
 	bool Disconnect( const DeviceList::ID );
 	
 	BYTE In( int );
@@ -82,8 +83,8 @@ private:
 	std::vector<int> Owait;			// OUTウェイトテーブル
 	
 public:
-	IO6();									// コンストラクタ
-	~IO6();									// デストラクタ
+	IO6();
+	~IO6();
 	
 	bool Init( int ) override;				// 初期化
 	

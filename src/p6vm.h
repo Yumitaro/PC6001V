@@ -13,8 +13,8 @@
 #include "schedule.h"
 #include "tape.h"
 #include "typedef.h"
-
 #include "device/z80.h"
+
 
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #include "breakpoint.h"
@@ -23,30 +23,28 @@
 class EL6;
 class CFG6;
 
+class CPU6;
+class SUB6;
 class IO6;
 class MEM6;
 class IRQ6;
+class PIO6;
 class VDG6;
+class KEY6;
 class PSGb;
 class VCE6;
+class CMTL;
+class CMTS;
 class DSK6;
+
+class EVSC;
+class BPoint;
 
 
 // 基本仮想マシンクラス
-//class VM6 {
-class VM6 : public EVSC, public CPU6, public PIO6, public CMTL, public CMTS,
-			virtual public SUB6, virtual public KEY6
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	, public BPoint
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-{
+class VM6 : public std::enable_shared_from_this<VM6> {
 	
 	friend class EL6;
-	friend class DSP6;
-	
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	friend class cWndMon;
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 protected:
 	// デバイスコネクタテーブル構造体
@@ -62,48 +60,69 @@ protected:
 		const std::vector<IOBus::Connector>* CmtL;		// CMT(LOAD)
 		const std::vector<IOBus::Connector>* Soldier;	// 戦士のカートリッジ
 		
-		DEVCONNTABLE() : Intr(nullptr), Memory(nullptr), Vdg(nullptr), Psg(nullptr), M8255(nullptr), S8255(nullptr),
-						 Voice(nullptr), Disk(nullptr), CmtL(nullptr), Soldier(nullptr) {}
+		DEVCONNTABLE() :
+			Intr( nullptr ), Memory( nullptr ), Vdg( nullptr ), Psg( nullptr ), M8255( nullptr ), S8255( nullptr ),
+			Voice( nullptr ), Disk( nullptr ), CmtL( nullptr ), Soldier( nullptr ) {}
 	};
 	
-	int cclock;					// CPUクロック
-	int pclock;					// PSG/OPNクロック
+	int cclock;						// CPUクロック
+	int pclock;						// PSG/OPNクロック
 	
 	// オブジェクトポインタ
-	EL6* el;					// エミュレータレイヤ
-	IO6* iom;					// I/O(Z80側)
-	IO6* ios;					// I/O(SUB CPU側)
-	IRQ6* intr;					// 割込み
-	MEM6* mem;					// メモリ
-	VDG6* vdg;					// VDG
-	PSGb* psg;					// PSG/OPN
-	VCE6* voice;				// 音声合成
-	DSK6* disk;					// DISK
+	std::unique_ptr<EVSC> evsc;		// イベントスケジューラ
+	std::unique_ptr<IO6> iom;		// I/O(Z80側)
+	std::unique_ptr<IO6> ios;		// I/O(SUB CPU側)
 	
-	DEVCONNTABLE DevTable;		// デバイスコネクタテーブル
+	std::shared_ptr<IRQ6> intr;		// 割込み
+	std::shared_ptr<CPU6> cpum;		// CPU
+	std::shared_ptr<SUB6> cpus;		// SUB CPU
+	std::shared_ptr<MEM6> mem;		// メモリ
+	std::shared_ptr<VDG6> vdg;		// VDG
+	std::shared_ptr<PSGb> psg;		// PSG/OPN
+	std::shared_ptr<VCE6> voice;	// 音声合成
+	std::shared_ptr<PIO6> pio;		// 8255
+	std::shared_ptr<KEY6> key;		// キー
+	std::shared_ptr<CMTL> cmtl;		// CMT(LOAD)
+	std::shared_ptr<CMTS> cmts;		// CMT(SAVE)
+	std::shared_ptr<DSK6> disk;		// DISK
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	std::unique_ptr<BPoint> bp;		// ブレークポイント
+	bool MonDisp;					// モニタウィンドウ表示状態 true:表示 false:非表示
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	DEVCONNTABLE DevTable;			// デバイスコネクタテーブル
 	
 	virtual void AllocObjSpecific() = 0;				// 機種別オブジェクト確保
-	bool AllocObject( CFG6* );							// 全オブジェクト確保
-	void DeleteAllObject();								// 全オブジェクト削除
+	bool AllocObject( const std::shared_ptr<CFG6>& );	// 全オブジェクト確保
 	
 public:
-	VM6( EL6* );										// コンストラクタ
-	virtual ~VM6();										// デストラクタ
+	VM6();
+	virtual ~VM6();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_soldier;	// 戦士のカートリッジ
 	
-	bool Init( CFG6* );									// 初期化
+	bool Init( const std::shared_ptr<CFG6>& );			// 初期化
 	void Reset();										// リセット
 	int Emu();											// 1命令実行
 	int GetCPUClock() const;							// CPUクロック取得
 	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	bool IsMonitor() const;								// モニタモード?
+	void SetMonitor( bool );							// モニタモード設定
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
 	
 	// P6デバイス用関数群
-	// EL
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	bool ElIsMonitor() const;							// モニタモード?
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// EVSC
+	bool EventAdd( Device::ID, int, double, int );		// イベント追加
+	bool EventDel( Device::ID, int );					// イベント削除
+	void EventUpdate( int );							// イベント更新
+	void EventReset( Device::ID, int, double=0 );		// 指定イベントをリセットする
+	double EventGetProgress( Device::ID, int );			// イベントの進行率を求める
+	bool EventGetInfo( EVSC::evinfo* );					// イベント情報取得
+	bool EventSetInfo( EVSC::evinfo* );					// イベント情報設定
+	void EventOnVSYNC();								// VSYNCを通知する
 	// IO6
 	BYTE IomIn( int, int* = nullptr );					// IN関数
 	BYTE IosIn( int, int* = nullptr );					// IN関数
@@ -114,8 +133,17 @@ public:
 	void IntReqIntr( DWORD );							// 割込み要求
 	void IntCancelIntr( DWORD );						// 割込み撤回
 	bool IntGetTimerIntr();								// タイマ割込みスイッチ取得
+	// CPU6
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	int CpumDisasm( std::string&, WORD );				// 1ライン逆アセンブル
+	void CpumGetRegister( cZ80::Register* );			// レジスタ値取得
+	void CpumSetRegister( cZ80::Register* );			// レジスタ値設定
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// SUB6
-	bool IsCmtIntrReady();								// CMT割込み発生可?
+	void CpusReqKeyIntr( int, BYTE );					// キー割込み要求
+	void CpusExtIntr();									// 外部割込み要求
+	void CpusReqCmtIntr( BYTE );						// CMT READ割込み要求
+	bool CpusIsCmtIntrReady();							// CMT割込み発生可?
 	// MEM6
 	BYTE MemFetch( WORD, int* = nullptr );				// フェッチ(M1)
 	BYTE MemRead( WORD, int* = nullptr );				// メモリリード
@@ -143,24 +171,55 @@ public:
 	bool VdgIsSRmode() const;							// SRモード取得
 	bool VdgIsSRBitmap( WORD ) const;					// SRビットマップモード取得
 	WORD VdgSRGVramAddr( WORD ) const;					// SRのG-VRAMアドレス取得(ビットマップモード)
+	// PIO6
+	BYTE PioReadA();									// PartA リード
+	// KEY6
+	BYTE KeyGetKeyJoy() const;							// カーソルキー状態取得
+	BYTE KeyGetJoy( int ) const;						// ジョイスティック状態取得
+	BYTE KeyGetKeyIndicator() const;					// キーボードインジケータ状態取得
+	void KeyChangeKana();								// 英字<->かな切換
+	void KeyChangeKKana();								// かな<->カナ切換
+	// CMTL
+	bool CmtlIsMount() const;							// マウント済み?
+	bool CmtlIsAutoStart() const;						// オートスタート?
+	const P6VPATH& CmtlGetFile() const;					// ファイルパス取得
+	const std::string& CmtlGetName() const;				// TAPE名取得
+	DWORD CmtlGetBetaSize() const;						// ベタイメージサイズ取得
+	int CmtlGetCount() const;							// カウンタ取得
+	// CMTS
+	bool CmtsMount();									// TAPE マウント
+	void CmtsUnmount();									// TAPE アンマウント
+	void CmtsSetBaud( int );							// ボーレート設定
+	void CmtsWriteOne( BYTE );							// 1文字書込み
 	// DSK6
 	bool DskIsMount( int ) const;						// マウント済み?
 	bool DskIsSystem( int ) const;						// システムディスク?
 	bool DskIsProtect( int ) const;						// プロテクト?
 	bool DskInAccess( int ) const;						// アクセス中?
-	const std::filesystem::path& DskGetFile( int ) const;	// ファイルパス取得
+	const P6VPATH& DskGetFile( int ) const;				// ファイルパス取得
 	const std::string& DskGetName( int ) const;			// DISK名取得
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// BPoint
+	void BpSet( const BPoint::BPtype, const WORD );		// ブレークポイントを設定
+	void BpDelete( const int );							// ブレークポイントを削除
+	BPoint::BPtype BpGetType( const int ) const;		// ブレークポイントのタイプを取得
+	WORD BpGetAddr( const int ) const;					// ブレークポイントのアドレスを取得
+	int BpGetNum() const;								// ブレークポイント登録数取得
+	bool BpCheck( const BPoint::BPtype, const WORD );	// ブレークポイントをチェック
+	int BpGetReqNum() const;							// ブレーク要求のあったブレークポイントNo.を取得
+	void BpReset();										// ブレーク要求キャンセル
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 };
 
 
 // PC-6001 仮想マシンクラス
-class VM60 : public VM6, public SUB60, public KEY60 {
+class VM60 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM60( EL6* );								// コンストラクタ
-	~VM60();									// デストラクタ
+	VM60();
+	~VM60();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_intr;		// 割込み
@@ -175,24 +234,24 @@ public:
 
 
 // PC-6001A 仮想マシンクラス
-class VM61 : public VM6, public SUB60, public KEY60 {
+class VM61 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM61( EL6* );								// コンストラクタ
-	~VM61();									// デストラクタ
+	VM61();
+	~VM61();
 };
 
 
 // PC-6001mk2 仮想マシンクラス
-class VM62 : public VM6, public SUB62, public KEY62 {
+class VM62 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM62( EL6* );								// コンストラクタ
-	~VM62();									// デストラクタ
+	VM62();
+	~VM62();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_intr;		// 割込み
@@ -208,13 +267,13 @@ public:
 
 
 // PC-6601 仮想マシンクラス
-class VM66 : public VM6, public SUB62, public KEY62 {
+class VM66 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM66( EL6* );								// コンストラクタ
-	~VM66();									// デストラクタ
+	VM66();
+	~VM66();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_disk;	// DISK
@@ -222,13 +281,13 @@ public:
 
 
 // PC-6001mk2SR 仮想マシンクラス
-class VM64 : public VM6, public SUB62, public KEY62 {
+class VM64 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM64( EL6* );								// コンストラクタ
-	~VM64();									// デストラクタ
+	VM64();
+	~VM64();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_intr;		// 割込み
@@ -244,13 +303,13 @@ public:
 
 
 // PC-6601SR 仮想マシンクラス
-class VM68 : public VM6, public SUB68, public KEY62 {
+class VM68 : public VM6 {
 private:
 	void AllocObjSpecific() override;			// 機種別オブジェクト確保
 	
 public:
-	VM68( EL6* );								// コンストラクタ
-	~VM68();									// デストラクタ
+	VM68();
+	~VM68();
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_disk;	// DISK
