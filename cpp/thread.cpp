@@ -10,15 +10,15 @@
 
 
 ////////////////////////////////////////////////////////////////
-// Constructor
+// コンストラクタ
 ////////////////////////////////////////////////////////////////
-cThread::cThread( void ) : m_bCancel(true), m_BeginTheadParam(nullptr)
+cThread::cThread( void ) : m_bCancel( true ), m_BeginTheadParam( nullptr )
 {
 }
 
 
 ////////////////////////////////////////////////////////////////
-// Destructor
+// デストラクタ
 ////////////////////////////////////////////////////////////////
 cThread::~cThread( void )
 {
@@ -97,7 +97,7 @@ bool cThread::IsCancel( void )
 ////////////////////////////////////////////////////////////////
 int cThread::ThreadProc( void* lpVoid )
 {
-	thread_local cThread* lpThis = STATIC_CAST( cThread*, lpVoid );	// 自分自身のオブジェクトポインタ取得
+	thread_local cThread* lpThis = static_cast<cThread*>( lpVoid );	// 自分自身のオブジェクトポインタ取得
 	lpThis->OnThread( lpThis->m_BeginTheadParam );					// virtual Procedure 
 	
 	return 0;

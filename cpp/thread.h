@@ -10,8 +10,6 @@
 #include <mutex>
 #include <thread>
 
-#include "typedef.h"
-
 
 class cThread {
 private:
@@ -26,10 +24,10 @@ protected:
 	virtual void OnThread( void* ) = 0;		// Virtual func. You need overwrite.
 	
 public:
-	cThread();								// Constructor
-	virtual ~cThread();						// Destructor
+	cThread();
+	virtual ~cThread();
 	
-	bool BeginThread( void* );				// スレッド開始
+	bool BeginThread( void* = nullptr );	// スレッド開始
 	bool Waiting();							// スレッド終了を待つ
 	
 	void Cancel();							// スレッド終了要求

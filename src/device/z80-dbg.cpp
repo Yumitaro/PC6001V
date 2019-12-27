@@ -1,5 +1,5 @@
+#include "common.h"
 #include "z80.h"
-#include "../common.h"
 
 
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

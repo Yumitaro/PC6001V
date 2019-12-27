@@ -4,21 +4,22 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 
+#include <mutex>
 #include <SDL.h>
 
-#include "../thread.h"
+#include "thread.h"
 
 
 ////////////////////////////////////////////////////////////////
-// Constructor
+// コンストラクタ
 ////////////////////////////////////////////////////////////////
-cThread::cThread( void ) : m_bCancel(true), m_hThread(nullptr), m_BeginTheadParam(nullptr)
+cThread::cThread( void ) : m_bCancel( true ), m_hThread( nullptr ), m_BeginTheadParam( nullptr )
 {
 }
 
 
 ////////////////////////////////////////////////////////////////
-// Destructor
+// デストラクタ
 ////////////////////////////////////////////////////////////////
 cThread::~cThread( void )
 {
@@ -74,9 +75,9 @@ bool cThread::Waiting( void )
 ////////////////////////////////////////////////////////////////
 void cThread::Cancel( void )
 {
-	this->cMutex::lock();
+	std::lock_guard<cMutex> lock( mtx );
+	
 	this->m_bCancel = true;
-	this->cMutex::unlock();
 }
 
 
@@ -88,12 +89,9 @@ void cThread::Cancel( void )
 ////////////////////////////////////////////////////////////////
 bool cThread::IsCancel( void )
 {
-	bool bCancel = false;
+	std::lock_guard<cMutex> lock( mtx );
 	
-	this->cMutex::lock();
-	bCancel = this->m_bCancel;
-	this->cMutex::unlock();
-	return bCancel;
+	return this->m_bCancel;
 }
 
 
