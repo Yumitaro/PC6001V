@@ -1,6 +1,6 @@
-#include "../log.h"
-#include "../vsurface.h"
+#include "log.h"
 #include "mc6847.h"
+#include "vsurface.h"
 
 
 #define	P60W		256			// 水平有効表示期間(N60)

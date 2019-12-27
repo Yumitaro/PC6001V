@@ -4,7 +4,6 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 
-
 #include "semaphore.h"
 
 
@@ -56,7 +55,7 @@ void cMutex::unlock( void )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-cSemaphore::cSemaphore( void ) : count(0)
+cSemaphore::cSemaphore( void ) : count( 0 )
 {
 }
 

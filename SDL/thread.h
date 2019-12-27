@@ -7,14 +7,16 @@
 #ifndef THREAD_H_INCLUDED
 #define THREAD_H_INCLUDED
 
-#include "typedef.h"
 #include "semaphore.h"
 
 
-class cThread : public cMutex {
+
+
+class cThread {
 private:
 	bool m_bCancel;				// for Cancel().
 	HTHREAD m_hThread;			// for Thread Handle.
+	cMutex mtx;
 	
 	void* m_BeginTheadParam;
 	static int ThreadProc( void* );			// デフォルトスレッド関数
@@ -23,10 +25,10 @@ protected:
 	virtual void OnThread( void* ) = 0;		// Virtual func. You need overwrite.
 	
 public:
-	cThread();								// Constructor
-	virtual ~cThread();						// Destructor
+	cThread();
+	virtual ~cThread();
 	
-	bool BeginThread( void* );				// スレッド開始
+	bool BeginThread( void* = nullptr );	// スレッド開始
 	bool Waiting();							// スレッド終了を待つ
 	
 	void Cancel();							// スレッド終了要求

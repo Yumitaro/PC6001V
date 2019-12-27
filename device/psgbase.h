@@ -1,7 +1,7 @@
 #ifndef PSGBASE_H_INCLUDED
 #define PSGBASE_H_INCLUDED
 
-#include "../typedef.h"
+#include "typedef.h"
 
 
 ////////////////////////////////////////////////////////////////

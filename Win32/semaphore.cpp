@@ -4,9 +4,7 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 
-#include <SDL.h>
-
-#include "../semaphore.h"
+#include "semaphore.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -18,7 +16,8 @@
 ////////////////////////////////////////////////////////////////
 cMutex::cMutex( void )
 {
-	mcs = (HCRSECT)SDL_CreateMutex();
+	mcs = (HCRSECT) new CRITICAL_SECTION;
+	InitializeCriticalSection( (LPCRITICAL_SECTION)mcs );
 }
 
 
@@ -27,7 +26,7 @@ cMutex::cMutex( void )
 ////////////////////////////////////////////////////////////////
 cMutex::~cMutex( void )
 {
-	SDL_DestroyMutex( (SDL_mutex*)mcs );
+	if( mcs ) DeleteCriticalSection( (LPCRITICAL_SECTION)mcs );
 }
 
 
@@ -36,7 +35,7 @@ cMutex::~cMutex( void )
 ////////////////////////////////////////////////////////////////
 void cMutex::lock( void )
 {
-	if( mcs ) SDL_LockMutex( (SDL_mutex*)mcs );
+	if( mcs ) EnterCriticalSection( (LPCRITICAL_SECTION)mcs );
 }
 
 
@@ -45,7 +44,7 @@ void cMutex::lock( void )
 ////////////////////////////////////////////////////////////////
 void cMutex::unlock( void )
 {
-	if( mcs ) SDL_UnlockMutex( (SDL_mutex*)mcs );
+	if( mcs ) LeaveCriticalSection( (LPCRITICAL_SECTION)mcs );
 }
 
 
@@ -58,9 +57,9 @@ void cMutex::unlock( void )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-cSemaphore::cSemaphore( void )
+cSemaphore::cSemaphore( void ) : count( 0 )
 {
-	sem = (HSEMAPHORE)SDL_CreateSemaphore( 0 );
+	sem = (HSEMAPHORE)CreateSemaphore( nullptr, 0, 32 * 1024, nullptr );
 }
 
 
@@ -69,7 +68,7 @@ cSemaphore::cSemaphore( void )
 ////////////////////////////////////////////////////////////////
 cSemaphore::~cSemaphore( void )
 {
-	if( sem ) SDL_DestroySemaphore( (SDL_sem*)sem );
+	if( sem ) CloseHandle( (HANDLE)sem );
 }
 
 
@@ -77,11 +76,16 @@ cSemaphore::~cSemaphore( void )
 // セマフォ加算
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	0:成功 -1:失敗
 ////////////////////////////////////////////////////////////////
 int cSemaphore::Post( void )
 {
-	return SDL_SemPost( (SDL_sem*)sem );
+	InterlockedIncrement( &count );
+	if( !ReleaseSemaphore( (HANDLE)sem, 1, nullptr ) ){
+		InterlockedDecrement( &count );
+		return -1;
+	}
+	return 0;
 }
 
 
@@ -89,9 +93,22 @@ int cSemaphore::Post( void )
 // セマフォ待つ
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	0:成功 -1:失敗
 ////////////////////////////////////////////////////////////////
 int cSemaphore::Wait( void )
 {
-	return SDL_SemWait( (SDL_sem*)sem );
+	int ret = -1;
+	
+	switch( WaitForSingleObject( (HANDLE)sem, INFINITE ) ){
+    case WAIT_OBJECT_0:
+		InterlockedDecrement( &count );
+		ret = 0;
+		break;
+		
+    case WAIT_TIMEOUT:
+		ret = 1;
+		break;
+	}
+	
+	return ret;
 }

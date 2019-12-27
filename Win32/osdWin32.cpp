@@ -241,7 +241,10 @@ void OSD_AbsolutePath( P6VPATH& path )
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
 	
-	if( tpath.empty() || !PathIsRelative( tpath.c_str() ) ) return;
+	if( tpath.empty() || !PathIsRelative( tpath.c_str() ) ){
+		PRINTD( OSD_LOG, "Already Absolute\n" );
+		return;
+	}
 	
 	std::string mpath = OSD_GetConfigPath();
 	OSD_UTF8toSJIS( mpath );
@@ -480,7 +483,9 @@ bool OSD_CreateFolder( const P6VPATH& path )
 		std::error_code ec;
 		
 		P6VPATH tpath = path;
+		OSD_DelDelimiter( tpath );	// デリミタ付きだと作成されない?
 		OSD_AbsolutePath( tpath );
+		PRINTD( OSD_LOG, "-> %s\n", P6VPATH2STR( tpath ).c_str() );
 		
 		// 設定ファイルパスより外側には作成しない
 		if( P6VPATH2STR( tpath ).compare( 0, P6VPATH2STR( OSD_GetConfigPath() ).length(), P6VPATH2STR( OSD_GetConfigPath() ) ) ) return false;
@@ -494,8 +499,9 @@ bool OSD_CreateFolder( const P6VPATH& path )
 	if( path.length() > PATH_MAX ) return false;
 	
 	std::string tpath = path;
-	OSD_AddDelimiter( tpath );	// 念のため
+	OSD_AddDelimiter( tpath );	// 念のため(MakeSureDirectoryPathExists関数の要求による)
 	OSD_AbsolutePath( tpath );
+	PRINTD( OSD_LOG, "-> %s\n", P6VPATH2STR( tpath ).c_str() );
 	
 	// 設定ファイルパスより外側には作成しない
 	if( !tpath.compare( 0, OSD_GetConfigPath().length(), OSD_GetConfigPath() ) ){

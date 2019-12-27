@@ -1,7 +1,7 @@
 #ifndef PD8255_H_INCLUDED
 #define PD8255_H_INCLUDED
 
-#include "../typedef.h"
+#include "typedef.h"
 
 
 ////////////////////////////////////////////////////////////////

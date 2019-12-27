@@ -1,9 +1,9 @@
 #ifndef YM2203_H_INCLUDED
 #define YM2203_H_INCLUDED
 
-#include "../typedef.h"
-#include "../ini.h"
+#include "ini.h"
 #include "psgbase.h"
+#include "typedef.h"
 #include "fmgen/opna.h"
 
 

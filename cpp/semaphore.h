@@ -10,8 +10,6 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "typedef.h"
-
 
 ////////////////////////////////////////////////////////////////
 // クラス定義
@@ -23,10 +21,10 @@ private:
 	
 public:
 	cMutex();
-	~cMutex();						// デストラクタ;
+	~cMutex();
 	
-	void lock();					// Lock
-	void unlock();					// Unlock
+	void lock();		// Lock
+	void unlock();		// Unlock
 };
 
 
@@ -39,10 +37,10 @@ private:
 	
 public:
 	cSemaphore();
-	~cSemaphore();					// デストラクタ;
+	~cSemaphore();
 	
-	void Post();					// セマフォ加算
-	void Wait();					// セマフォ待つ
+	void Post();		// セマフォ加算
+	void Wait();		// セマフォ待つ
 };
 
 

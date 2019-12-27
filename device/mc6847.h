@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "../typedef.h"
+#include "typedef.h"
 
 
 // 画面情報構造体

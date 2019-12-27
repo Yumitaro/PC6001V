@@ -29,7 +29,7 @@
 
 #include <queue>
 
-#include "../typedef.h"
+#include "typedef.h"
 
 
 typedef	int	D7752_SAMPLE;
