@@ -187,7 +187,7 @@ int main( int argc, char* argv[] )
 	
 	// P6VMオブジェクトを作成して実行
 	do{
-		std::shared_ptr<EL6> P6Core;			// P6VMオブジェクト
+		std::unique_ptr<EL6> P6Core;			// P6VMオブジェクト
 		
 		// 再起動ならばINIファイル再読込み
 		if( Restart == EL6::Restart ){
@@ -212,7 +212,7 @@ int main( int argc, char* argv[] )
 		
 		// P6VMオブジェクト確保
 		try{
-			P6Core = std::make_shared<EL6>();
+			P6Core = std::make_unique<EL6>();
 		}
 		catch( std::bad_alloc& ){
 			break;

@@ -65,10 +65,11 @@ cSemaphore::cSemaphore( void ) : count( 0 )
 ////////////////////////////////////////////////////////////////
 cSemaphore::~cSemaphore( void )
 {
-	std::unique_lock<std::mutex> lock( mtx );
-	count = 1;
-	
-	std::notify_all_at_thread_exit( cv, std::move( lock ) );
+	{
+		std::unique_lock<std::mutex> lock( mtx );
+		count = 1;
+	}
+	cv.notify_all();
 }
 
 
@@ -80,9 +81,10 @@ cSemaphore::~cSemaphore( void )
 ////////////////////////////////////////////////////////////////
 void cSemaphore::Post( void )
 {
-	std::unique_lock<std::mutex> lock( mtx );
-	count++;
-	
+	{
+		std::unique_lock<std::mutex> lock( mtx );
+		count++;
+	}
 	cv.notify_one();
 }
 
