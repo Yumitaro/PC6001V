@@ -15,6 +15,7 @@ class DSP6 {
 protected:
 	EL6* el;
 	HWINDOW Wh;
+	bool rsize;					// リサイズ通知
 	
 	bool SetScreenSurface();				// スクリーンサーフェス作成
 	
@@ -26,6 +27,7 @@ public:
 	void SetIcon( const int );				// アイコン設定
 	
 	bool ResizeScreen();					// スクリーンサイズ変更
+	bool CheckResize();						// ResizeScreen()でリサイズしたかチェック
 	
 	void DrawScreen();						// 画面更新
 	void SnapShot( const P6VPATH& );		// スナップショット

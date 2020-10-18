@@ -839,6 +839,18 @@ bool OSD_IsFiltering( HWINDOW hwnd )
 }
 
 
+////////////////////////////////////////////////////////////////
+// ウィンドウのサイズ変更可否設定
+//
+// 引数:	hwnd			ウィンドウハンドル
+// 返値:	bool			true:変更可 false:変更不可
+////////////////////////////////////////////////////////////////
+void OSD_SetWindowResizable( HWINDOW hwnd, bool resize )
+{
+	SDL_SetWindowResizable( (SDL_Window*)hwnd, (SDL_bool)resize );
+}
+
+
 
 ////////////////////////////////////////////////////////////////
 // ウィンドウクリア
@@ -902,8 +914,8 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	SDL_RenderGetLogicalSize( rend, &src1.w, &src1.h );
 	src1.x = max( 0, -x );
 	src1.y = max( 0, -y );
-	src1.w = min( src->Width()  - src1.x, src1.w );
-	src1.h = min( src->Height() - src1.y, src1.h );
+	src1.w = min( src->Width()  + x, src1.w) - max( 0, x );
+	src1.h = min( src->Height() + y, src1.h) - max( 0, y );
 	
 	if( src1.w <= 0 || src1.h <= 0 ) return;
 	
@@ -918,13 +930,17 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	
 	void* ptex;
 	int tpp;
+	
 	SDL_LockTexture( sdl_texwx, &drc1, &ptex, &tpp );
+	if( !ptex ) return;
+	
 	for( int yy=0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
 		for( int xx=0; xx < src1.w; xx++ )
 			*tpd++ = VSurface::GetColor( *tps++ );
 	}
+	
 	SDL_UnlockTexture( sdl_texwx );
 	SDL_RenderCopy( rend, sdl_texwx, &drc1, &drc1 );
 }
@@ -966,12 +982,15 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	void* ptex;
 	int tpp;
 	SDL_LockTexture( sdl_texbb, &src1, &ptex, &tpp );
+	if( !ptex ) return;
+	
 	for( int yy=0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
 		for( int xx=0; xx < src1.w; xx++ )
 			*tpd++ = VSurface::GetColor( *tps++ );
 	}
+	
 	SDL_UnlockTexture( sdl_texbb );
 	SDL_RenderCopy( rend, sdl_texbb, &src1, (SDL_Rect*)pos );
 	
@@ -1167,6 +1186,10 @@ bool OSD_GetEvent( Event* ev )
 		ev->key.unicode		= GetKeyChar( ev->key.sym, ev->key.mod & KVM_SHIFT );
 		break;
 		
+	case SDL_MOUSEMOTION:
+		ev->type			= EV_MOUSEMOTION;
+		break;
+		
 	case SDL_MOUSEBUTTONDOWN:
 		ev->type			= EV_MOUSEBUTTONDOWN;
 		ev->mousebt.button	= event.button.button == SDL_BUTTON_LEFT      ? MBT_LEFT      :
@@ -1227,11 +1250,30 @@ bool OSD_GetEvent( Event* ev )
 		
 	case SDL_WINDOWEVENT:
 		switch( event.window.event ){
+		case SDL_WINDOWEVENT_RESIZED:
+			ev->type		= EV_WINDOWRESIZED;
+			ev->window.w	= event.window.data1;
+			ev->window.h	= event.window.data2;
+			break;
+			
 		case SDL_WINDOWEVENT_SIZE_CHANGED:
 			ev->type		= EV_WINDOWSIZECHANGED;
 			ev->window.w	= event.window.data1;
 			ev->window.h	= event.window.data2;
 			break;
+			
+		case SDL_WINDOWEVENT_MINIMIZED:
+			ev->type		= EV_WINDOWEVENT_MINIMIZED;
+			break;
+			
+		case SDL_WINDOWEVENT_MAXIMIZED:
+			ev->type		= EV_WINDOWEVENT_MAXIMIZED;
+			break;
+			
+		case SDL_WINDOWEVENT_RESTORED:
+			ev->type		= EV_WINDOWEVENT_RESTORED;
+			break;
+			
 		default:
 			ev->type		= EV_NOEVENT;
 		}

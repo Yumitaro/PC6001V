@@ -65,6 +65,7 @@ protected:
 	
 	TIMERID UpDateFPSID;			// FPS表示タイマID
 	int FSkipCount;					// フレームスキップカウンタ
+	bool MMotion;					// マウス動いたフラグ
 	
 	static int Speed;				// 停止時の速度退避用
 	

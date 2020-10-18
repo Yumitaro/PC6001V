@@ -49,7 +49,7 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-DSP6::DSP6( EL6* el ) : el( el ), Wh( nullptr )
+DSP6::DSP6( EL6* el ) : el( el ), Wh( nullptr ), rsize( false )
 {
 	PRINTD( CONST_LOG, "[[DSP6]]\n" );
 }
@@ -125,14 +125,32 @@ bool DSP6::SetScreenSurface( void )
 	// ウィンドウ作成
 	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetFiltering(), el->cfg->GetScanLineBr() );
 	
+	// フルスクリーン，モニタモード時はウィンドウサイズ変更不可
+	OSD_SetWindowResizable( Wh, !(DISPFULL | DISPMON) );
+	
 	PRINTD( GRP_LOG, " -> %s ( %d x %d )\n", Wh ? "OK" : "Failed", Wh ? OSD_GetWindowWidth( Wh ) : 0, Wh ? OSD_GetWindowHeight( Wh ) : 0 );
 	
 	if( !Wh ) return false;
 	
-	// フルスクリーンの時はマウスカーソルを非表示
-	OSD_ShowCursor( !DISPFULL );
+	// マウスカーソル表示
+	OSD_ShowCursor( true );
 	
 	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// ResizeScreen()でリサイズしたかチェック
+//
+// 引数:	なし
+// 返値:	bool	true:ResizeScreen()使用 false:その他
+////////////////////////////////////////////////////////////////
+bool DSP6::CheckResize( void )
+{
+	bool ret = rsize;
+	rsize = false;
+	
+	return ret;
 }
 
 
@@ -164,6 +182,9 @@ bool DSP6::ResizeScreen( void )
 	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetFiltering() ){
 		if( !SetScreenSurface() ) return false;
 		el->staw->Init( OSD_GetWindowWidth( Wh ) );	// ステータスバーも
+		
+		// ResizeScreen()を使ったリサイズであることを通知
+		rsize = true;
 	}else
 		// 作り直さない場合は現在のスクリーンサーフェスをクリア
 		OSD_ClearWindow( Wh );

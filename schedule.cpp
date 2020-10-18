@@ -9,8 +9,10 @@
 #include "schedule.h"
 
 
-#define	SPDCNT		(5)									// 処理速度計算用保存領域サイズ(1000を割切れる数)
-#define WRUPDATE	(1000/SPDCNT)						// 処理速度更新間隔(ms)
+#define SPDSEC		(2)									// 処理速度計算期間(sec)
+#define	SPDCNT		(10)								// 処理速度計算用保存領域サイズ(1000を割切れる数)
+#define WRUPDATE	(SPDSEC*1000/SPDCNT)				// 処理速度更新間隔(ms)
+
 #define FRMTICK		((double)1000.0/(double)VSYNC_HZ);	// 1フレームの時間(ms)
 #define FPSSEC		(2.0)								// FPS計算期間(sec)
 #define FPSCNT		((size_t)(VSYNC_HZ*FPSSEC+1.0))		// FPS計算用保存領域サイズ
