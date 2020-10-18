@@ -177,7 +177,8 @@ FILE* OSD_Fopen( const P6VPATH& path, const std::string& mode )
 	char str[PATH_MAX+1];
 	
 	// Windowsの場合 native()はwchar_tなのでcharに変換
-	std::wcstombs( str, path.c_str(), sizeof(str) );
+	// POSIXの場合 native()は多分UTF-8なのだけど 処理共通化のために一旦wstring()にしてからcharに戻す
+	std::wcstombs( str, path.wstring().c_str(), sizeof(str) );
 	return fopen( str, mode.c_str() );
 }
 

@@ -205,7 +205,9 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuRadioItem( hsm, ID_FSKP0, ID_FSKP5, ID_FSKP0 + cfg->GetFrameSkip(), MF_BYCOMMAND );
 	
 	// ウィンドウ表示倍率
-	CheckMenuRadioItem( hsm, ID_ZOOM100, ID_ZOOM300, ID_ZOOM100 + cfg->GetWindowZoom() / 100 - 1, MF_BYCOMMAND );
+	if( !(cfg->GetWindowZoom() % 100) ){
+		CheckMenuRadioItem( hsm, ID_ZOOM100, ID_ZOOM300, ID_ZOOM100 + cfg->GetWindowZoom() / 100 - 1, MF_BYCOMMAND );
+	}
 	
 	// サンプリングレート
 	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetSampleRate()/11025)>>1), MF_BYCOMMAND );
@@ -224,6 +226,14 @@ void EL6::ShowPopupMenu( int x, int y )
 	#else
 	DeleteMenu( hsm, MDEBUG, MF_BYPOSITION );
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	// フルスクリーン時はダイアログを表示するコマンドを封印
+	
+	// 環境設定
+	EnableMenuItem( hsm, ID_CONFIG,  MF_BYCOMMAND | cfg->GetFullScreen() ? MF_GRAYED : MF_ENABLED );
+	
+	// バージョン情報
+	EnableMenuItem( hsm, ID_VERSION, MF_BYCOMMAND | cfg->GetFullScreen() ? MF_GRAYED : MF_ENABLED );
 	
 	
 	// ポップアップメニュー表示

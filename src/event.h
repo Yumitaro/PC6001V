@@ -13,27 +13,32 @@
 /////////////////////////////////////////////////////////////////////////////
 // イベントID
 typedef enum {
-	EV_RESTART = 0,			// (SDL User event)
-	EV_DOKOLOAD,			// (SDL User event)
-	EV_REPLAY,				// (SDL User event)
-	EV_FPSUPDATE,			// (SDL User event)
-	EV_DEBUGMODEBP,			// (SDL User event)
-	EV_DEBUGMODETOGGLE,		// (SDL User event)
-	EV_RENDER,				// (SDL User event)
-	EV_CAPTURE,				// (SDL User event)
+	EV_RESTART = 0,				// (SDL User event)
+	EV_DOKOLOAD,				// (SDL User event)
+	EV_REPLAY,					// (SDL User event)
+	EV_FPSUPDATE,				// (SDL User event)
+	EV_DEBUGMODEBP,				// (SDL User event)
+	EV_DEBUGMODETOGGLE,			// (SDL User event)
+	EV_RENDER,					// (SDL User event)
+	EV_CAPTURE,					// (SDL User event)
 	
-							// Fix order
-	EV_QUIT,				// User-requested quit
-	EV_DROPFILE,			// File dropped
-	EV_KEYDOWN,				// Keys pressed
-	EV_KEYUP,				// Keys released
-	EV_MOUSEBUTTONDOWN,		// Mouse button pressed
-	EV_MOUSEBUTTONUP,		// Mouse button released
-	EV_MOUSEWHEEL,			// Mouse wheel motion
-	EV_JOYAXISMOTION,		// Joystick axis motion
-	EV_JOYBUTTONDOWN,		// Joystick button pressed
-	EV_JOYBUTTONUP,			// Joystick button released
-	EV_WINDOWSIZECHANGED,	// Window size changed
+								// Fix order
+	EV_QUIT,					// User-requested quit
+	EV_DROPFILE,				// File dropped
+	EV_KEYDOWN,					// Keys pressed
+	EV_KEYUP,					// Keys released
+	EV_MOUSEMOTION,				// Mouse moved
+	EV_MOUSEBUTTONDOWN,			// Mouse button pressed
+	EV_MOUSEBUTTONUP,			// Mouse button released
+	EV_MOUSEWHEEL,				// Mouse wheel motion
+	EV_JOYAXISMOTION,			// Joystick axis motion
+	EV_JOYBUTTONDOWN,			// Joystick button pressed
+	EV_JOYBUTTONUP,				// Joystick button released
+	EV_WINDOWRESIZED,			// Window resized
+	EV_WINDOWSIZECHANGED,		// Window size changed
+	EV_WINDOWEVENT_MINIMIZED,	// Window minimized
+	EV_WINDOWEVENT_MAXIMIZED,	// Window maximized
+	EV_WINDOWEVENT_RESTORED,	// Window restored to normal size and position
 	
 	EV_NOEVENT,
 	EndofEvent

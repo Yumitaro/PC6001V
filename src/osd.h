@@ -174,6 +174,8 @@ int OSD_GetWindowHeight( HWINDOW );
 bool OSD_IsFullScreen( HWINDOW );
 // フィルタリング有効?
 bool OSD_IsFiltering( HWINDOW );
+// ウィンドウのサイズ変更可否設定
+void OSD_SetWindowResizable( HWINDOW, bool );
 // ウィンドウクリア
 void OSD_ClearWindow( HWINDOW );
 // ウィンドウ反映

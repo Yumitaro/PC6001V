@@ -48,7 +48,7 @@ EL6::EL6( void ) : cfg( nullptr ), vm( nullptr ), sche( nullptr ), snd( nullptr 
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	regw( nullptr ), memw( nullptr ), monw( nullptr ),
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	UpDateFPSID( 0 ), FSkipCount( 0 ),
+	UpDateFPSID( 0 ), FSkipCount( 0 ), MMotion( true ),
 	TapePathUI( "" ), DiskPathUI( "" ), ExRomPathUI( "" ), DokoPathUI( "" )
 {
 	PRINTD( CONST_LOG, "[[EL6]]\n" );
@@ -432,6 +432,9 @@ EL6::ReturnCode EL6::EventLoop( void )
 	// イベントキュークリア
 	OSD_FlushEvents();
 	
+	// ResizeScreen()でリサイズしたかチェック 空読みしてリセット
+	graph->CheckResize();
+	
 	while( OSD_GetEvent( &event ) ){
 		switch( event.type ){
 		case EV_FPSUPDATE:		// FPS表示
@@ -444,6 +447,12 @@ EL6::ReturnCode EL6::EventLoop( void )
 					str += Stringf( " [x%3.1f]", (double)sche->GetSpeedRatio()/100 );
 			}
 			OSD_SetWindowCaption( GetWindowHandle(), str );
+			
+			// フルスクリーン時にマウスを一定時間動かさなかったらカーソルを消す
+			if( cfg->GetFullScreen() ){
+				if( MMotion ){ MMotion = false; }
+				else         { OSD_ShowCursor( false ); }
+			}
 			break;
 			
 		case EV_KEYDOWN:		// キー入力
@@ -490,6 +499,13 @@ EL6::ReturnCode EL6::EventLoop( void )
 			break;
 			
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		case EV_MOUSEMOTION:	// マウスカーソル動いた
+			if( cfg->GetFullScreen() ){
+				OSD_ShowCursor( true );
+				MMotion = true;
+			}
+			break;
+			
 		case EV_MOUSEBUTTONUP:	// マウスボタンクリック(離した時)
 			switch( event.mousebt.button ){
 			case MBT_LEFT:		// 等速
@@ -527,9 +543,24 @@ EL6::ReturnCode EL6::EventLoop( void )
 			AVI6::AVIWriteFrame( GetWindowHandle() );
 			break;
 			
-		case EV_WINDOWSIZECHANGED:	// ウィンドウサイズ変更
+//		case EV_WINDOWRESIZED:{		// ウィンドウサイズ変更
+		case EV_WINDOWSIZECHANGED:{	// ウィンドウサイズ変更
+			// ResizeScreen()でリサイズしたなら何もしないで戻る
+			if( graph->CheckResize() ) break;
 			
+			int zoom = (int)((double)event.window.w / (double)GetVideoInfo().w * (double)((cfg->GetDispNTSC() ? GetVideoInfo().ratio : 100.0) + 0.5));
 			
+			Stop();
+			cfg->SetWindowZoom( zoom );	// ウィンドウサイズに合わせて倍率再設定
+			graph->ResizeScreen();		// スクリーンサイズ変更
+			Start();
+			break;
+		}
+		
+		case EV_WINDOWEVENT_RESTORED:
+			Stop();
+			graph->ResizeScreen();		// スクリーンサイズ変更
+			Start();
 			break;
 			
 		case EV_QUIT:			// 終了
