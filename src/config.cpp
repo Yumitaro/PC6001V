@@ -582,7 +582,7 @@ int CFG6::GetModel( void )
 void CFG6::SetModel( int data )
 {
 	int st = min( max( MIN_MODEL, data ), MAX_MODEL );
-	cIni::PutEntry( "CONFIG", GetText( TINI_Model ), "Model", "%02d", st );
+	cIni::PutEntry( "CONFIG", "Model", GetText( TINI_Model ), "%02d", st );
 }
 
 
@@ -598,7 +598,7 @@ int CFG6::GetFddNum( void )
 void CFG6::SetFddNum( int data )
 {
 	int st = min( max( MIN_FDD, data ), MAX_FDD );
-	cIni::PutEntry( "CONFIG", GetText( TINI_FDD ), "FDD", "%d", st );
+	cIni::PutEntry( "CONFIG", "FDD", GetText( TINI_FDD ), "%d", st );
 }
 
 
@@ -613,7 +613,7 @@ bool CFG6::GetUseExtRam( void )
 // 拡張RAMを使う設定
 void CFG6::SetUseExtRam( bool yn )
 {
-	cIni::PutEntry( "CONFIG", GetText( TINI_ExtRam ), "ExtRam", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CONFIG", "ExtRam", GetText( TINI_ExtRam ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -629,7 +629,7 @@ int CFG6::GetOverClock( void )
 void CFG6::SetOverClock( int data )
 {
 	int st = min( max( MIN_OVERCLOCK, data ), MAX_OVERCLOCK );
-	cIni::PutEntry( "CONFIG", GetText( TINI_OverClock ), "OverClock", "%d", st );
+	cIni::PutEntry( "CONFIG", "OverClock", GetText( TINI_OverClock ), "%d", st );
 }
 
 
@@ -643,7 +643,7 @@ bool CFG6::GetCheckCRC( void )
 // CRCチェック設定
 void CFG6::SetCheckCRC( bool yn )
 {
-	cIni::PutEntry( "CONFIG", GetText( TINI_CheckCRC ), "CheckCRC", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CONFIG", "CheckCRC", GetText( TINI_CheckCRC ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -658,7 +658,7 @@ bool CFG6::GetFddWaitEnable( void )
 // FDDウェイト有効フラグ設定
 void CFG6::SetFddWaitEnable( bool yn )
 {
-	cIni::PutEntry( "CONFIG", GetText( TINI_FDDWait ), "FDDWait", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CONFIG", "FDDWait", GetText( TINI_FDDWait ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -675,7 +675,7 @@ bool CFG6::GetTurboTAPE( void )
 // Turbo TAPE 有効フラグ設定
 void CFG6::SetTurboTAPE( bool yn )
 {
-	cIni::PutEntry( "CMT", GetText( TINI_TurboTAPE ), "TurboTAPE", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CMT", "TurboTAPE", GetText( TINI_TurboTAPE ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -690,7 +690,7 @@ bool CFG6::GetBoostUp( void )
 // BoostUp 有効フラグ設定
 void CFG6::SetBoostUp( bool yn )
 {
-	cIni::PutEntry( "CMT", GetText( TINI_BoostUp ), "BoostUp", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CMT", "BoostUp", GetText( TINI_BoostUp ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -706,7 +706,7 @@ int CFG6::GetMaxBoost1( void )
 void CFG6::SetMaxBoost1( int data )
 {
 	int st = min( max( MIN_MAXBOOST, data ), MAX_MAXBOOST );
-	cIni::PutEntry( "CMT", GetText( TINI_MaxBoost60 ), "MaxBoost60", "%d", st );
+	cIni::PutEntry( "CMT", "MaxBoost60", GetText( TINI_MaxBoost60 ), "%d", st );
 }
 
 
@@ -721,7 +721,7 @@ int CFG6::GetMaxBoost2( void )
 void CFG6::SetMaxBoost2( int data )
 {
 	int st = min( max( MIN_MAXBOOST, data ), MAX_MAXBOOST );
-	cIni::PutEntry( "CMT", GetText( TINI_MaxBoost62 ), "MaxBoost62", "%d", st );
+	cIni::PutEntry( "CMT", "MaxBoost62", GetText( TINI_MaxBoost62 ), "%d", st );
 }
 
 
@@ -737,7 +737,7 @@ int CFG6::GetStopBit( void )
 void CFG6::SetStopBit( int data )
 {
 	int st = min( max( MIN_STOPBIT, data ), MAX_STOPBIT );
-	cIni::PutEntry( "CMT", GetText( TINI_StopBit ), "TapeStopBit", "%d", st );
+	cIni::PutEntry( "CMT", "TapeStopBit", GetText( TINI_StopBit ), "%d", st );
 }
 
 
@@ -755,7 +755,7 @@ int CFG6::GetMode4Color( void )
 void CFG6::SetMode4Color( int data )
 {
 	int st = min( max( MIN_MODE4_COLOR, data ), MAX_MODE4_COLOR );
-	cIni::PutEntry( "DISPLAY", GetText( TINI_Mode4Color ), "Mode4Color", "%d", st );
+	cIni::PutEntry( "DISPLAY", "Mode4Color", GetText( TINI_Mode4Color ), "%d", st );
 }
 
 
@@ -770,7 +770,7 @@ bool CFG6::GetScanLine( void )
 // スキャンライン設定
 void CFG6::SetScanLine( bool yn )
 {
-	cIni::PutEntry( "DISPLAY", GetText( TINI_ScanLine ), "ScanLine", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "DISPLAY", "ScanLine", GetText( TINI_ScanLine ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -786,7 +786,7 @@ int CFG6::GetScanLineBr( void )
 void CFG6::SetScanLineBr( int data )
 {
 	int st = min( max( MIN_SCANLINEBR, data ), MAX_SCANLINEBR );
-	cIni::PutEntry( "DISPLAY", GetText( TINI_ScanLineBr ), "ScanLineBr", "%d", st );
+	cIni::PutEntry( "DISPLAY", "ScanLineBr", GetText( TINI_ScanLineBr ), "%d", st );
 }
 
 
@@ -801,7 +801,7 @@ bool CFG6::GetFiltering( void )
 // フィルタリング設定
 void CFG6::SetFiltering( bool yn )
 {
-	cIni::PutEntry( "DISPLAY", GetText( TINI_Filtering ), "Filtering", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "DISPLAY", "Filtering", GetText( TINI_Filtering ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -816,7 +816,7 @@ bool CFG6::GetDispNTSC( void )
 // 4:3表示設定
 void CFG6::SetDispNTSC( bool yn )
 {
-	cIni::PutEntry( "DISPLAY", GetText( TINI_DispNTSC ), "DispNTSC", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "DISPLAY", "DispNTSC", GetText( TINI_DispNTSC ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -831,7 +831,7 @@ bool CFG6::GetFullScreen( void )
 // フルスクリーン設定
 void CFG6::SetFullScreen( bool yn )
 {
-	cIni::PutEntry( "DISPLAY", GetText( TINI_FullScreen ), "FullScreen", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "DISPLAY", "FullScreen", GetText( TINI_FullScreen ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -847,7 +847,7 @@ int CFG6::GetWindowZoom( void )
 void CFG6::SetWindowZoom( int data )
 {
 	int st = min( max( MIN_WINDOWZOOM, data ), MAX_WINDOWZOOM );
-	cIni::PutEntry( "DISPLAY", GetText( TINI_WindowZoom ), "WindowZoom", "%d", st );
+	cIni::PutEntry( "DISPLAY", "WindowZoom", GetText( TINI_WindowZoom ), "%d", st );
 }
 
 
@@ -862,7 +862,7 @@ bool CFG6::GetDispStat( void )
 // ステータスバー表示状態設定
 void CFG6::SetDispStat( bool yn )
 {
-	cIni::PutEntry( "DISPLAY", GetText( TINI_DispStatus ), "DispStatus", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "DISPLAY", "DispStatus", GetText( TINI_DispStatus ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -878,7 +878,7 @@ int CFG6::GetFrameSkip( void )
 void CFG6::SetFrameSkip( int data )
 {
 	int st = min( max( MIN_FRAMESKIP, data ), MAX_FRAMESKIP );
-	cIni::PutEntry( "DISPLAY", GetText( TINI_FrameSkip ), "FrameSkip", "%d", st );
+	cIni::PutEntry( "DISPLAY", "FrameSkip", GetText( TINI_FrameSkip ), "%d", st );
 }
 
 
@@ -896,7 +896,7 @@ int CFG6::GetSampleRate( void )
 void CFG6::SetSampleRate( int data )
 {
 	int st = min( max( MIN_SAMPLE_RATE, data ), MAX_SAMPLE_RATE );
-	cIni::PutEntry( "SOUND", GetText( TINI_SampleRate ), "SampleRate", "%d", st );
+	cIni::PutEntry( "SOUND", "SampleRate", GetText( TINI_SampleRate ), "%d", st );
 }
 
 
@@ -912,7 +912,7 @@ int CFG6::GetSoundBuffer( void )
 void CFG6::SetSoundBuffer( int data )
 {
 	int st = min( max( MIN_SOUNDBUFFER, data ), MAX_SOUNDBUFFER );
-	cIni::PutEntry( "SOUND", GetText( TINI_SoundBuffer ), "SoundBuffer", "%d", st );
+	cIni::PutEntry( "SOUND", "SoundBuffer", GetText( TINI_SoundBuffer ), "%d", st );
 }
 
 
@@ -928,7 +928,7 @@ int CFG6::GetMasterVol( void )
 void CFG6::SetMasterVol( int data )
 {
 	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", GetText( TINI_MasterVolume ), "MasterVolume", "%d", st );
+	cIni::PutEntry( "SOUND", "MasterVolume", GetText( TINI_MasterVolume ), "%d", st );
 }
 
 
@@ -944,7 +944,7 @@ int CFG6::GetPsgVol( void )
 void CFG6::SetPsgVol( int data )
 {
 	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", GetText( TINI_PsgVolume ), "PsgVolume", "%d", st );
+	cIni::PutEntry( "SOUND", "PsgVolume", GetText( TINI_PsgVolume ), "%d", st );
 }
 
 
@@ -960,7 +960,7 @@ int CFG6::GetPsgLPF( void )
 void CFG6::SetPsgLPF( int data )
 {
 	int st = min( max( MIN_LPF, data ), MAX_LPF );
-	cIni::PutEntry( "SOUND", GetText( TINI_PsgLPF ),  "PsgLPF",  "%d", st );
+	cIni::PutEntry( "SOUND", "PsgLPF", GetText( TINI_PsgLPF ), "%d", st );
 }
 
 
@@ -976,7 +976,7 @@ int CFG6::GetVoiceVol( void )
 void CFG6::SetVoiceVol( int data )
 {
 	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", GetText( TINI_VoiceVolume ), "VoiceVolume", "%d", st );
+	cIni::PutEntry( "SOUND", "VoiceVolume", GetText( TINI_VoiceVolume ), "%d", st );
 }
 
 
@@ -992,7 +992,7 @@ int CFG6::GetCmtVol( void )
 void CFG6::SetCmtVol( int data )
 {
 	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", GetText( TINI_TapeVolume ), "TapeVolume", "%d", st );
+	cIni::PutEntry( "SOUND", "TapeVolume", GetText( TINI_TapeVolume ), "%d", st );
 }
 
 
@@ -1008,7 +1008,7 @@ int CFG6::GetCmtLPF( void )
 void CFG6::SetCmtLPF( int data )
 {
 	int st = min( max( MIN_LPF, data ), MAX_LPF );
-	cIni::PutEntry( "SOUND", GetText( TINI_TapeLPF ),  "TapeLPF",  "%d", st );
+	cIni::PutEntry( "SOUND", "TapeLPF", GetText( TINI_TapeLPF ), "%d", st );
 }
 
 
@@ -1026,7 +1026,7 @@ int CFG6::GetAviBpp()
 void CFG6::SetAviBpp( int data )
 {
 	int st = min( max( MIN_AVIBPP, data ), MAX_AVIBPP );
-	cIni::PutEntry( "MOVIE", GetText( TINI_AviBpp ), "AviBpp", "%d", st );
+	cIni::PutEntry( "MOVIE", "AviBpp", GetText( TINI_AviBpp ), "%d", st );
 }
 
 
@@ -1044,7 +1044,7 @@ void CFG6::SetExtRomFile( const P6VPATH& str )
 {
 	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_ExtRom ), "ExtRom", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "FILES", "ExtRom", GetText( TINI_ExtRom ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1060,7 +1060,7 @@ void CFG6::SetTapeFile( const P6VPATH& str )
 {
 	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_tape ), "tape", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "FILES", "tape", GetText( TINI_tape ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1076,7 +1076,7 @@ void CFG6::SetSaveFile( const P6VPATH& str )
 {
 	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_save ), "save", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "FILES", "save", GetText( TINI_save ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1098,8 +1098,8 @@ void CFG6::SetDiskFile( int drv, const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
 	switch( drv ){
-	case 1: cIni::PutEntry( "FILES", GetText( TINI_disk1 ), "disk1", P6VPATH2STR( tpath ) ); break;
-	case 2: cIni::PutEntry( "FILES", GetText( TINI_disk2 ), "disk2", P6VPATH2STR( tpath ) ); break;
+	case 1: cIni::PutEntry( "FILES", "disk1", GetText( TINI_disk1 ), P6VPATH2STR( tpath ) ); break;
+	case 2: cIni::PutEntry( "FILES", "disk2", GetText( TINI_disk2 ), P6VPATH2STR( tpath ) ); break;
 	}
 }
 
@@ -1116,7 +1116,7 @@ void CFG6::SetPrinterFile( const P6VPATH& str )
 {
 	P6VPATH tpath = str;
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", GetText( TINI_printer ), "printer", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "FILES", "printer", GetText( TINI_printer ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1141,7 +1141,7 @@ void CFG6::SetRomPath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_RomPath ), "RomPath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "RomPath", GetText( TINI_RomPath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1159,7 +1159,7 @@ void CFG6::SetTapePath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_TapePath ), "TapePath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "TapePath", GetText( TINI_TapePath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1177,7 +1177,7 @@ void CFG6::SetDiskPath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_DiskPath ), "DiskPath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "DiskPath", GetText( TINI_DiskPath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1195,7 +1195,7 @@ void CFG6::SetExtRomPath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_ExtRomPath ), "ExtRomPath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "ExtRomPath", GetText( TINI_ExtRomPath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1213,7 +1213,7 @@ void CFG6::SetImgPath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_ImgPath ), "ImgPath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "ImgPath", GetText( TINI_ImgPath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1231,7 +1231,7 @@ void CFG6::SetWavePath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_WavePath ), "WavePath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "WavePath", GetText( TINI_WavePath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1249,7 +1249,7 @@ void CFG6::SetFontPath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_FontPath ), "FontPath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "FontPath", GetText( TINI_FontPath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1267,7 +1267,7 @@ void CFG6::SetDokoSavePath( const P6VPATH& str )
 	P6VPATH tpath = str;
 	OSD_DelDelimiter( tpath );
 	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", GetText( TINI_DokoSavePath ), "DokoSavePath", P6VPATH2STR( tpath ) );
+	cIni::PutEntry( "PATH", "DokoSavePath", GetText( TINI_DokoSavePath ), P6VPATH2STR( tpath ) );
 }
 
 
@@ -1284,7 +1284,7 @@ bool CFG6::GetCkQuit( void )
 // 終了時確認設定
 void CFG6::SetCkQuit( bool yn )
 {
-	cIni::PutEntry( "CHECK", GetText( TINI_CkQuit ), "CkQuit", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CHECK", "CkQuit", GetText( TINI_CkQuit ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -1299,7 +1299,7 @@ bool CFG6::GetSaveQuit( void )
 // 終了時INI保存設定
 void CFG6::SetSaveQuit( bool yn )
 {
-	cIni::PutEntry( "CHECK", GetText( TINI_SaveQuit ), "SaveQuit", "%s", yn ? "Yes" : "No" );
+	cIni::PutEntry( "CHECK", "SaveQuit", GetText( TINI_SaveQuit ), "%s", yn ? "Yes" : "No" );
 }
 
 
@@ -1316,7 +1316,7 @@ int CFG6::GetUseSoldier()
 // 戦士のカートリッジ使うフラグ設定
 void CFG6::SetUseSoldier( int sol )
 {
-	cIni::PutEntry( "OPTION", GetText( TINI_UseSoldier ), "UseSoldier", "%d", sol & 0x0f );
+	cIni::PutEntry( "OPTION", "UseSoldier", GetText( TINI_UseSoldier ), "%d", sol & 0x0f );
 }
 
 
@@ -1348,7 +1348,7 @@ COLOR24 CFG6::GetColor( int num )
 // カラーデータ設定
 void CFG6::SetColor( int num, const COLOR24& col )
 {
-	cIni::PutEntry( "COLOR", GetColorName( num-16 ), Stringf( "COL%03d", num ), "%02X%02X%02X", col.r, col.g, col.b );
+	cIni::PutEntry( "COLOR", Stringf( "COL%03d", num ), GetColorName( num-16 ), "%02X%02X%02X", col.r, col.g, col.b );
 }
 
 
@@ -1366,7 +1366,7 @@ int CFG6::GetKeyRepeat( void )
 void CFG6::SetKeyRepeat( int data )
 {
 	int st = min( max( MIN_REPEAT, data ), MAX_REPEAT );
-	cIni::PutEntry( "KEY", GetText( TINI_KeyRepeat ), "KeyRepeat", "%d", st );
+	cIni::PutEntry( "KEY", "KeyRepeat", GetText( TINI_KeyRepeat ), "%d", st );
 }
 
 
@@ -1384,7 +1384,7 @@ P6KEYsym CFG6::GetVKey( PCKEYsym pcs )
 // キー定義設定
 void CFG6::SetVKey( PCKEYsym pcs, P6KEYsym p6s )
 {
-	cIni::PutEntry( "KEY", GetKeyName( pcs ), GetPCKeyName( pcs ), GetP6KeyName( p6s ) );
+	cIni::PutEntry( "KEY", GetPCKeyName( pcs ), GetKeyName( pcs ), GetP6KeyName( p6s ) );
 }
 
 
@@ -1769,12 +1769,12 @@ bool CFG6::DokoSave( cIni* ini )
 	if( !ini ) return false;
 	
 	// 共通
-	ini->PutEntry( "GLOBAL", "", "Version",		VERSION );
-	ini->PutEntry( "GLOBAL", "", "Model",		"%02d",	GetModel() );
-	ini->PutEntry( "GLOBAL", "", "FDD",			"%d",	GetFddNum() );
-	ini->PutEntry( "GLOBAL", "", "ExtRam",		"%s",	GetUseExtRam()  ? "Yes" : "No" );
+	ini->PutEntry( "GLOBAL", "Version",		"", VERSION );
+	ini->PutEntry( "GLOBAL", "Model",		"", "%02d",	GetModel() );
+	ini->PutEntry( "GLOBAL", "FDD",			"", "%d",	GetFddNum() );
+	ini->PutEntry( "GLOBAL", "ExtRam",		"", "%s",	GetUseExtRam()  ? "Yes" : "No" );
 	// OPTION
-	ini->PutEntry( "OPTION", "", "UseSoldier",	"%d",	GetUseSoldier() );
+	ini->PutEntry( "OPTION", "UseSoldier",	"", "%d",	GetUseSoldier() );
 	
 	return true;
 }

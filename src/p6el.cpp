@@ -718,8 +718,8 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 			cIni save;
 			if( save.Init( tpath ) ){
 				// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-				save.PutEntry( "KEY", "", "P6Matrix", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-				save.PutEntry( "KEY", "", "P6Mtrx",   "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+				save.PutEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+				save.PutEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
 			}
 		}
 		Start();
@@ -1210,9 +1210,9 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 			!vm->voice->DokoSave( &ini )
 		) throw Error::GetError();
 		
-		ini.PutEntry( "KEY", "", "AK_Wait",	"%d",	ak.Wait );
-		ini.PutEntry( "KEY", "", "AK_Relay",	"%s",	ak.Relay   ? "Yes" : "No" );
-		ini.PutEntry( "KEY", "", "AK_RelayOn",	"%s",	ak.RelayOn ? "Yes" : "No" );
+		ini.PutEntry( "KEY", "AK_Wait",		"", "%d",	ak.Wait );
+		ini.PutEntry( "KEY", "AK_Relay",	"", "%s",	ak.Relay   ? "Yes" : "No" );
+		ini.PutEntry( "KEY", "AK_RelayOn",	"", "%s",	ak.RelayOn ? "Yes" : "No" );
 		
 		std::string strva;
 		int nn=0;
@@ -1220,12 +1220,12 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 		for( size_t i=0; i<ak.Buffer.length(); i++ ){
 			strva += Stringf( "%02X", ak.Buffer[i] );
 			if( !((i+1)&63) ){
-				ini.PutEntry( "KEY", "", Stringf( "AKBuf_%02X", nn++ ), "%s", strva.c_str() );
+				ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn++ ), "", "%s", strva.c_str() );
 				strva.clear();
 			}
 		};
 		if( !ak.Buffer.empty() )
-			ini.PutEntry( "KEY", "", Stringf( "AKBuf_%02X", nn ), "%s", strva.c_str() );
+			ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", "%s", strva.c_str() );
 		
 		ini.Write();
 	}
@@ -1464,10 +1464,10 @@ bool EL6::ReplayRecDokoSave( void )
 		// 途中セーブ情報を追記
 		cIni save;
 		if( !save.Read( tpath ) ) return false;
-		save.PutEntry( "REPLAY", "", "frame", "%d", REPLAY::RepFrm );
+		save.PutEntry( "REPLAY", "frame", "", "%d", REPLAY::RepFrm );
 		// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-		save.PutEntry( "KEY", "", "P6Matrix", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-		save.PutEntry( "KEY", "", "P6Mtrx",   "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+		save.PutEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+		save.PutEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
 		
 		save.Write();
 		

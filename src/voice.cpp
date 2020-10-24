@@ -423,23 +423,23 @@ bool VCE6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "VOICE", "", "io_E0H",	"0x%02X",	io_E0H );
-	Ini->PutEntry( "VOICE", "", "io_E2H",	"0x%02X",	io_E2H );
-	Ini->PutEntry( "VOICE", "", "io_E3H",	"0x%02X",	io_E3H );
-	Ini->PutEntry( "VOICE", "", "VStat",	"%d",		VStat );
+	Ini->PutEntry( "VOICE", "io_E0H",	"", "0x%02X",	io_E0H );
+	Ini->PutEntry( "VOICE", "io_E2H",	"", "0x%02X",	io_E2H );
+	Ini->PutEntry( "VOICE", "io_E3H",	"", "0x%02X",	io_E3H );
+	Ini->PutEntry( "VOICE", "VStat",	"", "%d",		VStat );
 	
 	// 内部句関係(とりあえず無視)
 	
-	Ini->PutEntry( "VOICE", "", "ParaBuf0",	"0x%02X",	ParaBuf[0] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf1",	"0x%02X",	ParaBuf[1] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf2",	"0x%02X",	ParaBuf[2] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf3",	"0x%02X",	ParaBuf[3] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf4",	"0x%02X",	ParaBuf[4] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf5",	"0x%02X",	ParaBuf[5] );
-	Ini->PutEntry( "VOICE", "", "ParaBuf6",	"0x%02X",	ParaBuf[6] );
-	Ini->PutEntry( "VOICE", "", "Pnum",		"%d",		Pnum );
-	Ini->PutEntry( "VOICE", "", "Fnum",		"%d",		Fnum );
-	Ini->PutEntry( "VOICE", "", "PReady",	"%s",		PReady ? "Yes" : "No" );
+	Ini->PutEntry( "VOICE", "ParaBuf0",	"", "0x%02X",	ParaBuf[0] );
+	Ini->PutEntry( "VOICE", "ParaBuf1",	"", "0x%02X",	ParaBuf[1] );
+	Ini->PutEntry( "VOICE", "ParaBuf2",	"", "0x%02X",	ParaBuf[2] );
+	Ini->PutEntry( "VOICE", "ParaBuf3",	"", "0x%02X",	ParaBuf[3] );
+	Ini->PutEntry( "VOICE", "ParaBuf4",	"", "0x%02X",	ParaBuf[4] );
+	Ini->PutEntry( "VOICE", "ParaBuf5",	"", "0x%02X",	ParaBuf[5] );
+	Ini->PutEntry( "VOICE", "ParaBuf6",	"", "0x%02X",	ParaBuf[6] );
+	Ini->PutEntry( "VOICE", "Pnum",		"", "%d",		Pnum );
+	Ini->PutEntry( "VOICE", "Fnum",		"", "%d",		Fnum );
+	Ini->PutEntry( "VOICE", "PReady",	"", "%s",		PReady ? "Yes" : "No" );
 	
 	return true;
 }

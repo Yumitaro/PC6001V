@@ -281,25 +281,25 @@ bool PIO6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "8255", "", "PortA",		"0x%02X",	PortA );
-	Ini->PutEntry( "8255", "", "PortB",		"0x%02X",	PortB );
-	Ini->PutEntry( "8255", "", "PortC",		"0x%02X",	PortC );
-	Ini->PutEntry( "8255", "", "PortAbuf",	"0x%02X",	PortAbuf );
-	Ini->PutEntry( "8255", "", "ModeA",		"%d",		ModeA );
-	Ini->PutEntry( "8255", "", "ModeB",		"%d",		ModeB );
-	Ini->PutEntry( "8255", "", "PortAdir",	"%s",		PortAdir ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "PortBdir",	"%s",		PortBdir ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "PortC1dir",	"%s",		PortC1dir ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "PortC2dir",	"%s",		PortC2dir ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSINT0",	"%s",		HSINT0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSWINT0",	"%s",		HSWINT0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSRINT0",	"%s",		HSRINT0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSSTB0",	"%s",		HSSTB0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSIBF0",	"%s",		HSIBF0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSDAK0",	"%s",		HSDAK0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "HSOBF0",	"%s",		HSOBF0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "RIE0",		"%s",		RIE0 ? "Yes" : "No" );
-	Ini->PutEntry( "8255", "", "WIE0",		"%s",		WIE0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "PortA",		"", "0x%02X",	PortA );
+	Ini->PutEntry( "8255", "PortB",		"", "0x%02X",	PortB );
+	Ini->PutEntry( "8255", "PortC",		"", "0x%02X",	PortC );
+	Ini->PutEntry( "8255", "PortAbuf",	"", "0x%02X",	PortAbuf );
+	Ini->PutEntry( "8255", "ModeA",		"", "%d",		ModeA );
+	Ini->PutEntry( "8255", "ModeB",		"", "%d",		ModeB );
+	Ini->PutEntry( "8255", "PortAdir",	"", "%s",		PortAdir ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "PortBdir",	"", "%s",		PortBdir ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "PortC1dir",	"", "%s",		PortC1dir ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "PortC2dir",	"", "%s",		PortC2dir ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSINT0",	"", "%s",		HSINT0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSWINT0",	"", "%s",		HSWINT0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSRINT0",	"", "%s",		HSRINT0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSSTB0",	"", "%s",		HSSTB0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSIBF0",	"", "%s",		HSIBF0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSDAK0",	"", "%s",		HSDAK0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "HSOBF0",	"", "%s",		HSOBF0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "RIE0",		"", "%s",		RIE0 ? "Yes" : "No" );
+	Ini->PutEntry( "8255", "WIE0",		"", "%s",		WIE0 ? "Yes" : "No" );
 	
 	return true;
 }

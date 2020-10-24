@@ -96,27 +96,27 @@ bool CPU6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "Z80", "", "AF",			"0x%04X",	AF.W );
-	Ini->PutEntry( "Z80", "", "BC",			"0x%04X",	BC.W );
-	Ini->PutEntry( "Z80", "", "DE",			"0x%04X",	DE.W );
-	Ini->PutEntry( "Z80", "", "HL",			"0x%04X",	HL.W );
-	Ini->PutEntry( "Z80", "", "IX",			"0x%04X",	IX.W );
-	Ini->PutEntry( "Z80", "", "IY",			"0x%04X",	IY.W );
-	Ini->PutEntry( "Z80", "", "PC",			"0x%04X",	PC.W );
-	Ini->PutEntry( "Z80", "", "SP",			"0x%04X",	SP.W );
-	Ini->PutEntry( "Z80", "", "AF1",		"0x%04X",	AF1.W );
-	Ini->PutEntry( "Z80", "", "BC1",		"0x%04X",	BC1.W );
-	Ini->PutEntry( "Z80", "", "DE1",		"0x%04X",	DE1.W );
-	Ini->PutEntry( "Z80", "", "HL1",		"0x%04X",	HL1.W );
-	Ini->PutEntry( "Z80", "", "I",			"0x%02X",	I );
-	Ini->PutEntry( "Z80", "", "R",			"0x%02X",	R );
-	Ini->PutEntry( "Z80", "", "R_saved",	"0x%02X",	R_saved );
-	Ini->PutEntry( "Z80", "", "IFF",		"0x%02X",	IFF );
-	Ini->PutEntry( "Z80", "", "IFF2",		"0x%02X",	IFF2 );
-	Ini->PutEntry( "Z80", "", "IM",			"0x%02X",	IM );
-	Ini->PutEntry( "Z80", "", "Halt",		"0x%02X",	Halt );
+	Ini->PutEntry( "Z80", "AF",			"", "0x%04X",	AF.W );
+	Ini->PutEntry( "Z80", "BC",			"", "0x%04X",	BC.W );
+	Ini->PutEntry( "Z80", "DE",			"", "0x%04X",	DE.W );
+	Ini->PutEntry( "Z80", "HL",			"", "0x%04X",	HL.W );
+	Ini->PutEntry( "Z80", "IX",			"", "0x%04X",	IX.W );
+	Ini->PutEntry( "Z80", "IY",			"", "0x%04X",	IY.W );
+	Ini->PutEntry( "Z80", "PC",			"", "0x%04X",	PC.W );
+	Ini->PutEntry( "Z80", "SP",			"", "0x%04X",	SP.W );
+	Ini->PutEntry( "Z80", "AF1",		"", "0x%04X",	AF1.W );
+	Ini->PutEntry( "Z80", "BC1",		"", "0x%04X",	BC1.W );
+	Ini->PutEntry( "Z80", "DE1",		"", "0x%04X",	DE1.W );
+	Ini->PutEntry( "Z80", "HL1",		"", "0x%04X",	HL1.W );
+	Ini->PutEntry( "Z80", "I",			"", "0x%02X",	I );
+	Ini->PutEntry( "Z80", "R",			"", "0x%02X",	R );
+	Ini->PutEntry( "Z80", "R_saved",	"", "0x%02X",	R_saved );
+	Ini->PutEntry( "Z80", "IFF",		"", "0x%02X",	IFF );
+	Ini->PutEntry( "Z80", "IFF2",		"", "0x%02X",	IFF2 );
+	Ini->PutEntry( "Z80", "IM",			"", "0x%02X",	IM );
+	Ini->PutEntry( "Z80", "Halt",		"", "0x%02X",	Halt );
 	
-	Ini->PutEntry( "Z80", "", "mstate",		"%d",	mstate );
+	Ini->PutEntry( "Z80", "mstate",		"", "%d",	mstate );
 	
 	return true;
 }

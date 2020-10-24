@@ -116,7 +116,7 @@ void REPLAY::StopRecord( void )
 {
 	if( RepST != REP_RECORD ) return;
 	
-	cIni::PutEntry( "REPLAY", "", "EndFrm", "0x%08lX", RepFrm );
+	cIni::PutEntry( "REPLAY", "EndFrm", "", "0x%08lX", RepFrm );
 	cIni::Write();
 	cIni::Init();
 	
@@ -140,7 +140,7 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 	// マトリクスを書出し
 	for( auto &i : mt )
 		strva += Stringf( "%02X", i );
-	cIni::PutEntry( "REPLAY", "", Stringf( "%08lX ", RepFrm ), "%s", strva.c_str() );
+	cIni::PutEntry( "REPLAY", Stringf( "%08lX ", RepFrm ), "", "%s", strva.c_str() );
 	
 	RepFrm++;
 	

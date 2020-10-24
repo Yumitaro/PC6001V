@@ -393,7 +393,7 @@ bool cIni::GetPath( const std::string& section, const std::string& entry, P6VPAT
 ////////////////////////////////////////////////////////////////
 // エントリ追加
 ////////////////////////////////////////////////////////////////
-bool cIni::PutEntry( const std::string& section, const std::string& comment, const std::string& entry, const std::string& text, ... )
+bool cIni::PutEntry( const std::string& section, const std::string& entry, const std::string& comment, const std::string& text, ... )
 {
 	char rstr[MAX_LINE+1];
 	std::string str;
