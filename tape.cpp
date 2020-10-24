@@ -509,9 +509,9 @@ bool CMTL::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "TAPE", "", "Relay",	"%s",	Relay ? "Yes" : "No" );
-	Ini->PutEntry( "TAPE", "", "BoostUp",	"%s",	Boost ? "Yes" : "No" );
-	Ini->PutEntry( "TAPE", "", "StopBit",	"%d",	StopBit );
+	Ini->PutEntry( "TAPE", "Relay",		"", "%s",	Relay ? "Yes" : "No" );
+	Ini->PutEntry( "TAPE", "BoostUp",	"", "%s",	Boost ? "Yes" : "No" );
+	Ini->PutEntry( "TAPE", "StopBit",	"", "%d",	StopBit );
 	
 	// TAPEがマウントされてなければ何もしないで戻る
 	if( !IsMount() ) return true;
@@ -519,12 +519,12 @@ bool CMTL::DokoSave( cIni* Ini )
 	// マウントされていたらP6TオブジェクトをSAVE
 	P6VPATH tpath = FilePath;
 	OSD_RelativePath( tpath );
-	Ini->PutEntry( "TAPE", "", "FilePath",	"%s",	P6VPATH2STR( tpath ).c_str() );
+	Ini->PutEntry( "TAPE", "FilePath",	"", "%s",	P6VPATH2STR( tpath ).c_str() );
 	
 	// P6T
-	Ini->PutEntry( "P6T", "", "Counter",	"%d",	cP6T::GetCount() );
-	Ini->PutEntry( "P6T", "", "swait",		"%d",	cP6T::swait );
-	Ini->PutEntry( "P6T", "", "pwait",		"%d",	cP6T::pwait );
+	Ini->PutEntry( "P6T", "Counter",	"", "%d",	cP6T::GetCount() );
+	Ini->PutEntry( "P6T", "swait",		"", "%d",	cP6T::swait );
+	Ini->PutEntry( "P6T", "pwait",		"", "%d",	cP6T::pwait );
 	
 	return true;
 }

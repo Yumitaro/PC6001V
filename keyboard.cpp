@@ -823,20 +823,20 @@ bool KEY6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "KEY", "", "ON_KANA",	"%s",	ON_KANA  ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "", "ON_KKANA",	"%s",	ON_KKANA ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "", "ON_STOP",	"%s",	ON_STOP  ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "", "ON_CAPS",	"%s",	ON_CAPS  ? "Yes" : "No" );
+	Ini->PutEntry( "KEY", "ON_KANA",	"", "%s",	ON_KANA  ? "Yes" : "No" );
+	Ini->PutEntry( "KEY", "ON_KKANA",	"", "%s",	ON_KKANA ? "Yes" : "No" );
+	Ini->PutEntry( "KEY", "ON_STOP",	"", "%s",	ON_STOP  ? "Yes" : "No" );
+	Ini->PutEntry( "KEY", "ON_CAPS",	"", "%s",	ON_CAPS  ? "Yes" : "No" );
 	
 	std::string strva;
 	for( auto &i : P6Matrix )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "", "P6Matrix",	"%s",	strva.c_str() );
+	Ini->PutEntry( "KEY", "P6Matrix",	"", "%s",	strva.c_str() );
 	
 	strva.clear();
 	for( auto &i : P6Mtrx )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "", "P6Mtrx",		"%s",	strva.c_str() );
+	Ini->PutEntry( "KEY", "P6Mtrx",		"", "%s",	strva.c_str() );
 	
 	return true;
 }

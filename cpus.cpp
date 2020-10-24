@@ -692,15 +692,15 @@ bool SUB6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "8049", "", "CmtStatus",		"%d",		CmtStatus );
-	Ini->PutEntry( "8049", "", "Status8049",	"%d",		Status8049 );
-	Ini->PutEntry( "8049", "", "IntrFlag",		"0x%08X",	IntrFlag );
-	Ini->PutEntry( "8049", "", "KeyCode",		"0x%02X",	KeyCode );
-	Ini->PutEntry( "8049", "", "JoyCode",		"0x%02X",	JoyCode );
-	Ini->PutEntry( "8049", "", "CmtData",		"0x%02X",	CmtData );
-	Ini->PutEntry( "8049", "", "SioData",		"0x%02X",	SioData );
-	Ini->PutEntry( "8049", "", "TVRCnt",		"0x%02X",	TVRCnt );
-	Ini->PutEntry( "8049", "", "DateCnt",		"0x%02X",	DateCnt );
+	Ini->PutEntry( "8049", "CmtStatus",		"", "%d",		CmtStatus );
+	Ini->PutEntry( "8049", "Status8049",	"", "%d",		Status8049 );
+	Ini->PutEntry( "8049", "IntrFlag",		"", "0x%08X",	IntrFlag );
+	Ini->PutEntry( "8049", "KeyCode",		"", "0x%02X",	KeyCode );
+	Ini->PutEntry( "8049", "JoyCode",		"", "0x%02X",	JoyCode );
+	Ini->PutEntry( "8049", "CmtData",		"", "0x%02X",	CmtData );
+	Ini->PutEntry( "8049", "SioData",		"", "0x%02X",	SioData );
+	Ini->PutEntry( "8049", "TVRCnt",		"", "0x%02X",	TVRCnt );
+	Ini->PutEntry( "8049", "DateCnt",		"", "0x%02X",	DateCnt );
 	
 	return true;
 }

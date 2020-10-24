@@ -478,18 +478,18 @@ bool IRQ6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "INTR", "", "IntrFlag",			"0x%08X",	IntrFlag );
-	Ini->PutEntry( "INTR", "", "TimerIntrEnable",		"%s",	TimerIntrEnable  ? "Yes" : "No" );
-	Ini->PutEntry( "INTR", "", "TimerCntUp",			"%d",	TimerCntUp );
+	Ini->PutEntry( "INTR", "IntrFlag",			"", "0x%08X",	IntrFlag );
+	Ini->PutEntry( "INTR", "TimerIntrEnable",	"", "%s",		TimerIntrEnable  ? "Yes" : "No" );
+	Ini->PutEntry( "INTR", "TimerCntUp",		"", "%d",		TimerCntUp );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", "", Stringf( "IntEnable%d", i ),	"%s",		IntEnable[i]  ? "Yes" : "No" );
+		Ini->PutEntry( "INTR", Stringf( "IntEnable%d", i ),	"", "%s",		IntEnable[i]  ? "Yes" : "No" );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", "", Stringf( "VecOutput%d", i ),	"%s",		VecOutput[i]  ? "Yes" : "No" );
+		Ini->PutEntry( "INTR", Stringf( "VecOutput%d", i ),	"", "%s",		VecOutput[i]  ? "Yes" : "No" );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", "", Stringf( "IntVector%d", i ),	"0x%02X",	IntVector[i] );
+		Ini->PutEntry( "INTR", Stringf( "IntVector%d", i ),	"", "0x%02X",	IntVector[i] );
 	
 	return true;
 }

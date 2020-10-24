@@ -396,10 +396,10 @@ bool EVSC::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "SCHEDULE", "", "MasterClock",	"%d",	MasterClock );
-	Ini->PutEntry( "SCHEDULE", "", "VSYNC",			"%s",	VSYNC ? "Yes" : "No" );
-	Ini->PutEntry( "SCHEDULE", "", "NextEvent",		"%d",	NextEvent );
-	Ini->PutEntry( "SCHEDULE", "", "SaveClock",		"%d",	SaveClock );
+	Ini->PutEntry( "SCHEDULE", "MasterClock",	"", "%d",	MasterClock );
+	Ini->PutEntry( "SCHEDULE", "VSYNC",			"", "%s",	VSYNC ? "Yes" : "No" );
+	Ini->PutEntry( "SCHEDULE", "NextEvent",		"", "%d",	NextEvent );
+	Ini->PutEntry( "SCHEDULE", "SaveClock",		"", "%d",	SaveClock );
 	
 	
 	// イベント
@@ -409,7 +409,7 @@ bool EVSC::DokoSave( cIni* Ini )
 			BYTE id1,id2,id3,id4;
 			
 			DWTOB( p.devid, id4, id3, id2, id1 );
-			Ini->PutEntry( "SCHEDULE", "", Stringf( "Event%02X", i++ ), "%c%c%c%c %d %d %d %lf", id1, id2, id3, id4, p.id, p.Period, p.Clock, p.nps );
+			Ini->PutEntry( "SCHEDULE", Stringf( "Event%02X", i++ ), "", "%c%c%c%c %d %d %d %lf", id1, id2, id3, id4, p.id, p.Period, p.Clock, p.nps );
 		}
 	}
 	
