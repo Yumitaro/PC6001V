@@ -308,13 +308,11 @@ bool cIni::Write( void )
 ////////////////////////////////////////////////////////////////
 // 文字列読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::GetString( const std::string& section, const std::string& entry, std::string& val, const std::string& def )
+bool cIni::GetEntry( const std::string& section, const std::string& entry, std::string& val )
 {
 	// エントリを探す
 	auto node = FindNode( section, entry );
 	if( node == IniNode.end() ){
-		// 見つからなければデフォルト値をセット
-		val = def;
 		return false;
 	}
 	
@@ -328,60 +326,63 @@ bool cIni::GetString( const std::string& section, const std::string& entry, std:
 ////////////////////////////////////////////////////////////////
 // 数値読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::GetInt( const std::string& section, const std::string& entry, int* val, const int def )
+template<typename T>bool cIni::GetValue( const std::string& section, const std::string& entry, T& val )
 {
 	std::string str;
 	
 	// エントリを探す
-	if( !GetString( section, entry, str, "" ) ){
-		// 見つからなければデフォルト値をセット
-		*val = def;
+	if( !GetEntry( section, entry, str ) ){
 		return false;
 	}
 	
 	try{
-		*val = std::stoul( str, nullptr, 0 );
+		val = std::stoul( str, nullptr, 0 );
 		return true;
 	}
 	catch( std::logic_error& ){
 		return false;
 	}
 }
+// おまじない
+template bool cIni::GetValue<int>        ( const std::string&, const std::string&, int&         );
+template bool cIni::GetValue<signed char>( const std::string&, const std::string&, signed char& );
+template bool cIni::GetValue<BYTE>       ( const std::string&, const std::string&, BYTE&        );
+template bool cIni::GetValue<WORD>       ( const std::string&, const std::string&, WORD&        );
+template bool cIni::GetValue<DWORD>      ( const std::string&, const std::string&, DWORD&       );
 
 
 ////////////////////////////////////////////////////////////////
 // YesNo読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::GetTruth( const std::string& section, const std::string& entry, bool* val, const bool def )
+bool cIni::GetYesNo( const std::string& section, const std::string& entry, bool& val )
 {
 	std::string str;
 	
 	// エントリを探す
-	if( !GetString( section, entry, str, "" ) ){
-		// 見つからなければデフォルト値をセット
-		*val = def;
+	if( !GetEntry( section, entry, str ) ){
 		return false;
 	}
 	
-	if( !StriCmp( str, "1" ) || !StriCmp( str, "yes" ) || !StriCmp( str, "on" ) || !StriCmp( str, "true" ) )
-		*val = true;
-	else
-	if( !StriCmp( str, "0" ) || !StriCmp( str, "no" ) || !StriCmp( str, "off" ) || !StriCmp( str, "false" ) )
-		*val = false;
+	if( !StriCmp( str, "1" ) || !StriCmp( str, "yes" ) || !StriCmp( str, "on" ) || !StriCmp( str, "true" ) ){
+		val = true;
+	}else
+	if( !StriCmp( str, "0" ) || !StriCmp( str, "no" ) || !StriCmp( str, "off" ) || !StriCmp( str, "false" ) ){
+		val = false;
+	}
 	
-	return *val;
+	return val;
 }
 
 
 ////////////////////////////////////////////////////////////////
 // パス読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::GetPath( const std::string& section, const std::string& entry, P6VPATH& val, const P6VPATH& def )
+bool cIni::GetPath( const std::string& section, const std::string& entry, P6VPATH& val )
 {
 	std::string tval = P6VPATH2STR( val );
 	
 	// エントリを探す
-	if( !GetString( section, entry, tval, P6VPATH2STR( def ) ) ) return false;
+	if( !GetEntry( section, entry, tval ) ) return false;
 	
 	val = P6VSTR2PATH( tval );
 	OSD_AbsolutePath( val );
@@ -440,6 +441,33 @@ bool cIni::PutEntry( const std::string& section, const std::string& entry, const
 
 
 ////////////////////////////////////////////////////////////////
+// エントリ追加 数値
+////////////////////////////////////////////////////////////////
+bool cIni::PutValue( const std::string& section, const std::string& entry, const std::string& comment, const int val, const std::string& fmt )
+{
+	return PutEntry( section, entry, comment, fmt, val );
+}
+
+
+////////////////////////////////////////////////////////////////
+// エントリ追加 YesNo
+////////////////////////////////////////////////////////////////
+bool cIni::PutYesNo( const std::string& section, const std::string& entry, const std::string& comment, const bool val )
+{
+	return PutEntry( section, entry, comment, val ? "Yes" : "No" );
+}
+
+
+////////////////////////////////////////////////////////////////
+// エントリ追加 パス
+////////////////////////////////////////////////////////////////
+bool cIni::PutPath( const std::string& section, const std::string& entry, const std::string& comment, const P6VPATH& path )
+{
+	return PutEntry( section, entry, comment, P6VPATH2STR( path ).c_str() );
+}
+
+
+////////////////////////////////////////////////////////////////
 // エントリ削除(前)
 ////////////////////////////////////////////////////////////////
 bool cIni::DeleteBefore( const std::string& section, const std::string& entry )
@@ -450,6 +478,7 @@ bool cIni::DeleteBefore( const std::string& section, const std::string& entry )
 	
 	// エントリが見つかった場合はそれより前を削除(指定されたエントリを含む)
 	IniNode.erase( IniNode.begin(), node );
+	
 	return true;
 }
 
@@ -465,6 +494,7 @@ bool cIni::DeleteAfter( const std::string& section, const std::string& entry )
 	
 	// エントリが見つかった場合はそれより後を削除(指定されたエントリを含む)
 	IniNode.erase( node, IniNode.end() );
+	
 	return true;
 }
 

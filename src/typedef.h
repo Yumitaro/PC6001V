@@ -130,13 +130,8 @@ typedef std::string				P6VPATH;
 #undef max
 #undef min
 
-template <class T, class S>
-T max( T v1, S v2 ){ T v2_(v2); return v1 > v2_ ? v1 : v2_; }
-
-template <class T, class S>
-T min( T v1, S v2 ){ T v2_(v2); return v1 < v2_ ? v1 : v2_; }
-
-
+template <class T, class S> T max( T v1, S v2 ){ T v2_(v2); return v1 > v2_ ? v1 : v2_; }
+template <class T, class S> T min( T v1, S v2 ){ T v2_(v2); return v1 < v2_ ? v1 : v2_; }
 
 
 #endif	// TYPEDEF_H_INCLUDED

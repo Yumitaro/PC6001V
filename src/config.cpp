@@ -1,5 +1,6 @@
 #include <fstream>
 #include <algorithm>
+#include <map>
 
 #include "config.h"
 #include "common.h"
@@ -9,376 +10,457 @@
 #include "pc6001v.h"
 
 
-const P6VPATH DummtPath = "";
+// 設定項目定義
+typedef struct{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	int Default;			// 初期値
+	int Max;				// 最大値
+	int Min;				// 最小値
+} CfgSetValue;
+
+typedef struct{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	bool Default;			// 初期値
+} CfgSetBool;
+
+typedef struct{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	P6VPATH Default;		// 初期値
+	bool IsFile;			// true:ファイル false:パス
+} CfgSetPath;
+
+
+static const std::map<TConfig, const CfgSetValue> ConfigValue = {
+	{ CF_Model,			{ "CONFIG",		"Model",		TINI_Model,			DEFAULT_MODEL,		MAX_MODEL,		MIN_MODEL		} },
+	{ CF_FDD,			{ "CONFIG",		"FDD",			TINI_FDD,			DEFAULT_FDD,		MAX_FDD,		MIN_FDD			} },
+	{ CF_OverClock,		{ "CONFIG",		"OverClock",	TINI_OverClock,		DEFAULT_OVERCLOCK,	MAX_OVERCLOCK,	MIN_OVERCLOCK	} },
+	{ CF_MaxBoost60,	{ "CMT",		"MaxBoost60",	TINI_MaxBoost60,	DEFAULT_MAXBOOST60,	MAX_BOOST,		MIN_BOOST		} },
+	{ CF_MaxBoost62,	{ "CMT",		"MaxBoost62",	TINI_MaxBoost62,	DEFAULT_MAXBOOST62,	MAX_BOOST,		MIN_BOOST		} },
+	{ CF_StopBit,		{ "CMT",		"StopBit",		TINI_StopBit,		DEFAULT_STOPBIT,	MAX_STOPBIT,	MIN_STOPBIT		} },
+	{ CF_Mode4Color,	{ "DISPLAY",	"Mode4Color",	TINI_Mode4Color,	DEFAULT_MODE4COLOR,	MAX_MODE4COLOR,	MIN_MODE4COLOR	} },
+	{ CF_ScanLineBr,	{ "DISPLAY",	"ScanLineBr",	TINI_ScanLineBr,	DEFAULT_SCANLINEBR,	MAX_SCANLINEBR,	MIN_SCANLINEBR	} },
+	{ CF_WindowZoom,	{ "DISPLAY",	"WindowZoom",	TINI_WindowZoom,	DEFAULT_WINDOWZOOM,	MAX_WINDOWZOOM,	MIN_WINDOWZOOM	} },
+	{ CF_FrameSkip,		{ "DISPLAY",	"FrameSkip",	TINI_FrameSkip,		DEFAULT_FRAMESKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
+	{ CF_SampleRate,	{ "SOUND",		"SampleRate",	TINI_SampleRate,	DEFAULT_SAMPLERATE,	MAX_SAMPLERATE,	MIN_SAMPLERATE	} },
+	{ CF_SoundBuffer,	{ "SOUND",		"SoundBuffer",	TINI_SoundBuffer,	DEFAULT_SOUNDBUF,	MAX_SOUNDBUF,	MIN_SOUNDBUF	} },
+	{ CF_MasterVolume,	{ "SOUND",		"MasterVolume",	TINI_MasterVolume,	DEFAULT_MASTERVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CF_PsgVolume,		{ "SOUND",		"PsgVolume",	TINI_PsgVolume,		DEFAULT_PSGVOL,		MAX_VOLUME,		MIN_VOLUME		} },
+	{ CF_PsgLPF,		{ "SOUND",		"PsgLPF",		TINI_PsgLPF,		DEFAULT_PSGLPF,		MAX_LPF,		MIN_LPF			} },
+	{ CF_VoiceVolume,	{ "SOUND",		"VoiceVolume",	TINI_VoiceVolume,	DEFAULT_VOICEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CF_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CF_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,	MAX_LPF,		MIN_LPF			} },
+	{ CF_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,		MAX_AVIBPP,		MIN_AVIBPP		} },
+	{ CF_UseSoldier,	{ "OPTION",		"UseSoldier",	TINI_UseSoldier,	DEFAULT_SOLDIER,	0x0f,			0				} },
+	{ CF_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,		MAX_REPEAT,		MIN_REPEAT		} }
+};
+
+static const std::map<TConfig, const CfgSetBool> ConfigBool = {
+	{ CF_ExtRam,		{ "CONFIG",		"ExtRam",		TINI_ExtRam,		DEFAULT_EXTRAM		} },
+	{ CF_CheckCRC,		{ "CONFIG",		"CheckCRC",		TINI_CheckCRC,		DEFAULT_CHECKCRC	} },
+	{ CF_FDDWait,		{ "CONFIG",		"FDDWait",		TINI_FDDWait,		DEFAULT_FDDWAIT		} },
+	{ CF_TurboTAPE,		{ "CMT",		"TurboTAPE",	TINI_TurboTAPE,		DEFAULT_TURBO		} },
+	{ CF_BoostUp,		{ "CMT",		"BoostUp",		TINI_BoostUp,		DEFAULT_BOOST		} },
+	{ CF_ScanLine,		{ "DISPLAY",	"ScanLine",		TINI_ScanLine,		DEFAULT_SCANLINE	} },
+	{ CF_Filtering,		{ "DISPLAY",	"Filtering",	TINI_Filtering,		DEFAULT_FILTERING	} },
+	{ CF_DispNTSC,		{ "DISPLAY",	"DispNTSC",		TINI_DispNTSC,		DEFAULT_DISPNTSC	} },
+	{ CF_FullScreen,	{ "DISPLAY",	"FullScreen",	TINI_FullScreen,	DEFAULT_FULLSCREEN	} },
+	{ CF_DispStatus,	{ "DISPLAY",	"DispStatus",	TINI_DispStatus,	DEFAULT_DISPSTATUS	} },
+	{ CF_CkQuit,		{ "CHECK",		"CkQuit",		TINI_CkQuit,		DEFAULT_CKQUIT		} },
+	{ CF_SaveQuit,		{ "CHECK",		"SaveQuit",		TINI_SaveQuit,		DEFAULT_SAVEQUIT	} }
+};
+
+static const std::map<TConfig, const CfgSetPath> ConfigPath = {
+	{ CF_ExtRom,		{ "FILES",		"ExtRom",		TINI_ExtRom,		"",							true	} },
+	{ CF_tape,			{ "FILES",		"tape",			TINI_tape,			"",							true	} },
+	{ CF_save,			{ "FILES",		"save",			TINI_save,			DIR_TAPE "\\" FILE_SAVE,	true	} },
+	{ CF_disk1,			{ "FILES",		"disk1",		TINI_disk1,			"",							true	} },
+	{ CF_disk2,			{ "FILES",		"disk2",		TINI_disk2,			"",							true	} },
+	{ CF_printer,		{ "FILES",		"printer",		TINI_printer,		FILE_PRINT,					true	} },
+	{ CF_RomPath,		{ "PATH",		"RomPath",		TINI_RomPath,		DIR_ROM,					false	} },
+	{ CF_TapePath,		{ "PATH",		"TapePath",		TINI_TapePath,		DIR_TAPE,					false	} },
+	{ CF_DiskPath,		{ "PATH",		"DiskPath",		TINI_DiskPath,		DIR_DISK,					false	} },
+	{ CF_ExtRomPath,	{ "PATH",		"ExtRomPath",	TINI_ExtRomPath,	DIR_EXTROM,					false	} },
+	{ CF_ImgPath,		{ "PATH",		"ImgPath",		TINI_ImgPath,		DIR_IMAGE,					false	} },
+	{ CF_WavePath,		{ "PATH",		"WavePath",		TINI_WavePath,		DIR_WAVE,					false	} },
+	{ CF_FontPath,		{ "PATH",		"FontPath",		TINI_FontPath,		DIR_FONT,					false	} },
+	{ CF_DokoPath,		{ "PATH",		"DokoPath",		TINI_DokoPath,		DIR_DOKO,					false	} }
+};
+
 
 static const std::vector<P6KeyName> P6KeyNameDef = {
-	{ KP6_UNKNOWN,		"K6_UNKNOWN" },
+	{ KP6_UNKNOWN,		"K6_UNKNOWN"	},
 	
-	{ KP6_1,			"K6_1" },
-	{ KP6_2,			"K6_2" },
-	{ KP6_3,			"K6_3" },
-	{ KP6_4,			"K6_4" },
-	{ KP6_5,			"K6_5" },
-	{ KP6_6,			"K6_6" },
-	{ KP6_7,			"K6_7" },
-	{ KP6_8,			"K6_8" },
-	{ KP6_9,			"K6_9" },
-	{ KP6_0,			"K6_0" },
+	{ KP6_1,			"K6_1"			},
+	{ KP6_2,			"K6_2"			},
+	{ KP6_3,			"K6_3"			},
+	{ KP6_4,			"K6_4"			},
+	{ KP6_5,			"K6_5"			},
+	{ KP6_6,			"K6_6"			},
+	{ KP6_7,			"K6_7"			},
+	{ KP6_8,			"K6_8"			},
+	{ KP6_9,			"K6_9"			},
+	{ KP6_0,			"K6_0"			},
 	
-	{ KP6_A,			"K6_A" },
-	{ KP6_B,			"K6_B" },
-	{ KP6_C,			"K6_C" },
-	{ KP6_D,			"K6_D" },
-	{ KP6_E,			"K6_E" },
-	{ KP6_F,			"K6_F" },
-	{ KP6_G,			"K6_G" },
-	{ KP6_H,			"K6_H" },
-	{ KP6_I,			"K6_I" },
-	{ KP6_J,			"K6_J" },
-	{ KP6_K,			"K6_K" },
-	{ KP6_L,			"K6_L" },
-	{ KP6_M,			"K6_M" },
-	{ KP6_N,			"K6_N" },
-	{ KP6_O,			"K6_O" },
-	{ KP6_P,			"K6_P" },
-	{ KP6_Q,			"K6_Q" },
-	{ KP6_R,			"K6_R" },
-	{ KP6_S,			"K6_S" },
-	{ KP6_T,			"K6_T" },
-	{ KP6_U,			"K6_U" },
-	{ KP6_V,			"K6_V" },
-	{ KP6_W,			"K6_W" },
-	{ KP6_X,			"K6_X" },
-	{ KP6_Y,			"K6_Y" },
-	{ KP6_Z,			"K6_Z" },
+	{ KP6_A,			"K6_A"			},
+	{ KP6_B,			"K6_B"			},
+	{ KP6_C,			"K6_C"			},
+	{ KP6_D,			"K6_D"			},
+	{ KP6_E,			"K6_E"			},
+	{ KP6_F,			"K6_F"			},
+	{ KP6_G,			"K6_G"			},
+	{ KP6_H,			"K6_H"			},
+	{ KP6_I,			"K6_I"			},
+	{ KP6_J,			"K6_J"			},
+	{ KP6_K,			"K6_K"			},
+	{ KP6_L,			"K6_L"			},
+	{ KP6_M,			"K6_M"			},
+	{ KP6_N,			"K6_N"			},
+	{ KP6_O,			"K6_O"			},
+	{ KP6_P,			"K6_P"			},
+	{ KP6_Q,			"K6_Q"			},
+	{ KP6_R,			"K6_R"			},
+	{ KP6_S,			"K6_S"			},
+	{ KP6_T,			"K6_T"			},
+	{ KP6_U,			"K6_U"			},
+	{ KP6_V,			"K6_V"			},
+	{ KP6_W,			"K6_W"			},
+	{ KP6_X,			"K6_X"			},
+	{ KP6_Y,			"K6_Y"			},
+	{ KP6_Z,			"K6_Z"			},
 	
-	{ KP6_F1,			"K6_F1" },
-	{ KP6_F2,			"K6_F2" },
-	{ KP6_F3,			"K6_F3" },
-	{ KP6_F4,			"K6_F4" },
-	{ KP6_F5,			"K6_F5" },
+	{ KP6_F1,			"K6_F1"			},
+	{ KP6_F2,			"K6_F2"			},
+	{ KP6_F3,			"K6_F3"			},
+	{ KP6_F4,			"K6_F4"			},
+	{ KP6_F5,			"K6_F5"			},
 	
-	{ KP6_MINUS,		"K6_MINUS" },
-	{ KP6_CARET,		"K6_CARET" },
-	{ KP6_YEN,			"K6_YEN" },
-	{ KP6_AT,			"K6_AT" },
-	{ KP6_LBRACKET,		"K6_LBRACKET" },
-	{ KP6_RBRACKET,		"K6_RBRACKET" },
-	{ KP6_SEMICOLON,	"K6_SEMICOLON" },
-	{ KP6_COLON,		"K6_COLON" },
-	{ KP6_COMMA,		"K6_COMMA" },
-	{ KP6_PERIOD,		"K6_PERIOD" },
-	{ KP6_SLASH,		"K6_SLASH" },
-	{ KP6_UNDERSCORE,	"K6_UNDERSCORE" },
-	{ KP6_SPACE,		"K6_SPACE" },
+	{ KP6_MINUS,		"K6_MINUS"		},
+	{ KP6_CARET,		"K6_CARET"		},
+	{ KP6_YEN,			"K6_YEN"		},
+	{ KP6_AT,			"K6_AT"			},
+	{ KP6_LBRACKET,		"K6_LBRACKET"	},
+	{ KP6_RBRACKET,		"K6_RBRACKET"	},
+	{ KP6_SEMICOLON,	"K6_SEMICOLON"	},
+	{ KP6_COLON,		"K6_COLON"		},
+	{ KP6_COMMA,		"K6_COMMA"		},
+	{ KP6_PERIOD,		"K6_PERIOD"		},
+	{ KP6_SLASH,		"K6_SLASH"		},
+	{ KP6_UNDERSCORE,	"K6_UNDERSCORE"	},
+	{ KP6_SPACE,		"K6_SPACE"		},
 	
-	{ KP6_ESC,			"K6_ESC" },
-	{ KP6_TAB,			"K6_TAB" },
-	{ KP6_CTRL,			"K6_CTRL" },
-	{ KP6_SHIFT,		"K6_SHIFT" },
-	{ KP6_GRAPH,		"K6_GRAPH" },
-	{ KP6_HOME,			"K6_HOME" },
-	{ KP6_STOP,			"K6_STOP" },
-	{ KP6_PAGE,			"K6_PAGE" },
-	{ KP6_RETURN,		"K6_RETURN" },
-	{ KP6_KANA,			"K6_KANA" },
-	{ KP6_INS,			"K6_INS" },
-	{ KP6_DEL,			"K6_DEL" },
+	{ KP6_ESC,			"K6_ESC"		},
+	{ KP6_TAB,			"K6_TAB"		},
+	{ KP6_CTRL,			"K6_CTRL"		},
+	{ KP6_SHIFT,		"K6_SHIFT"		},
+	{ KP6_GRAPH,		"K6_GRAPH"		},
+	{ KP6_HOME,			"K6_HOME"		},
+	{ KP6_STOP,			"K6_STOP"		},
+	{ KP6_PAGE,			"K6_PAGE"		},
+	{ KP6_RETURN,		"K6_RETURN"		},
+	{ KP6_KANA,			"K6_KANA"		},
+	{ KP6_INS,			"K6_INS"		},
+	{ KP6_DEL,			"K6_DEL"		},
 	
-	{ KP6_UP,			"K6_UP" },
-	{ KP6_DOWN,			"K6_DOWN" },
-	{ KP6_LEFT,			"K6_LEFT" },
-	{ KP6_RIGHT,		"K6_RIGHT" },
+	{ KP6_UP,			"K6_UP"			},
+	{ KP6_DOWN,			"K6_DOWN"		},
+	{ KP6_LEFT,			"K6_LEFT"		},
+	{ KP6_RIGHT,		"K6_RIGHT"		},
 	
-	{ KP6_MODE,			"K6_MODE" },
-	{ KP6_CAPS,			"K6_CAPS" },
+	{ KP6_MODE,			"K6_MODE"		},
+	{ KP6_CAPS,			"K6_CAPS"		},
 	
 	
 	// テンキー部拡張
-	{ KP6_P0,			"K6_P0" },
-	{ KP6_P1,			"K6_P1" },
-	{ KP6_P2,			"K6_P2" },
-	{ KP6_P3,			"K6_P3" },
-	{ KP6_P4,			"K6_P4" },
-	{ KP6_P5,			"K6_P5" },
-	{ KP6_P6,			"K6_P6" },
-	{ KP6_P7,			"K6_P7" },
-	{ KP6_P8,			"K6_P8" },
-	{ KP6_P9,			"K6_P9" },
-	{ KP6_PPLUS,		"K6_PPLUS" },
-	{ KP6_PMINUS,		"K6_PMINUS" },
-	{ KP6_PMULTIPLY,	"K6_PMULTIPLY" },
-	{ KP6_PDIVIDE,		"K6_PDIVIDE" },
-	{ KP6_PPERIOD,		"K6_PPERIOD" },
-	{ KP6_PRETURN,		"K6_PRETURN" },
+	{ KP6_P0,			"K6_P0"			},
+	{ KP6_P1,			"K6_P1"			},
+	{ KP6_P2,			"K6_P2"			},
+	{ KP6_P3,			"K6_P3"			},
+	{ KP6_P4,			"K6_P4"			},
+	{ KP6_P5,			"K6_P5"			},
+	{ KP6_P6,			"K6_P6"			},
+	{ KP6_P7,			"K6_P7"			},
+	{ KP6_P8,			"K6_P8"			},
+	{ KP6_P9,			"K6_P9"			},
+	{ KP6_PPLUS,		"K6_PPLUS"		},
+	{ KP6_PMINUS,		"K6_PMINUS"		},
+	{ KP6_PMULTIPLY,	"K6_PMULTIPLY"	},
+	{ KP6_PDIVIDE,		"K6_PDIVIDE"	},
+	{ KP6_PPERIOD,		"K6_PPERIOD"	},
+	{ KP6_PRETURN,		"K6_PRETURN"	},
 	
 	
 	// 各種機能キー
-	{ KFN_1,			"K6_FN1" },
-	{ KFN_2,			"K6_FN2" },
-	{ KFN_3,			"K6_FN3" },
-	{ KFN_4,			"K6_FN4" },
-	{ KFN_5,			"K6_FN5" },
-	{ KFN_6,			"K6_FN6" },
-	{ KFN_7,			"K6_FN7" },
-	{ KFN_8,			"K6_FN8" },
-	{ KFN_9,			"K6_FN9" }
+	{ KFN_1,			"K6_FN1"		},
+	{ KFN_2,			"K6_FN2"		},
+	{ KFN_3,			"K6_FN3"		},
+	{ KFN_4,			"K6_FN4"		},
+	{ KFN_5,			"K6_FN5"		},
+	{ KFN_6,			"K6_FN6"		},
+	{ KFN_7,			"K6_FN7"		},
+	{ KFN_8,			"K6_FN8"		},
+	{ KFN_9,			"K6_FN9"		}
 };
 
 
 static const std::vector<PCKeyName> PCKeyNameDef = {
-	{ KVC_UNKNOWN,		"K_UNKNOWN" },
+	{ KVC_UNKNOWN,		"K_UNKNOWN"		},
 	
-	{ KVC_1,			"K_1" },
-	{ KVC_2,			"K_2" },
-	{ KVC_3,			"K_3" },
-	{ KVC_4,			"K_4" },
-	{ KVC_5,			"K_5" },
-	{ KVC_6,			"K_6" },
-	{ KVC_7,			"K_7" },
-	{ KVC_8,			"K_8" },
-	{ KVC_9,			"K_9" },
-	{ KVC_0,			"K_0" },
+	{ KVC_1,			"K_1"			},
+	{ KVC_2,			"K_2"			},
+	{ KVC_3,			"K_3"			},
+	{ KVC_4,			"K_4"			},
+	{ KVC_5,			"K_5"			},
+	{ KVC_6,			"K_6"			},
+	{ KVC_7,			"K_7"			},
+	{ KVC_8,			"K_8"			},
+	{ KVC_9,			"K_9"			},
+	{ KVC_0,			"K_0"			},
 	
-	{ KVC_A,			"K_A" },
-	{ KVC_B,			"K_B" },
-	{ KVC_C,			"K_C" },
-	{ KVC_D,			"K_D" },
-	{ KVC_E,			"K_E" },
-	{ KVC_F,			"K_F" },
-	{ KVC_G,			"K_G" },
-	{ KVC_H,			"K_H" },
-	{ KVC_I,			"K_I" },
-	{ KVC_J,			"K_J" },
-	{ KVC_K,			"K_K" },
-	{ KVC_L,			"K_L" },
-	{ KVC_M,			"K_M" },
-	{ KVC_N,			"K_N" },
-	{ KVC_O,			"K_O" },
-	{ KVC_P,			"K_P" },
-	{ KVC_Q,			"K_Q" },
-	{ KVC_R,			"K_R" },
-	{ KVC_S,			"K_S" },
-	{ KVC_T,			"K_T" },
-	{ KVC_U,			"K_U" },
-	{ KVC_V,			"K_V" },
-	{ KVC_W,			"K_W" },
-	{ KVC_X,			"K_X" },
-	{ KVC_Y,			"K_Y" },
-	{ KVC_Z,			"K_Z" },
+	{ KVC_A,			"K_A"			},
+	{ KVC_B,			"K_B"			},
+	{ KVC_C,			"K_C"			},
+	{ KVC_D,			"K_D"			},
+	{ KVC_E,			"K_E"			},
+	{ KVC_F,			"K_F"			},
+	{ KVC_G,			"K_G"			},
+	{ KVC_H,			"K_H"			},
+	{ KVC_I,			"K_I"			},
+	{ KVC_J,			"K_J"			},
+	{ KVC_K,			"K_K"			},
+	{ KVC_L,			"K_L"			},
+	{ KVC_M,			"K_M"			},
+	{ KVC_N,			"K_N"			},
+	{ KVC_O,			"K_O"			},
+	{ KVC_P,			"K_P"			},
+	{ KVC_Q,			"K_Q"			},
+	{ KVC_R,			"K_R"			},
+	{ KVC_S,			"K_S"			},
+	{ KVC_T,			"K_T"			},
+	{ KVC_U,			"K_U"			},
+	{ KVC_V,			"K_V"			},
+	{ KVC_W,			"K_W"			},
+	{ KVC_X,			"K_X"			},
+	{ KVC_Y,			"K_Y"			},
+	{ KVC_Z,			"K_Z"			},
 	
-	{ KVC_F1,			"K_F1" },
-	{ KVC_F2,			"K_F2" },
-	{ KVC_F3,			"K_F3" },
-	{ KVC_F4,			"K_F4" },
-	{ KVC_F5,			"K_F5" },
-	{ KVC_F6,			"K_F6" },
-	{ KVC_F7,			"K_F7" },
-	{ KVC_F8,			"K_F8" },
-	{ KVC_F9,			"K_F9" },
-	{ KVC_F10,			"K_F10" },
-	{ KVC_F11,			"K_F11" },
-	{ KVC_F12,			"K_F12" },
+	{ KVC_F1,			"K_F1"			},
+	{ KVC_F2,			"K_F2"			},
+	{ KVC_F3,			"K_F3"			},
+	{ KVC_F4,			"K_F4"			},
+	{ KVC_F5,			"K_F5"			},
+	{ KVC_F6,			"K_F6"			},
+	{ KVC_F7,			"K_F7"			},
+	{ KVC_F8,			"K_F8"			},
+	{ KVC_F9,			"K_F9"			},
+	{ KVC_F10,			"K_F10"			},
+	{ KVC_F11,			"K_F11"			},
+	{ KVC_F12,			"K_F12"			},
 	
-	{ KVC_MINUS,		"K_MINUS" },
-	{ KVC_CARET,		"K_CARET" },
-	{ KVC_BACKSPACE,	"K_BACKSPACE" },
-	{ KVC_AT,			"K_AT" },
-	{ KVC_LBRACKET,		"K_LBRACKET" },
-	{ KVC_SEMICOLON,	"K_SEMICOLON" },
-	{ KVC_COLON,		"K_COLON" },
-	{ KVC_COMMA,		"K_COMMA" },
-	{ KVC_PERIOD,		"K_PERIOD" },
-	{ KVC_SLASH,		"K_SLASH" },
-	{ KVC_SPACE,		"K_SPACE" },
+	{ KVC_MINUS,		"K_MINUS"		},
+	{ KVC_CARET,		"K_CARET"		},
+	{ KVC_BACKSPACE,	"K_BACKSPACE"	},
+	{ KVC_AT,			"K_AT"			},
+	{ KVC_LBRACKET,		"K_LBRACKET"	},
+	{ KVC_SEMICOLON,	"K_SEMICOLON"	},
+	{ KVC_COLON,		"K_COLON"		},
+	{ KVC_COMMA,		"K_COMMA"		},
+	{ KVC_PERIOD,		"K_PERIOD"		},
+	{ KVC_SLASH,		"K_SLASH"		},
+	{ KVC_SPACE,		"K_SPACE"		},
 	
-	{ KVC_ESC,			"K_ESC" },
-	{ KVC_HANZEN,		"K_HANZEN" },
-	{ KVC_TAB,			"K_TAB" },
-	{ KVC_CAPSLOCK,		"K_CAPSLOCK" },
-	{ KVC_ENTER,		"K_ENTER" },
-	{ KVC_LCTRL,		"K_LCTRL" },
-	{ KVC_RCTRL,		"K_RCTRL" },
-	{ KVC_LSHIFT,		"K_LSHIFT" },
-	{ KVC_RSHIFT,		"K_RSHIFT" },
-	{ KVC_LALT,			"K_LALT" },
-	{ KVC_RALT,			"K_RALT" },
-	{ KVC_PRINT,		"K_PRINT" },
-	{ KVC_SCROLLLOCK,	"K_SCROLLLOCK" },
-	{ KVC_PAUSE,		"K_PAUSE" },
-	{ KVC_INSERT,		"K_INSERT" },
-	{ KVC_DELETE,		"K_DELETE" },
-	{ KVC_HOME,			"K_HOME" },
-	{ KVC_END,			"K_END" },
-	{ KVC_PAGEUP,		"K_PAGEUP" },
-	{ KVC_PAGEDOWN,		"K_PAGEDOWN" },
+	{ KVC_ESC,			"K_ESC"			},
+	{ KVC_HANZEN,		"K_HANZEN"		},
+	{ KVC_TAB,			"K_TAB"			},
+	{ KVC_CAPSLOCK,		"K_CAPSLOCK"	},
+	{ KVC_ENTER,		"K_ENTER"		},
+	{ KVC_LCTRL,		"K_LCTRL"		},
+	{ KVC_RCTRL,		"K_RCTRL"		},
+	{ KVC_LSHIFT,		"K_LSHIFT"		},
+	{ KVC_RSHIFT,		"K_RSHIFT"		},
+	{ KVC_LALT,			"K_LALT"		},
+	{ KVC_RALT,			"K_RALT"		},
+	{ KVC_PRINT,		"K_PRINT"		},
+	{ KVC_SCROLLLOCK,	"K_SCROLLLOCK"	},
+	{ KVC_PAUSE,		"K_PAUSE"		},
+	{ KVC_INSERT,		"K_INSERT"		},
+	{ KVC_DELETE,		"K_DELETE"		},
+	{ KVC_HOME,			"K_HOME"		},
+	{ KVC_END,			"K_END"			},
+	{ KVC_PAGEUP,		"K_PAGEUP"		},
+	{ KVC_PAGEDOWN,		"K_PAGEDOWN"	},
 	
-	{ KVC_UP,			"K_UP" },
-	{ KVC_DOWN,			"K_DOWN" },
-	{ KVC_LEFT,			"K_LEFT" },
-	{ KVC_RIGHT,		"K_RIGHT" },
+	{ KVC_UP,			"K_UP"			},
+	{ KVC_DOWN,			"K_DOWN"		},
+	{ KVC_LEFT,			"K_LEFT"		},
+	{ KVC_RIGHT,		"K_RIGHT"		},
 	
-	{ KVC_P0,			"K_P_0" },
-	{ KVC_P1,			"K_P_1" },
-	{ KVC_P2,			"K_P_2" },
-	{ KVC_P3,			"K_P_3" },
-	{ KVC_P4,			"K_P_4" },
-	{ KVC_P5,			"K_P_5" },
-	{ KVC_P6,			"K_P_6" },
-	{ KVC_P7,			"K_P_7" },
-	{ KVC_P8,			"K_P_8" },
-	{ KVC_P9,			"K_P_9" },
-	{ KVC_NUMLOCK,		"K_NUMLOCK" },
-	{ KVC_P_PLUS,		"K_P_PLUS" },
-	{ KVC_P_MINUS,		"K_P_MINUS" },
-	{ KVC_P_MULTIPLY,	"K_P_MULTIPLY" },
-	{ KVC_P_DIVIDE,		"K_P_DIVIDE" },
-	{ KVC_P_PERIOD,		"K_P_PERIOD" },
-	{ KVC_P_ENTER,		"K_P_ENTER" },
+	{ KVC_P0,			"K_P_0"			},
+	{ KVC_P1,			"K_P_1"			},
+	{ KVC_P2,			"K_P_2"			},
+	{ KVC_P3,			"K_P_3"			},
+	{ KVC_P4,			"K_P_4"			},
+	{ KVC_P5,			"K_P_5"			},
+	{ KVC_P6,			"K_P_6"			},
+	{ KVC_P7,			"K_P_7"			},
+	{ KVC_P8,			"K_P_8"			},
+	{ KVC_P9,			"K_P_9"			},
+	{ KVC_NUMLOCK,		"K_NUMLOCK"		},
+	{ KVC_P_PLUS,		"K_P_PLUS"		},
+	{ KVC_P_MINUS,		"K_P_MINUS"		},
+	{ KVC_P_MULTIPLY,	"K_P_MULTIPLY"	},
+	{ KVC_P_DIVIDE,		"K_P_DIVIDE"	},
+	{ KVC_P_PERIOD,		"K_P_PERIOD"	},
+	{ KVC_P_ENTER,		"K_P_ENTER"		},
 	
 	// 日本語キーボードのみ
-	{ KVC_YEN,			"K_YEN" },
-	{ KVC_RBRACKET,		"K_RBRACKET" },
-	{ KVC_UNDERSCORE,	"K_UNDERSCORE" },
-	{ KVC_MUHENKAN,		"K_MUHENKAN" },
-	{ KVC_HENKAN,		"K_HENKAN" },
-	{ KVC_HIRAGANA,		"K_HIRAGANA" },
+	{ KVC_YEN,			"K_YEN"			},
+	{ KVC_RBRACKET,		"K_RBRACKET"	},
+	{ KVC_UNDERSCORE,	"K_UNDERSCORE"	},
+	{ KVC_MUHENKAN,		"K_MUHENKAN"	},
+	{ KVC_HENKAN,		"K_HENKAN"		},
+	{ KVC_HIRAGANA,		"K_HIRAGANA"	},
 	
 	// 英語キーボードのみ
-	{ KVE_BACKSLASH,	"K_BACKSLASH" },
+	{ KVE_BACKSLASH,	"K_BACKSLASH"	},
 	
 	// 追加キー
-	{ KVX_RMETA,		"K_RMETA" },
-	{ KVX_LMETA,		"K_LMETA" },
-	{ KVX_MENU,			"K_MENU" },
+	{ KVX_RMETA,		"K_RMETA"		},
+	{ KVX_LMETA,		"K_LMETA"		},
+	{ KVX_MENU,			"K_MENU"		}
 };
 
 
 static const std::vector<VKeyConv> KeyIni = {	// 仮想キーコード -> P6キーコード定義初期値
-	{ KVC_1,			KP6_1 },			// 1	!
-	{ KVC_2,			KP6_2 },			// 2	"
-	{ KVC_3,			KP6_3 },			// 3	#
-	{ KVC_4,			KP6_4 },			// 4	$
-	{ KVC_5,			KP6_5 },			// 5	%
-	{ KVC_6,			KP6_6 },			// 6	&
-	{ KVC_7,			KP6_7 },			// 7	'
-	{ KVC_8,			KP6_8 },			// 8	(
-	{ KVC_9,			KP6_9 },			// 9	)
-	{ KVC_0,			KP6_0 },			// 0
+	{ KVC_1,			KP6_1			},	// 1	!
+	{ KVC_2,			KP6_2			},	// 2	"
+	{ KVC_3,			KP6_3			},	// 3	#
+	{ KVC_4,			KP6_4			},	// 4	$
+	{ KVC_5,			KP6_5			},	// 5	%
+	{ KVC_6,			KP6_6			},	// 6	&
+	{ KVC_7,			KP6_7			},	// 7	'
+	{ KVC_8,			KP6_8			},	// 8	(
+	{ KVC_9,			KP6_9			},	// 9	)
+	{ KVC_0,			KP6_0			},	// 0
 	
-	{ KVC_A,			KP6_A },			// a	A
-	{ KVC_B,			KP6_B },			// b	B
-	{ KVC_C,			KP6_C },			// c	C
-	{ KVC_D,			KP6_D },			// d	D
-	{ KVC_E,			KP6_E },			// e	E
-	{ KVC_F,			KP6_F },			// f	F
-	{ KVC_G,			KP6_G },			// g	G
-	{ KVC_H,			KP6_H },			// h	H
-	{ KVC_I,			KP6_I },			// i	I
-	{ KVC_J,			KP6_J },			// j	J
-	{ KVC_K,			KP6_K },			// k	K
-	{ KVC_L,			KP6_L },			// l	L
-	{ KVC_M,			KP6_M },			// m	M
-	{ KVC_N,			KP6_N },			// n	N
-	{ KVC_O,			KP6_O },			// o	O
-	{ KVC_P,			KP6_P },			// p	P
-	{ KVC_Q,			KP6_Q },			// q	Q
-	{ KVC_R,			KP6_R },			// r	R
-	{ KVC_S,			KP6_S },			// s	S
-	{ KVC_T,			KP6_T },			// t	T
-	{ KVC_U,			KP6_U },			// u	U
-	{ KVC_V,			KP6_V },			// v	V
-	{ KVC_W,			KP6_W },			// w	W
-	{ KVC_X,			KP6_X },			// x	X
-	{ KVC_Y,			KP6_Y },			// y	Y
-	{ KVC_Z,			KP6_Z },			// z	Z
+	{ KVC_A,			KP6_A			},	// a	A
+	{ KVC_B,			KP6_B			},	// b	B
+	{ KVC_C,			KP6_C			},	// c	C
+	{ KVC_D,			KP6_D			},	// d	D
+	{ KVC_E,			KP6_E			},	// e	E
+	{ KVC_F,			KP6_F			},	// f	F
+	{ KVC_G,			KP6_G			},	// g	G
+	{ KVC_H,			KP6_H			},	// h	H
+	{ KVC_I,			KP6_I			},	// i	I
+	{ KVC_J,			KP6_J			},	// j	J
+	{ KVC_K,			KP6_K			},	// k	K
+	{ KVC_L,			KP6_L			},	// l	L
+	{ KVC_M,			KP6_M			},	// m	M
+	{ KVC_N,			KP6_N			},	// n	N
+	{ KVC_O,			KP6_O			},	// o	O
+	{ KVC_P,			KP6_P			},	// p	P
+	{ KVC_Q,			KP6_Q			},	// q	Q
+	{ KVC_R,			KP6_R			},	// r	R
+	{ KVC_S,			KP6_S			},	// s	S
+	{ KVC_T,			KP6_T			},	// t	T
+	{ KVC_U,			KP6_U			},	// u	U
+	{ KVC_V,			KP6_V			},	// v	V
+	{ KVC_W,			KP6_W			},	// w	W
+	{ KVC_X,			KP6_X			},	// x	X
+	{ KVC_Y,			KP6_Y			},	// y	Y
+	{ KVC_Z,			KP6_Z			},	// z	Z
 	
-	{ KVC_F1,			KP6_F1 },			// F1
-	{ KVC_F2,			KP6_F2 },			// F2
-	{ KVC_F3,			KP6_F3 },			// F3
-	{ KVC_F4,			KP6_F4 },			// F4
-	{ KVC_F5,			KP6_F5 },			// F5
+	{ KVC_F1,			KP6_F1			},	// F1
+	{ KVC_F2,			KP6_F2			},	// F2
+	{ KVC_F3,			KP6_F3			},	// F3
+	{ KVC_F4,			KP6_F4			},	// F4
+	{ KVC_F5,			KP6_F5			},	// F5
 	
-	{ KVC_MINUS,		KP6_MINUS },		// -	=
-	{ KVC_CARET,		KP6_CARET },		// ^	~
-	{ KVC_BACKSPACE,	KP6_DEL },			// BackSpace
-	{ KVC_AT,			KP6_AT },			// @	`
-	{ KVC_LBRACKET,		KP6_LBRACKET },		// [	{
-	{ KVC_SEMICOLON,	KP6_SEMICOLON },	// ;	+
-	{ KVC_COLON,		KP6_COLON },		// :	*
-	{ KVC_COMMA,		KP6_COMMA },		// ,	<
-	{ KVC_PERIOD,		KP6_PERIOD },		// .	>
-	{ KVC_SLASH,		KP6_SLASH },		// /	?
-	{ KVC_SPACE,		KP6_SPACE },		// Space
+	{ KVC_MINUS,		KP6_MINUS		},	// -	=
+	{ KVC_CARET,		KP6_CARET		},	// ^	~
+	{ KVC_BACKSPACE,	KP6_DEL			},	// BackSpace
+	{ KVC_AT,			KP6_AT			},	// @	`
+	{ KVC_LBRACKET,		KP6_LBRACKET	},	// [	{
+	{ KVC_SEMICOLON,	KP6_SEMICOLON	},	// ;	+
+	{ KVC_COLON,		KP6_COLON		},	// :	*
+	{ KVC_COMMA,		KP6_COMMA		},	// ,	<
+	{ KVC_PERIOD,		KP6_PERIOD		},	// .	>
+	{ KVC_SLASH,		KP6_SLASH		},	// /	?
+	{ KVC_SPACE,		KP6_SPACE		},	// Space
 	
-	{ KVC_ESC,			KP6_ESC },			// ESC
-	{ KVC_HANZEN,		KP6_UNKNOWN },		// 半角/全角
-	{ KVC_TAB,			KP6_TAB },			// Tab
-	{ KVC_CAPSLOCK,		KP6_UNKNOWN },		// CapsLock
-	{ KVC_ENTER,		KP6_RETURN },		// Enter
-	{ KVC_LCTRL,		KP6_CTRL },			// L-Ctrl
-	{ KVC_RCTRL,		KP6_CTRL },			// R-Ctrl
-	{ KVC_LSHIFT,		KP6_SHIFT },		// L-Shift
-	{ KVC_RSHIFT,		KP6_SHIFT },		// R-Shift
-	{ KVC_LALT,			KP6_GRAPH },		// L-Alt
-	{ KVC_RALT,			KP6_GRAPH },		// R-Alt
-	{ KVC_PRINT,		KP6_UNKNOWN },		// PrintScreen
-	{ KVC_SCROLLLOCK,	KP6_CAPS },			// ScrollLock
-	{ KVC_PAUSE,		KP6_KANA },			// Pause
-	{ KVC_INSERT,		KP6_INS },			// Insert
-	{ KVC_DELETE,		KP6_DEL },			// Delete
-	{ KVC_END,			KP6_STOP },			// End
-	{ KVC_HOME,			KP6_HOME },			// Home
-	{ KVC_PAGEUP,		KP6_PAGE },			// PageUp
-	{ KVC_PAGEDOWN,		KP6_MODE },			// PageDown
+	{ KVC_ESC,			KP6_ESC			},	// ESC
+	{ KVC_HANZEN,		KP6_UNKNOWN		},	// 半角/全角
+	{ KVC_TAB,			KP6_TAB			},	// Tab
+	{ KVC_CAPSLOCK,		KP6_UNKNOWN		},	// CapsLock
+	{ KVC_ENTER,		KP6_RETURN		},	// Enter
+	{ KVC_LCTRL,		KP6_CTRL		},	// L-Ctrl
+	{ KVC_RCTRL,		KP6_CTRL		},	// R-Ctrl
+	{ KVC_LSHIFT,		KP6_SHIFT		},	// L-Shift
+	{ KVC_RSHIFT,		KP6_SHIFT		},	// R-Shift
+	{ KVC_LALT,			KP6_GRAPH		},	// L-Alt
+	{ KVC_RALT,			KP6_GRAPH		},	// R-Alt
+	{ KVC_PRINT,		KP6_UNKNOWN		},	// PrintScreen
+	{ KVC_SCROLLLOCK,	KP6_CAPS		},	// ScrollLock
+	{ KVC_PAUSE,		KP6_KANA		},	// Pause
+	{ KVC_INSERT,		KP6_INS			},	// Insert
+	{ KVC_DELETE,		KP6_DEL			},	// Delete
+	{ KVC_END,			KP6_STOP		},	// End
+	{ KVC_HOME,			KP6_HOME		},	// Home
+	{ KVC_PAGEUP,		KP6_PAGE		},	// PageUp
+	{ KVC_PAGEDOWN,		KP6_MODE		},	// PageDown
 	
-	{ KVC_UP,			KP6_UP },			// ↑
-	{ KVC_DOWN,			KP6_DOWN },			// ↓
-	{ KVC_LEFT,			KP6_LEFT },			// ←
-	{ KVC_RIGHT,		KP6_RIGHT },		// →
+	{ KVC_UP,			KP6_UP			},	// ↑
+	{ KVC_DOWN,			KP6_DOWN		},	// ↓
+	{ KVC_LEFT,			KP6_LEFT		},	// ←
+	{ KVC_RIGHT,		KP6_RIGHT		},	// →
 	
-	{ KVC_P0,			KP6_P0 },			// [0]
-	{ KVC_P1,			KP6_P1 },			// [1]
-	{ KVC_P2,			KP6_P2 },			// [2]
-	{ KVC_P3,			KP6_P3 },			// [3]
-	{ KVC_P4,			KP6_P4 },			// [4]
-	{ KVC_P5,			KP6_P5 },			// [5]
-	{ KVC_P6,			KP6_P6 },			// [6]
-	{ KVC_P7,			KP6_P7 },			// [7]
-	{ KVC_P8,			KP6_P8 },			// [8]
-	{ KVC_P9,			KP6_P9 },			// [9]
-	{ KVC_NUMLOCK,		KP6_UNKNOWN },		// NumLock
-	{ KVC_P_PLUS,		KP6_PPLUS },		// [+]
-	{ KVC_P_MINUS,		KP6_PMINUS },		// [-]
-	{ KVC_P_MULTIPLY,	KP6_PMULTIPLY },	// [*]
-	{ KVC_P_DIVIDE,		KP6_PDIVIDE },		// [/]
-	{ KVC_P_PERIOD,		KP6_PPERIOD },		// [.]
-	{ KVC_P_ENTER,		KP6_PRETURN },		// [Enter]
+	{ KVC_P0,			KP6_P0			},	// [0]
+	{ KVC_P1,			KP6_P1			},	// [1]
+	{ KVC_P2,			KP6_P2			},	// [2]
+	{ KVC_P3,			KP6_P3			},	// [3]
+	{ KVC_P4,			KP6_P4			},	// [4]
+	{ KVC_P5,			KP6_P5			},	// [5]
+	{ KVC_P6,			KP6_P6			},	// [6]
+	{ KVC_P7,			KP6_P7			},	// [7]
+	{ KVC_P8,			KP6_P8			},	// [8]
+	{ KVC_P9,			KP6_P9			},	// [9]
+	{ KVC_NUMLOCK,		KP6_UNKNOWN		},	// NumLock
+	{ KVC_P_PLUS,		KP6_PPLUS		},	// [+]
+	{ KVC_P_MINUS,		KP6_PMINUS		},	// [-]
+	{ KVC_P_MULTIPLY,	KP6_PMULTIPLY	},	// [*]
+	{ KVC_P_DIVIDE,		KP6_PDIVIDE		},	// [/]
+	{ KVC_P_PERIOD,		KP6_PPERIOD		},	// [.]
+	{ KVC_P_ENTER,		KP6_PRETURN		},	// [Enter]
 	
 	// 日本語キーボードのみ
 	{ KVC_YEN,			KP6_YEN },			// ￥	|
-	{ KVC_RBRACKET,		KP6_RBRACKET },		// ]	}
-	{ KVC_UNDERSCORE,	KP6_UNDERSCORE },	// \	_
-//	{ KVC_MUHENKAN,		KP6_UNKNOWN },		// 無変換
-//	{ KVC_HENKAN,		KP6_UNKNOWN },		// 変換
-//	{ KVC_HIRAGANA,		KP6_UNKNOWN },		// ひらがな
+	{ KVC_RBRACKET,		KP6_RBRACKET	},	// ]	}
+	{ KVC_UNDERSCORE,	KP6_UNDERSCORE	},	// \	_
+//	{ KVC_MUHENKAN,		KP6_UNKNOWN		},	// 無変換
+//	{ KVC_HENKAN,		KP6_UNKNOWN		},	// 変換
+//	{ KVC_HIRAGANA,		KP6_UNKNOWN		},	// ひらがな
 	
 	// 英語キーボードのみ
-	{ KVE_BACKSLASH,	KP6_YEN	 },			// BackSlash	|
+	{ KVE_BACKSLASH,	KP6_YEN			},	// BackSlash	|
 	
 	// 追加キー
-	{ KVX_RMETA,		KP6_UNKNOWN },		// L-Meta
-	{ KVX_LMETA,		KP6_UNKNOWN },		// R-Meta
-	{ KVX_MENU,			KP6_UNKNOWN }		// Menu
+	{ KVX_RMETA,		KP6_UNKNOWN		},	// L-Meta
+	{ KVX_LMETA,		KP6_UNKNOWN		},	// R-Meta
+	{ KVX_MENU,			KP6_UNKNOWN		}	// Menu
 	
 	// 各種機能キー (今のところ無効)
-//	{ KVC_F6,			KFN_1 },			// F6
-//	{ KVC_F7,			KFN_2 },			// F7
-//	{ KVC_F8,			KFN_3 },			// F8
-//	{ KVC_F9,			KFN_4 },			// F9
-//	{ KVC_F10,			KFN_5 },			// F10
-//	{ KVC_F11,			KFN_6 },			// F11
-//	{ KVC_F12,			KFN_7 }				// F12
+//	{ KVC_F6,			KFN_1			},	// F6
+//	{ KVC_F7,			KFN_2			},	// F7
+//	{ KVC_F8,			KFN_3			},	// F8
+//	{ KVC_F9,			KFN_4			},	// F9
+//	{ KVC_F10,			KFN_5			},	// F10
+//	{ KVC_F11,			KFN_6			},	// F11
+//	{ KVC_F12,			KFN_7			}	// F12
 };
 
 
@@ -478,7 +560,7 @@ static const std::vector<COLOR24> STDColor = {	// 標準カラーデータ ( R,G
 	{   0,   0, 255, 0 },	// 77:青
 	{ 255,   0, 255, 0 },	// 78:マゼンタ
 	{   0, 255, 255, 0 },	// 79:シアン
-	{ 255, 255, 255, 0 },	// 80:白
+	{ 255, 255, 255, 0 }	// 80:白
 };
 
 
@@ -487,11 +569,7 @@ static const std::vector<COLOR24> STDColor = {	// 標準カラーデータ ( R,G
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-CFG6::CFG6( void ) : DokoFile(""), Caption(""),
-	RomPath(""), ExtRomPath(""), ExtRomFile(""), WavePath(""),
-	TapePath(""), TapeFile(""), SaveFile(""), DiskPath(""),
-	DiskFile1(""), DiskFile2(""), ImgPath(""), PrinterFile(""),
-	DokoSavePath(""), FontPath("")
+CFG6::CFG6( void ) : DokoFile(""), Caption("")
 {
 	PRINTD( CONST_LOG, "[[CFG6]]\n" );
 	
@@ -568,755 +646,128 @@ bool CFG6::Write( void )
 // メンバアクセス関数
 ////////////////////////////////////////////////////////////////
 
-// [CONFIG] ----------------------------------------------------
-
-// 機種取得
-int CFG6::GetModel( void )
-{
-	int st = DEFAULT_MODEL;
-	cIni::GetInt( "CONFIG", "Model", &st, st );
-	return st;
-}
-
-// 機種設定
-void CFG6::SetModel( int data )
-{
-	int st = min( max( MIN_MODEL, data ), MAX_MODEL );
-	cIni::PutEntry( "CONFIG", "Model", GetText( TINI_Model ), "%02d", st );
-}
-
-
-// FDD接続台数取得
-int CFG6::GetFddNum( void )
-{
-	int st = DEFAULT_FDD;
-	cIni::GetInt( "CONFIG", "FDD", &st, st );
-	return st;
-}
-
-// FDD接続台数設定
-void CFG6::SetFddNum( int data )
-{
-	int st = min( max( MIN_FDD, data ), MAX_FDD );
-	cIni::PutEntry( "CONFIG", "FDD", GetText( TINI_FDD ), "%d", st );
-}
-
-
-// 拡張RAMを使う取得
-bool CFG6::GetUseExtRam( void )
-{
-	bool st = DEFAULT_EXTRAM;
-	cIni::GetTruth( "CONFIG", "ExtRam", &st, st );
-	return st;
-}
-
-// 拡張RAMを使う設定
-void CFG6::SetUseExtRam( bool yn )
-{
-	cIni::PutEntry( "CONFIG", "ExtRam", GetText( TINI_ExtRam ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// オーバークロック率取得
-int CFG6::GetOverClock( void )
-{
-	int st = 100;
-	cIni::GetInt( "CONFIG", "OverClock", &st, st );
-	return st;
-}
-
-// オーバークロック率設定
-void CFG6::SetOverClock( int data )
-{
-	int st = min( max( MIN_OVERCLOCK, data ), MAX_OVERCLOCK );
-	cIni::PutEntry( "CONFIG", "OverClock", GetText( TINI_OverClock ), "%d", st );
-}
-
-
-// CRCチェック取得
-bool CFG6::GetCheckCRC( void )
-{
-	bool st = true;
-	cIni::GetTruth( "CONFIG", "CheckCRC", &st, st );
-	return st;
-}
-// CRCチェック設定
-void CFG6::SetCheckCRC( bool yn )
-{
-	cIni::PutEntry( "CONFIG", "CheckCRC", GetText( TINI_CheckCRC ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// FDDウェイト有効フラグ取得
-bool CFG6::GetFddWaitEnable( void )
-{
-	bool st = DEFAULT_FDDWAIT;
-	cIni::GetTruth( "CONFIG", "FDDWait", &st, st );
-	return st;
-}
-
-// FDDウェイト有効フラグ設定
-void CFG6::SetFddWaitEnable( bool yn )
-{
-	cIni::PutEntry( "CONFIG", "FDDWait", GetText( TINI_FDDWait ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// [CMT] -------------------------------------------------------
-
-// Turbo TAPE 有効フラグ取得
-bool CFG6::GetTurboTAPE( void )
-{
-	bool st = DEFAULT_TURBO;
-	cIni::GetTruth( "CMT", "TurboTAPE", &st, st );
-	return st;
-}
-
-// Turbo TAPE 有効フラグ設定
-void CFG6::SetTurboTAPE( bool yn )
-{
-	cIni::PutEntry( "CMT", "TurboTAPE", GetText( TINI_TurboTAPE ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// Boost Up 有効フラグ取得
-bool CFG6::GetBoostUp( void )
-{
-	bool st = DEFAULT_BOOST;
-	cIni::GetTruth( "CMT", "BoostUp", &st, st );
-	return st;
-}
-
-// BoostUp 有効フラグ設定
-void CFG6::SetBoostUp( bool yn )
-{
-	cIni::PutEntry( "CMT", "BoostUp", GetText( TINI_BoostUp ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// BoostUp 最大倍率(N60モード)取得
-int CFG6::GetMaxBoost1( void )
-{
-	int st = DEFAULT_MAXBOOST60;
-	cIni::GetInt( "CMT", "MaxBoost60", &st, st );
-	return st;
-}
-
-// BoostUp 最大倍率(N60モード)設定
-void CFG6::SetMaxBoost1( int data )
-{
-	int st = min( max( MIN_MAXBOOST, data ), MAX_MAXBOOST );
-	cIni::PutEntry( "CMT", "MaxBoost60", GetText( TINI_MaxBoost60 ), "%d", st );
-}
-
-
-// BoostUp 最大倍率(N60m/N66モード)取得
-int CFG6::GetMaxBoost2( void )
-{
-	int st = DEFAULT_MAXBOOST62;
-	cIni::GetInt( "CMT", "MaxBoost62", &st, st );
-	return st;
-}
-// BoostUp 最大倍率(N60m/N66モード)設定
-void CFG6::SetMaxBoost2( int data )
-{
-	int st = min( max( MIN_MAXBOOST, data ), MAX_MAXBOOST );
-	cIni::PutEntry( "CMT", "MaxBoost62", GetText( TINI_MaxBoost62 ), "%d", st );
-}
-
-
-// TAPEストップビット数取得
-int CFG6::GetStopBit( void )
-{
-	int st = DEFAULT_STOPBIT;
-	cIni::GetInt( "CMT", "TapeStopBit", &st, st );
-	return st;
-}
-
-// TAPEストップビット数設定
-void CFG6::SetStopBit( int data )
-{
-	int st = min( max( MIN_STOPBIT, data ), MAX_STOPBIT );
-	cIni::PutEntry( "CMT", "TapeStopBit", GetText( TINI_StopBit ), "%d", st );
-}
-
-
-// [DISPLAY] ---------------------------------------------------
-
-// モード4カラーモード取得
-int CFG6::GetMode4Color( void )
-{
-	int st = DEFAULT_MODE4_COLOR;
-	cIni::GetInt( "DISPLAY", "Mode4Color", &st, st );
-	return st;
-}
-
-// モード4カラーモード設定
-void CFG6::SetMode4Color( int data )
-{
-	int st = min( max( MIN_MODE4_COLOR, data ), MAX_MODE4_COLOR );
-	cIni::PutEntry( "DISPLAY", "Mode4Color", GetText( TINI_Mode4Color ), "%d", st );
-}
-
-
-// スキャンライン取得
-bool CFG6::GetScanLine( void )
-{
-	bool st = DEFAULT_SCANLINE;
-	cIni::GetTruth( "DISPLAY", "ScanLine", &st, st );
-	return st;
-}
-
-// スキャンライン設定
-void CFG6::SetScanLine( bool yn )
-{
-	cIni::PutEntry( "DISPLAY", "ScanLine", GetText( TINI_ScanLine ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// スキャンライン輝度取得
-int CFG6::GetScanLineBr( void )
-{
-	int st = DEFAULT_SCANLINEBR;
-	cIni::GetInt( "DISPLAY", "ScanLineBr", &st, st );
-	return st;
-}
-
-// スキャンライン輝度設定
-void CFG6::SetScanLineBr( int data )
-{
-	int st = min( max( MIN_SCANLINEBR, data ), MAX_SCANLINEBR );
-	cIni::PutEntry( "DISPLAY", "ScanLineBr", GetText( TINI_ScanLineBr ), "%d", st );
-}
-
-
-// フィルタリング取得
-bool CFG6::GetFiltering( void )
-{
-	bool st = DEFAULT_FILTERING;
-	cIni::GetTruth( "DISPLAY", "Filtering", &st, st );
-	return st;
-}
-
-// フィルタリング設定
-void CFG6::SetFiltering( bool yn )
-{
-	cIni::PutEntry( "DISPLAY", "Filtering", GetText( TINI_Filtering ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// 4:3表示取得
-bool CFG6::GetDispNTSC( void )
-{
-	bool st = DEFAULT_DISPNTSC;
-	cIni::GetTruth( "DISPLAY", "DispNTSC", &st, st );
-	return st;
-}
-
-// 4:3表示設定
-void CFG6::SetDispNTSC( bool yn )
-{
-	cIni::PutEntry( "DISPLAY", "DispNTSC", GetText( TINI_DispNTSC ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// フルスクリーン取得
-bool CFG6::GetFullScreen( void )
-{
-	bool st = false;
-	cIni::GetTruth( "DISPLAY", "FullScreen", &st, st );
-	return st;
-}
-
-// フルスクリーン設定
-void CFG6::SetFullScreen( bool yn )
-{
-	cIni::PutEntry( "DISPLAY", "FullScreen", GetText( TINI_FullScreen ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// ウィンドウ表示倍率取得
-int CFG6::GetWindowZoom( void )
-{
-	int st = DEFAULT_WINDOWZOOM;
-	cIni::GetInt( "DISPLAY", "WindowZoom", &st, st );
-	return st;
-}
-
-// ウィンドウ表示倍率設定
-void CFG6::SetWindowZoom( int data )
-{
-	int st = min( max( MIN_WINDOWZOOM, data ), MAX_WINDOWZOOM );
-	cIni::PutEntry( "DISPLAY", "WindowZoom", GetText( TINI_WindowZoom ), "%d", st );
-}
-
-
-// ステータスバー表示状態取得
-bool CFG6::GetDispStat( void )
-{
-	bool st = true;
-	cIni::GetTruth( "DISPLAY", "DispStatus", &st, st );
-	return st;
-}
-
-// ステータスバー表示状態設定
-void CFG6::SetDispStat( bool yn )
-{
-	cIni::PutEntry( "DISPLAY", "DispStatus", GetText( TINI_DispStatus ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// フレームスキップ取得
-int CFG6::GetFrameSkip( void )
-{
-	int st = DEFAULT_FRAMESKIP;
-	cIni::GetInt( "DISPLAY", "FrameSkip", &st, st );
-	return st;
-}
-
-// フレームスキップ設定
-void CFG6::SetFrameSkip( int data )
-{
-	int st = min( max( MIN_FRAMESKIP, data ), MAX_FRAMESKIP );
-	cIni::PutEntry( "DISPLAY", "FrameSkip", GetText( TINI_FrameSkip ), "%d", st );
-}
-
-
-// [SOUND] -----------------------------------------------------
-
-// サンプリングレート取得
-int CFG6::GetSampleRate( void )
-{
-	int st = DEFAULT_SAMPLE_RATE;
-	cIni::GetInt( "SOUND", "SampleRate", &st, st );
-	return st;
-}
-
-// サンプリングレート設定
-void CFG6::SetSampleRate( int data )
-{
-	int st = min( max( MIN_SAMPLE_RATE, data ), MAX_SAMPLE_RATE );
-	cIni::PutEntry( "SOUND", "SampleRate", GetText( TINI_SampleRate ), "%d", st );
-}
-
-
-// サウンドバッファ長倍率取得
-int CFG6::GetSoundBuffer( void )
-{
-	int st = DEFAULT_SOUND_BUFFER;
-	cIni::GetInt( "SOUND", "SoundBuffer", &st, st );
-	return st;
-}
-
-// サウンドバッファ長倍率設定
-void CFG6::SetSoundBuffer( int data )
-{
-	int st = min( max( MIN_SOUNDBUFFER, data ), MAX_SOUNDBUFFER );
-	cIni::PutEntry( "SOUND", "SoundBuffer", GetText( TINI_SoundBuffer ), "%d", st );
-}
-
-
-// マスター音量取得
-int CFG6::GetMasterVol( void )
-{
-	int st = DEFAULT_MASTERVOL;
-	cIni::GetInt( "SOUND", "MasterVolume", &st, st );
-	return st;
-}
-
-// マスター音量設定
-void CFG6::SetMasterVol( int data )
-{
-	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", "MasterVolume", GetText( TINI_MasterVolume ), "%d", st );
-}
-
-
-// PSG音量取得
-int CFG6::GetPsgVol( void )
-{
-	int st = DEFAULT_PSGVOL;
-	cIni::GetInt( "SOUND", "PsgVolume", &st, st );
-	return st;
-}
-
-// PSG音量設定
-void CFG6::SetPsgVol( int data )
-{
-	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", "PsgVolume", GetText( TINI_PsgVolume ), "%d", st );
-}
-
-
-// PSG LPFカットオフ周波数取得
-int CFG6::GetPsgLPF( void )
-{
-	int st = DEFAULT_PSGLPF;
-	cIni::GetInt( "SOUND", "PsgLPF", &st, st );
-	return st;
-}
-
-// PSG LPFカットオフ周波数設定
-void CFG6::SetPsgLPF( int data )
-{
-	int st = min( max( MIN_LPF, data ), MAX_LPF );
-	cIni::PutEntry( "SOUND", "PsgLPF", GetText( TINI_PsgLPF ), "%d", st );
-}
-
-
-// 音声合成音量取得
-int CFG6::GetVoiceVol( void )
-{
-	int st = DEFAULT_VOICEVOL;
-	cIni::GetInt( "SOUND", "VoiceVolume", &st, st );
-	return st;
-}
-
-// 音声合成音量設定
-void CFG6::SetVoiceVol( int data )
-{
-	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", "VoiceVolume", GetText( TINI_VoiceVolume ), "%d", st );
-}
-
-
-// TAPEモニタ音量取得
-int CFG6::GetCmtVol( void )
-{
-	int st = DEFAULT_TAPEVOL;
-	cIni::GetInt( "SOUND", "TapeVolume", &st, st );
-	return st;
-}
-
-// TAPEモニタ音量設定
-void CFG6::SetCmtVol( int data )
-{
-	int st = min( max( MIN_VOLUME, data ), MAX_VOLUME );
-	cIni::PutEntry( "SOUND", "TapeVolume", GetText( TINI_TapeVolume ), "%d", st );
-}
-
-
-// TAPE LPFカットオフ周波数取得
-int CFG6::GetCmtLPF( void )
-{
-	int st = DEFAULT_TAPELPF;
-	cIni::GetInt( "SOUND", "TapeLPF", &st, st );
-	return st;
-}
-
-// TAPE LPFカットオフ周波数設定
-void CFG6::SetCmtLPF( int data )
-{
-	int st = min( max( MIN_LPF, data ), MAX_LPF );
-	cIni::PutEntry( "SOUND", "TapeLPF", GetText( TINI_TapeLPF ), "%d", st );
-}
-
-
-// [MOVIE] -----------------------------------------------------
-
-// ビデオキャプチャ色深度取得
-int CFG6::GetAviBpp()
-{
-	int st = 24;
-	cIni::GetInt( "MOVIE", "AviBpp", &st, st );
-	return st;
-}
-
-// ビデオキャプチャ色深度設定
-void CFG6::SetAviBpp( int data )
-{
-	int st = min( max( MIN_AVIBPP, data ), MAX_AVIBPP );
-	cIni::PutEntry( "MOVIE", "AviBpp", GetText( TINI_AviBpp ), "%d", st );
-}
-
-
-// [FILES] -----------------------------------------------------
-
-// 拡張ROMファイル名取得
-const P6VPATH& CFG6::GetExtRomFile( void )
-{
-	cIni::GetPath( "FILES", "ExtRom", ExtRomFile, ExtRomFile );
-	return ExtRomFile;
-}
-
-// 拡張ROMファイル名設定
-void CFG6::SetExtRomFile( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", "ExtRom", GetText( TINI_ExtRom ), P6VPATH2STR( tpath ) );
-}
-
-
-// TAPEファイル名取得
-const P6VPATH& CFG6::GetTapeFile( void )
-{
-	cIni::GetPath( "FILES", "tape", TapeFile, TapeFile );
-	return TapeFile;
-}
-
-// TAPEファイル名設定
-void CFG6::SetTapeFile( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", "tape", GetText( TINI_tape ), P6VPATH2STR( tpath ) );
-}
-
-
-// TAPE(SAVE)ファイル名取得
-const P6VPATH& CFG6::GetSaveFile( void )
-{
-	cIni::GetPath( "FILES", "save", SaveFile, SaveFile );
-	return SaveFile;
-}
-
-// TAPE(SAVE)ファイル名設定
-void CFG6::SetSaveFile( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", "save", GetText( TINI_save ), P6VPATH2STR( tpath ) );
-}
-
-
-// DISKファイル名取得
-const P6VPATH& CFG6::GetDiskFile( int drv )
-{
-	switch( drv & 1 ){
-	case 1:	cIni::GetPath( "FILES", "disk1", DiskFile1, DiskFile1 );
-			return DiskFile1;
-	case 2: cIni::GetPath( "FILES", "disk2", DiskFile2, DiskFile2 );
-			return DiskFile2;
+// 値 取得
+int CFG6::GetValue( TConfig tc )
+{
+	try{
+		CfgSetValue cs = ConfigValue.at( tc );
+		int st = cs.Default;
+		
+		cIni::GetValue( cs.Section, cs.Entry, st );
+		return st;
 	}
-	return DummtPath;
+	catch( std::out_of_range& ){}
+	
+	return 0;
 }
 
-// DISKファイル名設定
-void CFG6::SetDiskFile( int drv, const P6VPATH& str )
+
+// 値 設定
+void CFG6::SetValue( TConfig tc , int val )
 {
-	P6VPATH tpath = str;
-	OSD_RelativePath( tpath );
-	switch( drv ){
-	case 1: cIni::PutEntry( "FILES", "disk1", GetText( TINI_disk1 ), P6VPATH2STR( tpath ) ); break;
-	case 2: cIni::PutEntry( "FILES", "disk2", GetText( TINI_disk2 ), P6VPATH2STR( tpath ) ); break;
+	try{
+		CfgSetValue cs = ConfigValue.at( tc );
+		int st = val;
+		
+		if( cs.Max != cs.Min ){
+			st = min( max( cs.Min, st ), cs.Max );
+		}
+		cIni::PutValue( cs.Section, cs.Entry, GetText( cs.Comment ), st );
 	}
+	catch( std::out_of_range& ){}
 }
 
 
-// プリンタファイル名取得
-const P6VPATH& CFG6::GetPrinterFile( void )
+// bool 取得
+bool CFG6::GetYesNo( TConfig tc )
 {
-	cIni::GetPath( "FILES", "printer", PrinterFile, PrinterFile );
-	return PrinterFile;
-}
-
-// プリンタファイル名設定
-void CFG6::SetPrinterFile( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "FILES", "printer", GetText( TINI_printer ), P6VPATH2STR( tpath ) );
-}
-
-
-// **********************************************************
-// フォント
-// **********************************************************
-
-
-// [PATH] ------------------------------------------------------
-
-// ROMパス取得
-const P6VPATH& CFG6::GetRomPath( void )
-{
-	cIni::GetPath( "PATH", "RomPath", RomPath, RomPath );
-	OSD_AddDelimiter( RomPath );
-	return RomPath;
-}
-
-// ROMパス設定
-void CFG6::SetRomPath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "RomPath", GetText( TINI_RomPath ), P6VPATH2STR( tpath ) );
+	try{
+		CfgSetBool cs = ConfigBool.at( tc );
+		bool st = cs.Default;
+		
+		cIni::GetYesNo( cs.Section, cs.Entry, st );
+		return st;
+	}
+	catch( std::out_of_range& ){}
+	
+	return false;
 }
 
 
-// TAPEパス取得
-const P6VPATH& CFG6::GetTapePath( void )
+// bool 設定
+void CFG6::SetYesNo( TConfig tc , bool yn )
 {
-	cIni::GetPath( "PATH", "TapePath", TapePath, TapePath );
-	OSD_AddDelimiter( TapePath );
-	return TapePath;
-}
-
-// TAPEパス設定
-void CFG6::SetTapePath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "TapePath", GetText( TINI_TapePath ), P6VPATH2STR( tpath ) );
+	try{
+		CfgSetBool cs = ConfigBool.at( tc );
+		
+		cIni::PutYesNo( cs.Section, cs.Entry, GetText( cs.Comment ), yn );
+	}
+	catch( std::out_of_range& ){}
 }
 
 
-// DISKパス取得
-const P6VPATH& CFG6::GetDiskPath( void )
+// path 取得
+P6VPATH CFG6::GetPath( TConfig tc )
 {
-	cIni::GetPath( "PATH", "DiskPath", DiskPath, DiskPath );
-	OSD_AddDelimiter( DiskPath );
-	return DiskPath;
-}
-
-// DISKパス設定
-void CFG6::SetDiskPath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "DiskPath", GetText( TINI_DiskPath ), P6VPATH2STR( tpath ) );
-}
-
-
-// 拡張ROMパス取得
-const P6VPATH& CFG6::GetExtRomPath( void )
-{
-	cIni::GetPath( "PATH", "ExtRomPath", ExtRomPath, ExtRomPath );
-	OSD_AddDelimiter( ExtRomPath );
-	return ExtRomPath;
-}
-
-// 拡張ROMパス設定
-void CFG6::SetExtRomPath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "ExtRomPath", GetText( TINI_ExtRomPath ), P6VPATH2STR( tpath ) );
+	try{
+		CfgSetPath cs = ConfigPath.at( tc );
+		P6VPATH st = cs.Default;
+		
+		cIni::GetPath( cs.Section, cs.Entry, st );
+		if( !cs.IsFile ){
+			OSD_AddDelimiter( st );
+		}
+		
+		return st;
+	}
+	catch( std::out_of_range& ){}
+	
+	return "";
 }
 
 
-// スクリーンショット格納パス取得
-const P6VPATH& CFG6::GetImgPath( void )
+// path 設定
+void CFG6::SetPath( TConfig tc , const P6VPATH& path )
 {
-	cIni::GetPath( "PATH", "ImgPath", ImgPath, ImgPath );
-	OSD_AddDelimiter( ImgPath );
-	return ImgPath;
-}
-
-// スクリーンショット格納パス設定
-void CFG6::SetImgPath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "ImgPath", GetText( TINI_ImgPath ), P6VPATH2STR( tpath ) );
-}
-
-
-// WAVEパス取得
-const P6VPATH& CFG6::GetWavePath( void )
-{
-	cIni::GetPath( "PATH", "WavePath", WavePath, WavePath );
-	OSD_AddDelimiter( WavePath );
-	return WavePath;
-}
-
-// WAVEパス設定
-void CFG6::SetWavePath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "WavePath", GetText( TINI_WavePath ), P6VPATH2STR( tpath ) );
+	try{
+		CfgSetPath cs = ConfigPath.at( tc );
+		
+		P6VPATH tpath = path;
+		if( !cs.IsFile ){
+			OSD_DelDelimiter( tpath );
+		}
+		OSD_RelativePath( tpath );
+		
+		cIni::PutPath( cs.Section, cs.Entry, GetText( cs.Comment ), tpath );
+	}
+	catch( std::out_of_range& ){}
 }
 
 
-// フォントパス取得
-const P6VPATH& CFG6::GetFontPath( void )
+// 初期値設定
+void CFG6::SetDefault( TConfig tc, bool ow )
 {
-	cIni::GetPath( "PATH", "FontPath", FontPath, FontPath );
-	OSD_AddDelimiter( FontPath );
-	return FontPath;
-}
-
-// フォントパス設定
-void CFG6::SetFontPath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "FontPath", GetText( TINI_FontPath ), P6VPATH2STR( tpath ) );
-}
-
-
-// どこでもSAVEパス取得
-const P6VPATH& CFG6::GetDokoSavePath( void )
-{
-	cIni::GetPath( "PATH", "DokoSavePath", DokoSavePath, DokoSavePath );
-	OSD_AddDelimiter( DokoSavePath );
-	return DokoSavePath;
-}
-
-// どこでもSAVEパス設定
-void CFG6::SetDokoSavePath( const P6VPATH& str )
-{
-	P6VPATH tpath = str;
-	OSD_DelDelimiter( tpath );
-	OSD_RelativePath( tpath );
-	cIni::PutEntry( "PATH", "DokoSavePath", GetText( TINI_DokoSavePath ), P6VPATH2STR( tpath ) );
-}
-
-
-// [CHECK] -----------------------------------------------------
-
-// 終了時確認取得
-bool CFG6::GetCkQuit( void )
-{
-	bool st = false;
-	cIni::GetTruth( "CHECK", "CkQuit", &st, st );
-	return st;
-}
-
-// 終了時確認設定
-void CFG6::SetCkQuit( bool yn )
-{
-	cIni::PutEntry( "CHECK", "CkQuit", GetText( TINI_CkQuit ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// 終了時INI保存取得
-bool CFG6::GetSaveQuit( void )
-{
-	bool st = false;
-	cIni::GetTruth( "CHECK", "SaveQuit", &st, st );
-	return st;
-}
-
-// 終了時INI保存設定
-void CFG6::SetSaveQuit( bool yn )
-{
-	cIni::PutEntry( "CHECK", "SaveQuit", GetText( TINI_SaveQuit ), "%s", yn ? "Yes" : "No" );
-}
-
-
-// [OPTION] ----------------------------------------------------
-
-// 戦士のカートリッジ使うフラグ取得
-int CFG6::GetUseSoldier()
-{
-	int st = DEFAULT_SOLDIER;
-	cIni::GetInt( "OPTION", "UseSoldier", &st, st );
-	return st & 0x0f;
-}
-
-// 戦士のカートリッジ使うフラグ設定
-void CFG6::SetUseSoldier( int sol )
-{
-	cIni::PutEntry( "OPTION", "UseSoldier", GetText( TINI_UseSoldier ), "%d", sol & 0x0f );
+	std::string str;
+	
+	try{
+		if( ConfigValue.count( tc ) ){
+			CfgSetValue cs = ConfigValue.at( tc );
+			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+				cIni::PutValue( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
+			}
+		}else if( ConfigBool.count( tc )  ){
+			CfgSetBool cs = ConfigBool.at( tc );
+			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+				cIni::PutYesNo( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
+			}
+		}else if( ConfigPath.count( tc )  ){
+			CfgSetPath cs = ConfigPath.at( tc );
+			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+				cIni::PutPath( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
+			}
+		}
+	}
+	catch( std::out_of_range& ){}
 }
 
 
@@ -1329,7 +780,7 @@ COLOR24 CFG6::GetColor( int num )
 	
 	try{
 		std::string str = Stringf( "%02X%02X%02X", STDColor.at( num ).r, STDColor.at( num ).g, STDColor.at( num ).b );
-		cIni::GetString( "COLOR", Stringf( "COL%03d", num ), str, str );
+		cIni::GetEntry( "COLOR", Stringf( "COL%03d", num ), str );
 		int st = std::stoul( str, nullptr, 16 );
 		col.r = (st>>16)&0xff;
 		col.g = (st>> 8)&0xff;
@@ -1348,27 +799,11 @@ COLOR24 CFG6::GetColor( int num )
 // カラーデータ設定
 void CFG6::SetColor( int num, const COLOR24& col )
 {
-	cIni::PutEntry( "COLOR", Stringf( "COL%03d", num ), GetColorName( num-16 ), "%02X%02X%02X", col.r, col.g, col.b );
+	cIni::PutValue( "COLOR", Stringf( "COL%03d", num ), GetColorName( num-16 ), (col.r<<16)|(col.g<<8)|col.b, "%06X" );
 }
 
 
 // [KEY] -------------------------------------------------------
-
-// キーリピート取得
-int CFG6::GetKeyRepeat( void )
-{
-	int st = DEFAULT_REPEAT;
-	cIni::GetInt( "KEY", "KeyRepeat", &st, st );
-	return st;
-}
-
-// キーリピート設定
-void CFG6::SetKeyRepeat( int data )
-{
-	int st = min( max( MIN_REPEAT, data ), MAX_REPEAT );
-	cIni::PutEntry( "KEY", "KeyRepeat", GetText( TINI_KeyRepeat ), "%d", st );
-}
-
 
 // キー定義取得
 P6KEYsym CFG6::GetVKey( PCKEYsym pcs )
@@ -1376,7 +811,7 @@ P6KEYsym CFG6::GetVKey( PCKEYsym pcs )
 	std::string str;
 	
 	// キーコードから名称取得
-	cIni::GetString( "KEY", GetPCKeyName( pcs ), str, "" );
+	cIni::GetEntry( "KEY", GetPCKeyName( pcs ), str );
 	
 	return GetP6KeyCode( str );
 }
@@ -1408,7 +843,7 @@ int CFG6::GetVKeyDef( std::vector<VKeyConv>& kdef )
 // ウィンドウキャプション取得
 const std::string& CFG6::GetCaption( void )
 {
-	switch( GetModel() ){	// 機種取得
+	switch( GetValue( CF_Model ) ){	// 機種取得
 	case 61: Caption = APPNAME " (" P61NAME ") Ver." VERSION; break;
 	case 62: Caption = APPNAME " (" P62NAME ") Ver." VERSION; break;
 	case 66: Caption = APPNAME " (" P66NAME ") Ver." VERSION; break;
@@ -1443,257 +878,187 @@ void CFG6::SetDokoFile( const P6VPATH& path )
 ////////////////////////////////////////////////////////////////
 void CFG6::InitIni( bool over )
 {
+	std::vector<TConfig> allcf = {
+		// [CONFIG] ------------------------------------------------
+		CF_Model,			// 機種
+		CF_FDD,				// FDD
+		CF_ExtRam,			// 拡張RAM使用
+		CF_OverClock,		// オーバークロック率
+		CF_CheckCRC,		// CRCチェック
+		CF_FDDWait,			// FDDウェイト有効フラグ
+		
+		// [CMT] ---------------------------------------------------
+		CF_TurboTAPE,		// Turbo TAPE
+		CF_BoostUp,			// Boost Up
+		CF_MaxBoost60,		// BoostUp 最大倍率(N60モード)
+		CF_MaxBoost62,		// BoostUp 最大倍率(N60m/N66モード)
+		CF_StopBit,			// TAPEストップビット数
+		
+		// [DISPLAY] -----------------------------------------------
+		CF_Mode4Color,		// MODE4カラー
+		CF_ScanLine,		// スキャンライン
+		CF_ScanLineBr,		// スキャンライン輝度
+		CF_Filtering,		// フィルタリング
+		CF_DispNTSC,		// 4:3表示
+		CF_FullScreen,		// フルスクリーン
+		CF_WindowZoom,		// ウィンドウ表示倍率設定
+		CF_DispStatus,		// ステータスバー表示状態
+		CF_FrameSkip,		// フレームスキップ
+		
+		// [SOUND] -------------------------------------------------
+		CF_SampleRate,		// サンプリングレート
+		CF_SoundBuffer,		// サウンドバッファ長倍率
+		CF_MasterVolume,	// マスター音量
+		CF_PsgVolume,		// PSG音量
+		CF_PsgLPF,			// PSG LPFカットオフ周波数
+		CF_VoiceVolume,		// 音声合成音量
+		CF_TapeVolume,		// TAPEモニタ音量
+		CF_TapeLPF,			// TAPE LPFカットオフ周波数
+		
+		// [MOVIE] -------------------------------------------------
+		CF_AviBpp,			// ビデオキャプチャ色深度
+		
+		// [FILES] -------------------------------------------------
+		CF_ExtRom,			// 拡張ROMファイル名(起動時に自動マウント)
+		CF_tape,			// TAPEファイル名(起動時に自動マウント)
+		CF_save,			// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
+		CF_disk1,			// DISK1ファイル名(起動時に自動マウント)
+		CF_disk2,			// DISK2ファイル名(起動時に自動マウント)
+		CF_printer,			// プリンタファイル名
+		
+		// [PATH] --------------------------------------------------
+		CF_RomPath,			// ROMパス
+		CF_TapePath,		// TAPEパス
+		CF_DiskPath,		// DISKパス
+		CF_ExtRomPath,		// 拡張ROMパス
+		CF_ImgPath,			// IMGパス
+		CF_WavePath,		// WAVEパス
+		CF_FontPath,		// フォントパス設定
+		CF_DokoPath,		// どこでもSAVEパス
+		
+		// [CHECK] -------------------------------------------------
+		CF_CkQuit,			// 終了時確認
+		CF_SaveQuit,		// 終了時INI保存
+		
+		// [OPTION] ------------------------------------------------
+		CF_UseSoldier,		// 戦士のカートリッジ使うフラグ
+		
+		// [KEY] ---------------------------------------------------
+		CF_KeyRepeat,		// キーリピート
+	};
+	
 	std::string str;
-	P6VPATH tpath;
 	
-	// [CONFIG] ------------------------------------------------
-	// 機種
-	if( over || !cIni::GetString( "CONFIG", "Model", str, "" ) )
-		SetModel( DEFAULT_MODEL );
-	
-	// FDD
-	if( over || !cIni::GetString( "CONFIG", "FDD", str, "" ) )
-		SetFddNum( DEFAULT_FDD );
-	
-	// 拡張RAM使用
-	if( over || !cIni::GetString( "CONFIG", "ExtRam", str, "" ) )
-		SetUseExtRam( DEFAULT_EXTRAM );
-	
-	// オーバークロック率
-	if( over || !cIni::GetString( "CONFIG", "OverClock", str, "" ) )
-		SetOverClock( DEFAULT_OVERCLOCK );
-	
-	// CRCチェック
-	if( over || !cIni::GetString( "CONFIG", "CheckCRC", str, "" ) )
-		SetCheckCRC( DEFAULT_CHECKCRC );
-	
-	// FDDウェイト有効フラグ
-	if( over || !cIni::GetString( "CONFIG", "FDDWait", str, "" ) )
-		SetFddWaitEnable( DEFAULT_FDDWAIT );
-	
-	
-	// [CMT] ---------------------------------------------------
-	// Turbo TAPE
-	if( over || !cIni::GetString( "CMT", "TurboTAPE", str, "" ) )
-		SetTurboTAPE( DEFAULT_TURBO );
-	
-	// Boost Up
-	if( over || !cIni::GetString( "CMT", "BoostUp", str, "" ) )
-		SetBoostUp( DEFAULT_BOOST );
-	
-	// BoostUp 最大倍率(N60モード)
-	if( over || !cIni::GetString( "CMT", "MaxBoost60", str, "" ) )
-		SetMaxBoost1( DEFAULT_MAXBOOST60 );
-	
-	// BoostUp 最大倍率(N60m/N66モード)
-	if( over || !cIni::GetString( "CMT", "MaxBoost62", str, "" ) )
-		SetMaxBoost2( DEFAULT_MAXBOOST62 );
-	
-	// TAPEストップビット数
-	if( over || !cIni::GetString( "CMT", "TapeStopBit", str, "" ) )
-		SetStopBit( DEFAULT_STOPBIT );
-	
-	
-	// [DISPLAY] -----------------------------------------------
-	// MODE4カラー
-	if( over || !cIni::GetString( "DISPLAY", "Mode4Color", str, "" ) )
-		SetMode4Color( DEFAULT_MODE4_COLOR );
-	
-	// スキャンライン
-	if( over || !cIni::GetString( "DISPLAY", "ScanLine", str, "" ) )
-		SetScanLine( DEFAULT_SCANLINE );
-	
-	// スキャンライン輝度
-	if( over || !cIni::GetString( "DISPLAY", "ScanLineBr", str, "" ) )
-		SetScanLineBr( DEFAULT_SCANLINEBR );
-	
-	// フィルタリング
-	if( over || !cIni::GetString( "DISPLAY", "Filtering", str, "" ) )
-		SetFiltering( DEFAULT_FILTERING );
-	
-	// 4:3表示
-	if( over || !cIni::GetString( "DISPLAY", "DispNTSC", str, "" ) )
-		SetDispNTSC( DEFAULT_DISPNTSC );
-	
-	// フルスクリーン
-	if( over || !cIni::GetString( "DISPLAY", "FullScreen", str, "" ) )
-		SetFullScreen( DEFAULT_FULLSCREEN );
-	
-	// ウィンドウ表示倍率設定
-	if( over || !cIni::GetString( "DISPLAY", "WindowZoom", str, "" ) )
-		SetWindowZoom( DEFAULT_WINDOWZOOM );
-	
-	// ステータスバー表示状態
-	if( over || !cIni::GetString( "DISPLAY", "DispStatus", str, "" ) )
-		SetDispStat( DEFAULT_DISPSTATUS );
-	
-	// フレームスキップ
-	if( over || !cIni::GetString( "DISPLAY", "FrameSkip", str, "" ) )
-		SetFrameSkip( DEFAULT_FRAMESKIP );
-	
-	
-	// [SOUND] -------------------------------------------------
-	// サンプリングレート
-	if( over || !cIni::GetString( "SOUND", "SampleRate", str, "" ) )
-		SetSampleRate( DEFAULT_SAMPLE_RATE );
-	
-	// サウンドバッファ長倍率
-	if( over || !cIni::GetString( "SOUND", "SoundBuffer", str, "" ) )
-		SetSoundBuffer( DEFAULT_SOUND_BUFFER );
-	
-	// マスター音量
-	if( over || !cIni::GetString( "SOUND", "MasterVolume", str, "" ) )
-		SetMasterVol( DEFAULT_MASTERVOL );
-	
-	// PSG音量
-	if( over || !cIni::GetString( "SOUND", "PsgVolume", str, "" ) )
-		SetPsgVol( DEFAULT_PSGVOL );
-	
-	// PSG LPFカットオフ周波数
-	if( over || !cIni::GetString( "SOUND", "PsgLPF", str, "" ) )
-		SetPsgLPF( DEFAULT_PSGLPF );
-	
-	// 音声合成音量
-	if( over || !cIni::GetString( "SOUND", "VoiceVolume", str, "" ) )
-		SetVoiceVol( DEFAULT_VOICEVOL );
-	
-	// TAPEモニタ音量
-	if( over || !cIni::GetString( "SOUND", "TapeVolume", str, "" ) )
-		SetCmtVol( DEFAULT_TAPEVOL );
-	
-	// TAPE LPFカットオフ周波数
-	if( over || !cIni::GetString( "SOUND", "TapeLPF", str, "" ) )
-		SetCmtLPF( DEFAULT_TAPELPF );
-	
-	
-	// [MOVIE] -------------------------------------------------
-	// ビデオキャプチャ色深度
-	if( over || !cIni::GetString( "MOVIE", "AviBpp", str, "" ) )
-		SetAviBpp( DEFAULT_AVIBPP );
-	
-	
+	for( TConfig x : allcf ){
+		SetDefault( x, over );
+	}
+
+
+
+/*
 	// [FILES] -------------------------------------------------
 	// 拡張ROMファイル名(起動時に自動マウント)
-	if( over || !cIni::GetString( "FILES", "ExtRom", str, "" ) )
-		SetExtRomFile( P6VSTR2PATH( "" ) );
+	if( over || !cIni::GetEntry( "FILES", "ExtRom", str ) )
+		SetPath( CF_ExtRom, P6VSTR2PATH( "" ) );
 	
 	// TAPEファイル名(起動時に自動マウント)
-	if( over || !cIni::GetString( "FILES", "tape", str, "" ) )
-		SetTapeFile( P6VSTR2PATH( "" ) );
+	if( over || !cIni::GetEntry( "FILES", "tape", str ) )
+		SetPath( CF_tape, P6VSTR2PATH( "" ) );
 	
 	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
-	if( over || !cIni::GetString( "FILES", "save", str, "" ) ){
+	if( over || !cIni::GetEntry( "FILES", "save", str ) ){
 		OSD_AddPath( tpath, P6VSTR2PATH( DIR_TAPE ), P6VSTR2PATH( FILE_SAVE ) );
 		OSD_AbsolutePath( tpath );
-		SetSaveFile( tpath );
+		SetPath( CF_save, tpath );
 	}
 	
 	// DISK1ファイル名(起動時に自動マウント)
-	if( over || !cIni::GetString( "FILES", "disk1", str, "" ) )
-		SetDiskFile( 1, P6VSTR2PATH( "" ) );
+	if( over || !cIni::GetEntry( "FILES", "disk1", str ) )
+		SetPath( CF_disk1, P6VSTR2PATH( "" ) );
 	
 	// DISK2ファイル名(起動時に自動マウント)
-	if( over || !cIni::GetString( "FILES", "disk2", str, "" ) )
-		SetDiskFile( 2, P6VSTR2PATH( "" ) );
+	if( over || !cIni::GetEntry( "FILES", "disk2", str ) )
+		SetPath( CF_disk2, P6VSTR2PATH( "" ) );
 	
 	// プリンタファイル名
-	if( over || !cIni::GetString( "FILES", "printer", str, "" ) ){
-		tpath = P6VSTR2PATH( FILE_PRINTER );
+	if( over || !cIni::GetEntry( "FILES", "printer", str ) ){
+		tpath = P6VSTR2PATH( FILE_PRINT );
 		OSD_AbsolutePath( tpath );
-		SetPrinterFile( tpath );
+		SetPath( CF_printer, tpath );
 	}
 	
 	
 	// [PATH] --------------------------------------------------
 	// ROMパス
-	if( over || !cIni::GetString( "PATH", "RomPath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "RomPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_ROM );
 		OSD_AbsolutePath( tpath );
-		SetRomPath( tpath );
+		SetPath( CF_RomPath, tpath );
 	}
 	
 	// TAPEパス
-	if( over || !cIni::GetString( "PATH", "TapePath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "TapePath", str ) ){
 		tpath = P6VSTR2PATH( DIR_TAPE );
 		OSD_AbsolutePath( tpath );
-		SetTapePath( tpath );
+		SetPath( CF_TapePath, tpath );
 	}
 	
 	// DISKパス
-	if( over || !cIni::GetString( "PATH", "DiskPath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "DiskPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_DISK );
 		OSD_AbsolutePath( tpath );
-		SetDiskPath( tpath );
+		SetPath( CF_DiskPath, tpath );
 	}
 	
 	// 拡張ROMパス
-	if( over || !cIni::GetString( "PATH", "ExtRomPath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "ExtRomPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_EXTROM );
 		OSD_AbsolutePath( tpath );
-		SetExtRomPath( tpath );
+		SetPath( CF_ExtRomPath, tpath );
 	}
 	
 	// IMGパス
-	if( over || !cIni::GetString( "PATH", "ImgPath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "ImgPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_IMAGE );
 		OSD_AbsolutePath( tpath );
-		SetImgPath( tpath );
+		SetPath( CF_ImgPath, tpath );
 	}
 	
 	// WAVEパス
-	if( over || !cIni::GetString( "PATH", "WavePath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "WavePath", str ) ){
 		tpath = P6VSTR2PATH( DIR_WAVE );
 		OSD_AbsolutePath( tpath );
-		SetWavePath( tpath );
+		SetPath( CF_WavePath, tpath );
 	}
 	
 	// フォントパス設定
-	if( over || !cIni::GetString( "PATH", "FontPath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "FontPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_FONT );
 		OSD_AbsolutePath( tpath );
-		SetFontPath( tpath );
+		SetPath( CF_FontPath, tpath );
 	}
 	
 	// どこでもSAVEパス
-	if( over || !cIni::GetString( "PATH", "DokoSavePath", str, "" ) ){
+	if( over || !cIni::GetEntry( "PATH", "DokoPath", str ) ){
 		tpath = P6VSTR2PATH( DIR_DOKO );
 		OSD_AbsolutePath( tpath );
-		SetDokoSavePath( tpath );
+		SetPath( CF_DokoPath, tpath );
 	}
-	
-	
-	// [CHECK] -------------------------------------------------
-	// 終了時確認
-	if( over || !cIni::GetString( "CHECK", "CkQuit", str, "" ) )
-		SetCkQuit( DEFAULT_CKQUIT );
-	
-	// 終了時INI保存
-	if( over || !cIni::GetString( "CHECK", "SaveQuit", str, "" ) )
-		SetSaveQuit( DEFAULT_SAVEQUIT );
-	
-	
-	// [OPTION] ------------------------------------------------
-	// 戦士のカートリッジ使うフラグ
-	if( over || !cIni::GetString( "OPTION", "UseSoldier", str, "" ) )
-		SetUseSoldier( DEFAULT_SOLDIER );
+*/
 	
 	
 	// [COLOR] -------------------------------------------------
 	// パレット
 	for( size_t i=16; i<STDColor.size(); i++ ){
-		if( over || !cIni::GetString( "COLOR", Stringf( "COL%03d", i ), str, "" ) )
+		if( over || !cIni::GetEntry( "COLOR", Stringf( "COL%03d", i ), str ) )
 			SetColor( i, STDColor[i] );
 	}
 	
 	
 	// [KEY] ---------------------------------------------------
-	// キーリピート
-	if( over || !cIni::GetString( "KEY", "KeyRepeat", str, "" ) )
-		SetKeyRepeat( DEFAULT_REPEAT );
-	
 	// キー定義
 	for( auto &i : KeyIni )
-		if( over || !cIni::GetString( "KEY", GetPCKeyName( i.PCKey ), str, "" ) )
+		if( over || !cIni::GetEntry( "KEY", GetPCKeyName( i.PCKey ), str ) )
 			SetVKey( i.PCKey, i.P6Key );
 }
 
@@ -1770,11 +1135,11 @@ bool CFG6::DokoSave( cIni* ini )
 	
 	// 共通
 	ini->PutEntry( "GLOBAL", "Version",		"", VERSION );
-	ini->PutEntry( "GLOBAL", "Model",		"", "%02d",	GetModel() );
-	ini->PutEntry( "GLOBAL", "FDD",			"", "%d",	GetFddNum() );
-	ini->PutEntry( "GLOBAL", "ExtRam",		"", "%s",	GetUseExtRam()  ? "Yes" : "No" );
+	ini->PutValue( "GLOBAL", "Model",		"", GetValue( CF_Model ) );
+	ini->PutValue( "GLOBAL", "FDD",			"", GetValue( CF_FDD ) );
+	ini->PutYesNo( "GLOBAL", "ExtRam",		"", GetYesNo( CF_ExtRam ) );
 	// OPTION
-	ini->PutEntry( "OPTION", "UseSoldier",	"", "%d",	GetUseSoldier() );
+	ini->PutValue( "OPTION", "UseSoldier",	"", GetValue( CF_UseSoldier ) );
 	
 	return true;
 }
@@ -1795,16 +1160,16 @@ bool CFG6::DokoLoad( cIni* ini )
 	if( !ini ) return false;
 	
 	// 共通
-	ini->GetString( "GLOBAL", "Version", strva, "" );
+	ini->GetEntry( "GLOBAL", "Version", strva );
 	if( strva != VERSION ){
 		Error::SetError( Error::DokoDiffVersion );
 		return false;
 	}
 	
-	ini->GetInt(   "GLOBAL", "Model",      &st, GetModel() );		SetModel( st );
-	ini->GetInt(   "GLOBAL", "FDD",        &st, GetFddNum() );		SetFddNum( st );
-	ini->GetTruth( "GLOBAL", "ExtRam",     &yn, GetUseExtRam() );	SetUseExtRam( yn );
-	ini->GetInt(   "OPTION", "UseSoldier", &st, GetUseSoldier() );	SetUseSoldier( st );
+	if( ini->GetValue( "GLOBAL", "Model",      st ) )	SetValue( CF_Model, st );
+	if( ini->GetValue( "GLOBAL", "FDD",        st ) )	SetValue( CF_FDD, st );
+	if( ini->GetYesNo( "GLOBAL", "ExtRam",     yn ) )	SetYesNo( CF_ExtRam, yn );
+	if( ini->GetValue( "OPTION", "UseSoldier", st ) )	SetValue( CF_UseSoldier, st );
 	
 	return true;
 }

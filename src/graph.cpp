@@ -11,7 +11,7 @@
 
 
 // スクリーン表示倍率(%)
-#define	WSCALE		el->cfg->GetWindowZoom()
+#define	WSCALE		el->cfg->GetValue( CF_WindowZoom )
 
 // スクリーンサイズ(標準)
 #define	P6WINW		el->GetVideoInfo().w
@@ -34,16 +34,16 @@
 // フルスクリーンモード時はステータスバー表示禁止
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #define	DISPMON		el->vm->IsMonitor()
-#define	DISPFULL	(!DISPMON && el->cfg->GetFullScreen())
-#define	DISPSCAN	(!DISPMON && el->cfg->GetScanLine())
-#define	DISPNTSC	(!DISPMON && el->cfg->GetDispNTSC())
+#define	DISPFULL	(!DISPMON && el->cfg->GetYesNo( CF_FullScreen ))
+#define	DISPSCAN	(!DISPMON && el->cfg->GetYesNo( CF_ScanLine ))
+#define	DISPNTSC	(!DISPMON && el->cfg->GetYesNo( CF_DispNTSC ))
 #else
-#define	DISPFULL	el->cfg->GetFullScreen()
-#define	DISPSCAN	el->cfg->GetScanLine()
-#define	DISPNTSC	el->cfg->GetDispNTSC()
+#define	DISPFULL	el->cfg->GetYesNo( CF_FullScreen )
+#define	DISPSCAN	el->cfg->GetYesNo( CF_ScanLine )
+#define	DISPNTSC	el->cfg->GetYesNo( CF_DispNTSC )
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-#define	DISPSTAT	(!DISPFULL && el->cfg->GetDispStat())
+#define	DISPSTAT	(!DISPFULL && el->cfg->GetYesNo( CF_DispStatus ))
 
 
 ////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ bool DSP6::SetScreenSurface( void )
 	}
 	
 	// ウィンドウ作成
-	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetFiltering(), el->cfg->GetScanLineBr() );
+	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetYesNo( CF_Filtering ), el->cfg->GetValue( CF_ScanLineBr ) );
 	
 	// フルスクリーン，モニタモード時はウィンドウサイズ変更不可
 	OSD_SetWindowResizable( Wh, !(DISPFULL | DISPMON) );
@@ -179,7 +179,7 @@ bool DSP6::ResizeScreen( void )
 	}
 	
 	// ウィンドウサイズ変更 or フィルタリング変更なら作り直す
-	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetFiltering() ){
+	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetYesNo( CF_Filtering ) ){
 		if( !SetScreenSurface() ) return false;
 		el->staw->Init( OSD_GetWindowWidth( Wh ) );	// ステータスバーも
 		

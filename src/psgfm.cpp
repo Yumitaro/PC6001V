@@ -327,70 +327,70 @@ bool PSG60::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "PSG", "RegisterLatch",	"", "0x%02X",	RegisterLatch );
-	Ini->PutEntry( "PSG", "LastEnable",		"", "0x%02X",	LastEnable );
+	Ini->PutValue( "PSG", "RegisterLatch",	"",	RegisterLatch,	"0x%02X" );
+	Ini->PutValue( "PSG", "LastEnable",		"",	LastEnable,		"0x%02X" );
 
 #ifdef USEFMGEN
 /*
 	for( int i=0; i<16; i++ ){
 		char stren[16];
 		sprintf( stren, "reg_%02d", i );
-		Ini->PutEntry( "PSG", stren, "", "0x%02X", reg[i] );
+		Ini->PutValue( "PSG", stren, "", reg[i], "0x%02X" );
 	}
 	
-	Ini->PutEntry( "PSG", "envelop", "", "%d", (envelop - enveloptable)/64 );
+	Ini->PutValue( "PSG", "envelop", "", (envelop - enveloptable)/64 );
 	
 	for( int i=0; i<3; i++ ){
 		char stren[16];
 		sprintf( stren, "olevel_%02d", i );
-		Ini->PutEntry( "PSG", stren, "", "%d", olevel[i] );
+		Ini->PutValue( "PSG", stren, "", olevel[i] );
 		sprintf( stren, "scount_%02d", i );
-		Ini->PutEntry( "PSG", stren, "", "0x%08X", scount[i] );
+		Ini->PutValue( "PSG", stren, "", scount[i], "0x%08X" );
 		sprintf( stren, "speriod_%02d", i );
-		Ini->PutEntry( "PSG", stren, "", "0x%08X", speriod[i] );
+		Ini->PutValue( "PSG", stren, "", speriod[i], "0x%08X" );
 	}
-	Ini->PutEntry( "PSG", "ecount",			"", "0x%08X",	ecount );
-	Ini->PutEntry( "PSG", "eperiod",		"", "0x%08X",	eperiod );
-	Ini->PutEntry( "PSG", "ncount",			"", "0x%08X",	ncount );
-	Ini->PutEntry( "PSG", "nperiod",		"", "0x%08X",	nperiod );
+	Ini->PutValue( "PSG", "ecount",		"",	ecount,			"0x%08X" );
+	Ini->PutValue( "PSG", "eperiod",		"",	eperiod,		"0x%08X" );
+	Ini->PutValue( "PSG", "ncount",		"",	ncount,			"0x%08X" );
+	Ini->PutValue( "PSG", "nperiod",		"",	nperiod,		"0x%08X" );
 	
-	Ini->PutEntry( "PSG", "tperiodbase",	"", "0x%08X",	tperiodbase );
-	Ini->PutEntry( "PSG", "eperiodbase",	"", "0x%08X",	eperiodbase );
-	Ini->PutEntry( "PSG", "nperiodbase",	"", "0x%08X",	nperiodbase );
+	Ini->PutValue( "PSG", "tperiodbase",	"",	tperiodbase,	"0x%08X" );
+	Ini->PutValue( "PSG", "eperiodbase",	"",	eperiodbase,	"0x%08X" );
+	Ini->PutValue( "PSG", "nperiodbase",	"",	nperiodbase,	"0x%08X" );
 	
-	Ini->PutEntry( "PSG", "mask",			"", "%d",		mask );
+	Ini->PutValue( "PSG", "mask",			"", mask );
 */
 #else
 	for( int i=0; i<16; i++ )
-		Ini->PutEntry( "PSG", Stringf( "Regs_%02d", i ), "", "0x%02X", Regs[i] );
+		Ini->PutValue( "PSG", Stringf( "Regs_%02d", i ), "", Regs[i], "0x%02X" );
 	
-	Ini->PutEntry( "PSG", "PeriodA",	"", "%d",		PeriodA );
-	Ini->PutEntry( "PSG", "PeriodB",	"", "%d",		PeriodB );
-	Ini->PutEntry( "PSG", "PeriodC",	"", "%d",		PeriodC );
-	Ini->PutEntry( "PSG", "PeriodN",	"", "%d",		PeriodN );
-	Ini->PutEntry( "PSG", "PeriodE",	"", "%d",		PeriodE );
-	Ini->PutEntry( "PSG", "CountA",		"", "%d",		CountA );
-	Ini->PutEntry( "PSG", "CountB",		"", "%d",		CountB );
-	Ini->PutEntry( "PSG", "CountC",		"", "%d",		CountC );
-	Ini->PutEntry( "PSG", "CountN",		"", "%d",		CountN );
-	Ini->PutEntry( "PSG", "CountE",		"", "%d",		CountE );
-	Ini->PutEntry( "PSG", "VolA",		"", "%d",		VolA );
-	Ini->PutEntry( "PSG", "VolB",		"", "%d",		VolB );
-	Ini->PutEntry( "PSG", "VolC",		"", "%d",		VolC );
-	Ini->PutEntry( "PSG", "VolE",		"", "%d",		VolE );
-	Ini->PutEntry( "PSG", "EnvelopeA",	"", "0x%02X",	EnvelopeA );
-	Ini->PutEntry( "PSG", "EnvelopeB",	"", "0x%02X",	EnvelopeB );
-	Ini->PutEntry( "PSG", "EnvelopeC",	"", "0x%02X",	EnvelopeC );
-	Ini->PutEntry( "PSG", "OutputA",	"", "0x%02X",	OutputA );
-	Ini->PutEntry( "PSG", "OutputB",	"", "0x%02X",	OutputB );
-	Ini->PutEntry( "PSG", "OutputC",	"", "0x%02X",	OutputC );
-	Ini->PutEntry( "PSG", "OutputN",	"", "0x%02X",	OutputN );
-	Ini->PutEntry( "PSG", "CountEnv",	"", "%d",		CountEnv );
-	Ini->PutEntry( "PSG", "Hold",		"", "0x%02X",	Hold );
-	Ini->PutEntry( "PSG", "Alternate",	"", "0x%02X",	Alternate );
-	Ini->PutEntry( "PSG", "Attack",		"", "0x%02X",	Attack );
-	Ini->PutEntry( "PSG", "Holding",	"", "0x%02X",	Holding );
-	Ini->PutEntry( "PSG", "RNG",		"", "%d",		RNG );
+	Ini->PutValue( "PSG", "PeriodA",		"", PeriodA );
+	Ini->PutValue( "PSG", "PeriodB",		"", PeriodB );
+	Ini->PutValue( "PSG", "PeriodC",		"", PeriodC );
+	Ini->PutValue( "PSG", "PeriodN",		"", PeriodN );
+	Ini->PutValue( "PSG", "PeriodE",		"", PeriodE );
+	Ini->PutValue( "PSG", "CountA",		"", CountA );
+	Ini->PutValue( "PSG", "CountB",		"", CountB );
+	Ini->PutValue( "PSG", "CountC",		"", CountC );
+	Ini->PutValue( "PSG", "CountN",		"", CountN );
+	Ini->PutValue( "PSG", "CountE",		"", CountE );
+	Ini->PutValue( "PSG", "VolA",			"", VolA );
+	Ini->PutValue( "PSG", "VolB",			"", VolB );
+	Ini->PutValue( "PSG", "VolC",			"", VolC );
+	Ini->PutValue( "PSG", "VolE",			"", VolE );
+	Ini->PutValue( "PSG", "EnvelopeA",	"",	EnvelopeA,	"0x%02X" );
+	Ini->PutValue( "PSG", "EnvelopeB",	"",	EnvelopeB,	"0x%02X" );
+	Ini->PutValue( "PSG", "EnvelopeC",	"",	EnvelopeC,	"0x%02X" );
+	Ini->PutValue( "PSG", "OutputA",		"",	OutputA,	"0x%02X" );
+	Ini->PutValue( "PSG", "OutputB",		"",	OutputB,	"0x%02X" );
+	Ini->PutValue( "PSG", "OutputC",		"",	OutputC,	"0x%02X" );
+	Ini->PutValue( "PSG", "OutputN",		"",	OutputN,	"0x%02X" );
+	Ini->PutValue( "PSG", "CountEnv",		"", CountEnv );
+	Ini->PutValue( "PSG", "Hold",			"",	Hold,		"0x%02X" );
+	Ini->PutValue( "PSG", "Alternate",	"",	Alternate,	"0x%02X" );
+	Ini->PutValue( "PSG", "Attack",		"",	Attack,		"0x%02X" );
+	Ini->PutValue( "PSG", "Holding",		"",	Holding,	"0x%02X" );
+	Ini->PutValue( "PSG", "RNG",			"", RNG );
 #endif
 	
 	return true;
@@ -401,8 +401,8 @@ bool OPN64::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "OPN", "RegisterLatch",	"", "0x%02X",	RegisterLatch );
-	Ini->PutEntry( "OPN", "LastEnable",		"", "0x%02X",	LastEnable );
+	Ini->PutValue( "OPN", "RegisterLatch",	"",	RegisterLatch,	"0x%02X" );
+	Ini->PutValue( "OPN", "LastEnable",		"",	LastEnable,		"0x%02X" );
 	
 	return true;
 }
@@ -416,74 +416,74 @@ bool OPN64::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool PSG60::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !Ini ) return false;
 	
-	Ini->GetInt( "PSG", "RegisterLatch",	&st,	RegisterLatch );	RegisterLatch = st;
-	Ini->GetInt( "PSG", "LastEnable",		&st,	LastEnable );		LastEnable = st;
+	Ini->GetValue( "PSG", "RegisterLatch",	RegisterLatch );
+	Ini->GetValue( "PSG", "LastEnable",		LastEnable    );
 
 #ifdef USEFMGEN
 /*
 	for( int i=0; i<16; i++ ){
 		char stren[16];
 		sprintf( stren, "reg_%02d", i );
-		Ini->GetInt( "PSG", stren, &st, reg[i] );	reg[i] = st;
+		Ini->GetValue( "PSG", stren, reg[i] );
 	}
 	
-	Ini->GetInt( "PSG", "envelop",		&st,	(envelop - enveloptable)/64 );	envelop = enveloptable[st];
+	st = (envelop - enveloptable)/64;
+	Ini->GetValue( "PSG", "envelop",	st );
+	envelop = enveloptable[st];
 	
 	for( int i=0; i<3; i++ ){
 		char stren[16];
 		sprintf( stren, "olevel_%02d", i );
-		Ini->GetInt( "PSG", stren, &st, olevel[i] );	olevel[i] = st;
+		Ini->GetValue( "PSG", stren, olevel[i] );
 		sprintf( stren, "scount_%02d", i );
-		Ini->GetInt( "PSG", stren, &st, scount[i] );	scount[i] = st;
+		Ini->GetValue( "PSG", stren, scount[i] );
 		sprintf( stren, "speriod_%02d", i );
-		Ini->GetInt( "PSG", stren, &st, speriod[i] );	speriod[i] = st;
+		Ini->GetValue( "PSG", stren, speriod[i] );
 	}
 	
-	Ini->GetInt( "PSG", "ecount",		&st,	ecount );		ecount  = st;
-	Ini->GetInt( "PSG", "eperiod",		&st,	eperiod );		eperiod = st;
-	Ini->GetInt( "PSG", "ncount",		&st,	ncount );		ncount  = st;
-	Ini->GetInt( "PSG", "nperiod",		&st,	nperiod );		nperiod = st;
-	Ini->GetInt( "PSG", "tperiodbase",	&st,	tperiodbase );	tperiodbase = st;
-	Ini->GetInt( "PSG", "eperiodbase",	&st,	eperiodbase );	eperiodbase = st;
-	Ini->GetInt( "PSG", "nperiodbase",	&st,	nperiodbase );	nperiodbase = st;
+	Ini->GetValue( "PSG", "ecount",		ecount      );
+	Ini->GetValue( "PSG", "eperiod",		eperiod     );
+	Ini->GetValue( "PSG", "ncount",		ncount      );
+	Ini->GetValue( "PSG", "nperiod",		nperiod     );
+	Ini->GetValue( "PSG", "tperiodbase",	tperiodbase );
+	Ini->GetValue( "PSG", "eperiodbase",	eperiodbase );
+	Ini->GetValue( "PSG", "nperiodbase",	nperiodbase );
 	
-	Ini->GetInt( "PSG", "mask",			&mask,	mask );
+	Ini->GetValue( "PSG", "mask",		mask        );
 */
 #else
 	for( int i=0; i<16; i++ ){
-		Ini->GetInt( "PSG", Stringf( "Regs_%02d", i ), &st, Regs[i] );	Regs[i] = st;
+		Ini->GetValue( "PSG", Stringf( "Regs_%02d", i ), Regs[i] );
 	}
-	Ini->GetInt( "PSG", "PeriodA",		&PeriodA,		PeriodA );
-	Ini->GetInt( "PSG", "PeriodB",		&PeriodB,		PeriodB );
-	Ini->GetInt( "PSG", "PeriodC",		&PeriodC,		PeriodC );
-	Ini->GetInt( "PSG", "PeriodN",		&PeriodN,		PeriodN );
-	Ini->GetInt( "PSG", "PeriodE",		&PeriodE,		PeriodE );
-	Ini->GetInt( "PSG", "CountA",		&CountA,		CountA );
-	Ini->GetInt( "PSG", "CountB",		&CountB,		CountB );
-	Ini->GetInt( "PSG", "CountC",		&CountC,		CountC );
-	Ini->GetInt( "PSG", "CountN",		&CountN,		CountN );
-	Ini->GetInt( "PSG", "CountE",		&CountE,		CountE );
-	Ini->GetInt( "PSG", "VolA",			&VolA,			VolA );
-	Ini->GetInt( "PSG", "VolB",			&VolB,			VolB );
-	Ini->GetInt( "PSG", "VolC",			&VolC,			VolC );
-	Ini->GetInt( "PSG", "VolE",			&VolE,			VolE );
-	Ini->GetInt( "PSG", "EnvelopeA",	&st,			EnvelopeA );	EnvelopeA = st;
-	Ini->GetInt( "PSG", "EnvelopeB",	&st,			EnvelopeB );	EnvelopeB = st;
-	Ini->GetInt( "PSG", "EnvelopeC",	&st,			EnvelopeC );	EnvelopeC = st;
-	Ini->GetInt( "PSG", "OutputA",		&st,			OutputA );		OutputA = st;
-	Ini->GetInt( "PSG", "OutputB",		&st,			OutputB );		OutputB = st;
-	Ini->GetInt( "PSG", "OutputC",		&st,			OutputC );		OutputC = st;
-	Ini->GetInt( "PSG", "OutputN",		&st,			OutputN );		OutputN = st;
-	Ini->GetInt( "PSG", "CountEnv",		&st,			CountEnv );		CountEnv = st;
-	Ini->GetInt( "PSG", "Hold",			&st,			Hold );			Hold = st;
-	Ini->GetInt( "PSG", "Alternate",	&st,			Alternate );	Alternate = st;
-	Ini->GetInt( "PSG", "Attack",		&st,			Attack );		Attack = st;
-	Ini->GetInt( "PSG", "Holding",		&st,			Holding );		Holding = st;
-	Ini->GetInt( "PSG", "RNG",			&RNG,			RNG );
+	Ini->GetValue( "PSG", "PeriodA",		PeriodA   );
+	Ini->GetValue( "PSG", "PeriodB",		PeriodB   );
+	Ini->GetValue( "PSG", "PeriodC",		PeriodC   );
+	Ini->GetValue( "PSG", "PeriodN",		PeriodN   );
+	Ini->GetValue( "PSG", "PeriodE",		PeriodE   );
+	Ini->GetValue( "PSG", "CountA",		CountA    );
+	Ini->GetValue( "PSG", "CountB",		CountB    );
+	Ini->GetValue( "PSG", "CountC",		CountC    );
+	Ini->GetValue( "PSG", "CountN",		CountN    );
+	Ini->GetValue( "PSG", "CountE",		CountE    );
+	Ini->GetValue( "PSG", "VolA",		VolA      );
+	Ini->GetValue( "PSG", "VolB",		VolB      );
+	Ini->GetValue( "PSG", "VolC",		VolC      );
+	Ini->GetValue( "PSG", "VolE",		VolE      );
+	Ini->GetValue( "PSG", "EnvelopeA",	EnvelopeA );
+	Ini->GetValue( "PSG", "EnvelopeB",	EnvelopeB );
+	Ini->GetValue( "PSG", "EnvelopeC",	EnvelopeC );
+	Ini->GetValue( "PSG", "OutputA",		OutputA   );
+	Ini->GetValue( "PSG", "OutputB",		OutputB   );
+	Ini->GetValue( "PSG", "OutputC",		OutputC   );
+	Ini->GetValue( "PSG", "OutputN",		OutputN   );
+	Ini->GetValue( "PSG", "CountEnv",	CountEnv  );
+	Ini->GetValue( "PSG", "Hold",		Hold      );
+	Ini->GetValue( "PSG", "Alternate",	Alternate );
+	Ini->GetValue( "PSG", "Attack",		Attack    );
+	Ini->GetValue( "PSG", "Holding",		Holding   );
+	Ini->GetValue( "PSG", "RNG",			RNG       );
 #endif
 	
 	return true;
@@ -492,12 +492,10 @@ bool PSG60::DokoLoad( cIni* Ini )
 
 bool OPN64::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !Ini ) return false;
 	
-	Ini->GetInt( "OPN", "RegisterLatch",	&st,	RegisterLatch );	RegisterLatch = st;
-	Ini->GetInt( "OPN", "LastEnable",		&st,	LastEnable );		LastEnable = st;
+	Ini->GetValue( "OPN", "RegisterLatch",	RegisterLatch );
+	Ini->GetValue( "OPN", "LastEnable",		LastEnable    );
 	
 	return true;
 }

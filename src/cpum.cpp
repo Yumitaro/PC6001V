@@ -96,27 +96,27 @@ bool CPU6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "Z80", "AF",			"", "0x%04X",	AF.W );
-	Ini->PutEntry( "Z80", "BC",			"", "0x%04X",	BC.W );
-	Ini->PutEntry( "Z80", "DE",			"", "0x%04X",	DE.W );
-	Ini->PutEntry( "Z80", "HL",			"", "0x%04X",	HL.W );
-	Ini->PutEntry( "Z80", "IX",			"", "0x%04X",	IX.W );
-	Ini->PutEntry( "Z80", "IY",			"", "0x%04X",	IY.W );
-	Ini->PutEntry( "Z80", "PC",			"", "0x%04X",	PC.W );
-	Ini->PutEntry( "Z80", "SP",			"", "0x%04X",	SP.W );
-	Ini->PutEntry( "Z80", "AF1",		"", "0x%04X",	AF1.W );
-	Ini->PutEntry( "Z80", "BC1",		"", "0x%04X",	BC1.W );
-	Ini->PutEntry( "Z80", "DE1",		"", "0x%04X",	DE1.W );
-	Ini->PutEntry( "Z80", "HL1",		"", "0x%04X",	HL1.W );
-	Ini->PutEntry( "Z80", "I",			"", "0x%02X",	I );
-	Ini->PutEntry( "Z80", "R",			"", "0x%02X",	R );
-	Ini->PutEntry( "Z80", "R_saved",	"", "0x%02X",	R_saved );
-	Ini->PutEntry( "Z80", "IFF",		"", "0x%02X",	IFF );
-	Ini->PutEntry( "Z80", "IFF2",		"", "0x%02X",	IFF2 );
-	Ini->PutEntry( "Z80", "IM",			"", "0x%02X",	IM );
-	Ini->PutEntry( "Z80", "Halt",		"", "0x%02X",	Halt );
+	Ini->PutValue( "Z80", "AF",			"",	AF.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "BC",			"",	BC.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "DE",			"",	DE.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "HL",			"",	HL.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "IX",			"",	IX.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "IY",			"",	IY.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "PC",			"",	PC.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "SP",			"",	SP.W,    "0x%04X" );
+	Ini->PutValue( "Z80", "AF1",		"",	AF1.W,   "0x%04X" );
+	Ini->PutValue( "Z80", "BC1",		"",	BC1.W,   "0x%04X" );
+	Ini->PutValue( "Z80", "DE1",		"",	DE1.W,   "0x%04X" );
+	Ini->PutValue( "Z80", "HL1",		"",	HL1.W,   "0x%04X" );
+	Ini->PutValue( "Z80", "I",			"",	I,       "0x%02X" );
+	Ini->PutValue( "Z80", "R",			"",	R,       "0x%02X" );
+	Ini->PutValue( "Z80", "R_saved",	"",	R_saved, "0x%02X" );
+	Ini->PutValue( "Z80", "IFF",		"",	IFF,     "0x%02X" );
+	Ini->PutValue( "Z80", "IFF2",		"",	IFF2,    "0x%02X" );
+	Ini->PutValue( "Z80", "IM",			"",	IM,      "0x%02X" );
+	Ini->PutValue( "Z80", "Halt",		"",	Halt,    "0x%02X" );
 	
-	Ini->PutEntry( "Z80", "mstate",		"", "%d",	mstate );
+	Ini->PutValue( "Z80", "mstate",		"", mstate );
 	
 	return true;
 }
@@ -127,31 +127,29 @@ bool CPU6::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool CPU6::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !Ini ) return false;
 	
-	Ini->GetInt( "Z80", "AF",		&st,	AF.W );		AF.W = st;
-	Ini->GetInt( "Z80", "BC",		&st,	BC.W );		BC.W = st;
-	Ini->GetInt( "Z80", "DE",		&st,	DE.W );		DE.W = st;
-	Ini->GetInt( "Z80", "HL",		&st,	HL.W );		HL.W = st;
-	Ini->GetInt( "Z80", "IX",		&st,	IX.W );		IX.W = st;
-	Ini->GetInt( "Z80", "IY",		&st,	IY.W );		IY.W = st;
-	Ini->GetInt( "Z80", "PC",		&st,	PC.W );		PC.W = st;
-	Ini->GetInt( "Z80", "SP",		&st,	SP.W );		SP.W = st;
-	Ini->GetInt( "Z80", "AF1",		&st,	AF1.W );	AF1.W = st;
-	Ini->GetInt( "Z80", "BC1",		&st,	BC1.W );	BC1.W = st;
-	Ini->GetInt( "Z80", "DE1",		&st,	DE1.W );	DE1.W = st;
-	Ini->GetInt( "Z80", "HL1",		&st,	HL1.W );	HL1.W = st;
-	Ini->GetInt( "Z80", "I",		&st,	I );		I = st;
-	Ini->GetInt( "Z80", "R",		&st,	R );		R = st;
-	Ini->GetInt( "Z80", "R_saved",	&st,	R_saved );	R_saved = st;
-	Ini->GetInt( "Z80", "IFF",		&st,	IFF );		IFF = st;
-	Ini->GetInt( "Z80", "IFF2",		&st,	IFF2 );		IFF2 = st;
-	Ini->GetInt( "Z80", "IM",		&st,	IM );		IM = st;
-	Ini->GetInt( "Z80", "Halt",		&st,	Halt );		Halt = st;
+	Ini->GetValue( "Z80", "AF",		AF.W    );
+	Ini->GetValue( "Z80", "BC",		BC.W    );
+	Ini->GetValue( "Z80", "DE",		DE.W    );
+	Ini->GetValue( "Z80", "HL",		HL.W    );
+	Ini->GetValue( "Z80", "IX",		IX.W    );
+	Ini->GetValue( "Z80", "IY",		IY.W    );
+	Ini->GetValue( "Z80", "PC",		PC.W    );
+	Ini->GetValue( "Z80", "SP",		SP.W    );
+	Ini->GetValue( "Z80", "AF1",		AF1.W   );
+	Ini->GetValue( "Z80", "BC1",		BC1.W   );
+	Ini->GetValue( "Z80", "DE1",		DE1.W   );
+	Ini->GetValue( "Z80", "HL1",		HL1.W   );
+	Ini->GetValue( "Z80", "I",		I       );
+	Ini->GetValue( "Z80", "R",		R       );
+	Ini->GetValue( "Z80", "R_saved",	R_saved );
+	Ini->GetValue( "Z80", "IFF",		IFF     );
+	Ini->GetValue( "Z80", "IFF2",	IFF2    );
+	Ini->GetValue( "Z80", "IM",		IM      );
+	Ini->GetValue( "Z80", "Halt",	Halt    );
 	
-	Ini->GetInt( "Z80", "mstate",	&mstate,	mstate );
+	Ini->GetValue( "Z80", "mstate",	mstate  );
 	
 	return true;
 }

@@ -40,8 +40,7 @@ typedef enum {
 	EV_WINDOWEVENT_MAXIMIZED,	// Window maximized
 	EV_WINDOWEVENT_RESTORED,	// Window restored to normal size and position
 	
-	EV_NOEVENT,
-	EndofEvent
+	EV_NOEVENT
 } EventType;
 
 

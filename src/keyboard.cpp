@@ -361,8 +361,7 @@ static const struct {
 
 
 
-enum KeyGroup
-{
+enum KeyGroup{
 	KEYSTD = 0,
 	KEYSHIFT,
 	KEYGRAPH,
@@ -823,20 +822,20 @@ bool KEY6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "KEY", "ON_KANA",	"", "%s",	ON_KANA  ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "ON_KKANA",	"", "%s",	ON_KKANA ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "ON_STOP",	"", "%s",	ON_STOP  ? "Yes" : "No" );
-	Ini->PutEntry( "KEY", "ON_CAPS",	"", "%s",	ON_CAPS  ? "Yes" : "No" );
+	Ini->PutYesNo( "KEY", "ON_KANA",	"", ON_KANA  );
+	Ini->PutYesNo( "KEY", "ON_KKANA",	"", ON_KKANA );
+	Ini->PutYesNo( "KEY", "ON_STOP",	"", ON_STOP  );
+	Ini->PutYesNo( "KEY", "ON_CAPS",	"", ON_CAPS  );
 	
 	std::string strva;
 	for( auto &i : P6Matrix )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "P6Matrix",	"", "%s",	strva.c_str() );
+	Ini->PutEntry( "KEY", "P6Matrix",	"", strva.c_str() );
 	
 	strva.clear();
 	for( auto &i : P6Mtrx )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "P6Mtrx",		"", "%s",	strva.c_str() );
+	Ini->PutEntry( "KEY", "P6Mtrx",		"", strva.c_str() );
 	
 	return true;
 }
@@ -854,18 +853,18 @@ bool KEY6::DokoLoad( cIni* Ini )
 	
 	if( !Ini ) return false;
 	
-	Ini->GetTruth( "KEY", "ON_KANA",	&ON_KANA,	ON_KANA );
-	Ini->GetTruth( "KEY", "ON_KKANA",	&ON_KKANA,	ON_KKANA );
-	Ini->GetTruth( "KEY", "ON_STOP",	&ON_STOP,	ON_STOP );
-	Ini->GetTruth( "KEY", "ON_CAPS",	&ON_CAPS,	ON_CAPS );
+	Ini->GetYesNo( "KEY", "ON_KANA",	ON_KANA  );
+	Ini->GetYesNo( "KEY", "ON_KKANA",	ON_KKANA );
+	Ini->GetYesNo( "KEY", "ON_STOP",	ON_STOP  );
+	Ini->GetYesNo( "KEY", "ON_CAPS",	ON_CAPS  );
 	
-	if( Ini->GetString( "KEY", "P6Matrix", strva, "" ) ){
+	if( Ini->GetEntry( "KEY", "P6Matrix", strva ) ){
 		strva.resize( P6Matrix.size() * 2, 'F' );
 		int i = 0;
 		for( auto &m : P6Matrix )
 			m = std::stoul( strva.substr( i++ * 2, 2 ), nullptr, 16 );
 	}
-	if( Ini->GetString( "KEY", "P6Mtrx", strva, "" ) ){
+	if( Ini->GetEntry( "KEY", "P6Mtrx", strva ) ){
 		strva.resize( P6Mtrx.size() * 2, 'F' );
 		int i = 0;
 		for( auto &m : P6Mtrx )

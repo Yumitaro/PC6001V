@@ -1886,42 +1886,42 @@ bool MEM6::DokoSave( cIni* Ini )
 	
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "MEMORY", "CGBank",		"", "%s",		CGBank    ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "UseExtRam",	"", "%s",		UseExtRam ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "M1Wait",		"", "%d",		M1Wait );
-	Ini->PutEntry( "MEMORY", "UseSoldier",	"", "%d",		UseSol );
-	Ini->PutEntry( "MEMORY", "Soldier60",	"", "%s",		Sol60Mode ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "SoldierBank",	"", "%d",		SolBankSet );
+	Ini->PutYesNo( "MEMORY", "CGBank",		"", CGBank );
+	Ini->PutYesNo( "MEMORY", "UseExtRam",	"", UseExtRam );
+	Ini->PutValue( "MEMORY", "M1Wait",		"", M1Wait );
+	Ini->PutValue( "MEMORY", "UseSoldier",	"", UseSol );
+	Ini->PutYesNo( "MEMORY", "Soldier60",	"", Sol60Mode );
+	Ini->PutValue( "MEMORY", "SoldierBank",	"", SolBankSet );
 	
 	// 62,66,64,68
-	Ini->PutEntry( "MEMORY", "cgrom",		"", "%s",		cgrom    ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "kj_rom",		"", "%s",		kj_rom   ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "kj_LR",		"", "%s",		kj_LR    ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "cgenable",	"", "%s",		cgenable ? "Yes" : "No" );
-	Ini->PutEntry( "MEMORY", "cgaden",		"", "%d",		cgaden );
-	Ini->PutEntry( "MEMORY", "cgaddr",		"", "%d",		cgaddr );
-	Ini->PutEntry( "MEMORY", "Rf0",	 		"", "0x%02X",	Rf[0] );
-	Ini->PutEntry( "MEMORY", "Rf1",	 		"", "0x%02X",	Rf[1] );
-	Ini->PutEntry( "MEMORY", "Rf2",	 		"", "0x%02X",	Rf[2] );
+	Ini->PutYesNo( "MEMORY", "cgrom",		"", cgrom    );
+	Ini->PutYesNo( "MEMORY", "kj_rom",		"", kj_rom   );
+	Ini->PutYesNo( "MEMORY", "kj_LR",		"", kj_LR    );
+	Ini->PutYesNo( "MEMORY", "cgenable",	"", cgenable );
+	Ini->PutValue( "MEMORY", "cgaden",		"", cgaden );
+	Ini->PutValue( "MEMORY", "cgaddr",		"", cgaddr );
+	Ini->PutValue( "MEMORY", "Rf0",	 		"", Rf[0],	"0x%02X" );
+	Ini->PutValue( "MEMORY", "Rf1",	 		"", Rf[1],	"0x%02X" );
+	Ini->PutValue( "MEMORY", "Rf2",	 		"", Rf[2],	"0x%02X" );
 	
 	// 拡張ROMがマウントされている場合
 	if( UseExtRom ){
 		P6VPATH tpath = FilePath;
 		OSD_RelativePath( tpath );
-		Ini->PutEntry( "MEMORY", "FilePath",	"", "%s",	P6VPATH2STR( tpath ).c_str() );
+		Ini->PutPath( "MEMORY", "FilePath",	"", tpath );
 	}
 	
 	// メモリウェイト
-	Ini->PutEntry( "MEMORY", "Wait",			"", "%d",		GetWait() );
+	Ini->PutValue( "MEMORY", "Wait",		"", GetWait() );
 	// CGRomウェイト
-	Ini->PutEntry( "MEMORY", "CgRomWait",		"", "%d",		CGROM1.GetWait() );
+	Ini->PutValue( "MEMORY", "CgRomWait",	"", CGROM1.GetWait() );
 	
 	// 内部RAM
 	for( int i=0; i<(int)MemTable.IntRam->Size; i+=64 ){
 		std::string strva;
 		for( int j=0; j<64; j++ )
 			strva += Stringf( "%02X", IntRam[i+j] );
-		Ini->PutEntry( "MEMORY", Stringf( "IntRam_%04X", i ), "", "%s", strva.c_str() );
+		Ini->PutEntry( "MEMORY", Stringf( "IntRam_%04X", i ), "", strva.c_str() );
 	}
 	
 	// 外部RAM
@@ -1930,7 +1930,7 @@ bool MEM6::DokoSave( cIni* Ini )
 			std::string strva;
 			for( int j=0; j<64; j++ )
 				strva += Stringf( "%02X", ExtRam[i+j] );
-			Ini->PutEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), "", "%s", strva.c_str() );
+			Ini->PutEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), "", strva.c_str() );
 		}
 	}
 	
@@ -1938,7 +1938,7 @@ bool MEM6::DokoSave( cIni* Ini )
 	if( UseSol ){
 		// メモリバンクレジスタ
 		for( int i=0; i<8; i++ )
-			Ini->PutEntry( "MEMORY", Stringf( "SolBank%d", i ), "", "0x%02X", SolBank[i] );
+			Ini->PutValue( "MEMORY", Stringf( "SolBank%d", i ), "", SolBank[i], "0x%02X" );
 	}
 	
 	return true;
@@ -1949,7 +1949,7 @@ bool MEM64::DokoSave( cIni* Ini )
 	if( !MEM6::DokoSave( Ini ) ) return false;
 	
 	for( int i=0; i<16; i++ )
-		Ini->PutEntry( "MEMORY", Stringf( "RfSR_%02d", i ), "", "0x%02X", RfSR[i] );
+		Ini->PutValue( "MEMORY", Stringf( "RfSR_%02d", i ), "", RfSR[i], "0x%02X" );
 	
 	return true;
 }
@@ -1963,33 +1963,33 @@ bool MEM64::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool MEM6::DokoLoad( cIni* Ini )
 {
-	P6VPATH tpath;
+	P6VPATH tpath = "";
 	int st;
 	
 	PRINTD( MEM_LOG, "[MEM][DokoLoad]\n" );
 	
 	if( !Ini ) return false;
 	
-	Ini->GetTruth( "MEMORY", "CGBank",		&CGBank,		CGBank );
-	Ini->GetTruth( "MEMORY", "UseExtRam",	&UseExtRam,		UseExtRam );
-	Ini->GetInt(   "MEMORY", "M1Wait",		&M1Wait,		M1Wait );
-	Ini->GetInt(   "MEMORY", "UseSoldier",	&UseSol,		UseSol );
-	Ini->GetTruth( "MEMORY", "Soldier60",	&Sol60Mode,		Sol60Mode );
-	Ini->GetInt(   "MEMORY", "SoldierBank",	&SolBankSet,	SolBankSet );
+	Ini->GetYesNo( "MEMORY", "CGBank",		CGBank     );
+	Ini->GetYesNo( "MEMORY", "UseExtRam",	UseExtRam  );
+	Ini->GetValue( "MEMORY", "M1Wait",		M1Wait     );
+	Ini->GetValue( "MEMORY", "UseSoldier",	UseSol     );
+	Ini->GetYesNo( "MEMORY", "Soldier60",	Sol60Mode  );
+	Ini->GetValue( "MEMORY", "SoldierBank",	SolBankSet );
 	
 	// 62,66,64,68
-	Ini->GetTruth( "MEMORY", "cgrom",		&cgrom,		cgrom );
-	Ini->GetTruth( "MEMORY", "kj_rom",		&kj_rom,	kj_rom );
-	Ini->GetTruth( "MEMORY", "kj_LR",		&kj_LR,		kj_LR );
-	Ini->GetTruth( "MEMORY", "cgenable",	&cgenable,	cgenable );
-	Ini->GetInt(   "MEMORY", "cgaden",		&st,		cgaden );	cgaden = st;
-	Ini->GetInt(   "MEMORY", "cgaddr",		&st,		cgaddr );	cgaddr = st;
-	Ini->GetInt(   "MEMORY", "Rf0",			&st,		Rf[0] );	Rf[0]  = st;
-	Ini->GetInt(   "MEMORY", "Rf1",			&st,		Rf[1] );	Rf[1]  = st;
-	Ini->GetInt(   "MEMORY", "Rf2",			&st,		Rf[2] );	Rf[2]  = st;
+	Ini->GetYesNo( "MEMORY", "cgrom",		cgrom    );
+	Ini->GetYesNo( "MEMORY", "kj_rom",		kj_rom   );
+	Ini->GetYesNo( "MEMORY", "kj_LR",		kj_LR    );
+	Ini->GetYesNo( "MEMORY", "cgenable",	cgenable );
+	Ini->GetValue( "MEMORY", "cgaden",		cgaden   );
+	Ini->GetValue( "MEMORY", "cgaddr",		cgaddr   );
+	Ini->GetValue( "MEMORY", "Rf0",			Rf[0]    );
+	Ini->GetValue( "MEMORY", "Rf1",			Rf[1]    );
+	Ini->GetValue( "MEMORY", "Rf2",			Rf[2]    );
 	
 	// 拡張ROM
-	if( Ini->GetPath( "MEMORY", "FilePath", tpath, "" ) )
+	if( Ini->GetPath( "MEMORY", "FilePath", tpath ) )
 		MountExtRom( tpath );
 	
 	// メモリブロック設定
@@ -1999,9 +1999,12 @@ bool MEM6::DokoLoad( cIni* Ini )
 	SetCGBank( CGBank );
 	
 	// メモリウェイト
-	Ini->GetInt(    "MEMORY", "Wait",       &st,        GetWait() );    SetWait( st );
+	st = GetWait();
+	Ini->GetValue( "MEMORY", "Wait",      st );
+	SetWait( st );
 	// CGRomウェイト
-	Ini->GetInt(    "MEMORY", "CgRomWait",  &st,        CGROM1.GetWait() );
+	st = CGROM1.GetWait();
+	Ini->GetValue( "MEMORY", "CgRomWait", st );
 	st &= 0xff;
 	CGROM1.SetWait( st );
 	CGROM2.SetWait( st );
@@ -2010,7 +2013,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 	// 内部RAM
 	for( int i=0; i<(int)MemTable.IntRam->Size; i+=64 ){
 		std::string strva;
-		if( Ini->GetString( "MEMORY", Stringf( "IntRam_%04X", i ), strva, "" ) ){
+		if( Ini->GetEntry( "MEMORY", Stringf( "IntRam_%04X", i ), strva ) ){
 			strva += std::string( 64 * 2 - strva.length(), '0' );
 			for( int j=0; j<64; j++ )
 				IntRam[i+j] = std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 );
@@ -2021,7 +2024,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 	if( UseExtRam || UseSol ){
 		for( int i=0; i<(int)MemTable.ExtRam->Size; i+=64 ){
 			std::string strva;
-			if( Ini->GetString( "MEMORY", Stringf( "ExtRam_%06X", i ), strva, "" ) ){
+			if( Ini->GetEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), strva ) ){
 				strva += std::string( 64 * 2 - strva.length(), '0' );
 				for( int j=0; j<64; j++ )
 					ExtRam[i+j] = std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 );
@@ -2033,9 +2036,8 @@ bool MEM6::DokoLoad( cIni* Ini )
 	if( UseSol ){
 		// メモリバンクレジスタ
 		for( int i=0; i<8; i++ ){
-			Ini->GetInt( "MEMORY", Stringf( "SolBank%d", i ), &st, SolBank[i] );
-			SolBank[i] = st;
-			SetSolBank( i, st );	// メモリバンク設定
+			Ini->GetValue( "MEMORY", Stringf( "SolBank%d", i ), SolBank[i] );
+			SetSolBank( i, SolBank[i] );	// メモリバンク設定
 		}
 	}
 	
@@ -2044,14 +2046,11 @@ bool MEM6::DokoLoad( cIni* Ini )
 
 bool MEM64::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !MEM6::DokoLoad( Ini ) ) return false;
 	
 	for( int i=0; i<16; i++ ){
-		Ini->GetInt( "MEMORY", Stringf( "RfSR_%02d", i ), &st, RfSR[i] );
-		RfSR[i] = st;
-		SetMemBlockSR( i, st );
+		Ini->GetValue( "MEMORY", Stringf( "RfSR_%02d", i ), RfSR[i] );
+		SetMemBlockSR( i, RfSR[i] );
 	}
 	
 	return true;

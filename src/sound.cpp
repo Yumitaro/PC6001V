@@ -127,7 +127,7 @@ int cRing::GetSize( void ) const
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-SndDev::SndDev( void ) : SampleRate(DEFAULT_SAMPLE_RATE),
+SndDev::SndDev( void ) : SampleRate(DEFAULT_SAMPLERATE),
 							Volume(0), LPF_Mem(0), LPF_fc(0) {}
 
 
@@ -238,7 +238,7 @@ int SndDev::SoundUpdate( int samples )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-SND6::SND6( void ) : Volume(DEFAULT_MASTERVOL), SampleRate(DEFAULT_SAMPLE_RATE), BSize(DEFAULT_SOUND_BUFFER),
+SND6::SND6( void ) : Volume(DEFAULT_MASTERVOL), SampleRate(DEFAULT_SAMPLERATE), BSize(DEFAULT_SOUNDBUF),
 						CbFunc(nullptr), CbData(nullptr) {}
 
 

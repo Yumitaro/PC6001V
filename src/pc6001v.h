@@ -29,8 +29,8 @@
 #define	DEFAULT_MODEL			(0)					// 機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR (0:自動選定)
 #define	DEFAULT_EXTRAM			(1)					// 拡張RAM 0:なし 1:あり
 #define	DEFAULT_REPEAT			(70)				// キーリピートの間隔(単位:ms 0で無効)
-#define	DEFAULT_SAMPLE_RATE		(44100)				// サンプリングレート
-#define	DEFAULT_SOUND_BUFFER	(1)					// サウンドバッファ長倍率(基本長はVSYNC)
+#define	DEFAULT_SAMPLERATE		(44100)				// サンプリングレート
+#define	DEFAULT_SOUNDBUF		(1)					// サウンドバッファ長倍率(基本長はVSYNC)
 #define	DEFAULT_MASTERVOL		(70)				// マスター音量
 #define	DEFAULT_PSGVOL			(60)				// PSG音量
 #define	DEFAULT_PSGLPF			(0)					// PSG LPFカットオフ周波数(0で無効)
@@ -45,7 +45,7 @@
 #define	DEFAULT_STOPBIT			(3)					// CMTストップビット数
 #define	DEFAULT_FDD				(0)					// FDD接続台数
 #define	DEFAULT_FDDWAIT			(true)				// FDDウェイト true:有効 false:無効
-#define	DEFAULT_MODE4_COLOR		(1)					// モード４カラーモード 0:モノ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク
+#define	DEFAULT_MODE4COLOR		(1)					// モード４カラーモード 0:モノ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク
 #define	DEFAULT_SCANLINE		(true) 				// スキャンライン true:あり false:なし
 #define	DEFAULT_SCANLINEBR		(75)				// スキャンライン輝度 (0-100)%
 #define	DEFAULT_FILTERING		(true) 				// フィルタリング true:アンチエイリアシング false:ニアレストネイバー
@@ -65,22 +65,22 @@
 #define	MAX_MODEL				(68)				// 機種 最大値
 #define	MIN_FDD					(0)					// FDD接続台数 最小値
 #define	MAX_FDD					(2)					// FDD接続台数 最大値
-#define	MIN_MAXBOOST			(1)					// BoostUp最大倍率 最小値
-#define	MAX_MAXBOOST			(10)				// BoostUp最大倍率 最大値
+#define	MIN_BOOST				(1)					// BoostUp最大倍率 最小値
+#define	MAX_BOOST				(10)				// BoostUp最大倍率 最大値
 #define	MIN_STOPBIT				(2)					// TAPEストップビット数 最小値
 #define	MAX_STOPBIT				(10)				// TAPEストップビット数 最大値
 #define	MIN_REPEAT				(10)				// キーリピートの間隔 最小値
 #define	MAX_REPEAT				(100)				// キーリピートの間隔 最大値
-#define	MIN_SAMPLE_RATE			(11025)				// サンプリングレート 最小値
-#define	MAX_SAMPLE_RATE			(44100)				// サンプリングレート 最大値
-#define	MIN_SOUNDBUFFER			(1)					// サウンドバッファ長倍率 最小値
-#define	MAX_SOUNDBUFFER			(10)				// サウンドバッファ長倍率 最大値
+#define	MIN_SAMPLERATE			(11025)				// サンプリングレート 最小値
+#define	MAX_SAMPLERATE			(44100)				// サンプリングレート 最大値
+#define	MIN_SOUNDBUF			(1)					// サウンドバッファ長倍率 最小値
+#define	MAX_SOUNDBUF			(10)				// サウンドバッファ長倍率 最大値
 #define	MIN_VOLUME				(0)					// 音量 最小値
 #define	MAX_VOLUME				(100)				// 音量 最大値
 #define	MIN_LPF					(0)					// LPFカットオフ周波数 最小値
 #define	MAX_LPF					(20000)				// LPFカットオフ周波数 最大値
-#define	MIN_MODE4_COLOR			(0)					// モード４カラーモード 最小値
-#define	MAX_MODE4_COLOR			(4)					// モード４カラーモード 最大値
+#define	MIN_MODE4COLOR			(0)					// モード４カラーモード 最小値
+#define	MAX_MODE4COLOR			(4)					// モード４カラーモード 最大値
 #define	MIN_SCANLINEBR			(0)					// スキャンライン輝度 最小値
 #define	MAX_SCANLINEBR			(100)				// スキャンライン輝度 最大値
 #define	MIN_FRAMESKIP			(0)					// フレームスキップ 最小値
@@ -113,8 +113,8 @@
 #define	DIR_DISK				"disk"				// DISKイメージ
 #define	DIR_EXTROM				"extrom"			// 拡張ROMイメージ
 #define	DIR_IMAGE				"img"				// スナップショット
-#define	DIR_FONT				"font"				// フォント
 #define	DIR_WAVE				"wave"				// WAVEファイル
+#define	DIR_FONT				"font"				// フォント
 #define	DIR_DOKO				"doko"				// どこでもSAVEファイル
 
 
@@ -140,12 +140,12 @@
 /////////////////////////////////////////////////////////////////////////////
 #define	FILE_SNAP				"P6V"				// スナップショットプレフィックス
 #define	FILE_CONFIG				"pc6001v.ini"		// 設定ファイル
-#define	FILE_PRINTER			"printer.txt"		// プリンタ出力ファイル
+#define	FILE_PRINT				"printer.txt"		// プリンタ出力ファイル
 #define	FILE_SERIAL				"serial.txt"		// シリアル出力ファイル
 #define	FILE_SAVE				"_csave." EXT_P6T	// TAPE(CSAVE)ファイル
 #define	FILE_FONTZ				"fontz12." EXT_IMG	// 半角フォントファイル
 #define	FILE_FONTH				"fonth12." EXT_IMG	// 全角フォントファイル
-                        
+
 #define	SUBCPU60				"subcpu.60"			// サブCPU ROM(PC-6001)
 #define	SUBCPU61				"subcpu.61"			// サブCPU ROM(PC-6001A)
 #define	SUBCPU62				"subcpu.62"			// サブCPU ROM(PC-6001mk2)

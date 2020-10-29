@@ -478,18 +478,18 @@ bool IRQ6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "INTR", "IntrFlag",			"", "0x%08X",	IntrFlag );
-	Ini->PutEntry( "INTR", "TimerIntrEnable",	"", "%s",		TimerIntrEnable  ? "Yes" : "No" );
-	Ini->PutEntry( "INTR", "TimerCntUp",		"", "%d",		TimerCntUp );
+	Ini->PutValue( "INTR", "IntrFlag",			"", IntrFlag,	"0x%08X" );
+	Ini->PutYesNo( "INTR", "TimerIntrEnable",	"", TimerIntrEnable );
+	Ini->PutValue( "INTR", "TimerCntUp",		"", TimerCntUp );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", Stringf( "IntEnable%d", i ),	"", "%s",		IntEnable[i]  ? "Yes" : "No" );
+		Ini->PutYesNo( "INTR", Stringf( "IntEnable%d", i ),	"", IntEnable[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", Stringf( "VecOutput%d", i ),	"", "%s",		VecOutput[i]  ? "Yes" : "No" );
+		Ini->PutYesNo( "INTR", Stringf( "VecOutput%d", i ),	"", VecOutput[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutEntry( "INTR", Stringf( "IntVector%d", i ),	"", "0x%02X",	IntVector[i] );
+		Ini->PutValue( "INTR", Stringf( "IntVector%d", i ),	"", IntVector[i], "0x%02X" );
 	
 	return true;
 }
@@ -500,23 +500,20 @@ bool IRQ6::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool IRQ6::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !Ini ) return false;
 	
-	Ini->GetInt(   "INTR", "IntrFlag",			&st,				IntrFlag );			IntrFlag = st;
-	Ini->GetTruth( "INTR", "TimerIntrEnable",	&TimerIntrEnable,	TimerIntrEnable );
-	Ini->GetInt(   "INTR", "TimerCntUp",		&st,				TimerCntUp );		TimerCntUp   = st;
+	Ini->GetValue( "INTR", "IntrFlag",			IntrFlag );
+	Ini->GetYesNo( "INTR", "TimerIntrEnable",	TimerIntrEnable );
+	Ini->GetValue( "INTR", "TimerCntUp",		TimerCntUp );
 	
 	for( int i=0; i<8; i++ )
-		Ini->GetTruth( "INTR", Stringf( "IntEnable%d", i ),		&IntEnable[i],	IntEnable[i] );
+		Ini->GetYesNo( "INTR", Stringf( "IntEnable%d", i ), IntEnable[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->GetTruth( "INTR", Stringf( "VecOutput%d", i ),		&VecOutput[i],	VecOutput[i] );
+		Ini->GetYesNo( "INTR", Stringf( "VecOutput%d", i ), VecOutput[i] );
 	
 	for( int i=0; i<8; i++ ){
-		Ini->GetInt(   "INTR", Stringf( "IntVector%d", i ),		&st,			IntVector[i] );
-		IntVector[i] = st;
+		Ini->GetValue( "INTR", Stringf( "IntVector%d", i ), IntVector[i] );
 	}
 	
 	return true;

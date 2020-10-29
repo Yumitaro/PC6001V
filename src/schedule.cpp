@@ -396,10 +396,10 @@ bool EVSC::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "SCHEDULE", "MasterClock",	"", "%d",	MasterClock );
-	Ini->PutEntry( "SCHEDULE", "VSYNC",			"", "%s",	VSYNC ? "Yes" : "No" );
-	Ini->PutEntry( "SCHEDULE", "NextEvent",		"", "%d",	NextEvent );
-	Ini->PutEntry( "SCHEDULE", "SaveClock",		"", "%d",	SaveClock );
+	Ini->PutValue( "SCHEDULE", "MasterClock",	"", MasterClock );
+	Ini->PutYesNo( "SCHEDULE", "VSYNC",			"", VSYNC );
+	Ini->PutValue( "SCHEDULE", "NextEvent",		"", NextEvent );
+	Ini->PutValue( "SCHEDULE", "SaveClock",		"", SaveClock );
 	
 	
 	// イベント
@@ -430,10 +430,10 @@ bool EVSC::DokoLoad( cIni* Ini )
 	// 全てのイベントをひとまず無効にする
 	ev.clear();
 	
-	Ini->GetInt(    "SCHEDULE", "MasterClock",	&MasterClock,	MasterClock );
-	Ini->GetTruth(  "SCHEDULE", "VSYNC",		&VSYNC, 		VSYNC );
-	Ini->GetInt(    "SCHEDULE", "NextEvent",	&NextEvent,		NextEvent );	// イベント再設定時に再現される?
-	Ini->GetInt(    "SCHEDULE", "SaveClock",	&SaveClock,		SaveClock );
+	Ini->GetValue( "SCHEDULE", "MasterClock",	MasterClock );
+	Ini->GetYesNo( "SCHEDULE", "VSYNC",			VSYNC       );
+	Ini->GetValue( "SCHEDULE", "NextEvent",		NextEvent   );	// イベント再設定時に再現される?
+	Ini->GetValue( "SCHEDULE", "SaveClock",		SaveClock   );
 	
 	
 	// イベント
@@ -442,7 +442,7 @@ bool EVSC::DokoLoad( cIni* Ini )
 		evinfo e;
 		BYTE id1,id2,id3,id4;
 		
-		if( !Ini->GetString( "SCHEDULE", Stringf( "Event%02X", i ), str, "" ) ) break;
+		if( !Ini->GetEntry( "SCHEDULE", Stringf( "Event%02X", i ), str ) ) break;
 		sscanf( str.c_str(), "%c%c%c%c %d %d %d %lf", &id1, &id2, &id3, &id4, &e.id, &e.Period, &e.Clock, &e.nps );
 		e.devid = BTODW( id1, id2, id3, id4 );
 		if( e.devid && e.id && !SetEvinfo( &e ) ) return false;
