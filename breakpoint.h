@@ -13,7 +13,7 @@
 
 class BPoint {
 public:
-	enum BPtype{ BP_NONE, BP_PC, BP_READ, BP_WRITE, BP_IN, BP_OUT, EndofBPtype };
+	enum BPtype{ BP_NONE, BP_PC, BP_READ, BP_WRITE, BP_IN, BP_OUT };
 	
 private:
 	struct BreakPoint {

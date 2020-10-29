@@ -536,7 +536,7 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TINI_ImgPath,				"スナップショット格納パス" },
 	{ TINI_WavePath,			"WAVEファイル格納パス" },
 	{ TINI_FontPath,			"FONTファイル格納パス" },
-	{ TINI_DokoSavePath,		"どこでもSAVE格納パス" },
+	{ TINI_DokoPath,			"どこでもSAVE格納パス" },
 	// [CHECK]
 	{ TINI_CkQuit,				"終了時確認 Yes:する No:しない" },
 	{ TINI_SaveQuit,			"終了時INIファイルを保存 Yes:する No:しない" },

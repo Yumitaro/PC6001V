@@ -13,8 +13,7 @@
 
 class Error {
 public:
-	enum Errno
-	{
+	enum Errno{
 		NoError = 0,
 		Unknown,
 		MemAllocFailed,

@@ -140,7 +140,7 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 	// マトリクスを書出し
 	for( auto &i : mt )
 		strva += Stringf( "%02X", i );
-	cIni::PutEntry( "REPLAY", Stringf( "%08lX ", RepFrm ), "", "%s", strva.c_str() );
+	cIni::PutEntry( "REPLAY", Stringf( "%08lX ", RepFrm ), "", strva.c_str() );
 	
 	RepFrm++;
 	
@@ -159,13 +159,10 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
-		int st;	// ホントはDWORD
-		
 		if( RepST != REP_IDLE ) throw Error::ReplayPlayError;
 		
 		if( !cIni::Read( filepath ) ) throw Error::ReplayPlayError;
-		if( !cIni::GetInt( "REPLAY", "EndFrm", &st, EndFrm ) ) throw Error::NoReplayData;
-		else                                                   EndFrm = st;
+		if( !cIni::GetValue( "REPLAY", "EndFrm", EndFrm ) ) throw Error::NoReplayData;
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -211,7 +208,7 @@ bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 	
 	if( RepST != REP_REPLAY ) return false;
 	
-	if( cIni::GetString( "REPLAY", Stringf( "%08lX", RepFrm ), strva, "" ) ){
+	if( cIni::GetEntry( "REPLAY", Stringf( "%08lX", RepFrm ), strva ) ){
 		strva.resize( mt.size() * 2, 'F' );
 		int i = 0;
 		for( auto &m : mt )

@@ -36,14 +36,12 @@ class EL6 : public cThread, public AVI6, public REPLAY {
 	friend class DSP6;
 	
 public:
-	enum ReturnCode {
+	enum ReturnCode{
 		Quit = 0,
 		Restart,
 		Dokoload,
 		Replay,
-		Error,
-		
-		EndofReturnCode
+		Error
 	};
 	
 protected:

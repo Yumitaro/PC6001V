@@ -34,7 +34,7 @@
 #include "vsurface.h"
 
 
-#define	FRAMERATE	((double)VSYNC_HZ/(double)(cfg->GetFrameSkip()+1))
+#define	FRAMERATE	((double)VSYNC_HZ/(double)(cfg->GetValue( CF_FrameSkip )+1))
 
 int EL6::Speed = 100;
 
@@ -187,7 +187,7 @@ void EL6::OnThread( void* inst )
 ////////////////////////////////////////////////////////////////
 void EL6::Wait( void )
 {
-	if( sche->GetWaitEnable() && (!cfg->GetTurboTAPE() || (vm->cpus->GetCmtStatus() == CMTCLOSE)) )
+	if( sche->GetWaitEnable() && (!cfg->GetYesNo( CF_TurboTAPE ) || (vm->cpus->GetCmtStatus() == CMTCLOSE)) )
 		sche->VWait();
 	vm->evsc->ReVSYNC();
 }
@@ -282,7 +282,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 	
 	try{
 		// 機種別 VM確保
-		switch( cfg->GetModel() ){
+		switch( cfg->GetValue( CF_Model ) ){
 		case 61: vm = std::make_unique<VM61>();	break;
 		case 62: vm = std::make_unique<VM62>();	break;
 		case 66: vm = std::make_unique<VM66>();	break;
@@ -311,18 +311,18 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		sche->SetMasterClock( vm->evsc->GetMasterClock() );
 		
 		// サウンド -----
-		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetSampleRate(), cfg->GetSoundBuffer() ) ) throw Error::GetError();
-		snd->SetVolume( cfg->GetMasterVol() );
+		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetValue( CF_SampleRate ), cfg->GetValue( CF_SoundBuffer ) ) ) throw Error::GetError();
+		snd->SetVolume( cfg->GetValue( CF_MasterVolume ) );
 		
 		// 画面描画 -----
 		if( !graph->Init() ) throw Error::GetError();
-		graph->SetIcon( cfg->GetModel() );	// アイコン設定
+		graph->SetIcon( cfg->GetValue( CF_Model ) );	// アイコン設定
 		
 		// ジョイスティック -----
 		if( !joy->Init() ) throw Error::GetError();
 		
 		// ステータスバー -----
-		if( !staw->Init( graph->ScreenX(), cfg->GetFddNum() ) ) throw Error::GetError();
+		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CF_FDD ) ) ) throw Error::GetError();
 		
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		// レジスタウィンドウ　-----
@@ -351,11 +351,11 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		
 		
 		// TAPE挿入
-		if( !cfg->GetTapeFile().empty() ) TapeMount( cfg->GetTapeFile() );
+		if( !cfg->GetPath( CF_tape ).empty() ) TapeMount( cfg->GetPath( CF_tape ) );
 		
 		// ドライブ1,2にDISK挿入
-		if( !cfg->GetDiskFile( 1 ).empty() ) DiskMount( 0, cfg->GetDiskFile( 1 ) );
-		if( !cfg->GetDiskFile( 2 ).empty() ) DiskMount( 1, cfg->GetDiskFile( 2 ) );
+		if( !cfg->GetPath( CF_disk1 ).empty() ) DiskMount( 0, cfg->GetPath( CF_disk1 ) );
+		if( !cfg->GetPath( CF_disk2 ).empty() ) DiskMount( 1, cfg->GetPath( CF_disk2 ) );
 		
 		// リセット
 		UI_Reset();
@@ -449,7 +449,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			OSD_SetWindowCaption( GetWindowHandle(), str );
 			
 			// フルスクリーン時にマウスを一定時間動かさなかったらカーソルを消す
-			if( cfg->GetFullScreen() ){
+			if( cfg->GetYesNo( CF_FullScreen ) ){
 				if( MMotion ){ MMotion = false; }
 				else         { OSD_ShowCursor( false ); }
 			}
@@ -500,7 +500,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		case EV_MOUSEMOTION:	// マウスカーソル動いた
-			if( cfg->GetFullScreen() ){
+			if( cfg->GetYesNo( CF_FullScreen ) ){
 				OSD_ShowCursor( true );
 				MMotion = true;
 			}
@@ -548,10 +548,10 @@ EL6::ReturnCode EL6::EventLoop( void )
 			// ResizeScreen()でリサイズしたなら何もしないで戻る
 			if( graph->CheckResize() ) break;
 			
-			int zoom = (int)((double)event.window.w / (double)GetVideoInfo().w * (double)((cfg->GetDispNTSC() ? GetVideoInfo().ratio : 100.0) + 0.5));
+			int zoom = (int)((double)event.window.w / (double)GetVideoInfo().w * (double)((cfg->GetYesNo( CF_DispNTSC ) ? GetVideoInfo().ratio : 100.0) + 0.5));
 			
 			Stop();
-			cfg->SetWindowZoom( zoom );	// ウィンドウサイズに合わせて倍率再設定
+			cfg->SetValue( CF_WindowZoom, zoom );	// ウィンドウサイズに合わせて倍率再設定
 			graph->ResizeScreen();		// スクリーンサイズ変更
 			Start();
 			break;
@@ -564,7 +564,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			break;
 			
 		case EV_QUIT:			// 終了
-			if( cfg->GetCkQuit() )
+			if( cfg->GetYesNo( CF_CkQuit ) )
 				if( OSD_Message( GetWindowHandle(), GetText( T_QUIT ), GetText( T_QUITC ), OSDM_YESNO | OSDM_ICONQUESTION ) != OSDR_YES )
 					break;
 			return Quit;
@@ -634,7 +634,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		
 		if( OnALT ){
 			Stop();
-			cfg->SetFullScreen( cfg->GetFullScreen() ? false : true );
+			cfg->SetYesNo( CF_FullScreen, cfg->GetYesNo( CF_FullScreen ) ? false : true );
 			graph->ResizeScreen();	// スクリーンサイズ変更
 			Start();
 		}else{
@@ -650,10 +650,10 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		
 		Stop();
 		if( OnALT ){
-			cfg->SetDispNTSC( cfg->GetDispNTSC() ? false : true );
+			cfg->SetYesNo( CF_DispNTSC, cfg->GetYesNo( CF_DispNTSC ) ? false : true );
 			graph->ResizeScreen();	// スクリーンサイズ変更
 		}else{
-			cfg->SetScanLine( cfg->GetScanLine() ? false : true );
+			cfg->SetYesNo( CF_ScanLine, cfg->GetYesNo( CF_ScanLine ) ? false : true );
 		}
 		Start();
 		break;
@@ -661,7 +661,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 	case KVC_F8:			// モード4カラー変更 or ステータスバー表示状態変更
 		if( OnALT ){
 			Stop();
-			cfg->SetDispStat( cfg->GetDispStat() ? false : true );
+			cfg->SetYesNo( CF_DispStatus, cfg->GetYesNo( CF_DispStatus ) ? false : true );
 			graph->ResizeScreen();	// スクリーンサイズ変更
 			Start();
 		}else{
@@ -696,7 +696,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 	case KVC_F12:			// スナップショット
 		if( OnALT ){
 		}else{
-			graph->SnapShot( cfg->GetImgPath() );
+			graph->SnapShot( cfg->GetPath( CF_ImgPath ) );
 		}
 		break;
 		
@@ -712,7 +712,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		if( REPLAY::GetStatus() == REP_RECORD ){
 			UI_ReplayDokoSave();
 		}else{
-			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() );
+			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetPath( CF_DokoPath ) );
 			DokoDemoSave( tpath );
 			
 			cIni save;
@@ -730,9 +730,9 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		if( REPLAY::GetStatus() == REP_RECORD ){
 			UI_ReplayDokoLoad();
 		} else {
-			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetDokoSavePath() ) );
+			P6VPATH tpath = P6VSTR2PATH( Stringf( "%s/.1.dds", cfg->GetPath( CF_DokoPath ) ) );
 			if( OSD_FileExist( tpath ) ){
-				cfg->SetModel( GetDokoModel( tpath ) );
+				cfg->SetValue( CF_Model, GetDokoModel( tpath ) );
 				cfg->SetDokoFile( tpath );
 				OSD_PushEvent( EV_DOKOLOAD );
 			}
@@ -784,7 +784,7 @@ bool EL6::ScreenUpdate( void )
 	if( !AVI6::IsAVI() && !sche->IsScreenUpdate() ) return false;
 	
 	// フレームスキップチェック
-	if( FSkipCount++ < cfg->GetFrameSkip() ) return false;
+	if( FSkipCount++ < cfg->GetValue( CF_FrameSkip ) ) return false;
 	
 	
 	// ここではバックバッファの更新のみ
@@ -1051,7 +1051,7 @@ void EL6::SetAutoStart( void )
 	const P6TAUTOINFO& ainf = vm->cmtl->GetAutoStartInfo();
 	
 	// キーバッファに書込み
-	switch( cfg->GetModel() ){
+	switch( cfg->GetValue( CF_Model ) ){
 	case 60:	// PC-6001
 	case 61:	// PC-6001A
 		kbuf = Stringf( "%c%c", ainf.Page+'0', 0x0d );
@@ -1210,9 +1210,9 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 			!vm->voice->DokoSave( &ini )
 		) throw Error::GetError();
 		
-		ini.PutEntry( "KEY", "AK_Wait",		"", "%d",	ak.Wait );
-		ini.PutEntry( "KEY", "AK_Relay",	"", "%s",	ak.Relay   ? "Yes" : "No" );
-		ini.PutEntry( "KEY", "AK_RelayOn",	"", "%s",	ak.RelayOn ? "Yes" : "No" );
+		ini.PutValue( "KEY", "AK_Wait",		"", ak.Wait    );
+		ini.PutYesNo( "KEY", "AK_Relay",	"", ak.Relay   );
+		ini.PutYesNo( "KEY", "AK_RelayOn",	"", ak.RelayOn );
 		
 		std::string strva;
 		int nn=0;
@@ -1220,12 +1220,12 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 		for( size_t i=0; i<ak.Buffer.length(); i++ ){
 			strva += Stringf( "%02X", ak.Buffer[i] );
 			if( !((i+1)&63) ){
-				ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn++ ), "", "%s", strva.c_str() );
+				ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn++ ), "", strva.c_str() );
 				strva.clear();
 			}
 		};
 		if( !ak.Buffer.empty() )
-			ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", "%s", strva.c_str() );
+			ini.PutEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", strva.c_str() );
 		
 		ini.Write();
 	}
@@ -1278,15 +1278,15 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 			!vm->voice->DokoLoad( &ini )
 		) throw Error::GetError();
 		
-		ini.GetInt(   "KEY", "AK_Wait",		&ak.Wait,		ak.Wait );
-		ini.GetTruth( "KEY", "AK_Relay",	&ak.Relay,		ak.Relay );
-		ini.GetTruth( "KEY", "AK_RelayOn",	&ak.RelayOn,	ak.RelayOn );
+		ini.GetValue( "KEY", "AK_Wait",		ak.Wait    );
+		ini.GetYesNo( "KEY", "AK_Relay",	ak.Relay   );
+		ini.GetYesNo( "KEY", "AK_RelayOn",	ak.RelayOn );
 		
 		std::string strva;
 		int nn=0;
 		
 		ak.Buffer.clear();
-		while( ini.GetString( "KEY", Stringf( "AKBuf_%02X", nn++ ), strva, "" ) ){
+		while( ini.GetEntry( "KEY", Stringf( "AKBuf_%02X", nn++ ), strva ) ){
 			while( strva.length() >= 2 ){
 				ak.Buffer += std::stoul( strva.substr( 0, 2 ), nullptr, 16 );
 				strva.erase( strva.begin() );
@@ -1316,14 +1316,14 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 int EL6::GetDokoModel( const P6VPATH& path )
 {
 	cIni ini;
-	int st;
+	int st = 0;
 	
 	try{
 		// どこでもLOADファイルを開く
 		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
 		
 		// 機種取得
-		ini.GetInt( "GLOBAL", "Model",	&st, 0 );
+		ini.GetValue( "GLOBAL", "Model", st );
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -1344,7 +1344,7 @@ bool EL6::TapeMount( const P6VPATH& path )
 {
 	if( !vm->cmtl->Mount( path ) ) return false;
 	
-	vm->cmtl->SetStopBit( cfg->GetStopBit() );		// ストップビット数
+	vm->cmtl->SetStopBit( cfg->GetValue( CF_StopBit ) );		// ストップビット数
 	return true;
 }
 
@@ -1419,7 +1419,7 @@ bool EL6::ReplayRecResume( const P6VPATH& path )
 		cIni save;
 		save.Read( tpath );
 		int frame = 0;
-		save.GetInt( "REPLAY", "frame", &frame, frame );
+		save.GetValue( "REPLAY", "frame", frame );
 		if( frame == 0 ) return false;
 		
 		DokoDemoLoad( tpath );
@@ -1464,7 +1464,7 @@ bool EL6::ReplayRecDokoSave( void )
 		// 途中セーブ情報を追記
 		cIni save;
 		if( !save.Read( tpath ) ) return false;
-		save.PutEntry( "REPLAY", "frame", "", "%d", REPLAY::RepFrm );
+		save.PutValue( "REPLAY", "frame", "", REPLAY::RepFrm );
 		// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
 		save.PutEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
 		save.PutEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
@@ -1499,7 +1499,7 @@ void EL6::ReplayRecStop( void )
 ////////////////////////////////////////////////////////////////
 void EL6::ReplayPlayStart( const P6VPATH& path )
 {
-	cfg->SetModel( GetDokoModel( path ) );
+	cfg->SetValue( CF_Model, GetDokoModel( path ) );
 	cfg->SetDokoFile( path );
 	OSD_PushEvent( EV_REPLAY );
 }
@@ -1534,7 +1534,7 @@ void EL6::UI_TapeInsert( const P6VPATH& path )
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( TapePathUI ) )
-			TapePathUI = cfg->GetTapePath();
+			TapePathUI = cfg->GetPath( CF_TapePath );
 		OSD_FileSelect( GetWindowHandle(), FD_TapeLoad, fpath, TapePathUI );
 	}
 	if( fpath.empty() ) return;
@@ -1556,7 +1556,7 @@ void EL6::UI_DiskInsert( int drv, const P6VPATH& path )
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DiskPathUI ) )
-			DiskPathUI = cfg->GetDiskPath();
+			DiskPathUI = cfg->GetPath( CF_DiskPath );
 		OSD_FileSelect( GetWindowHandle(), FD_Disk, fpath, DiskPathUI );
 	}
 	if( fpath.empty() ) return;
@@ -1577,7 +1577,7 @@ void EL6::UI_RomInsert( const P6VPATH& path )
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( ExRomPathUI ) )
-			ExRomPathUI = cfg->GetExtRomPath();
+			ExRomPathUI = cfg->GetPath( CF_ExtRomPath );
 		OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI );
 	}
 	if( fpath.empty() ) return;
@@ -1618,7 +1618,7 @@ void EL6::UI_DokoSave( const P6VPATH& path )
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DokoPathUI ) )
-			DokoPathUI = cfg->GetDokoSavePath();
+			DokoPathUI = cfg->GetPath( CF_DokoPath );
 		OSD_FileSelect( GetWindowHandle(), FD_DokoSave, fpath, DokoPathUI );
 	}
 	if( fpath.empty() ) return;
@@ -1639,12 +1639,12 @@ void EL6::UI_DokoLoad( const P6VPATH& path )
 	
 	if( fpath.empty() ){
 		if( !OSD_FileExist( DokoPathUI ) )
-			DokoPathUI = cfg->GetDokoSavePath();
+			DokoPathUI = cfg->GetPath( CF_DokoPath );
 		OSD_FileSelect( GetWindowHandle(), FD_DokoLoad, fpath, DokoPathUI );
 	}
 	if( fpath.empty() ) return;
 	
-	cfg->SetModel( GetDokoModel( fpath ) );
+	cfg->SetValue( CF_Model, GetDokoModel( fpath ) );
 	cfg->SetDokoFile( fpath );
 	OSD_PushEvent( EV_DOKOLOAD );
 }
@@ -1663,7 +1663,7 @@ void EL6::UI_ReplaySave( const P6VPATH& path )
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
 			if( !OSD_FileExist( DokoPathUI ) )
-				DokoPathUI = cfg->GetDokoSavePath();
+				DokoPathUI = cfg->GetPath( CF_DokoPath );
 			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
 		}
 		if( fpath.empty() ) return;
@@ -1690,7 +1690,7 @@ void EL6::UI_ReplayResumeSave( const P6VPATH& path )
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
 			if( !OSD_FileExist( DokoPathUI ) )
-				DokoPathUI = cfg->GetDokoSavePath();
+				DokoPathUI = cfg->GetPath( CF_DokoPath );
 			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
 		}
 		if( fpath.empty() ) return;
@@ -1737,7 +1737,7 @@ void EL6::UI_ReplayLoad( const P6VPATH& path )
 	if( REPLAY::GetStatus() == REP_IDLE ){
 		if( fpath.empty() ){
 			if( !OSD_FileExist( DokoPathUI ) )
-				DokoPathUI = cfg->GetDokoSavePath();
+				DokoPathUI = cfg->GetPath( CF_DokoPath );
 			OSD_FileSelect( GetWindowHandle(), FD_RepLoad, fpath, DokoPathUI );
 		}
 	}else if( REPLAY::GetStatus() == REP_REPLAY ){
@@ -1763,7 +1763,7 @@ void EL6::UI_AVISave( void )
 	
 	if( !AVI6::IsAVI() ){
 		if( OSD_FileSelect( GetWindowHandle(), FD_AVISave, fpath, mpath ) ){
-			AVI6::StartAVI( fpath, graph->ScreenX(), graph->ScreenY(), FRAMERATE, cfg->GetSampleRate(), cfg->GetAviBpp() );
+			AVI6::StartAVI( fpath, graph->ScreenX(), graph->ScreenY(), FRAMERATE, cfg->GetValue( CF_SampleRate ), cfg->GetValue( CF_AviBpp ) );
 		}
 	}else{
 		AVI6::StopAVI();
@@ -1857,7 +1857,7 @@ void EL6::UI_NoWait( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_TurboTape( void )
 {
-	cfg->SetTurboTAPE( cfg->GetTurboTAPE() ? false : true );
+	cfg->SetYesNo( CF_TurboTAPE, cfg->GetYesNo( CF_TurboTAPE ) ? false : true );
 }
 
 
@@ -1869,7 +1869,7 @@ void EL6::UI_TurboTape( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_BoostUp( void )
 {
-	cfg->SetBoostUp( cfg->GetBoostUp() ? false : true );
+	cfg->SetYesNo( CF_BoostUp, cfg->GetYesNo( CF_BoostUp ) ? false : true );
 	vm->cmtl->SetBoost( vm->cmtl->IsBoostUp() ? false : true );
 }
 
@@ -1884,7 +1884,7 @@ void EL6::UI_FullScreen( void )
 {
 	// ビデオキャプチャ中は無効
 	if( !AVI6::IsAVI() ){
-		cfg->SetFullScreen( cfg->GetFullScreen() ? false : true );
+		cfg->SetYesNo( CF_FullScreen, cfg->GetYesNo( CF_FullScreen ) ? false : true );
 		graph->ResizeScreen();	// スクリーンサイズ変更
 	}
 }
@@ -1900,7 +1900,7 @@ void EL6::UI_WindowZoom( int zoom )
 {
 	// ビデオキャプチャ中は無効
 	if( !AVI6::IsAVI() ){
-		cfg->SetWindowZoom( zoom );
+		cfg->SetValue( CF_WindowZoom, zoom );
 		graph->ResizeScreen();	// スクリーンサイズ変更
 	}
 }
@@ -1914,7 +1914,7 @@ void EL6::UI_WindowZoom( int zoom )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_StatusBar( void )
 {
-	cfg->SetDispStat( cfg->GetDispStat() ? false : true );
+	cfg->SetYesNo( CF_DispStatus, cfg->GetYesNo( CF_DispStatus ) ? false : true );
 	graph->ResizeScreen();	// スクリーンサイズ変更
 }
 
@@ -1929,7 +1929,7 @@ void EL6::UI_Disp43( void )
 {
 	// ビデオキャプチャ中は無効
 	if( !AVI6::IsAVI() ){
-		cfg->SetDispNTSC( cfg->GetDispNTSC() ? false : true );
+		cfg->SetYesNo( CF_DispNTSC, cfg->GetYesNo( CF_DispNTSC ) ? false : true );
 		graph->ResizeScreen();	// スクリーンサイズ変更
 	}
 }
@@ -1945,7 +1945,7 @@ void EL6::UI_ScanLine( void )
 {
 	// ビデオキャプチャ中は無効
 	if( !AVI6::IsAVI() ){
-		cfg->SetScanLine( cfg->GetScanLine() ? false : true );
+		cfg->SetYesNo( CF_ScanLine, cfg->GetYesNo( CF_ScanLine ) ? false : true );
 	}
 }
 
@@ -1960,7 +1960,7 @@ void EL6::UI_Filtering( void )
 {
 	// ビデオキャプチャ中は無効
 	if( !AVI6::IsAVI() ){
-		cfg->SetFiltering( cfg->GetFiltering() ? false : true );
+		cfg->SetYesNo( CF_Filtering, cfg->GetYesNo( CF_Filtering ) ? false : true );
 		graph->ResizeScreen();	// スクリーンサイズ変更
 	}
 }
@@ -1974,7 +1974,7 @@ void EL6::UI_Filtering( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_Mode4Color( int col )
 {
-	cfg->SetMode4Color( col );
+	cfg->SetValue( CF_Mode4Color, col );
 	vm->vdg->SetMode4Color( col );
 }
 
@@ -1987,7 +1987,7 @@ void EL6::UI_Mode4Color( int col )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_FrameSkip( int sk )
 {
-	if( !AVI6::IsAVI() ) cfg->SetFrameSkip( sk );
+	if( !AVI6::IsAVI() ) cfg->SetValue( CF_FrameSkip, sk );
 }
 
 
@@ -1999,7 +1999,7 @@ void EL6::UI_FrameSkip( int sk )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_SampleRate( int rate )
 {
-	cfg->SetSampleRate( rate );
+	cfg->SetValue( CF_SampleRate, rate );
 	snd->SetSampleRate( rate );
 }
 
@@ -2017,15 +2017,15 @@ void EL6::UI_Config( void )
 		CFG6 ccfg;
 		
 		ccfg.Init();	// 変更したINIを読込み(比較用)
-		bool reb =  cfg->GetModel()       != ccfg.GetModel()       ||	// 機種取得
-					cfg->GetFddNum()      != ccfg.GetFddNum()      ||	// FDD接続台数取得
-					cfg->GetUseExtRam()   != ccfg.GetUseExtRam()   ||	// 拡張RAMを使う取得
-					cfg->GetOverClock()   != ccfg.GetOverClock()   ||	// オーバークロック率
-					cfg->GetUseSoldier()  != ccfg.GetUseSoldier()  ||	// 戦士のカートリッジ使うフラグ取得
-					cfg->GetExtRomFile()  != ccfg.GetExtRomFile()  ||	// 拡張ROMファイル名取得
-					cfg->GetTapeFile()    != ccfg.GetTapeFile()    ||	// TAPE(LOAD)ファイル名
-					cfg->GetDiskFile( 1 ) != ccfg.GetDiskFile( 1 ) ||	// DISK1ファイル名
-					cfg->GetDiskFile( 2 ) != ccfg.GetDiskFile( 2 );		// DISK2ファイル名
+		bool reb =  cfg->GetValue( CF_Model )      != ccfg.GetValue( CF_Model )      ||	// 機種取得
+					cfg->GetValue( CF_FDD )        != ccfg.GetValue( CF_FDD )        ||	// FDD接続台数取得
+					cfg->GetYesNo( CF_ExtRam )     != ccfg.GetYesNo( CF_ExtRam )     ||	// 拡張RAMを使う取得
+					cfg->GetValue( CF_OverClock )  != ccfg.GetValue( CF_OverClock )  ||	// オーバークロック率
+					cfg->GetValue( CF_UseSoldier ) != ccfg.GetValue( CF_UseSoldier ) ||	// 戦士のカートリッジ使うフラグ取得
+					cfg->GetPath ( CF_ExtRom )     != ccfg.GetPath( CF_ExtRom )      ||	// 拡張ROMファイル名取得
+					cfg->GetPath ( CF_tape )       != ccfg.GetPath( CF_tape )        ||	// TAPE(LOAD)ファイル名
+					cfg->GetPath ( CF_disk1 )      != ccfg.GetPath( CF_disk1 )       ||	// DISK1ファイル名
+					cfg->GetPath ( CF_disk2 )      != ccfg.GetPath( CF_disk2 );			// DISK2ファイル名
 		
 		cfg->Init();	// 変更したINIを読込み(オリジナル)
 		
@@ -2037,31 +2037,32 @@ void EL6::UI_Config( void )
 		
 		// 設定反映
 		// [CONFIG] ----------------------------------------------------
-		vm->cmtl->SetBoost( cfg->GetBoostUp() );					// BoostUp 有効フラグ
-		vm->cmtl->SetMaxBoost( cfg->GetMaxBoost1(), cfg->GetMaxBoost2() );	// BoostUp 最大倍率
-		vm->disk->WaitEnable( cfg->GetFddWaitEnable() );			// FDDウェイト有効フラグ
-		vm->cmtl->SetStopBit( cfg->GetStopBit() );					// ストップビット数
+		vm->cmtl->SetBoost( cfg->GetYesNo( CF_BoostUp ) );			// BoostUp 有効フラグ
+		vm->cmtl->SetMaxBoost( cfg->GetValue( CF_MaxBoost60 ), cfg->GetValue( CF_MaxBoost62 ) );	// BoostUp 最大倍率
+		vm->disk->WaitEnable( cfg->GetYesNo( CF_FDDWait ) );		// FDDウェイト有効フラグ
+		vm->cmtl->SetStopBit( cfg->GetValue( CF_StopBit ) );		// ストップビット数
 		
 		// [DISPLAY] ---------------------------------------------------
-		vm->vdg->SetMode4Color( cfg->GetMode4Color() );				// モード4カラーモード
+		vm->vdg->SetMode4Color( cfg->GetValue( CF_Mode4Color ) );	// モード4カラーモード
 		
 		// [SOUND] -----------------------------------------------------
-		snd->SetSampleRate( cfg->GetSampleRate(), cfg->GetSoundBuffer() );	// サンプリングレート, サウンドバッファ長倍率
-		snd->SetVolume( cfg->GetMasterVol() );						// マスター音量
-		vm->psg->SetVolume( cfg->GetPsgVol() );						// PSG/OPN音量
-		vm->psg->SetLPF( cfg->GetPsgLPF() );						// PSG/OPN LPFカットオフ周波数
-		vm->voice->SetVolume( cfg->GetVoiceVol() );					// 音声合成音量
-		vm->cmtl->SetVolume( cfg->GetCmtVol() );					// TAPEモニタ音量取得
-		vm->cmtl->SetLPF( cfg->GetCmtLPF() );						// TAPE LPFカットオフ周波数取得
+																	// サンプリングレート, サウンドバッファ長倍率
+		snd->SetSampleRate( cfg->GetValue( CF_SampleRate ), cfg->GetValue( CF_SoundBuffer ) );
+		snd->SetVolume( cfg->GetValue( CF_MasterVolume ) );			// マスター音量
+		vm->psg->SetVolume( cfg->GetValue( CF_PsgVolume ) );		// PSG/OPN音量
+		vm->psg->SetLPF( cfg->GetValue( CF_PsgLPF ) );				// PSG/OPN LPFカットオフ周波数
+		vm->voice->SetVolume( cfg->GetValue( CF_VoiceVolume ) );	// 音声合成音量
+		vm->cmtl->SetVolume( cfg->GetValue( CF_TapeVolume ) );		// TAPEモニタ音量取得
+		vm->cmtl->SetLPF( cfg->GetValue( CF_TapeLPF ) );			// TAPE LPFカットオフ周波数取得
 		
 		// [FILES] -----------------------------------------------------
-		vm->pio->cPRT::SetFile( cfg->GetPrinterFile() );			// プリンタファイル名取得
+		vm->pio->cPRT::SetFile( cfg->GetPath( CF_printer ) );		// プリンタファイル名取得
 		
 		// [PATH] ------------------------------------------------------
-		vm->voice->SetPath( cfg->GetWavePath() );					// WAVEパス取得
+		vm->voice->SetPath( cfg->GetPath( CF_WavePath ) );			// WAVEパス取得
 		
 		// [KEY] -------------------------------------------------------
-		OSD_SetKeyRepeat( cfg->GetKeyRepeat() );					// キーリピート
+		OSD_SetKeyRepeat( cfg->GetValue( CF_KeyRepeat ) );			// キーリピート
 		
 		// [COLOR] -----------------------------------------------------
 		SetPalette();												// パレット設定
@@ -2139,7 +2140,7 @@ void EL6::ExecMenu( int id )
 	case ID_SPR44:															// サンプリングレート 44100Hz
 	case ID_SPR22:															// サンプリングレート 22050Hz
 	case ID_SPR11:			UI_SampleRate( 44100 >> (id - ID_SPR44 ) );	break;	// サンプリングレート 11025Hz
-	case ID_VERSION:		OSD_VersionDialog( GetWindowHandle(), cfg->GetModel() );	break;	// バージョン情報
+	case ID_VERSION:		OSD_VersionDialog( GetWindowHandle(), cfg->GetValue( CF_Model ) );	break;	// バージョン情報
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	case ID_MONITOR:		ToggleMonitor();						break;	// モニターモード
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

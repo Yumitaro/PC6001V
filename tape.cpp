@@ -509,9 +509,9 @@ bool CMTL::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "TAPE", "Relay",		"", "%s",	Relay ? "Yes" : "No" );
-	Ini->PutEntry( "TAPE", "BoostUp",	"", "%s",	Boost ? "Yes" : "No" );
-	Ini->PutEntry( "TAPE", "StopBit",	"", "%d",	StopBit );
+	Ini->PutYesNo( "TAPE", "Relay",		"", Relay );
+	Ini->PutYesNo( "TAPE", "BoostUp",	"", Boost );
+	Ini->PutValue( "TAPE", "StopBit",	"", StopBit );
 	
 	// TAPEがマウントされてなければ何もしないで戻る
 	if( !IsMount() ) return true;
@@ -519,12 +519,12 @@ bool CMTL::DokoSave( cIni* Ini )
 	// マウントされていたらP6TオブジェクトをSAVE
 	P6VPATH tpath = FilePath;
 	OSD_RelativePath( tpath );
-	Ini->PutEntry( "TAPE", "FilePath",	"", "%s",	P6VPATH2STR( tpath ).c_str() );
+	Ini->PutPath( "TAPE", "FilePath",	"", tpath );
 	
 	// P6T
-	Ini->PutEntry( "P6T", "Counter",	"", "%d",	cP6T::GetCount() );
-	Ini->PutEntry( "P6T", "swait",		"", "%d",	cP6T::swait );
-	Ini->PutEntry( "P6T", "pwait",		"", "%d",	cP6T::pwait );
+	Ini->PutValue( "P6T", "Counter",	"", cP6T::GetCount() );
+	Ini->PutValue( "P6T", "swait",		"", cP6T::swait );
+	Ini->PutValue( "P6T", "pwait",		"", cP6T::pwait );
 	
 	return true;
 }
@@ -535,24 +535,24 @@ bool CMTL::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool CMTL::DokoLoad( cIni* Ini )
 {
-	int st;
-	P6VPATH fpath;
+	int st = 0;
+	P6VPATH fpath = "";
 	
 	if( !Ini ) return false;
 	
-	Ini->GetTruth( "TAPE", "Relay",		&Relay,		Relay );
-	Ini->GetTruth( "TAPE", "BoostUp",	&Boost,		Boost );
-	Ini->GetInt(   "TAPE", "StopBit",	&StopBit,	StopBit );
+	Ini->GetYesNo( "TAPE", "Relay",		Relay   );
+	Ini->GetYesNo( "TAPE", "BoostUp",	Boost   );
+	Ini->GetValue( "TAPE", "StopBit",	StopBit );
 	
-	Ini->GetPath( "TAPE", "FilePath", fpath, "" );
+	Ini->GetPath( "TAPE", "FilePath", fpath );
 	if( !fpath.empty() ){
 		if( !Mount( fpath ) ) return false;
 		
 		// P6T
-		Ini->GetInt( "P6T",	"Counter",	&st,			0 );
+		Ini->GetValue( "P6T",	"Counter",	st );
 		cP6T::SetCount( st );
-		Ini->GetInt( "P6T",	"swait",	&(cP6T::swait),	cP6T::swait );
-		Ini->GetInt( "P6T",	"pwait",	&(cP6T::pwait),	cP6T::pwait );
+		Ini->GetValue( "P6T",	"swait",	cP6T::swait );
+		Ini->GetValue( "P6T",	"pwait",	cP6T::pwait );
 	}else
 		Unmount();
 	

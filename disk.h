@@ -14,32 +14,26 @@
 
 
 // 装置タイプ
-enum UnitType
-{
+enum UnitType{
 	PC6031 = 0,
 	PC6031SR,
 	PC8031,
 	PC80S31,
 	PC6601,
-	PC6601SR,
-	EndofUnitType
+	PC6601SR
 };
 
 // ドライブタイプ
-enum FddType
-{
+enum FddType{
 	FDD1D = 0,
 	FDD1DD,
 	FDD2D,
-	FDD2DD,
-	
-	EndofFddType
+	FDD2DD
 };
 
 // コマンド
 // PC-6031準拠(えすびさん調査ベース)
-enum FddCommand
-{
+enum FddCommand{
 	INITIALIZE			= 0x00,
 	WRITE_DATA			= 0x01,
 	READ_DATA			= 0x02,
@@ -54,8 +48,7 @@ enum FddCommand
 	FAST_SEND_DATA		= 0x12,	// PC-6031SR
 	SET_MODE			= 0x17,	// PC-6031SR
 	
-	IDLE				= 0xff,	// 処理待ちの状態
-	EndofFddCmd
+	IDLE				= 0xff	// 処理待ちの状態
 };
 
 // ミニフロッピーディスク 各種情報
@@ -105,7 +98,7 @@ struct DISK60 {
 };
 
 
-enum FdcPhase {
+enum FdcPhase{
 	IDLEP = 0,
 	C_PHASE,
 	E_PHASE,

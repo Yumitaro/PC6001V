@@ -423,23 +423,23 @@ bool VCE6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutEntry( "VOICE", "io_E0H",	"", "0x%02X",	io_E0H );
-	Ini->PutEntry( "VOICE", "io_E2H",	"", "0x%02X",	io_E2H );
-	Ini->PutEntry( "VOICE", "io_E3H",	"", "0x%02X",	io_E3H );
-	Ini->PutEntry( "VOICE", "VStat",	"", "%d",		VStat );
+	Ini->PutValue( "VOICE", "io_E0H",	"", io_E0H,		"0x%02X" );
+	Ini->PutValue( "VOICE", "io_E2H",	"", io_E2H,		"0x%02X" );
+	Ini->PutValue( "VOICE", "io_E3H",	"", io_E3H,		"0x%02X" );
+	Ini->PutValue( "VOICE", "VStat",	"", VStat );
 	
 	// 内部句関係(とりあえず無視)
 	
-	Ini->PutEntry( "VOICE", "ParaBuf0",	"", "0x%02X",	ParaBuf[0] );
-	Ini->PutEntry( "VOICE", "ParaBuf1",	"", "0x%02X",	ParaBuf[1] );
-	Ini->PutEntry( "VOICE", "ParaBuf2",	"", "0x%02X",	ParaBuf[2] );
-	Ini->PutEntry( "VOICE", "ParaBuf3",	"", "0x%02X",	ParaBuf[3] );
-	Ini->PutEntry( "VOICE", "ParaBuf4",	"", "0x%02X",	ParaBuf[4] );
-	Ini->PutEntry( "VOICE", "ParaBuf5",	"", "0x%02X",	ParaBuf[5] );
-	Ini->PutEntry( "VOICE", "ParaBuf6",	"", "0x%02X",	ParaBuf[6] );
-	Ini->PutEntry( "VOICE", "Pnum",		"", "%d",		Pnum );
-	Ini->PutEntry( "VOICE", "Fnum",		"", "%d",		Fnum );
-	Ini->PutEntry( "VOICE", "PReady",	"", "%s",		PReady ? "Yes" : "No" );
+	Ini->PutValue( "VOICE", "ParaBuf0",	"", ParaBuf[0],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf1",	"", ParaBuf[1],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf2",	"", ParaBuf[2],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf3",	"", ParaBuf[3],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf4",	"", ParaBuf[4],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf5",	"", ParaBuf[5],	"0x%02X" );
+	Ini->PutValue( "VOICE", "ParaBuf6",	"", ParaBuf[6],	"0x%02X" );
+	Ini->PutValue( "VOICE", "Pnum",		"", Pnum   );
+	Ini->PutValue( "VOICE", "Fnum",		"", Fnum   );
+	Ini->PutYesNo( "VOICE", "PReady",	"", PReady );
 	
 	return true;
 }
@@ -453,28 +453,26 @@ bool VCE6::DokoSave( cIni* Ini )
 ////////////////////////////////////////////////////////////////
 bool VCE6::DokoLoad( cIni* Ini )
 {
-	int st;
-	
 	if( !Ini ) return false;
 	
-	Ini->GetInt(   "VOICE", "io_E0H",		&st,		io_E0H );	io_E0H = st;
-	Ini->GetInt(   "VOICE", "io_E2H",		&st,		io_E2H );	io_E2H = st;
-	Ini->GetInt(   "VOICE", "io_E3H",		&st,		io_E3H );	io_E3H = st;
-	Ini->GetInt(   "VOICE", "VStat",		&VStat,		VStat );
+	Ini->GetValue( "VOICE", "io_E0H",	io_E0H );
+	Ini->GetValue( "VOICE", "io_E2H",	io_E2H );
+	Ini->GetValue( "VOICE", "io_E3H",	io_E3H );
+	Ini->GetValue( "VOICE", "VStat",		VStat  );
 	
 	// 内部句関係(とりあえず無視)
 	FreeVoice();
 	
-	Ini->GetInt(   "VOICE", "ParaBuf0",		&st,		ParaBuf[0] );	ParaBuf[0] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf1",		&st,		ParaBuf[1] );	ParaBuf[1] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf2",		&st,		ParaBuf[2] );	ParaBuf[2] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf3",		&st,		ParaBuf[3] );	ParaBuf[3] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf4",		&st,		ParaBuf[4] );	ParaBuf[4] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf5",		&st,		ParaBuf[5] );	ParaBuf[5] = st;
-	Ini->GetInt(   "VOICE", "ParaBuf6",		&st,		ParaBuf[6] );	ParaBuf[6] = st;
-	Ini->GetInt(   "VOICE", "Pnum",			&Pnum,		Pnum );
-	Ini->GetInt(   "VOICE", "Fnum",			&Fnum,		Fnum );
-	Ini->GetTruth( "VOICE", "PReady",		&PReady,	PReady );
+	Ini->GetValue( "VOICE", "ParaBuf0",		ParaBuf[0] );
+	Ini->GetValue( "VOICE", "ParaBuf1",		ParaBuf[1] );
+	Ini->GetValue( "VOICE", "ParaBuf2",		ParaBuf[2] );
+	Ini->GetValue( "VOICE", "ParaBuf3",		ParaBuf[3] );
+	Ini->GetValue( "VOICE", "ParaBuf4",		ParaBuf[4] );
+	Ini->GetValue( "VOICE", "ParaBuf5",		ParaBuf[5] );
+	Ini->GetValue( "VOICE", "ParaBuf6",		ParaBuf[6] );
+	Ini->GetValue( "VOICE", "Pnum",			Pnum       );
+	Ini->GetValue( "VOICE", "Fnum",			Fnum       );
+	Ini->GetYesNo( "VOICE", "PReady",		PReady     );
 	
 	return true;
 }

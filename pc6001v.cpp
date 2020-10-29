@@ -30,7 +30,7 @@ bool CheckFont( const std::shared_ptr<CFG6>& cfg )
 {
 	P6VPATH FontFile;
 	
-	OSD_AddPath( FontFile, cfg->GetFontPath(), P6VSTR2PATH( FILE_FONTH ) );
+	OSD_AddPath( FontFile, cfg->GetPath( CF_FontPath ), P6VSTR2PATH( FILE_FONTH ) );
 	
 	if( !OSD_FileExist( FontFile ) )
 		if( !OSD_CreateFont( FontFile, "", FSIZE ) ){
@@ -38,7 +38,7 @@ bool CheckFont( const std::shared_ptr<CFG6>& cfg )
 			return false;
 		}
 	
-	OSD_AddPath( FontFile, cfg->GetFontPath(), P6VSTR2PATH( FILE_FONTZ ) );
+	OSD_AddPath( FontFile, cfg->GetPath( CF_FontPath ), P6VSTR2PATH( FILE_FONTZ ) );
 	if( !OSD_FileExist( FontFile ) )
 		if( !OSD_CreateFont( "", FontFile, FSIZE ) ){
 			Error::SetError( Error::FontCreateFailed );
@@ -59,7 +59,7 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 {
 	P6VPATH RomSearch;
 	
-	int IniModel = cfg->GetModel();
+	int IniModel = cfg->GetValue( CF_Model );
 	
 	// 自動選定の時は飛ばす
 	if( IniModel ){
@@ -68,7 +68,7 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 		for( auto &rom : roms ){
 			bool resf = false;
 			for( auto &file : rom ){
-				OSD_AddPath( RomSearch, cfg->GetRomPath(), P6VSTR2PATH( file.FileName ) );
+				OSD_AddPath( RomSearch, cfg->GetPath( CF_RomPath ), P6VSTR2PATH( file.FileName ) );
 				if( OSD_FileExist( RomSearch ) ) resf = true;
 			}
 			if( !resf ) res = false;
@@ -91,14 +91,14 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 		for( auto &rom : roms ){
 			bool resf = false;
 			for( auto &file : rom ){
-				OSD_AddPath( RomSearch, cfg->GetRomPath(), P6VSTR2PATH( file.FileName ) );
+				OSD_AddPath( RomSearch, cfg->GetPath( CF_RomPath ), P6VSTR2PATH( file.FileName ) );
 				if( OSD_FileExist( RomSearch ) ) resf = true;
 			}
 			if( !resf ) res = false;
 			resf = false;
 		}
 		if( res ){
-			cfg->SetModel( models[i] );
+			cfg->SetValue( CF_Model, models[i] );
 			// 自動選定の時はメッセージを出さない
 			if( IniModel ) Error::SetError( Error::RomChange );
 			return true;
@@ -159,14 +159,14 @@ int main( int argc, char* argv[] )
 	}
 	
 	// 各種フォルダの存在チェック&作成
-	if( !OSD_FileExist( Cfg->GetRomPath() ) )		OSD_CreateFolder( Cfg->GetRomPath() );
-	if( !OSD_FileExist( Cfg->GetTapePath() ) )		OSD_CreateFolder( Cfg->GetTapePath() );
-	if( !OSD_FileExist( Cfg->GetDiskPath() ) )		OSD_CreateFolder( Cfg->GetDiskPath() );
-	if( !OSD_FileExist( Cfg->GetExtRomPath() ) )	OSD_CreateFolder( Cfg->GetExtRomPath() );
-	if( !OSD_FileExist( Cfg->GetImgPath() ) )		OSD_CreateFolder( Cfg->GetImgPath() );
-	if( !OSD_FileExist( Cfg->GetWavePath() ) )		OSD_CreateFolder( Cfg->GetWavePath() );
-	if( !OSD_FileExist( Cfg->GetFontPath() ) )		OSD_CreateFolder( Cfg->GetFontPath() );
-	if( !OSD_FileExist( Cfg->GetDokoSavePath() ) )	OSD_CreateFolder( Cfg->GetDokoSavePath() );
+	if( !OSD_FileExist( Cfg->GetPath( CF_RomPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_RomPath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_TapePath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_TapePath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_DiskPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_DiskPath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_ExtRomPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_ExtRomPath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_ImgPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_ImgPath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_WavePath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_WavePath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_FontPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_FontPath ) );
+	if( !OSD_FileExist( Cfg->GetPath( CF_DokoPath ) ) )	OSD_CreateFolder( Cfg->GetPath( CF_DokoPath ) );
 	
 	
 	// フォントファイルチェック&作成
@@ -177,8 +177,8 @@ int main( int argc, char* argv[] )
 	
 	// コンソール用フォント読込み
 	P6VPATH FontZ, FontH;
-	OSD_AddPath( FontZ, Cfg->GetFontPath(), P6VSTR2PATH( FILE_FONTZ ) );
-	OSD_AddPath( FontH, Cfg->GetFontPath(), P6VSTR2PATH( FILE_FONTH ) );
+	OSD_AddPath( FontZ, Cfg->GetPath( CF_FontPath ), P6VSTR2PATH( FILE_FONTZ ) );
+	OSD_AddPath( FontH, Cfg->GetPath( CF_FontPath ), P6VSTR2PATH( FILE_FONTH ) );
 	
 	if( !JFont::OpenFont( FontZ, FontH ) ){
 		OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
@@ -227,7 +227,7 @@ int main( int argc, char* argv[] )
 				Error::Reset();
 				if( ret != OSDR_YES ) break;
 				
-				Cfg->SetCheckCRC( false );
+				Cfg->SetYesNo( CF_CheckCRC, false );
 				Cfg->Write();
 				Restart = EL6::Restart;
 			}else{
@@ -273,7 +273,7 @@ int main( int argc, char* argv[] )
 	}while( Restart != EL6::Quit );
 	
 	// INIファイル書込み
-	if( Cfg->GetSaveQuit() ) Cfg->Write();
+	if( Cfg->GetYesNo( CF_SaveQuit ) ) Cfg->Write();
 	
 	// 終了処理
 	OSD_Quit();
