@@ -152,7 +152,7 @@ bool OSD_ChangeFileNameExt( P6VPATH& path, const std::string& ext )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_ChangeFileNameExt] %s -> %s\n", OSD_GetFileNameExt( path ).c_str(), ext.c_str() );
 	
-	path.replace_extension( P6VSTR2PATH( ext ) );
+	path.replace_extension( STR2P6VPATH( ext ) );
 	return OSD_GetFileNameExt( path ) == ext;
 }
 

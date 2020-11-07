@@ -478,18 +478,18 @@ bool IRQ6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutValue( "INTR", "IntrFlag",			"", IntrFlag,	"0x%08X" );
-	Ini->PutYesNo( "INTR", "TimerIntrEnable",	"", TimerIntrEnable );
-	Ini->PutValue( "INTR", "TimerCntUp",		"", TimerCntUp );
+	Ini->SetVal( "INTR", "IntrFlag",		"", "0x%08X", IntrFlag );
+	Ini->SetVal( "INTR", "TimerIntrEnable",	"", TimerIntrEnable );
+	Ini->SetVal( "INTR", "TimerCntUp",		"", TimerCntUp );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutYesNo( "INTR", Stringf( "IntEnable%d", i ),	"", IntEnable[i] );
+		Ini->SetVal( "INTR", Stringf( "IntEnable%d", i ),	"", IntEnable[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutYesNo( "INTR", Stringf( "VecOutput%d", i ),	"", VecOutput[i] );
+		Ini->SetVal( "INTR", Stringf( "VecOutput%d", i ),	"", VecOutput[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->PutValue( "INTR", Stringf( "IntVector%d", i ),	"", IntVector[i], "0x%02X" );
+		Ini->SetVal( "INTR", Stringf( "IntVector%d", i ),	"", "0x%02X", IntVector[i] );
 	
 	return true;
 }
@@ -502,18 +502,18 @@ bool IRQ6::DokoLoad( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->GetValue( "INTR", "IntrFlag",			IntrFlag );
-	Ini->GetYesNo( "INTR", "TimerIntrEnable",	TimerIntrEnable );
-	Ini->GetValue( "INTR", "TimerCntUp",		TimerCntUp );
+	Ini->GetVal( "INTR", "IntrFlag",		IntrFlag );
+	Ini->GetVal( "INTR", "TimerIntrEnable",	TimerIntrEnable );
+	Ini->GetVal( "INTR", "TimerCntUp",		TimerCntUp );
 	
 	for( int i=0; i<8; i++ )
-		Ini->GetYesNo( "INTR", Stringf( "IntEnable%d", i ), IntEnable[i] );
+		Ini->GetVal( "INTR", Stringf( "IntEnable%d", i ), IntEnable[i] );
 	
 	for( int i=0; i<8; i++ )
-		Ini->GetYesNo( "INTR", Stringf( "VecOutput%d", i ), VecOutput[i] );
+		Ini->GetVal( "INTR", Stringf( "VecOutput%d", i ), VecOutput[i] );
 	
 	for( int i=0; i<8; i++ ){
-		Ini->GetValue( "INTR", Stringf( "IntVector%d", i ), IntVector[i] );
+		Ini->GetVal( "INTR", Stringf( "IntVector%d", i ), IntVector[i] );
 	}
 	
 	return true;

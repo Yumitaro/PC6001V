@@ -202,24 +202,24 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuRadioItem( hsm, ID_M4MONO, ID_M4GRPK, ID_M4MONO + vm->vdg->GetMode4Color(), MF_BYCOMMAND );
 	
 	// フレームスキップ
-	CheckMenuRadioItem( hsm, ID_FSKP0, ID_FSKP5, ID_FSKP0 + cfg->GetValue( CF_FrameSkip ), MF_BYCOMMAND );
+	CheckMenuRadioItem( hsm, ID_FSKP0, ID_FSKP5, ID_FSKP0 + cfg->GetValue( CV_FrameSkip ), MF_BYCOMMAND );
 	
 	// ウィンドウ表示倍率
-	if( !(cfg->GetValue( CF_WindowZoom ) % 100) ){
-		CheckMenuRadioItem( hsm, ID_ZOOM100, ID_ZOOM300, ID_ZOOM100 + cfg->GetValue( CF_WindowZoom ) / 100 - 1, MF_BYCOMMAND );
+	if( !(cfg->GetValue( CV_WindowZoom ) % 100) ){
+		CheckMenuRadioItem( hsm, ID_ZOOM100, ID_ZOOM300, ID_ZOOM100 + cfg->GetValue( CV_WindowZoom ) / 100 - 1, MF_BYCOMMAND );
 	}
 	
 	// サンプリングレート
-	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CF_SampleRate )/11025)>>1), MF_BYCOMMAND );
+	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CV_SampleRate )/11025)>>1), MF_BYCOMMAND );
 	
 	CheckMenuItem( hsm, ID_NOWAIT,    sche->GetWaitEnable()               ? MF_UNCHECKED : MF_CHECKED   );
-	CheckMenuItem( hsm, ID_TURBO,     cfg->GetYesNo( CF_TurboTAPE )  ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_TURBO,     cfg->GetValue( CB_TurboTAPE )  ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_BOOST,     vm->cmtl->IsBoostUp()               ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_FULLSCRN,  cfg->GetYesNo( CF_FullScreen ) ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_STATUS,    cfg->GetYesNo( CF_DispStatus ) ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_DISP43,    cfg->GetYesNo( CF_DispNTSC )   ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_SCANLINE,  cfg->GetYesNo( CF_ScanLine )   ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_FILTERING, cfg->GetYesNo( CF_Filtering )  ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_FULLSCRN,  cfg->GetValue( CB_FullScreen ) ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_STATUS,    cfg->GetValue( CB_DispStatus ) ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_DISP43,    cfg->GetValue( CB_DispNTSC )   ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_SCANLINE,  cfg->GetValue( CB_ScanLine )   ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_FILTERING, cfg->GetValue( CB_Filtering )  ? MF_CHECKED   : MF_UNCHECKED );
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	CheckMenuItem( hsm, ID_MONITOR,   vm->IsMonitor()		? MF_CHECKED   : MF_UNCHECKED );
@@ -230,10 +230,10 @@ void EL6::ShowPopupMenu( int x, int y )
 	// フルスクリーン時はダイアログを表示するコマンドを封印
 	
 	// 環境設定
-	EnableMenuItem( hsm, ID_CONFIG,  MF_BYCOMMAND | cfg->GetYesNo( CF_FullScreen ) ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem( hsm, ID_CONFIG,  MF_BYCOMMAND | cfg->GetValue( CB_FullScreen ) ? MF_GRAYED : MF_ENABLED );
 	
 	// バージョン情報
-	EnableMenuItem( hsm, ID_VERSION, MF_BYCOMMAND | cfg->GetYesNo( CF_FullScreen ) ? MF_GRAYED : MF_ENABLED );
+	EnableMenuItem( hsm, ID_VERSION, MF_BYCOMMAND | cfg->GetValue( CB_FullScreen ) ? MF_GRAYED : MF_ENABLED );
 	
 	
 	// ポップアップメニュー表示
@@ -327,7 +327,7 @@ bool FolderDiaog_Win32( HWND hwnd, P6VPATH& path )
 		PathRemoveBackslash( Buffer );
 		tpath = Buffer;
 		OSD_SJIStoUTF8( tpath );
-		path = P6VSTR2PATH( tpath );
+		path = STR2P6VPATH( tpath );
 		res = true;
 	}
 	
@@ -415,14 +415,14 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 		// フルパスを保存
 		tpath = File;
 		OSD_SJIStoUTF8( tpath );
-		fullpath = P6VSTR2PATH( tpath );
+		fullpath = STR2P6VPATH( tpath );
 		
 		// パスを保存
 		PathRemoveFileSpec( File );
 		PathAddBackslash( File );
 		tpath = File;
 		OSD_SJIStoUTF8( tpath );
-		path = P6VSTR2PATH( tpath );
+		path = STR2P6VPATH( tpath );
 		
 		return true;
 	}
@@ -786,7 +786,7 @@ P6VPATH GetTextBoxPath( HWND hwnd, int id )
 	GetDlgItemText( hwnd, id, str, sizeof(str) );
 	std::string tstr = str;
 	OSD_SJIStoUTF8( tstr );
-	return P6VSTR2PATH( tstr );
+	return STR2P6VPATH( tstr );
 }
 
 ///////////////////////////////////////////////////////////
@@ -801,7 +801,7 @@ void FileSelCom( HWND hwnd, int id, FileDlg type, const P6VPATH& path )
 	GetDlgItemText( hwnd, id, str, sizeof(str) );
 	tstr = str;
 	OSD_SJIStoUTF8( tstr );
-	folder = P6VSTR2PATH( tstr );
+	folder = STR2P6VPATH( tstr );
 	fpath  = path;
 	if( FileSelect_Win32( hwnd, type, folder, fpath ) ){
 		tstr = P6VPATH2STR( folder );
@@ -822,7 +822,7 @@ void FolderSelCom( HWND hwnd, int id )
 	GetDlgItemText( hwnd, id, str, sizeof(str) );
 	tstr = str;
 	OSD_SJIStoUTF8( tstr );
-	folder = P6VSTR2PATH( tstr );
+	folder = STR2P6VPATH( tstr );
 	if( FolderDiaog_Win32( hwnd, folder ) ){
 		tstr = P6VPATH2STR( folder );
 		OSD_UTF8toSJIS( tstr );
@@ -844,7 +844,7 @@ static bool OsdReadINI( HWND hwnd, int page )
 	switch( page ){
 	case PP_BASE:	// 基本
 		// 機種
-		st = ecfg.GetValue( CF_Model );
+		st = ecfg.GetValue( CV_Model );
 		SendMessage( GetDlgItem( hwnd, ID_RB01 ), BM_SETCHECK, (st==60)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB02 ), BM_SETCHECK, (st==61)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB03 ), BM_SETCHECK, (st==62)? BST_CHECKED:BST_UNCHECKED, 0 );
@@ -853,24 +853,24 @@ static bool OsdReadINI( HWND hwnd, int page )
 		SendMessage( GetDlgItem( hwnd, ID_RB06 ), BM_SETCHECK, (st==68)? BST_CHECKED:BST_UNCHECKED, 0 );
 		
 		// FDD
-		st = ecfg.GetValue( CF_FDD );
+		st = ecfg.GetValue( CV_FDD );
 		SendMessage( GetDlgItem( hwnd, ID_RB31 ), BM_SETCHECK, (st==0)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB32 ), BM_SETCHECK, (st==1)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB33 ), BM_SETCHECK, (st==2)? BST_CHECKED:BST_UNCHECKED, 0 );
 		
 		// 拡張RAM使用
-		yn = ecfg.GetYesNo( CF_ExtRam );
+		yn = ecfg.GetValue( CB_ExtRam );
 		SendMessage( GetDlgItem( hwnd, ID_CB1 ), BM_SETCHECK, yn, 0 );
 		
 		// 戦士のカートリッジ使用
-		st = ecfg.GetValue( CF_UseSoldier );
+		st = ecfg.GetValue( CV_Soldier );
 		SendMessage( GetDlgItem( hwnd, ID_CB13 ), BM_SETCHECK, st ? true : false, 0 );
 		
 		break;
 		
 	case PP_DISP:	// 画面
 		// MODE4カラー
-		st = ecfg.GetValue( CF_Mode4Color );
+		st = ecfg.GetValue( CV_Mode4Color );
 		SendMessage( GetDlgItem( hwnd, ID_RB11 ), BM_SETCHECK, (st==0)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB12 ), BM_SETCHECK, (st==1)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB13 ), BM_SETCHECK, (st==2)? BST_CHECKED:BST_UNCHECKED, 0 );
@@ -878,37 +878,37 @@ static bool OsdReadINI( HWND hwnd, int page )
 		SendMessage( GetDlgItem( hwnd, ID_RB15 ), BM_SETCHECK, (st==4)? BST_CHECKED:BST_UNCHECKED, 0 );
 		
 		// ビデオキャプチャ色深度
-		st = ecfg.GetValue( CF_AviBpp );
+		st = ecfg.GetValue( CV_AviBpp );
 		SendMessage( GetDlgItem( hwnd, ID_RB07 ), BM_SETCHECK, (st==16)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB08 ), BM_SETCHECK, (st==24)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB09 ), BM_SETCHECK, (st==32)? BST_CHECKED:BST_UNCHECKED, 0 );
 		
 		// スキャンライン
-		yn = ecfg.GetYesNo( CF_ScanLine );
+		yn = ecfg.GetValue( CB_ScanLine );
 		SendMessage( GetDlgItem( hwnd, ID_CB2 ), BM_SETCHECK, yn, 0 );
 		
 		// スキャンライン輝度
-		st = ecfg.GetValue( CF_ScanLineBr );
+		st = ecfg.GetValue( CV_ScanLineBr );
 		SetDlgItemText( hwnd, ID_SCANLINEBR, std::to_string( st ).c_str() );
 		
 		// フィルタリング
-		yn = ecfg.GetYesNo( CF_Filtering );
+		yn = ecfg.GetValue( CB_Filtering );
 		SendMessage( GetDlgItem( hwnd, ID_CB15 ), BM_SETCHECK, yn, 0 );
 		
 		// 4:3表示
-		yn = ecfg.GetYesNo( CF_DispNTSC );
+		yn = ecfg.GetValue( CB_DispNTSC );
 		SendMessage( GetDlgItem( hwnd, ID_CB7 ), BM_SETCHECK, yn, 0 );
 		
 		// フルスクリーン
-		yn = ecfg.GetYesNo( CF_FullScreen );
+		yn = ecfg.GetValue( CB_FullScreen );
 		SendMessage( GetDlgItem( hwnd, ID_CB10 ), BM_SETCHECK, yn, 0 );
 		
 		// ステータスバー表示状態
-		yn = ecfg.GetYesNo( CF_DispStatus );
+		yn = ecfg.GetValue( CB_DispStatus );
 		SendMessage( GetDlgItem( hwnd, ID_CB11 ), BM_SETCHECK, yn, 0 );
 		
 		// フレームスキップ
-		st = ecfg.GetValue( CF_FrameSkip );
+		st = ecfg.GetValue( CV_FrameSkip );
 		SendMessage( GetDlgItem( hwnd, ID_TBFPS ), TBM_SETPOS, true, st );
 		SendMessage( GetDlgItem( hwnd, ID_TBFPS ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBFPS ), TBM_SETRANGE, true, MAKELPARAM(0,5) );
@@ -917,41 +917,41 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 	case PP_SOUND:	// サウンド
 		// サンプリングレート
-		st = ecfg.GetValue( CF_SampleRate );
+		st = ecfg.GetValue( CV_SampleRate );
 		SendMessage( GetDlgItem( hwnd, ID_RB21 ), BM_SETCHECK, (st==44100)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB22 ), BM_SETCHECK, (st==22050)? BST_CHECKED:BST_UNCHECKED, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_RB23 ), BM_SETCHECK, (st==11025)? BST_CHECKED:BST_UNCHECKED, 0 );
 		
 		// バッファサイズ
-		st = ecfg.GetValue( CF_SoundBuffer );
+		st = ecfg.GetValue( CV_SoundBuffer );
 		SendMessage( GetDlgItem( hwnd, ID_TBBUF ), TBM_SETPOS, true, st );
 		SendMessage( GetDlgItem( hwnd, ID_TBBUF ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBBUF ), TBM_SETRANGE, true, MAKELPARAM(1,5) );
 		
 		// PSG LPFカットオフ周波数
-		st = ecfg.GetValue( CF_PsgLPF );
+		st = ecfg.GetValue( CV_PsgLPF );
 		SetDlgItemText( hwnd, ID_EDIT1, std::to_string( st ).c_str() );
 		
 		// マスター音量
-		st = ecfg.GetValue( CF_MasterVolume );
+		st = ecfg.GetValue( CV_MasterVol );
 		SendMessage( GetDlgItem( hwnd, ID_TBMST ), TBM_SETPOS, true, st/10 );
 		SendMessage( GetDlgItem( hwnd, ID_TBMST ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBMST ), TBM_SETRANGE, true, MAKELPARAM(0,10) );
 		
 		// PSG音量
-		st = ecfg.GetValue( CF_PsgVolume );
+		st = ecfg.GetValue( CV_PsgVolume );
 		SendMessage( GetDlgItem( hwnd, ID_TBPSG ), TBM_SETPOS, true, st/10 );
 		SendMessage( GetDlgItem( hwnd, ID_TBPSG ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBPSG ), TBM_SETRANGE, true, MAKELPARAM(0,10) );
 		
 		// 音声合成音量
-		st = ecfg.GetValue( CF_VoiceVolume );
+		st = ecfg.GetValue( CV_VoiceVolume );
 		SendMessage( GetDlgItem( hwnd, ID_TBVCE ), TBM_SETPOS, true, st/10 );
 		SendMessage( GetDlgItem( hwnd, ID_TBVCE ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBVCE ), TBM_SETRANGE, true, MAKELPARAM(0,10) );
 		
 		// TAPEモニタ音量
-		st = ecfg.GetValue( CF_TapeVolume );
+		st = ecfg.GetValue( CV_TapeVolume );
 		SendMessage( GetDlgItem( hwnd, ID_TBTAPE ), TBM_SETPOS, true, st/10 );
 		SendMessage( GetDlgItem( hwnd, ID_TBTAPE ), TBM_SETTHUMBLENGTH, 13, 0 );
 		SendMessage( GetDlgItem( hwnd, ID_TBTAPE ), TBM_SETRANGE, true, MAKELPARAM(0,10) );
@@ -960,53 +960,53 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 	case PP_INPUT:	// 入力関係
 		// キーリピート間隔
-		st = ecfg.GetValue( CF_KeyRepeat );
+		st = ecfg.GetValue( CV_KeyRepeat );
 		SetDlgItemText( hwnd, ID_KEYREP, std::to_string( st ).c_str() );
 		
 		break;
 		
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
-		SetTextBoxPath( hwnd, ID_PATH1, ecfg.GetPath( CF_RomPath ) );
+		SetTextBoxPath( hwnd, ID_PATH1, ecfg.GetValue( CF_RomPath ) );
 		
 		// TAPEパス
-		SetTextBoxPath( hwnd, ID_PATH2, ecfg.GetPath( CF_TapePath ) );
+		SetTextBoxPath( hwnd, ID_PATH2, ecfg.GetValue( CF_TapePath ) );
 		
 		// DISKパス
-		SetTextBoxPath( hwnd, ID_PATH3, ecfg.GetPath( CF_DiskPath ) );
+		SetTextBoxPath( hwnd, ID_PATH3, ecfg.GetValue( CF_DiskPath ) );
 		
 		// 拡張ROMパス
-		SetTextBoxPath( hwnd, ID_PATH4, ecfg.GetPath( CF_ExtRomPath ) );
+		SetTextBoxPath( hwnd, ID_PATH4, ecfg.GetValue( CF_ExtRomPath ) );
 		
 		// IMGパス
-		SetTextBoxPath( hwnd, ID_PATH5, ecfg.GetPath( CF_ImgPath ) );
+		SetTextBoxPath( hwnd, ID_PATH5, ecfg.GetValue( CF_ImgPath ) );
 		
 		// WAVEパス
-		SetTextBoxPath( hwnd, ID_PATH6, ecfg.GetPath( CF_WavePath ) );
+		SetTextBoxPath( hwnd, ID_PATH6, ecfg.GetValue( CF_WavePath ) );
 		
 		// どこでもSAVEパス
-		SetTextBoxPath( hwnd, ID_PATH7, ecfg.GetPath( CF_DokoPath ) );
+		SetTextBoxPath( hwnd, ID_PATH7, ecfg.GetValue( CF_DokoPath ) );
 		
 		break;
 		
 	case PP_FILE:	// ファイル
 		// 拡張ROMファイル
-		SetTextBoxPath( hwnd, ID_FEXROM, ecfg.GetPath( CF_ExtRom ) );
+		SetTextBoxPath( hwnd, ID_FEXROM, ecfg.GetValue( CF_ExtRom ) );
 		
 		// TAPE(LOAD)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPLD, ecfg.GetPath( CF_tape ) );
+		SetTextBoxPath( hwnd, ID_FTPLD, ecfg.GetValue( CF_tape ) );
 		
 		// TAPE(SAVE)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPSV, ecfg.GetPath( CF_save ) );
+		SetTextBoxPath( hwnd, ID_FTPSV, ecfg.GetValue( CF_save ) );
 		
 		// DISK1ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK1, ecfg.GetPath( CF_disk1 ) );
+		SetTextBoxPath( hwnd, ID_FDISK1, ecfg.GetValue( CF_disk1 ) );
 		
 		// DISK2ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK2, ecfg.GetPath( CF_disk2 ) );
+		SetTextBoxPath( hwnd, ID_FDISK2, ecfg.GetValue( CF_disk2 ) );
 		
 		// プリンタファイル名
-		SetTextBoxPath( hwnd, ID_FPRINT, ecfg.GetPath( CF_printer ) );
+		SetTextBoxPath( hwnd, ID_FPRINT, ecfg.GetValue( CF_printer ) );
 		
 		break;
 		
@@ -1015,43 +1015,43 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 	case PP_ETC:	// その他
 		// オーバークロック率
-		st = min( max( MIN_OVERCLOCK, ecfg.GetValue( CF_OverClock ) ), MAX_OVERCLOCK );
+		st = min( max( MIN_OVERCLOCK, ecfg.GetValue( CV_OverClock ) ), MAX_OVERCLOCK );
 		SetDlgItemText( hwnd, ID_OVERCLK, std::to_string( st ).c_str() );
 		
 		// CRCチェック
-		yn = ecfg.GetYesNo( CF_CheckCRC );
+		yn = ecfg.GetValue( CB_CheckCRC );
 		SendMessage( GetDlgItem( hwnd, ID_CB4 ), BM_SETCHECK, yn, 0 );
 		
 		// Turbo TAPE
-		yn = ecfg.GetYesNo( CF_TurboTAPE );
+		yn = ecfg.GetValue( CB_TurboTAPE );
 		SendMessage( GetDlgItem( hwnd, ID_CB3 ), BM_SETCHECK, yn, 0 );
 		
 		// Boost Up
-		yn = ecfg.GetYesNo( CF_BoostUp );
+		yn = ecfg.GetValue( CB_BoostUp );
 		SendMessage( GetDlgItem( hwnd, ID_CB5 ), BM_SETCHECK, yn, 0 );
 		
 		// BoostUp 最大倍率(N60モード)
-		st = min( max( MIN_BOOST, ecfg.GetValue( CF_MaxBoost60 ) ), MAX_BOOST );
+		st = min( max( MIN_BOOST, ecfg.GetValue( CV_MaxBoost60 ) ), MAX_BOOST );
 		SetDlgItemText( hwnd, ID_BOOST60, std::to_string( st ).c_str() );
 		
 		// BoostUp 最大倍率(N60m/N66モード)
-		st = min( max( MIN_BOOST, ecfg.GetValue( CF_MaxBoost62 ) ), MAX_BOOST );
+		st = min( max( MIN_BOOST, ecfg.GetValue( CV_MaxBoost62 ) ), MAX_BOOST );
 		SetDlgItemText( hwnd, ID_BOOST62, std::to_string( st ).c_str() );
 		
 		// TAPEストップビット数
-		st = min( max( MIN_STOPBIT, ecfg.GetValue( CF_StopBit ) ), MAX_STOPBIT );
+		st = min( max( MIN_STOPBIT, ecfg.GetValue( CV_StopBit ) ), MAX_STOPBIT );
 		SetDlgItemText( hwnd, ID_STOPBIT, std::to_string( st ).c_str() );
 		
 		// FDDウェイト
-		yn = ecfg.GetYesNo( CF_FDDWait );
+		yn = ecfg.GetValue( CB_FDDWait );
 		SendMessage( GetDlgItem( hwnd, ID_CB14 ), BM_SETCHECK, yn, 0 );
 		
 		// 終了時 確認する
-		yn = ecfg.GetYesNo( CF_CkQuit );
+		yn = ecfg.GetValue( CB_CkQuit );
 		SendMessage( GetDlgItem( hwnd, ID_CB8 ), BM_SETCHECK, yn, 0 );
 		
 		// 終了時 INIファイルを保存する
-		yn = ecfg.GetYesNo( CF_SaveQuit );
+		yn = ecfg.GetValue( CB_SaveQuit );
 		SendMessage( GetDlgItem( hwnd, ID_CB12 ), BM_SETCHECK, yn, 0 );
 		
 		break;
@@ -1078,19 +1078,19 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		else if( IsDlgButtonChecked( hwnd, ID_RB05 ) ) st = 64;	// PC-6001mk2SR
 		else if( IsDlgButtonChecked( hwnd, ID_RB06 ) ) st = 68;	// PC-6601SR
 		else                                           st = 60;	// 上記以外ならPC-6001
-		ecfg.SetValue( CF_Model, st );
+		ecfg.SetValue( CV_Model, st );
 		
 		// FDD
 		if     ( IsDlgButtonChecked( hwnd, ID_RB32 ) ) st = 1;		// 2台
 		else if( IsDlgButtonChecked( hwnd, ID_RB33 ) ) st = 2;		// 1台
 		else                                           st = 0;		// 上記以外ならなし
-		ecfg.SetValue( CF_FDD, st );
+		ecfg.SetValue( CV_FDD, st );
 		
 		// 拡張RAM使用
-		ecfg.SetYesNo( CF_ExtRam, IsDlgButtonChecked( hwnd, ID_CB1 ) );
+		ecfg.SetValue( CB_ExtRam, IsDlgButtonChecked( hwnd, ID_CB1 ) == BST_CHECKED ? true : false );
 		
 		// 戦士のカートリッジ使用
-		ecfg.SetValue( CF_UseSoldier, IsDlgButtonChecked( hwnd, ID_CB13 ) ? 2 : 0 );	// とりあえずmkⅡ決め打ちで
+		ecfg.SetValue( CV_Soldier, IsDlgButtonChecked( hwnd, ID_CB13 ) ? 2 : 0 );	// とりあえずmkⅡ決め打ちで
 		
 		break;
 		
@@ -1101,37 +1101,37 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		else if( IsDlgButtonChecked( hwnd, ID_RB14 ) ) st = 3;	// ピンク/緑
 		else if( IsDlgButtonChecked( hwnd, ID_RB15 ) ) st = 4;	// 緑/ピンク
 		else                                           st = 0;	// 上記以外ならモノクロ
-		ecfg.SetValue( CF_Mode4Color, st );
+		ecfg.SetValue( CV_Mode4Color, st );
 		
 		// ビデオキャプチャ色深度
 		if     ( IsDlgButtonChecked( hwnd, ID_RB07 ) ) st = 16;	// 16bit
 		else if( IsDlgButtonChecked( hwnd, ID_RB08 ) ) st = 24;	// 24bit
 		else                                           st = 32;	// 上記以外なら32bit
-		ecfg.SetValue( CF_AviBpp, st );
+		ecfg.SetValue( CV_AviBpp, st );
 		
 		// スキャンライン
-		ecfg.SetYesNo( CF_ScanLine, IsDlgButtonChecked( hwnd, ID_CB2 ) );
+		ecfg.SetValue( CB_ScanLine, IsDlgButtonChecked( hwnd, ID_CB2 ) == BST_CHECKED ? true : false );
 		
 		// スキャンライン輝度
 		GetDlgItemText( hwnd, ID_SCANLINEBR, str, sizeof(str) );
 		st = min( max( MIN_SCANLINEBR, std::strtol( str, nullptr, 0 ) ), MAX_SCANLINEBR );
-		ecfg.SetValue( CF_ScanLineBr, st );
+		ecfg.SetValue( CV_ScanLineBr, st );
 		
 		// フィルタリング
-		ecfg.SetYesNo( CF_Filtering, IsDlgButtonChecked( hwnd, ID_CB15 ) );
+		ecfg.SetValue( CB_Filtering, IsDlgButtonChecked( hwnd, ID_CB15 ) == BST_CHECKED ? true : false );
 		
 		// 4:3表示
-		ecfg.SetYesNo( CF_DispNTSC, IsDlgButtonChecked( hwnd, ID_CB7 ) );
+		ecfg.SetValue( CB_DispNTSC, IsDlgButtonChecked( hwnd, ID_CB7 ) == BST_CHECKED ? true : false );
 		
 		// フルスクリーン
-		ecfg.SetYesNo( CF_FullScreen, IsDlgButtonChecked( hwnd, ID_CB10 ) );
+		ecfg.SetValue( CB_FullScreen, IsDlgButtonChecked( hwnd, ID_CB10 ) == BST_CHECKED ? true : false );
 		
 		// ステータスバー表示状態
-		ecfg.SetYesNo( CF_DispStatus, IsDlgButtonChecked( hwnd, ID_CB11 ) );
+		ecfg.SetValue( CB_DispStatus, IsDlgButtonChecked( hwnd, ID_CB11 ) == BST_CHECKED ? true : false );
 		
 		// フレームスキップ
 		st = SendMessage( GetDlgItem( hwnd, ID_TBFPS ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_FrameSkip, st );
+		ecfg.SetValue( CV_FrameSkip, st );
 		
 		break;
 		
@@ -1140,32 +1140,32 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		if     ( IsDlgButtonChecked( hwnd, ID_RB22 ) ) st = 22050;	// 22050
 		else if( IsDlgButtonChecked( hwnd, ID_RB23 ) ) st = 11025;	// 11025
 		else                                           st = 44100;	// 上記以外なら44100
-		ecfg.SetValue( CF_SampleRate, st );
+		ecfg.SetValue( CV_SampleRate, st );
 		
 		// バッファサイズ
 		st = SendMessage( GetDlgItem( hwnd, ID_TBBUF ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_SoundBuffer, st );
+		ecfg.SetValue( CV_SoundBuffer, st );
 		
 		// PSG LPFカットオフ周波数
 		GetDlgItemText( hwnd, ID_EDIT1, str, sizeof(str) );
 		st = min( max( MIN_LPF, std::strtol( str, nullptr, 0 ) ), MAX_LPF );
-		ecfg.SetValue( CF_PsgLPF, st );
+		ecfg.SetValue( CV_PsgLPF, st );
 		
 		// マスター音量
 		st = SendMessage( GetDlgItem( hwnd, ID_TBMST ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_MasterVolume, st * 10 );
+		ecfg.SetValue( CV_MasterVol, st * 10 );
 		
 		// PSG音量
 		st = SendMessage( GetDlgItem( hwnd, ID_TBPSG ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_PsgVolume, st * 10 );
+		ecfg.SetValue( CV_PsgVolume, st * 10 );
 		
 		// 音声合成音量
 		st = SendMessage( GetDlgItem( hwnd, ID_TBVCE ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_VoiceVolume, st * 10 );
+		ecfg.SetValue( CV_VoiceVolume, st * 10 );
 		
 		// TAPEモニタ音量
 		st = SendMessage( GetDlgItem( hwnd, ID_TBTAPE ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CF_TapeVolume, st * 10 );
+		ecfg.SetValue( CV_TapeVolume, st * 10 );
 		
 		break;
 		
@@ -1173,52 +1173,52 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		// キーリピート間隔
 		GetDlgItemText( hwnd, ID_KEYREP, str, sizeof(str) );
 		st = min( max( MIN_REPEAT, std::strtol( str, nullptr, 0 ) ), MAX_REPEAT );
-		ecfg.SetValue( CF_KeyRepeat, st );
+		ecfg.SetValue( CV_KeyRepeat, st );
 		
 		break;
 		
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
-		ecfg.SetPath( CF_RomPath, GetTextBoxPath( hwnd, ID_PATH1 ) );
+		ecfg.SetValue( CF_RomPath, GetTextBoxPath( hwnd, ID_PATH1 ) );
 		
 		// TAPEパス
-		ecfg.SetPath( CF_TapePath, GetTextBoxPath( hwnd, ID_PATH2 ) );
+		ecfg.SetValue( CF_TapePath, GetTextBoxPath( hwnd, ID_PATH2 ) );
 		
 		// DISKパス
-		ecfg.SetPath( CF_DiskPath, GetTextBoxPath( hwnd, ID_PATH3 ) );
+		ecfg.SetValue( CF_DiskPath, GetTextBoxPath( hwnd, ID_PATH3 ) );
 		
 		// 拡張ROMパス
-		ecfg.SetPath( CF_ExtRomPath, GetTextBoxPath( hwnd, ID_PATH4 ) );
+		ecfg.SetValue( CF_ExtRomPath, GetTextBoxPath( hwnd, ID_PATH4 ) );
 		
 		// IMGパス
-		ecfg.SetPath( CF_ImgPath, GetTextBoxPath( hwnd, ID_PATH5 ) );
+		ecfg.SetValue( CF_ImgPath, GetTextBoxPath( hwnd, ID_PATH5 ) );
 		
 		// WAVEパス
-		ecfg.SetPath( CF_WavePath, GetTextBoxPath( hwnd, ID_PATH6 ) );
+		ecfg.SetValue( CF_WavePath, GetTextBoxPath( hwnd, ID_PATH6 ) );
 		
 		// どこでもSAVEパス
-		ecfg.SetPath( CF_DokoPath, GetTextBoxPath( hwnd, ID_PATH7 ) );
+		ecfg.SetValue( CF_DokoPath, GetTextBoxPath( hwnd, ID_PATH7 ) );
 		
 		break;
 		
 	case PP_FILE:	// ファイル
 		// 拡張ROMファイル
-		ecfg.SetPath( CF_ExtRom, GetTextBoxPath( hwnd, ID_FEXROM ) );
+		ecfg.SetValue( CF_ExtRom, GetTextBoxPath( hwnd, ID_FEXROM ) );
 		
 		// TAPE(LOAD)ファイル名
-		ecfg.SetPath( CF_tape, GetTextBoxPath( hwnd, ID_FTPLD ) );
+		ecfg.SetValue( CF_tape, GetTextBoxPath( hwnd, ID_FTPLD ) );
 		
 		// TAPE(SAVE)ファイル名
-		ecfg.SetPath( CF_save, GetTextBoxPath( hwnd, ID_FTPSV ) );
+		ecfg.SetValue( CF_save, GetTextBoxPath( hwnd, ID_FTPSV ) );
 		
 		// DISK1ファイル名
-		ecfg.SetPath( CF_disk1, GetTextBoxPath( hwnd, ID_FDISK1 ) );
+		ecfg.SetValue( CF_disk1, GetTextBoxPath( hwnd, ID_FDISK1 ) );
 		
 		// DISK2ファイル名
-		ecfg.SetPath( CF_disk2, GetTextBoxPath( hwnd, ID_FDISK2 ) );
+		ecfg.SetValue( CF_disk2, GetTextBoxPath( hwnd, ID_FDISK2 ) );
 		
 		// プリンタファイル名
-		ecfg.SetPath( CF_printer, GetTextBoxPath( hwnd, ID_FPRINT ) );
+		ecfg.SetValue( CF_printer, GetTextBoxPath( hwnd, ID_FPRINT ) );
 		
 		break;
 		
@@ -1229,40 +1229,40 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		// オーバークロック率
 		GetDlgItemText( hwnd, ID_OVERCLK, str, sizeof(str) );
 		st = min( max( MIN_OVERCLOCK, std::strtol( str, nullptr, 0 ) ), MAX_OVERCLOCK );
-		ecfg.SetValue( CF_OverClock, st );
+		ecfg.SetValue( CV_OverClock, st );
 		
 		// CRCチェック
-		ecfg.SetYesNo( CF_CheckCRC, IsDlgButtonChecked( hwnd, ID_CB4 ) );
+		ecfg.SetValue( CB_CheckCRC, IsDlgButtonChecked( hwnd, ID_CB4 ) == BST_CHECKED ? true : false );
 		
 		// Turbo TAPE
-		ecfg.SetYesNo( CF_TurboTAPE, IsDlgButtonChecked( hwnd, ID_CB3 ) );
+		ecfg.SetValue( CB_TurboTAPE, IsDlgButtonChecked( hwnd, ID_CB3 ) == BST_CHECKED ? true : false );
 		
 		// Boost Up
-		ecfg.SetYesNo( CF_BoostUp, IsDlgButtonChecked( hwnd, ID_CB5 ) );
+		ecfg.SetValue( CB_BoostUp, IsDlgButtonChecked( hwnd, ID_CB5 ) == BST_CHECKED ? true : false );
 		
 		// BoostUp 最大倍率(N60モード)
 		GetDlgItemText( hwnd, ID_BOOST60, str, sizeof(str) );
 		st = min( max( MIN_BOOST, std::strtol( str, nullptr, 0 ) ), MAX_BOOST );
-		ecfg.SetValue( CF_MaxBoost60, st );
+		ecfg.SetValue( CV_MaxBoost60, st );
 		
 		// BoostUp 最大倍率(N60m/N66モード)
 		GetDlgItemText( hwnd, ID_BOOST62, str, sizeof(str) );
 		st = min( max( MIN_BOOST, std::strtol( str, nullptr, 0 ) ), MAX_BOOST );
-		ecfg.SetValue( CF_MaxBoost62, st );
+		ecfg.SetValue( CV_MaxBoost62, st );
 		
 		// TAPEストップビット数
 		GetDlgItemText( hwnd, ID_STOPBIT, str, sizeof(str) );
 		st = min( max( MIN_STOPBIT, std::strtol( str, nullptr, 0 ) ), MAX_STOPBIT );
-		ecfg.SetValue( CF_StopBit, st );
+		ecfg.SetValue( CV_StopBit, st );
 		
 		// FDDウェイト
-		ecfg.SetYesNo( CF_FDDWait, IsDlgButtonChecked( hwnd, ID_CB14 ) );
+		ecfg.SetValue( CB_FDDWait, IsDlgButtonChecked( hwnd, ID_CB14 ) == BST_CHECKED ? true : false );
 		
 		// 終了時 確認する
-		ecfg.SetYesNo( CF_CkQuit, IsDlgButtonChecked( hwnd, ID_CB8 ) );
+		ecfg.SetValue( CB_CkQuit, IsDlgButtonChecked( hwnd, ID_CB8 ) == BST_CHECKED ? true : false );
 		
 		// 終了時 INIファイルを保存する
-		ecfg.SetYesNo( CF_SaveQuit, IsDlgButtonChecked( hwnd, ID_CB12 ) );
+		ecfg.SetValue( CB_SaveQuit, IsDlgButtonChecked( hwnd, ID_CB12 ) == BST_CHECKED ? true : false );
 		
 		break;
 	}
@@ -1372,23 +1372,23 @@ static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 	case WM_COMMAND:
 		switch( wp ){
 		case ID_B11:	// ファイル参照ボタン(拡張ROMイメージ)
-			FileSelCom( hwnd, ID_FEXROM, FD_ExtRom, ecfg.GetPath( CF_ExtRomPath ) );
+			FileSelCom( hwnd, ID_FEXROM, FD_ExtRom, ecfg.GetValue( CF_ExtRomPath ) );
 			break;
 			
 		case ID_B12:	// ファイル参照ボタン(TAPEイメージ(LOAD))
-			FileSelCom( hwnd, ID_FTPLD, FD_TapeLoad, ecfg.GetPath( CF_TapePath ) );
+			FileSelCom( hwnd, ID_FTPLD, FD_TapeLoad, ecfg.GetValue( CF_TapePath ) );
 			break;
 			
 		case ID_B13:	// ファイル参照ボタン(TAPEイメージ(SAVE))
-			FileSelCom( hwnd, ID_FTPSV, FD_TapeSave, ecfg.GetPath( CF_TapePath ) );
+			FileSelCom( hwnd, ID_FTPSV, FD_TapeSave, ecfg.GetValue( CF_TapePath ) );
 			break;
 			
 		case ID_B14:	// ファイル参照ボタン(DISK1イメージ)
-			FileSelCom( hwnd, ID_FDISK1, FD_Disk, ecfg.GetPath( CF_DiskPath ) );
+			FileSelCom( hwnd, ID_FDISK1, FD_Disk, ecfg.GetValue( CF_DiskPath ) );
 			break;
 			
 		case ID_B15:	// ファイル参照ボタン(DISK2イメージ)
-			FileSelCom( hwnd, ID_FDISK2, FD_Disk, ecfg.GetPath( CF_DiskPath ) );
+			FileSelCom( hwnd, ID_FDISK2, FD_Disk, ecfg.GetValue( CF_DiskPath ) );
 			break;
 			
 		case ID_B16:	// ファイル参照ボタン(プリンタ出力ファイル)

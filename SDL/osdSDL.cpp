@@ -258,7 +258,7 @@ const P6VPATH& OSD_GetConfigPath( void )
 	if( ConfigPath.empty() ){
 		char* str = SDL_GetPrefPath( DIR_CONFIG, DIR_CONFIG );	// 末尾には必ずデリミタがつく
 		if( str ){
-			ConfigPath = P6VSTR2PATH( str );
+			ConfigPath = STR2P6VPATH( str );
 			delete [] str;
 		}
 	}

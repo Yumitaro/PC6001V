@@ -541,7 +541,7 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TINI_CkQuit,				"終了時確認 Yes:する No:しない" },
 	{ TINI_SaveQuit,			"終了時INIファイルを保存 Yes:する No:しない" },
 	// [OPTION]
-	{ TINI_UseSoldier,			"戦士のカートリッジ Yes:有効 No:無効" },
+	{ TINI_Soldier,				"戦士のカートリッジ 0:なし 1:無印 2:mkⅡ 3:mkⅢ" },
 	// [KEY]
 	{ TINI_KeyRepeat,			"キーリピートの間隔(単位:ms 0で無効)" },
 	

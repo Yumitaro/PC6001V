@@ -42,14 +42,17 @@ public:
 	bool Read( const P6VPATH& );																			// INIファイル読込み
 	bool Write();																							// INIファイル書込み
 	
-	bool GetEntry( const std::string&, const std::string&, std::string& );									// 文字列読込み
-    template<typename T>bool GetValue( const std::string&, const std::string&, T& );						// 数値読込み
-	bool GetYesNo( const std::string&, const std::string&, bool& );											// YesNo読込み
-	bool GetPath ( const std::string&, const std::string&, P6VPATH& );										// パス読込み
-	bool PutEntry( const std::string&, const std::string&, const std::string&, const std::string&, ... );	// エントリ追加
-	bool PutValue( const std::string&, const std::string&, const std::string&, const int, const std::string& = "%d" );	// エントリ追加 数値
-	bool PutYesNo( const std::string&, const std::string&, const std::string&, const bool );				// エントリ追加 YesNo
-	bool PutPath ( const std::string&, const std::string&, const std::string&, const P6VPATH& );			// エントリ追加 パス
+	bool GetEntry( const std::string&, const std::string&, std::string& );									// エントリ読込み(文字列)
+	bool SetEntry( const std::string&, const std::string&, const std::string&, const std::string&, ... );	// エントリ書込み(文字列)
+	
+	template <typename T> bool GetVal( const std::string&, const std::string&, T& );						// エントリ読込み
+	template <typename T> bool SetVal( const std::string&, const std::string&, const std::string&, const T& );	// エントリ書込み
+																											// エントリ書込み(書式付き)
+	template <typename T, typename ... A> bool SetVal( const std::string& section, const std::string& entry, const std::string& comment, const std::string& format, const T& val, A const & ... args )
+	{
+		return SetEntry( section, entry, comment, format, val, args ... );
+	}
+	
 	bool DeleteBefore( const std::string&, const std::string& );											// エントリ削除(前)
 	bool DeleteAfter( const std::string&, const std::string& );												// エントリ削除(後)
 	const P6VPATH& GetFilePath() const;																		// ファイルパス取得

@@ -96,27 +96,27 @@ bool CPU6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutValue( "Z80", "AF",			"",	AF.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "BC",			"",	BC.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "DE",			"",	DE.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "HL",			"",	HL.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "IX",			"",	IX.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "IY",			"",	IY.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "PC",			"",	PC.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "SP",			"",	SP.W,    "0x%04X" );
-	Ini->PutValue( "Z80", "AF1",		"",	AF1.W,   "0x%04X" );
-	Ini->PutValue( "Z80", "BC1",		"",	BC1.W,   "0x%04X" );
-	Ini->PutValue( "Z80", "DE1",		"",	DE1.W,   "0x%04X" );
-	Ini->PutValue( "Z80", "HL1",		"",	HL1.W,   "0x%04X" );
-	Ini->PutValue( "Z80", "I",			"",	I,       "0x%02X" );
-	Ini->PutValue( "Z80", "R",			"",	R,       "0x%02X" );
-	Ini->PutValue( "Z80", "R_saved",	"",	R_saved, "0x%02X" );
-	Ini->PutValue( "Z80", "IFF",		"",	IFF,     "0x%02X" );
-	Ini->PutValue( "Z80", "IFF2",		"",	IFF2,    "0x%02X" );
-	Ini->PutValue( "Z80", "IM",			"",	IM,      "0x%02X" );
-	Ini->PutValue( "Z80", "Halt",		"",	Halt,    "0x%02X" );
+	Ini->SetVal( "Z80", "AF",		"", "0x%04X",	AF.W    );
+	Ini->SetVal( "Z80", "BC",		"", "0x%04X",	BC.W    );
+	Ini->SetVal( "Z80", "DE",		"", "0x%04X",	DE.W    );
+	Ini->SetVal( "Z80", "HL",		"", "0x%04X",	HL.W    );
+	Ini->SetVal( "Z80", "IX",		"", "0x%04X",	IX.W    );
+	Ini->SetVal( "Z80", "IY",		"", "0x%04X",	IY.W    );
+	Ini->SetVal( "Z80", "PC",		"", "0x%04X",	PC.W    );
+	Ini->SetVal( "Z80", "SP",		"", "0x%04X",	SP.W    );
+	Ini->SetVal( "Z80", "AF1",		"", "0x%04X",	AF1.W   );
+	Ini->SetVal( "Z80", "BC1",		"", "0x%04X",	BC1.W   );
+	Ini->SetVal( "Z80", "DE1",		"", "0x%04X",	DE1.W   );
+	Ini->SetVal( "Z80", "HL1",		"", "0x%04X",	HL1.W   );
+	Ini->SetVal( "Z80", "I",		"", "0x%02X",	I       );
+	Ini->SetVal( "Z80", "R",		"", "0x%02X",	R       );
+	Ini->SetVal( "Z80", "R_saved",	"", "0x%02X",	R_saved );
+	Ini->SetVal( "Z80", "IFF",		"", "0x%02X",	IFF     );
+	Ini->SetVal( "Z80", "IFF2",		"", "0x%02X",	IFF2    );
+	Ini->SetVal( "Z80", "IM",		"", "0x%02X",	IM      );
+	Ini->SetVal( "Z80", "Halt",		"", "0x%02X",	Halt    );
 	
-	Ini->PutValue( "Z80", "mstate",		"", mstate );
+	Ini->SetVal( "Z80", "mstate",	"", mstate );
 	
 	return true;
 }
@@ -129,27 +129,27 @@ bool CPU6::DokoLoad( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->GetValue( "Z80", "AF",		AF.W    );
-	Ini->GetValue( "Z80", "BC",		BC.W    );
-	Ini->GetValue( "Z80", "DE",		DE.W    );
-	Ini->GetValue( "Z80", "HL",		HL.W    );
-	Ini->GetValue( "Z80", "IX",		IX.W    );
-	Ini->GetValue( "Z80", "IY",		IY.W    );
-	Ini->GetValue( "Z80", "PC",		PC.W    );
-	Ini->GetValue( "Z80", "SP",		SP.W    );
-	Ini->GetValue( "Z80", "AF1",		AF1.W   );
-	Ini->GetValue( "Z80", "BC1",		BC1.W   );
-	Ini->GetValue( "Z80", "DE1",		DE1.W   );
-	Ini->GetValue( "Z80", "HL1",		HL1.W   );
-	Ini->GetValue( "Z80", "I",		I       );
-	Ini->GetValue( "Z80", "R",		R       );
-	Ini->GetValue( "Z80", "R_saved",	R_saved );
-	Ini->GetValue( "Z80", "IFF",		IFF     );
-	Ini->GetValue( "Z80", "IFF2",	IFF2    );
-	Ini->GetValue( "Z80", "IM",		IM      );
-	Ini->GetValue( "Z80", "Halt",	Halt    );
+	Ini->GetVal( "Z80", "AF",		AF.W    );
+	Ini->GetVal( "Z80", "BC",		BC.W    );
+	Ini->GetVal( "Z80", "DE",		DE.W    );
+	Ini->GetVal( "Z80", "HL",		HL.W    );
+	Ini->GetVal( "Z80", "IX",		IX.W    );
+	Ini->GetVal( "Z80", "IY",		IY.W    );
+	Ini->GetVal( "Z80", "PC",		PC.W    );
+	Ini->GetVal( "Z80", "SP",		SP.W    );
+	Ini->GetVal( "Z80", "AF1",		AF1.W   );
+	Ini->GetVal( "Z80", "BC1",		BC1.W   );
+	Ini->GetVal( "Z80", "DE1",		DE1.W   );
+	Ini->GetVal( "Z80", "HL1",		HL1.W   );
+	Ini->GetVal( "Z80", "I",		I       );
+	Ini->GetVal( "Z80", "R",		R       );
+	Ini->GetVal( "Z80", "R_saved",	R_saved );
+	Ini->GetVal( "Z80", "IFF",		IFF     );
+	Ini->GetVal( "Z80", "IFF2",		IFF2    );
+	Ini->GetVal( "Z80", "IM",		IM      );
+	Ini->GetVal( "Z80", "Halt",		Halt    );
 	
-	Ini->GetValue( "Z80", "mstate",	mstate  );
+	Ini->GetVal( "Z80", "mstate",	mstate  );
 	
 	return true;
 }

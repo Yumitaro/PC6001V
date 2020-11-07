@@ -692,15 +692,15 @@ bool SUB6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutValue( "8049", "CmtStatus",	"", CmtStatus );
-	Ini->PutValue( "8049", "Status8049",	"", Status8049 );
-	Ini->PutValue( "8049", "IntrFlag",	"",	IntrFlag,	"0x%08X" );
-	Ini->PutValue( "8049", "KeyCode",		"",	KeyCode,	"0x%02X" );
-	Ini->PutValue( "8049", "JoyCode",		"",	JoyCode,	"0x%02X" );
-	Ini->PutValue( "8049", "CmtData",		"",	CmtData,	"0x%02X" );
-	Ini->PutValue( "8049", "SioData",		"",	SioData,	"0x%02X" );
-	Ini->PutValue( "8049", "TVRCnt",		"",	TVRCnt,		"0x%02X" );
-	Ini->PutValue( "8049", "DateCnt",		"",	DateCnt,	"0x%02X" );
+	Ini->SetVal( "8049", "CmtStatus",	"", CmtStatus  );
+	Ini->SetVal( "8049", "Status8049",	"", Status8049 );
+	Ini->SetVal( "8049", "IntrFlag",	"", "0x%08X",	IntrFlag );
+	Ini->SetVal( "8049", "KeyCode",		"", "0x%02X",	KeyCode  );
+	Ini->SetVal( "8049", "JoyCode",		"", "0x%02X",	JoyCode  );
+	Ini->SetVal( "8049", "CmtData",		"", "0x%02X",	CmtData  );
+	Ini->SetVal( "8049", "SioData",		"", "0x%02X",	SioData  );
+	Ini->SetVal( "8049", "TVRCnt",		"", "0x%02X",	TVRCnt   );
+	Ini->SetVal( "8049", "DateCnt",		"", "0x%02X",	DateCnt  );
 	
 	return true;
 }
@@ -713,15 +713,15 @@ bool SUB6::DokoLoad( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->GetValue( "8049", "CmtStatus",	CmtStatus  );
-	Ini->GetValue( "8049", "Status8049",	Status8049 );
-	Ini->GetValue( "8049", "IntrFlag",	IntrFlag   );
-	Ini->GetValue( "8049", "KeyCode",	KeyCode    );
-	Ini->GetValue( "8049", "JoyCode",	JoyCode    );
-	Ini->GetValue( "8049", "CmtData",	CmtData    );
-	Ini->GetValue( "8049", "SioData",	SioData    );
-	Ini->GetValue( "8049", "TVRCnt",		TVRCnt     );
-	Ini->GetValue( "8049", "DateCnt",	DateCnt    );
+	Ini->GetVal( "8049", "CmtStatus",	CmtStatus  );
+	Ini->GetVal( "8049", "Status8049",	Status8049 );
+	Ini->GetVal( "8049", "IntrFlag",	IntrFlag   );
+	Ini->GetVal( "8049", "KeyCode",		KeyCode    );
+	Ini->GetVal( "8049", "JoyCode",		JoyCode    );
+	Ini->GetVal( "8049", "CmtData",		CmtData    );
+	Ini->GetVal( "8049", "SioData",		SioData    );
+	Ini->GetVal( "8049", "TVRCnt",		TVRCnt     );
+	Ini->GetVal( "8049", "DateCnt",		DateCnt    );
 	
 	return true;
 }

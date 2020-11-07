@@ -306,7 +306,7 @@ bool cIni::Write( void )
 
 
 ////////////////////////////////////////////////////////////////
-// 文字列読込み
+// エントリ読込み(文字列)
 ////////////////////////////////////////////////////////////////
 bool cIni::GetEntry( const std::string& section, const std::string& entry, std::string& val )
 {
@@ -324,77 +324,9 @@ bool cIni::GetEntry( const std::string& section, const std::string& entry, std::
 
 
 ////////////////////////////////////////////////////////////////
-// 数値読込み
+// エントリ書込み(文字列)
 ////////////////////////////////////////////////////////////////
-template<typename T>bool cIni::GetValue( const std::string& section, const std::string& entry, T& val )
-{
-	std::string str;
-	
-	// エントリを探す
-	if( !GetEntry( section, entry, str ) ){
-		return false;
-	}
-	
-	try{
-		val = std::stoul( str, nullptr, 0 );
-		return true;
-	}
-	catch( std::logic_error& ){
-		return false;
-	}
-}
-// おまじない
-template bool cIni::GetValue<int>        ( const std::string&, const std::string&, int&         );
-template bool cIni::GetValue<signed char>( const std::string&, const std::string&, signed char& );
-template bool cIni::GetValue<BYTE>       ( const std::string&, const std::string&, BYTE&        );
-template bool cIni::GetValue<WORD>       ( const std::string&, const std::string&, WORD&        );
-template bool cIni::GetValue<DWORD>      ( const std::string&, const std::string&, DWORD&       );
-
-
-////////////////////////////////////////////////////////////////
-// YesNo読込み
-////////////////////////////////////////////////////////////////
-bool cIni::GetYesNo( const std::string& section, const std::string& entry, bool& val )
-{
-	std::string str;
-	
-	// エントリを探す
-	if( !GetEntry( section, entry, str ) ){
-		return false;
-	}
-	
-	if( !StriCmp( str, "1" ) || !StriCmp( str, "yes" ) || !StriCmp( str, "on" ) || !StriCmp( str, "true" ) ){
-		val = true;
-	}else
-	if( !StriCmp( str, "0" ) || !StriCmp( str, "no" ) || !StriCmp( str, "off" ) || !StriCmp( str, "false" ) ){
-		val = false;
-	}
-	
-	return val;
-}
-
-
-////////////////////////////////////////////////////////////////
-// パス読込み
-////////////////////////////////////////////////////////////////
-bool cIni::GetPath( const std::string& section, const std::string& entry, P6VPATH& val )
-{
-	std::string tval = P6VPATH2STR( val );
-	
-	// エントリを探す
-	if( !GetEntry( section, entry, tval ) ) return false;
-	
-	val = P6VSTR2PATH( tval );
-	OSD_AbsolutePath( val );
-	
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////
-// エントリ追加
-////////////////////////////////////////////////////////////////
-bool cIni::PutEntry( const std::string& section, const std::string& entry, const std::string& comment, const std::string& text, ... )
+bool cIni::SetEntry( const std::string& section, const std::string& entry, const std::string& comment, const std::string& text, ... )
 {
 	char rstr[MAX_LINE+1];
 	std::string str;
@@ -441,29 +373,91 @@ bool cIni::PutEntry( const std::string& section, const std::string& entry, const
 
 
 ////////////////////////////////////////////////////////////////
-// エントリ追加 数値
+// エントリ読込み
 ////////////////////////////////////////////////////////////////
-bool cIni::PutValue( const std::string& section, const std::string& entry, const std::string& comment, const int val, const std::string& fmt )
+// Value
+template <typename T> bool cIni::GetVal( const std::string& section, const std::string& entry, T& val )
 {
-	return PutEntry( section, entry, comment, fmt, val );
+	try{
+		std::string str;
+		
+		if( GetEntry( section, entry, str ) ){	// エントリを探す
+			val = std::stoul( str, nullptr, 0 );
+			return true;
+		}
+	}
+	catch( std::logic_error& ){}
+	
+	return false;
+}
+
+// おまじない
+template bool cIni::GetVal<int>        ( const std::string&, const std::string&, int&         );
+template bool cIni::GetVal<signed char>( const std::string&, const std::string&, signed char& );
+template bool cIni::GetVal<BYTE>       ( const std::string&, const std::string&, BYTE&        );
+template bool cIni::GetVal<WORD>       ( const std::string&, const std::string&, WORD&        );
+template bool cIni::GetVal<DWORD>      ( const std::string&, const std::string&, DWORD&       );
+
+// YesNo(テンプレート特殊化)
+template <> bool cIni::GetVal<bool>( const std::string& section, const std::string& entry, bool& yn )
+{
+	std::string str;
+	
+	// エントリを探す
+	if( !GetEntry( section, entry, str ) ){
+		return false;
+	}
+	
+	if( !StriCmp( str, "1" ) || !StriCmp( str, "yes" ) || !StriCmp( str, "on" ) || !StriCmp( str, "true" ) ){
+		yn = true;
+	}else
+	if( !StriCmp( str, "0" ) || !StriCmp( str, "no" ) || !StriCmp( str, "off" ) || !StriCmp( str, "false" ) ){
+		yn = false;
+	}
+	
+	return yn;
+}
+
+// Path(テンプレート特殊化)
+template <> bool cIni::GetVal<P6VPATH>( const std::string& section, const std::string& entry, P6VPATH& path )
+{
+	std::string tval = P6VPATH2STR( path );
+	
+	// エントリを探す
+	if( !GetEntry( section, entry, tval ) ) return false;
+	
+	path = STR2P6VPATH( tval );
+	OSD_AbsolutePath( path );
+	
+	return true;
 }
 
 
 ////////////////////////////////////////////////////////////////
-// エントリ追加 YesNo
+// エントリ書込み
 ////////////////////////////////////////////////////////////////
-bool cIni::PutYesNo( const std::string& section, const std::string& entry, const std::string& comment, const bool val )
+// Value
+template <typename T> bool cIni::SetVal( const std::string& section, const std::string& entry, const std::string& comment, const T& val )
 {
-	return PutEntry( section, entry, comment, val ? "Yes" : "No" );
+	return SetEntry( section, entry, comment, "%d", val );
+}
+// おまじない
+template bool cIni::SetVal<int>        ( const std::string&, const std::string&, const std::string&, const int& );
+template bool cIni::SetVal<signed char>( const std::string&, const std::string&, const std::string&, const signed char& );
+template bool cIni::SetVal<BYTE>       ( const std::string&, const std::string&, const std::string&, const BYTE& );
+template bool cIni::SetVal<WORD>       ( const std::string&, const std::string&, const std::string&, const WORD& );
+template bool cIni::SetVal<DWORD>      ( const std::string&, const std::string&, const std::string&, const DWORD& );
+
+// YesNo(テンプレート特殊化)
+template <> bool cIni::SetVal<bool>( const std::string& section, const std::string& entry, const std::string& comment, const bool& yn )
+{
+	return SetEntry( section, entry, comment, yn ? "Yes" : "No" );
 }
 
-
-////////////////////////////////////////////////////////////////
-// エントリ追加 パス
-////////////////////////////////////////////////////////////////
-bool cIni::PutPath( const std::string& section, const std::string& entry, const std::string& comment, const P6VPATH& path )
+// Path(テンプレート特殊化)
+template <> bool cIni::SetVal<P6VPATH>( const std::string& section, const std::string& entry, const std::string& comment, const P6VPATH& path )
 {
-	return PutEntry( section, entry, comment, P6VPATH2STR( path ).c_str() );
+	return SetEntry( section, entry, comment, P6VPATH2STR( path ).c_str() );
 }
 
 

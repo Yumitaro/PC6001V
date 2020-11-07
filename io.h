@@ -19,8 +19,8 @@
 class IOBus {
 // 型定義
 public:
-	typedef Device::InFuncPtr  InFuncPtr;
-	typedef Device::OutFuncPtr OutFuncPtr;
+	using InFuncPtr  = Device::InFuncPtr;
+	using OutFuncPtr = Device::OutFuncPtr;
 	
 	struct InBank{
 		IDevice* device;

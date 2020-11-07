@@ -1,6 +1,7 @@
 #include <fstream>
 #include <algorithm>
 #include <map>
+#include <tuple>
 
 #include "config.h"
 #include "common.h"
@@ -10,87 +11,66 @@
 #include "pc6001v.h"
 
 
-// 設定項目定義
-typedef struct{
-	std::string Section;	// セクション
-	std::string Entry;		// ノード
-	TextID Comment;			// コメント
-	int Default;			// 初期値
-	int Max;				// 最大値
-	int Min;				// 最小値
-} CfgSetValue;
-
-typedef struct{
-	std::string Section;	// セクション
-	std::string Entry;		// ノード
-	TextID Comment;			// コメント
-	bool Default;			// 初期値
-} CfgSetBool;
-
-typedef struct{
-	std::string Section;	// セクション
-	std::string Entry;		// ノード
-	TextID Comment;			// コメント
-	P6VPATH Default;		// 初期値
-	bool IsFile;			// true:ファイル false:パス
-} CfgSetPath;
-
-
-static const std::map<TConfig, const CfgSetValue> ConfigValue = {
-	{ CF_Model,			{ "CONFIG",		"Model",		TINI_Model,			DEFAULT_MODEL,		MAX_MODEL,		MIN_MODEL		} },
-	{ CF_FDD,			{ "CONFIG",		"FDD",			TINI_FDD,			DEFAULT_FDD,		MAX_FDD,		MIN_FDD			} },
-	{ CF_OverClock,		{ "CONFIG",		"OverClock",	TINI_OverClock,		DEFAULT_OVERCLOCK,	MAX_OVERCLOCK,	MIN_OVERCLOCK	} },
-	{ CF_MaxBoost60,	{ "CMT",		"MaxBoost60",	TINI_MaxBoost60,	DEFAULT_MAXBOOST60,	MAX_BOOST,		MIN_BOOST		} },
-	{ CF_MaxBoost62,	{ "CMT",		"MaxBoost62",	TINI_MaxBoost62,	DEFAULT_MAXBOOST62,	MAX_BOOST,		MIN_BOOST		} },
-	{ CF_StopBit,		{ "CMT",		"StopBit",		TINI_StopBit,		DEFAULT_STOPBIT,	MAX_STOPBIT,	MIN_STOPBIT		} },
-	{ CF_Mode4Color,	{ "DISPLAY",	"Mode4Color",	TINI_Mode4Color,	DEFAULT_MODE4COLOR,	MAX_MODE4COLOR,	MIN_MODE4COLOR	} },
-	{ CF_ScanLineBr,	{ "DISPLAY",	"ScanLineBr",	TINI_ScanLineBr,	DEFAULT_SCANLINEBR,	MAX_SCANLINEBR,	MIN_SCANLINEBR	} },
-	{ CF_WindowZoom,	{ "DISPLAY",	"WindowZoom",	TINI_WindowZoom,	DEFAULT_WINDOWZOOM,	MAX_WINDOWZOOM,	MIN_WINDOWZOOM	} },
-	{ CF_FrameSkip,		{ "DISPLAY",	"FrameSkip",	TINI_FrameSkip,		DEFAULT_FRAMESKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
-	{ CF_SampleRate,	{ "SOUND",		"SampleRate",	TINI_SampleRate,	DEFAULT_SAMPLERATE,	MAX_SAMPLERATE,	MIN_SAMPLERATE	} },
-	{ CF_SoundBuffer,	{ "SOUND",		"SoundBuffer",	TINI_SoundBuffer,	DEFAULT_SOUNDBUF,	MAX_SOUNDBUF,	MIN_SOUNDBUF	} },
-	{ CF_MasterVolume,	{ "SOUND",		"MasterVolume",	TINI_MasterVolume,	DEFAULT_MASTERVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CF_PsgVolume,		{ "SOUND",		"PsgVolume",	TINI_PsgVolume,		DEFAULT_PSGVOL,		MAX_VOLUME,		MIN_VOLUME		} },
-	{ CF_PsgLPF,		{ "SOUND",		"PsgLPF",		TINI_PsgLPF,		DEFAULT_PSGLPF,		MAX_LPF,		MIN_LPF			} },
-	{ CF_VoiceVolume,	{ "SOUND",		"VoiceVolume",	TINI_VoiceVolume,	DEFAULT_VOICEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CF_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CF_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,	MAX_LPF,		MIN_LPF			} },
-	{ CF_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,		MAX_AVIBPP,		MIN_AVIBPP		} },
-	{ CF_UseSoldier,	{ "OPTION",		"UseSoldier",	TINI_UseSoldier,	DEFAULT_SOLDIER,	0x0f,			0				} },
-	{ CF_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,		MAX_REPEAT,		MIN_REPEAT		} }
+static const std::map<TCValue, const CfgSet<TCValue>> ConfigValue = {
+	{ CV_Model,			{ "CONFIG",		"Model",		TINI_Model,			DEFAULT_MODEL,		MAX_MODEL,		MIN_MODEL		} },
+	{ CV_FDD,			{ "CONFIG",		"FDD",			TINI_FDD,			DEFAULT_FDD,		MAX_FDD,		MIN_FDD			} },
+	{ CV_OverClock,		{ "CONFIG",		"OverClock",	TINI_OverClock,		DEFAULT_OVERCLOCK,	MAX_OVERCLOCK,	MIN_OVERCLOCK	} },
+	{ CV_MaxBoost60,	{ "CMT",		"MaxBoost60",	TINI_MaxBoost60,	DEFAULT_MAXBOOST60,	MAX_BOOST,		MIN_BOOST		} },
+	{ CV_MaxBoost62,	{ "CMT",		"MaxBoost62",	TINI_MaxBoost62,	DEFAULT_MAXBOOST62,	MAX_BOOST,		MIN_BOOST		} },
+	{ CV_StopBit,		{ "CMT",		"StopBit",		TINI_StopBit,		DEFAULT_STOPBIT,	MAX_STOPBIT,	MIN_STOPBIT		} },
+	{ CV_Mode4Color,	{ "DISPLAY",	"Mode4Color",	TINI_Mode4Color,	DEFAULT_MODE4COLOR,	MAX_MODE4COLOR,	MIN_MODE4COLOR	} },
+	{ CV_ScanLineBr,	{ "DISPLAY",	"ScanLineBr",	TINI_ScanLineBr,	DEFAULT_SCANLINEBR,	MAX_SCANLINEBR,	MIN_SCANLINEBR	} },
+	{ CV_WindowZoom,	{ "DISPLAY",	"WindowZoom",	TINI_WindowZoom,	DEFAULT_WINDOWZOOM,	MAX_WINDOWZOOM,	MIN_WINDOWZOOM	} },
+	{ CV_FrameSkip,		{ "DISPLAY",	"FrameSkip",	TINI_FrameSkip,		DEFAULT_FRAMESKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
+	{ CV_SampleRate,	{ "SOUND",		"SampleRate",	TINI_SampleRate,	DEFAULT_SAMPLERATE,	MAX_SAMPLERATE,	MIN_SAMPLERATE	} },
+	{ CV_SoundBuffer,	{ "SOUND",		"SoundBuffer",	TINI_SoundBuffer,	DEFAULT_SOUNDBUF,	MAX_SOUNDBUF,	MIN_SOUNDBUF	} },
+	{ CV_MasterVol,		{ "SOUND",		"MasterVolume",	TINI_MasterVolume,	DEFAULT_MASTERVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_PsgVolume,		{ "SOUND",		"PsgVolume",	TINI_PsgVolume,		DEFAULT_PSGVOL,		MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_PsgLPF,		{ "SOUND",		"PsgLPF",		TINI_PsgLPF,		DEFAULT_PSGLPF,		MAX_LPF,		MIN_LPF			} },
+	{ CV_VoiceVolume,	{ "SOUND",		"VoiceVolume",	TINI_VoiceVolume,	DEFAULT_VOICEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,	MAX_LPF,		MIN_LPF			} },
+	{ CV_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,		MAX_AVIBPP,		MIN_AVIBPP		} },
+	{ CV_Soldier,		{ "OPTION",		"Soldier",		TINI_Soldier,		DEFAULT_SOLDIER,	0x0f,			0				} },
+	{ CV_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,		MAX_REPEAT,		MIN_REPEAT		} }
 };
 
-static const std::map<TConfig, const CfgSetBool> ConfigBool = {
-	{ CF_ExtRam,		{ "CONFIG",		"ExtRam",		TINI_ExtRam,		DEFAULT_EXTRAM		} },
-	{ CF_CheckCRC,		{ "CONFIG",		"CheckCRC",		TINI_CheckCRC,		DEFAULT_CHECKCRC	} },
-	{ CF_FDDWait,		{ "CONFIG",		"FDDWait",		TINI_FDDWait,		DEFAULT_FDDWAIT		} },
-	{ CF_TurboTAPE,		{ "CMT",		"TurboTAPE",	TINI_TurboTAPE,		DEFAULT_TURBO		} },
-	{ CF_BoostUp,		{ "CMT",		"BoostUp",		TINI_BoostUp,		DEFAULT_BOOST		} },
-	{ CF_ScanLine,		{ "DISPLAY",	"ScanLine",		TINI_ScanLine,		DEFAULT_SCANLINE	} },
-	{ CF_Filtering,		{ "DISPLAY",	"Filtering",	TINI_Filtering,		DEFAULT_FILTERING	} },
-	{ CF_DispNTSC,		{ "DISPLAY",	"DispNTSC",		TINI_DispNTSC,		DEFAULT_DISPNTSC	} },
-	{ CF_FullScreen,	{ "DISPLAY",	"FullScreen",	TINI_FullScreen,	DEFAULT_FULLSCREEN	} },
-	{ CF_DispStatus,	{ "DISPLAY",	"DispStatus",	TINI_DispStatus,	DEFAULT_DISPSTATUS	} },
-	{ CF_CkQuit,		{ "CHECK",		"CkQuit",		TINI_CkQuit,		DEFAULT_CKQUIT		} },
-	{ CF_SaveQuit,		{ "CHECK",		"SaveQuit",		TINI_SaveQuit,		DEFAULT_SAVEQUIT	} }
+static const std::map<TCBool, const CfgSet<TCBool>> ConfigBool = {
+	{ CB_ExtRam,		{ "CONFIG",		"ExtRam",		TINI_ExtRam,		DEFAULT_EXTRAM		} },
+	{ CB_CheckCRC,		{ "CONFIG",		"CheckCRC",		TINI_CheckCRC,		DEFAULT_CHECKCRC	} },
+	{ CB_FDDWait,		{ "CONFIG",		"FDDWait",		TINI_FDDWait,		DEFAULT_FDDWAIT		} },
+	{ CB_TurboTAPE,		{ "CMT",		"TurboTAPE",	TINI_TurboTAPE,		DEFAULT_TURBO		} },
+	{ CB_BoostUp,		{ "CMT",		"BoostUp",		TINI_BoostUp,		DEFAULT_BOOST		} },
+	{ CB_ScanLine,		{ "DISPLAY",	"ScanLine",		TINI_ScanLine,		DEFAULT_SCANLINE	} },
+	{ CB_Filtering,		{ "DISPLAY",	"Filtering",	TINI_Filtering,		DEFAULT_FILTERING	} },
+	{ CB_DispNTSC,		{ "DISPLAY",	"DispNTSC",		TINI_DispNTSC,		DEFAULT_DISPNTSC	} },
+	{ CB_FullScreen,	{ "DISPLAY",	"FullScreen",	TINI_FullScreen,	DEFAULT_FULLSCREEN	} },
+	{ CB_DispStatus,	{ "DISPLAY",	"DispStatus",	TINI_DispStatus,	DEFAULT_DISPSTATUS	} },
+	{ CB_CkQuit,		{ "CHECK",		"CkQuit",		TINI_CkQuit,		DEFAULT_CKQUIT		} },
+	{ CB_SaveQuit,		{ "CHECK",		"SaveQuit",		TINI_SaveQuit,		DEFAULT_SAVEQUIT	} }
 };
 
-static const std::map<TConfig, const CfgSetPath> ConfigPath = {
-	{ CF_ExtRom,		{ "FILES",		"ExtRom",		TINI_ExtRom,		"",							true	} },
-	{ CF_tape,			{ "FILES",		"tape",			TINI_tape,			"",							true	} },
-	{ CF_save,			{ "FILES",		"save",			TINI_save,			DIR_TAPE "\\" FILE_SAVE,	true	} },
-	{ CF_disk1,			{ "FILES",		"disk1",		TINI_disk1,			"",							true	} },
-	{ CF_disk2,			{ "FILES",		"disk2",		TINI_disk2,			"",							true	} },
-	{ CF_printer,		{ "FILES",		"printer",		TINI_printer,		FILE_PRINT,					true	} },
-	{ CF_RomPath,		{ "PATH",		"RomPath",		TINI_RomPath,		DIR_ROM,					false	} },
-	{ CF_TapePath,		{ "PATH",		"TapePath",		TINI_TapePath,		DIR_TAPE,					false	} },
-	{ CF_DiskPath,		{ "PATH",		"DiskPath",		TINI_DiskPath,		DIR_DISK,					false	} },
-	{ CF_ExtRomPath,	{ "PATH",		"ExtRomPath",	TINI_ExtRomPath,	DIR_EXTROM,					false	} },
-	{ CF_ImgPath,		{ "PATH",		"ImgPath",		TINI_ImgPath,		DIR_IMAGE,					false	} },
-	{ CF_WavePath,		{ "PATH",		"WavePath",		TINI_WavePath,		DIR_WAVE,					false	} },
-	{ CF_FontPath,		{ "PATH",		"FontPath",		TINI_FontPath,		DIR_FONT,					false	} },
-	{ CF_DokoPath,		{ "PATH",		"DokoPath",		TINI_DokoPath,		DIR_DOKO,					false	} }
+static const std::map<TCPath, const CfgSet<TCPath>> ConfigPath = {
+	{ CF_ExtRom,		{ "FILES",		"ExtRom",		TINI_ExtRom,		"",			true	} },
+	{ CF_tape,			{ "FILES",		"tape",			TINI_tape,			"",			true	} },
+	{ CF_save,			{ "FILES",		"save",			TINI_save,			FILE_SAVE,	true	} },
+	{ CF_disk1,			{ "FILES",		"disk1",		TINI_disk1,			"",			true	} },
+	{ CF_disk2,			{ "FILES",		"disk2",		TINI_disk2,			"",			true	} },
+	{ CF_printer,		{ "FILES",		"printer",		TINI_printer,		FILE_PRINT,	true	} },
+	{ CF_RomPath,		{ "PATH",		"RomPath",		TINI_RomPath,		DIR_ROM,	false	} },
+	{ CF_TapePath,		{ "PATH",		"TapePath",		TINI_TapePath,		DIR_TAPE,	false	} },
+	{ CF_DiskPath,		{ "PATH",		"DiskPath",		TINI_DiskPath,		DIR_DISK,	false	} },
+	{ CF_ExtRomPath,	{ "PATH",		"ExtRomPath",	TINI_ExtRomPath,	DIR_EXTROM,	false	} },
+	{ CF_ImgPath,		{ "PATH",		"ImgPath",		TINI_ImgPath,		DIR_IMAGE,	false	} },
+	{ CF_WavePath,		{ "PATH",		"WavePath",		TINI_WavePath,		DIR_WAVE,	false	} },
+	{ CF_FontPath,		{ "PATH",		"FontPath",		TINI_FontPath,		DIR_FONT,	false	} },
+	{ CF_DokoPath,		{ "PATH",		"DokoPath",		TINI_DokoPath,		DIR_DOKO,	false	} }
 };
+
+// 見つからなければ例外 std::out_of_range
+auto GetCfgSet( const TCValue& tc){ return ConfigValue.at( tc ); }
+auto GetCfgSet( const TCBool&  tc){ return ConfigBool.at( tc ); }
+auto GetCfgSet( const TCPath&  tc){ return ConfigPath.at( tc ); }
 
 
 static const std::vector<P6KeyName> P6KeyNameDef = {
@@ -565,7 +545,6 @@ static const std::vector<COLOR24> STDColor = {	// 標準カラーデータ ( R,G
 
 
 
-
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
@@ -574,7 +553,7 @@ CFG6::CFG6( void ) : DokoFile(""), Caption("")
 	PRINTD( CONST_LOG, "[[CFG6]]\n" );
 	
 	// INIファイルのパスを設定
-	IniPath = P6VSTR2PATH( FILE_CONFIG );
+	IniPath = STR2P6VPATH( FILE_CONFIG );
 	OSD_AbsolutePath( IniPath );
 }
 
@@ -646,14 +625,15 @@ bool CFG6::Write( void )
 // メンバアクセス関数
 ////////////////////////////////////////////////////////////////
 
-// 値 取得
-int CFG6::GetValue( TConfig tc )
+// 値取得(数値)
+//template <typename T> auto CFG6::GetValue( const T& tc ) -> decltype(CfgSet<T>::Default)
+template <> auto CFG6::GetValue<TCValue>( const TCValue& tc ) -> decltype(CfgSet<TCValue>::Default)
 {
 	try{
-		CfgSetValue cs = ConfigValue.at( tc );
-		int st = cs.Default;
+		auto cs = GetCfgSet( tc );
+		auto st = cs.Default;
 		
-		cIni::GetValue( cs.Section, cs.Entry, st );
+		cIni::GetVal( cs.Section, cs.Entry, st );
 		return st;
 	}
 	catch( std::out_of_range& ){}
@@ -662,30 +642,14 @@ int CFG6::GetValue( TConfig tc )
 }
 
 
-// 値 設定
-void CFG6::SetValue( TConfig tc , int val )
+// 値取得(bool)
+template <> auto CFG6::GetValue<TCBool>( const TCBool& tc ) -> decltype(CfgSet<TCBool>::Default)
 {
 	try{
-		CfgSetValue cs = ConfigValue.at( tc );
-		int st = val;
+		auto cs = GetCfgSet( tc );
+		auto st = cs.Default;
 		
-		if( cs.Max != cs.Min ){
-			st = min( max( cs.Min, st ), cs.Max );
-		}
-		cIni::PutValue( cs.Section, cs.Entry, GetText( cs.Comment ), st );
-	}
-	catch( std::out_of_range& ){}
-}
-
-
-// bool 取得
-bool CFG6::GetYesNo( TConfig tc )
-{
-	try{
-		CfgSetBool cs = ConfigBool.at( tc );
-		bool st = cs.Default;
-		
-		cIni::GetYesNo( cs.Section, cs.Entry, st );
+		cIni::GetVal( cs.Section, cs.Entry, st );
 		return st;
 	}
 	catch( std::out_of_range& ){}
@@ -694,26 +658,14 @@ bool CFG6::GetYesNo( TConfig tc )
 }
 
 
-// bool 設定
-void CFG6::SetYesNo( TConfig tc , bool yn )
+// 値取得(path)
+template <> auto CFG6::GetValue<TCPath>( const TCPath& tc ) -> decltype(CfgSet<TCPath>::Default)
 {
 	try{
-		CfgSetBool cs = ConfigBool.at( tc );
+		auto cs = GetCfgSet( tc );
+		auto st = cs.Default;
 		
-		cIni::PutYesNo( cs.Section, cs.Entry, GetText( cs.Comment ), yn );
-	}
-	catch( std::out_of_range& ){}
-}
-
-
-// path 取得
-P6VPATH CFG6::GetPath( TConfig tc )
-{
-	try{
-		CfgSetPath cs = ConfigPath.at( tc );
-		P6VPATH st = cs.Default;
-		
-		cIni::GetPath( cs.Section, cs.Entry, st );
+		cIni::GetVal( cs.Section, cs.Entry, st );
 		if( !cs.IsFile ){
 			OSD_AddDelimiter( st );
 		}
@@ -722,53 +674,96 @@ P6VPATH CFG6::GetPath( TConfig tc )
 	}
 	catch( std::out_of_range& ){}
 	
-	return "";
+	return STR2P6VPATH( "" );
 }
 
 
-// path 設定
-void CFG6::SetPath( TConfig tc , const P6VPATH& path )
+// 値設定(数値)
+template <> void CFG6::SetValue<TCValue,int>( const TCValue& tc, const int& val )
 {
 	try{
-		CfgSetPath cs = ConfigPath.at( tc );
+		auto cs = GetCfgSet( tc );
+		auto st = val;
 		
-		P6VPATH tpath = path;
+		if( cs.Max != cs.Min ){
+			st = min( max( cs.Min, st ), cs.Max );
+		}
+		cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), st );
+	}
+	catch( std::out_of_range& ){}
+}
+
+// 値設定(bool)
+template <> void CFG6::SetValue<TCBool,bool>( const TCBool& tc, const bool& yn )
+{
+	try{
+		auto cs = GetCfgSet( tc );
+		
+		cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), yn );
+	}
+	catch( std::out_of_range& ){}
+}
+
+// 値設定(path)
+template <> void CFG6::SetValue<TCPath,P6VPATH>( const TCPath& tc, const P6VPATH& path )
+{
+	try{
+		auto cs = GetCfgSet( tc );
+		auto tpath = path;
+		
 		if( !cs.IsFile ){
 			OSD_DelDelimiter( tpath );
 		}
 		OSD_RelativePath( tpath );
 		
-		cIni::PutPath( cs.Section, cs.Entry, GetText( cs.Comment ), tpath );
+		cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), tpath );
 	}
 	catch( std::out_of_range& ){}
 }
 
 
-// 初期値設定
-void CFG6::SetDefault( TConfig tc, bool ow )
+// 初期値設定(数値)
+template <> void CFG6::SetDefault<TCValue>( const TCValue& tc, const bool ow )
 {
 	std::string str;
 	
 	try{
-		if( ConfigValue.count( tc ) ){
-			CfgSetValue cs = ConfigValue.at( tc );
-			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
-				cIni::PutValue( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
-			}
-		}else if( ConfigBool.count( tc )  ){
-			CfgSetBool cs = ConfigBool.at( tc );
-			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
-				cIni::PutYesNo( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
-			}
-		}else if( ConfigPath.count( tc )  ){
-			CfgSetPath cs = ConfigPath.at( tc );
-			if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
-				cIni::PutPath( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
-			}
+		auto cs = GetCfgSet( tc );
+		if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+			cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
 		}
 	}
 	catch( std::out_of_range& ){}
 }
+
+// 初期値設定(bool)
+template <> void CFG6::SetDefault<TCBool>( const TCBool& tc, const bool ow )
+{
+	std::string str;
+	
+	try{
+		auto cs = GetCfgSet( tc );
+		if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+			cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
+		}
+	}
+	catch( std::out_of_range& ){}
+}
+
+// 初期値設定(path)
+template <> void CFG6::SetDefault<TCPath>( const TCPath& tc, const bool ow )
+{
+	std::string str;
+	
+	try{
+		auto cs = GetCfgSet( tc );
+		if( ow || !cIni::GetEntry( cs.Section, cs.Entry, str ) ){
+			cIni::SetVal( cs.Section, cs.Entry, GetText( cs.Comment ), cs.Default );
+		}
+	}
+	catch( std::out_of_range& ){}
+}
+
 
 
 // [COLOR] -----------------------------------------------------
@@ -799,7 +794,7 @@ COLOR24 CFG6::GetColor( int num )
 // カラーデータ設定
 void CFG6::SetColor( int num, const COLOR24& col )
 {
-	cIni::PutValue( "COLOR", Stringf( "COL%03d", num ), GetColorName( num-16 ), (col.r<<16)|(col.g<<8)|col.b, "%06X" );
+	cIni::SetVal( "COLOR", Stringf( "COL%03d", num ), GetColorName( num-16 ), "%02X%02X%02X", col.r, col.g, col.b );
 }
 
 
@@ -819,7 +814,7 @@ P6KEYsym CFG6::GetVKey( PCKEYsym pcs )
 // キー定義設定
 void CFG6::SetVKey( PCKEYsym pcs, P6KEYsym p6s )
 {
-	cIni::PutEntry( "KEY", GetPCKeyName( pcs ), GetKeyName( pcs ), GetP6KeyName( p6s ) );
+	cIni::SetEntry( "KEY", GetPCKeyName( pcs ), GetKeyName( pcs ), GetP6KeyName( p6s ) );
 }
 
 
@@ -843,7 +838,7 @@ int CFG6::GetVKeyDef( std::vector<VKeyConv>& kdef )
 // ウィンドウキャプション取得
 const std::string& CFG6::GetCaption( void )
 {
-	switch( GetValue( CF_Model ) ){	// 機種取得
+	switch( GetValue( CV_Model ) ){	// 機種取得
 	case 61: Caption = APPNAME " (" P61NAME ") Ver." VERSION; break;
 	case 62: Caption = APPNAME " (" P62NAME ") Ver." VERSION; break;
 	case 66: Caption = APPNAME " (" P66NAME ") Ver." VERSION; break;
@@ -878,45 +873,49 @@ void CFG6::SetDokoFile( const P6VPATH& path )
 ////////////////////////////////////////////////////////////////
 void CFG6::InitIni( bool over )
 {
+	P6VPATH tpath;
+	std::string str;
+	
+/*
 	std::vector<TConfig> allcf = {
 		// [CONFIG] ------------------------------------------------
-		CF_Model,			// 機種
-		CF_FDD,				// FDD
-		CF_ExtRam,			// 拡張RAM使用
-		CF_OverClock,		// オーバークロック率
-		CF_CheckCRC,		// CRCチェック
-		CF_FDDWait,			// FDDウェイト有効フラグ
+		CV_Model,			// 機種
+		CV_FDD,				// FDD
+		CB_ExtRam,			// 拡張RAM使用
+		CV_OverClock,		// オーバークロック率
+		CB_CheckCRC,		// CRCチェック
+		CB_FDDWait,			// FDDウェイト有効フラグ
 		
 		// [CMT] ---------------------------------------------------
-		CF_TurboTAPE,		// Turbo TAPE
-		CF_BoostUp,			// Boost Up
-		CF_MaxBoost60,		// BoostUp 最大倍率(N60モード)
-		CF_MaxBoost62,		// BoostUp 最大倍率(N60m/N66モード)
-		CF_StopBit,			// TAPEストップビット数
+		CB_TurboTAPE,		// Turbo TAPE
+		CB_BoostUp,			// Boost Up
+		CV_MaxBoost60,		// BoostUp 最大倍率(N60モード)
+		CV_MaxBoost62,		// BoostUp 最大倍率(N60m/N66モード)
+		CV_StopBit,			// TAPEストップビット数
 		
 		// [DISPLAY] -----------------------------------------------
-		CF_Mode4Color,		// MODE4カラー
-		CF_ScanLine,		// スキャンライン
-		CF_ScanLineBr,		// スキャンライン輝度
-		CF_Filtering,		// フィルタリング
-		CF_DispNTSC,		// 4:3表示
-		CF_FullScreen,		// フルスクリーン
-		CF_WindowZoom,		// ウィンドウ表示倍率設定
-		CF_DispStatus,		// ステータスバー表示状態
-		CF_FrameSkip,		// フレームスキップ
+		CV_Mode4Color,		// MODE4カラー
+		CB_ScanLine,		// スキャンライン
+		CV_ScanLineBr,		// スキャンライン輝度
+		CB_Filtering,		// フィルタリング
+		CB_DispNTSC,		// 4:3表示
+		CB_FullScreen,		// フルスクリーン
+		CV_WindowZoom,		// ウィンドウ表示倍率設定
+		CB_DispStatus,		// ステータスバー表示状態
+		CV_FrameSkip,		// フレームスキップ
 		
 		// [SOUND] -------------------------------------------------
-		CF_SampleRate,		// サンプリングレート
-		CF_SoundBuffer,		// サウンドバッファ長倍率
-		CF_MasterVolume,	// マスター音量
-		CF_PsgVolume,		// PSG音量
-		CF_PsgLPF,			// PSG LPFカットオフ周波数
-		CF_VoiceVolume,		// 音声合成音量
-		CF_TapeVolume,		// TAPEモニタ音量
-		CF_TapeLPF,			// TAPE LPFカットオフ周波数
+		CV_SampleRate,		// サンプリングレート
+		CV_SoundBuffer,		// サウンドバッファ長倍率
+		CV_MasterVol,		// マスター音量
+		CV_PsgVolume,		// PSG音量
+		CV_PsgLPF,			// PSG LPFカットオフ周波数
+		CV_VoiceVolume,		// 音声合成音量
+		CV_TapeVolume,		// TAPEモニタ音量
+		CV_TapeLPF,			// TAPE LPFカットオフ周波数
 		
 		// [MOVIE] -------------------------------------------------
-		CF_AviBpp,			// ビデオキャプチャ色深度
+		CV_AviBpp,			// ビデオキャプチャ色深度
 		
 		// [FILES] -------------------------------------------------
 		CF_ExtRom,			// 拡張ROMファイル名(起動時に自動マウント)
@@ -937,112 +936,256 @@ void CFG6::InitIni( bool over )
 		CF_DokoPath,		// どこでもSAVEパス
 		
 		// [CHECK] -------------------------------------------------
-		CF_CkQuit,			// 終了時確認
-		CF_SaveQuit,		// 終了時INI保存
+		CB_CkQuit,			// 終了時確認
+		CB_SaveQuit,		// 終了時INI保存
 		
 		// [OPTION] ------------------------------------------------
-		CF_UseSoldier,		// 戦士のカートリッジ使うフラグ
+		CV_Soldier,			// 戦士のカートリッジ使うフラグ
 		
 		// [KEY] ---------------------------------------------------
-		CF_KeyRepeat,		// キーリピート
+		CV_KeyRepeat,		// キーリピート
 	};
 	
-	std::string str;
-	
 	for( TConfig x : allcf ){
-		SetDefault( x, over );
+		SetDefault1( x, over );
 	}
+*/
 
+
+/*
+	auto allcf2 = std::tuple(
+		// [CONFIG] ------------------------------------------------
+		CV_Model,			// 機種
+		CV_FDD,				// FDD
+		CB_ExtRam,			// 拡張RAM使用
+		CV_OverClock,		// オーバークロック率
+		CB_CheckCRC,		// CRCチェック
+		CB_FDDWait,			// FDDウェイト有効フラグ
+		
+		// [CMT] ---------------------------------------------------
+		CB_TurboTAPE,		// Turbo TAPE
+		CB_BoostUp,			// Boost Up
+		CV_MaxBoost60,		// BoostUp 最大倍率(N60モード)
+		CV_MaxBoost62,		// BoostUp 最大倍率(N60m/N66モード)
+		CV_StopBit,			// TAPEストップビット数
+		
+		// [DISPLAY] -----------------------------------------------
+		CV_Mode4Color,		// MODE4カラー
+		CB_ScanLine,		// スキャンライン
+		CV_ScanLineBr,		// スキャンライン輝度
+		CB_Filtering,		// フィルタリング
+		CB_DispNTSC,		// 4:3表示
+		CB_FullScreen,		// フルスクリーン
+		CV_WindowZoom,		// ウィンドウ表示倍率設定
+		CB_DispStatus,		// ステータスバー表示状態
+		CV_FrameSkip,		// フレームスキップ
+		
+		// [SOUND] -------------------------------------------------
+		CV_SampleRate,		// サンプリングレート
+		CV_SoundBuffer,		// サウンドバッファ長倍率
+		CV_MasterVol,		// マスター音量
+		CV_PsgVolume,		// PSG音量
+		CV_PsgLPF,			// PSG LPFカットオフ周波数
+		CV_VoiceVolume,		// 音声合成音量
+		CV_TapeVolume,		// TAPEモニタ音量
+		CV_TapeLPF,			// TAPE LPFカットオフ周波数
+		
+		// [MOVIE] -------------------------------------------------
+		CV_AviBpp,			// ビデオキャプチャ色深度
+		
+		// [FILES] -------------------------------------------------
+		CF_ExtRom,			// 拡張ROMファイル名(起動時に自動マウント)
+		CF_tape,			// TAPEファイル名(起動時に自動マウント)
+		CF_save,			// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
+		CF_disk1,			// DISK1ファイル名(起動時に自動マウント)
+		CF_disk2,			// DISK2ファイル名(起動時に自動マウント)
+		CF_printer,			// プリンタファイル名
+		
+		// [PATH] --------------------------------------------------
+		CF_RomPath,			// ROMパス
+		CF_TapePath,		// TAPEパス
+		CF_DiskPath,		// DISKパス
+		CF_ExtRomPath,		// 拡張ROMパス
+		CF_ImgPath,			// IMGパス
+		CF_WavePath,		// WAVEパス
+		CF_FontPath,		// フォントパス設定
+		CF_DokoPath,		// どこでもSAVEパス
+		
+		// [CHECK] -------------------------------------------------
+		CB_CkQuit,			// 終了時確認
+		CB_SaveQuit,		// 終了時INI保存
+		
+		// [OPTION] ------------------------------------------------
+		CV_Soldier,			// 戦士のカートリッジ使うフラグ
+		
+		// [KEY] ---------------------------------------------------
+		CV_KeyRepeat		// キーリピート
+	);
+*/
+
+	// 後でstd::tupleか何かでループ処理させたい
+	
+	// [CONFIG] ------------------------------------------------
+	SetDefault( CV_Model,		over );	// 機種
+	SetDefault( CV_FDD,			over );	// FDD
+	SetDefault( CB_ExtRam,		over );	// 拡張RAM使用
+	SetDefault( CV_OverClock,	over );	// オーバークロック率
+	SetDefault( CB_CheckCRC,	over );	// CRCチェック
+	SetDefault( CB_FDDWait,		over );	// FDDウェイト有効フラグ
+	
+	// [CMT] ---------------------------------------------------
+	SetDefault( CB_TurboTAPE,	over );	// Turbo TAPE
+	SetDefault( CB_BoostUp,		over );	// Boost Up
+	SetDefault( CV_MaxBoost60,	over );	// BoostUp 最大倍率(N60モード)
+	SetDefault( CV_MaxBoost62,	over );	// BoostUp 最大倍率(N60m/N66モード)
+	SetDefault( CV_StopBit,		over );	// TAPEストップビット数
+	
+	// [DISPLAY] -----------------------------------------------
+	SetDefault( CV_Mode4Color,	over );	// MODE4カラー
+	SetDefault( CB_ScanLine,	over );	// スキャンライン
+	SetDefault( CV_ScanLineBr,	over );	// スキャンライン輝度
+	SetDefault( CB_Filtering,	over );	// フィルタリング
+	SetDefault( CB_DispNTSC,	over );	// 4:3表示
+	SetDefault( CB_FullScreen,	over );	// フルスクリーン
+	SetDefault( CV_WindowZoom,	over );	// ウィンドウ表示倍率設定
+	SetDefault( CB_DispStatus,	over );	// ステータスバー表示状態
+	SetDefault( CV_FrameSkip,	over );	// フレームスキップ
+	
+	// [SOUND] -------------------------------------------------
+	SetDefault( CV_SampleRate,	over );	// サンプリングレート
+	SetDefault( CV_SoundBuffer,	over );	// サウンドバッファ長倍率
+	SetDefault( CV_MasterVol,	over );	// マスター音量
+	SetDefault( CV_PsgVolume,	over );	// PSG音量
+	SetDefault( CV_PsgLPF,		over );	// PSG LPFカットオフ周波数
+	SetDefault( CV_VoiceVolume,	over );	// 音声合成音量
+	SetDefault( CV_TapeVolume,	over );	// TAPEモニタ音量
+	SetDefault( CV_TapeLPF,		over );	// TAPE LPFカットオフ周波数
+	
+	// [MOVIE] -------------------------------------------------
+	SetDefault( CV_AviBpp,		over );	// ビデオキャプチャ色深度
+	
+	// [FILES] -------------------------------------------------
+	SetDefault( CF_ExtRom,		over );	// 拡張ROMファイル名(起動時に自動マウント)
+	SetDefault( CF_tape,		over );	// TAPEファイル名(起動時に自動マウント)
+	SetDefault( CF_save,		over );	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
+	SetDefault( CF_disk1,		over );	// DISK1ファイル名(起動時に自動マウント)
+	SetDefault( CF_disk2,		over );	// DISK2ファイル名(起動時に自動マウント)
+	SetDefault( CF_printer,		over );	// プリンタファイル名
+	
+	// [PATH] --------------------------------------------------
+	SetDefault( CF_RomPath,		over );	// ROMパス
+	SetDefault( CF_TapePath,	over );	// TAPEパス
+	SetDefault( CF_DiskPath,	over );	// DISKパス
+	SetDefault( CF_ExtRomPath,	over );	// 拡張ROMパス
+	SetDefault( CF_ImgPath,		over );	// IMGパス
+	SetDefault( CF_WavePath,	over );	// WAVEパス
+	SetDefault( CF_FontPath,	over );	// フォントパス設定
+	SetDefault( CF_DokoPath,	over );	// どこでもSAVEパス
+	
+	// [CHECK] -------------------------------------------------
+	SetDefault( CB_CkQuit,		over );	// 終了時確認
+	SetDefault( CB_SaveQuit,	over );	// 終了時INI保存
+	
+	// [OPTION] ------------------------------------------------
+	SetDefault( CV_Soldier,		over );	// 戦士のカートリッジ使うフラグ
+	
+	// [KEY] ---------------------------------------------------
+	SetDefault( CV_KeyRepeat,	over );	// キーリピート
+	
+	
+	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
+	OSD_AddPath( tpath,	GetValue( CF_TapePath ), STR2P6VPATH( OSD_GetFileNamePart( GetValue( CF_save ) ) ) );
+	SetValue( CF_save, tpath );
 
 
 /*
 	// [FILES] -------------------------------------------------
 	// 拡張ROMファイル名(起動時に自動マウント)
 	if( over || !cIni::GetEntry( "FILES", "ExtRom", str ) )
-		SetPath( CF_ExtRom, P6VSTR2PATH( "" ) );
+		SetValue( CF_ExtRom, STR2P6VPATH( "" ) );
 	
 	// TAPEファイル名(起動時に自動マウント)
 	if( over || !cIni::GetEntry( "FILES", "tape", str ) )
-		SetPath( CF_tape, P6VSTR2PATH( "" ) );
+		SetValue( CF_tape, STR2P6VPATH( "" ) );
 	
 	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
 	if( over || !cIni::GetEntry( "FILES", "save", str ) ){
-		OSD_AddPath( tpath, P6VSTR2PATH( DIR_TAPE ), P6VSTR2PATH( FILE_SAVE ) );
+		OSD_AddPath( tpath, STR2P6VPATH( DIR_TAPE ), STR2P6VPATH( FILE_SAVE ) );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_save, tpath );
+		SetValue( CF_save, tpath );
 	}
 	
 	// DISK1ファイル名(起動時に自動マウント)
 	if( over || !cIni::GetEntry( "FILES", "disk1", str ) )
-		SetPath( CF_disk1, P6VSTR2PATH( "" ) );
+		SetValue( CF_disk1, STR2P6VPATH( "" ) );
 	
 	// DISK2ファイル名(起動時に自動マウント)
 	if( over || !cIni::GetEntry( "FILES", "disk2", str ) )
-		SetPath( CF_disk2, P6VSTR2PATH( "" ) );
+		SetValue( CF_disk2, STR2P6VPATH( "" ) );
 	
 	// プリンタファイル名
 	if( over || !cIni::GetEntry( "FILES", "printer", str ) ){
-		tpath = P6VSTR2PATH( FILE_PRINT );
+		tpath = STR2P6VPATH( FILE_PRINT );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_printer, tpath );
+		SetValue( CF_printer, tpath );
 	}
 	
 	
 	// [PATH] --------------------------------------------------
 	// ROMパス
 	if( over || !cIni::GetEntry( "PATH", "RomPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_ROM );
+		tpath = STR2P6VPATH( DIR_ROM );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_RomPath, tpath );
+		SetValue( CF_RomPath, tpath );
 	}
 	
 	// TAPEパス
 	if( over || !cIni::GetEntry( "PATH", "TapePath", str ) ){
-		tpath = P6VSTR2PATH( DIR_TAPE );
+		tpath = STR2P6VPATH( DIR_TAPE );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_TapePath, tpath );
+		SetValue( CF_TapePath, tpath );
 	}
 	
 	// DISKパス
 	if( over || !cIni::GetEntry( "PATH", "DiskPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_DISK );
+		tpath = STR2P6VPATH( DIR_DISK );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_DiskPath, tpath );
+		SetValue( CF_DiskPath, tpath );
 	}
 	
 	// 拡張ROMパス
 	if( over || !cIni::GetEntry( "PATH", "ExtRomPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_EXTROM );
+		tpath = STR2P6VPATH( DIR_EXTROM );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_ExtRomPath, tpath );
+		SetValue( CF_ExtRomPath, tpath );
 	}
 	
 	// IMGパス
 	if( over || !cIni::GetEntry( "PATH", "ImgPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_IMAGE );
+		tpath = STR2P6VPATH( DIR_IMAGE );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_ImgPath, tpath );
+		SetValue( CF_ImgPath, tpath );
 	}
 	
 	// WAVEパス
 	if( over || !cIni::GetEntry( "PATH", "WavePath", str ) ){
-		tpath = P6VSTR2PATH( DIR_WAVE );
+		tpath = STR2P6VPATH( DIR_WAVE );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_WavePath, tpath );
+		SetValue( CF_WavePath, tpath );
 	}
 	
 	// フォントパス設定
 	if( over || !cIni::GetEntry( "PATH", "FontPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_FONT );
+		tpath = STR2P6VPATH( DIR_FONT );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_FontPath, tpath );
+		SetValue( CF_FontPath, tpath );
 	}
 	
 	// どこでもSAVEパス
 	if( over || !cIni::GetEntry( "PATH", "DokoPath", str ) ){
-		tpath = P6VSTR2PATH( DIR_DOKO );
+		tpath = STR2P6VPATH( DIR_DOKO );
 		OSD_AbsolutePath( tpath );
-		SetPath( CF_DokoPath, tpath );
+		SetValue( CF_DokoPath, tpath );
 	}
 */
 	
@@ -1129,17 +1272,17 @@ P6KEYsym CFG6::GetP6KeyCode( const std::string& str )
 // 引数:	ini		INIオブジェクトポインタ
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool CFG6::DokoSave( cIni* ini )
+bool CFG6::DokoSave( cIni* Ini )
 {
-	if( !ini ) return false;
+	if( !Ini ) return false;
 	
 	// 共通
-	ini->PutEntry( "GLOBAL", "Version",		"", VERSION );
-	ini->PutValue( "GLOBAL", "Model",		"", GetValue( CF_Model ) );
-	ini->PutValue( "GLOBAL", "FDD",			"", GetValue( CF_FDD ) );
-	ini->PutYesNo( "GLOBAL", "ExtRam",		"", GetYesNo( CF_ExtRam ) );
+	Ini->SetEntry( "GLOBAL", "Version",	"", VERSION );
+	Ini->SetVal( "GLOBAL", "Model",		"", GetValue( CV_Model ) );
+	Ini->SetVal( "GLOBAL", "FDD",		"", GetValue( CV_FDD ) );
+	Ini->SetVal( "GLOBAL", "ExtRam",	"", GetValue( CB_ExtRam ) );
 	// OPTION
-	ini->PutValue( "OPTION", "UseSoldier",	"", GetValue( CF_UseSoldier ) );
+	Ini->SetVal( "OPTION", "Soldier",	"", GetValue( CV_Soldier ) );
 	
 	return true;
 }
@@ -1151,25 +1294,25 @@ bool CFG6::DokoSave( cIni* ini )
 // 引数:	ini		INIオブジェクトポインタ
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool CFG6::DokoLoad( cIni* ini )
+bool CFG6::DokoLoad( cIni* Ini )
 {
 	int st;
 	bool yn;
 	std::string strva;
 	
-	if( !ini ) return false;
+	if( !Ini ) return false;
 	
 	// 共通
-	ini->GetEntry( "GLOBAL", "Version", strva );
+	Ini->GetEntry( "GLOBAL", "Version", strva );
 	if( strva != VERSION ){
 		Error::SetError( Error::DokoDiffVersion );
 		return false;
 	}
 	
-	if( ini->GetValue( "GLOBAL", "Model",      st ) )	SetValue( CF_Model, st );
-	if( ini->GetValue( "GLOBAL", "FDD",        st ) )	SetValue( CF_FDD, st );
-	if( ini->GetYesNo( "GLOBAL", "ExtRam",     yn ) )	SetYesNo( CF_ExtRam, yn );
-	if( ini->GetValue( "OPTION", "UseSoldier", st ) )	SetValue( CF_UseSoldier, st );
+	if( Ini->GetVal( "GLOBAL", "Model",   st ) )	SetValue( CV_Model,   st );
+	if( Ini->GetVal( "GLOBAL", "FDD",     st ) )	SetValue( CV_FDD,     st );
+	if( Ini->GetVal( "GLOBAL", "ExtRam",  yn ) )	SetValue( CB_ExtRam,  yn );
+	if( Ini->GetVal( "OPTION", "Soldier", st ) )	SetValue( CV_Soldier, st );
 	
 	return true;
 }

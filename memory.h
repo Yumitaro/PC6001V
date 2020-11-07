@@ -22,6 +22,97 @@
 
 
 
+
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// メモリセル(最小単位)
+class MemCell {
+public:
+	enum {
+		PAGEBITS = 13,			// 8KB
+		PAGEMASK = (1 << PAGEBITS) - 1
+	};
+
+protected:
+	std::string Name;			// メモリブロック名
+	std::vector<BYTE> Data;		// データ
+	bool WPt;					// ライトプロテクトフラグ
+	
+public:
+	MemCell( BYTE = 0xff, bool = false );
+	~MemCell();
+	
+	void ReadFile( std::fstream& );					// データ読込み
+	size_t Size() const;							// サイズ取得
+	void SetProtect( bool );						// ライトプロテクト設定
+	void SetName( const std::string& );				// メモリブロック名設定
+	const std::string& GetName() const;				// メモリブロック名取得
+	
+	BYTE Read( WORD ) const;						// メモリリード
+	void Write( WORD, BYTE );						// メモリライト
+	
+	BYTE* GetData();								// ※暫定※ データポインタ取得
+};
+
+
+// メモリ集合体(ROM/RAMチップ相当)
+class MemCells {
+protected:
+	std::vector<MemCell> Cells;	// データ
+	
+public:
+	MemCells( size_t = 1, BYTE = 0xff, bool = false );
+	~MemCells();
+	
+	bool ReadFile( const P6VPATH& );				// ROMファイル読込み
+	size_t Size() const;							// サイズ(メモリセル数)取得
+	const MemCell& GetCell( const int ) const;		// メモリセル取得
+	
+	BYTE Read( WORD ) const;						// メモリリード
+	void Write( WORD, BYTE );						// メモリライト
+};
+
+
+// メモリブロッククラス
+class MemBlk {
+public:
+	typedef IDevice::RFuncPtr RFuncPtr;
+	typedef IDevice::WFuncPtr WFuncPtr;
+
+protected:
+	std::string Name;			// メモリブロック名
+	
+	MemCell& PRead;				// メモリセル参照(読込み)
+	MemCell& PWrite;			// メモリセル参照(書込み)
+	RFuncPtr FRead;				// 関数ポインタ(読込み)
+	WFuncPtr FWrite;			// 関数ポインタ(書込み)
+	IDevice* Inst;				// オブジェクトポインタ
+	int Wait;					// アクセスウェイト
+	
+public:
+	MemBlk( const std::string& = "" );
+	~MemBlk();
+	
+	void SetMemory( MemCell&, int );				// メモリ割当て
+	void SetRom   ( MemCell&, int = -1 );			// ROM割当て
+	void SetRam   ( MemCell&, int = -1 );			// RAM割当て
+	void SetFunc  ( MemCell&, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
+	
+	void SetWait( int );							// アクセスウェイト設定
+	int GetWait() const;							// アクセスウェイト取得
+	const std::string& GetName() const;				// メモリブロック名取得
+	
+	BYTE Read( WORD, int* = nullptr ) const;		// メモリリード
+	void Write( WORD, BYTE, int* = nullptr ) const;	// メモリライト
+};
+
+
+
+
+
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
 ////////////////////////////////////////////////////////////////
 
 // ROM情報構造体
@@ -43,13 +134,12 @@ const std::vector<std::vector<ROMINFO>>& GetRomSetList( const int );
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
-class MEM6;
 
 // メモリブロッククラス
 class MemBlock {
 public:
 	enum {
-		PAGEBITS = 13,	// 8KB
+		PAGEBITS = 13,			// 8KB
 		PAGEMASK = (1 << PAGEBITS) - 1
 	};
 	
@@ -77,7 +167,6 @@ public:
 	void SetWait( int );									// アクセスウェイト設定
 	int GetWait() const;									// アクセスウェイト取得
 	void SetProtect( bool );								// ライトプロテクト設定
-	bool GetProtect() const;								// ライトプロテクト取得
 	
 	const std::string& GetName() const;						// メモリブロック名取得
 	
@@ -189,7 +278,7 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	
 	// 戦士のカートリッジ --------------------------------------------------------------------
-	int UseSol;					// バージョン 0:なし 1:無印 2:mkⅡ 3:mkⅢ
+	int SolVer;					// バージョン 0:なし 1:無印 2:mkⅡ 3:mkⅢ
 	bool Sol60Mode;				// 初代機モード　true:有効 false:無効
 	BYTE SolBank[8];			// メモリバンクレジスタ
 	int SolBankSet;				// ROMバンクセット

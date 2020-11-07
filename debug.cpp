@@ -1138,7 +1138,7 @@ void cWndMon::Exec( int cmd )
 		
 		// <filename>
 		if( !ArgvIs( ARGV_STR ) ) ErrorMes();
-		P6VPATH fname = P6VSTR2PATH( argv.Str );
+		P6VPATH fname = STR2P6VPATH( argv.Str );
 		Shift();
 		
 		// <addr>
@@ -1184,7 +1184,7 @@ void cWndMon::Exec( int cmd )
 		
 		// <filename>
 		if( !ArgvIs( ARGV_STR ) ) ErrorMes();
-		P6VPATH fname = P6VSTR2PATH( argv.Str );
+		P6VPATH fname = STR2P6VPATH( argv.Str );
 		Shift();
 		
 		// <addr>
