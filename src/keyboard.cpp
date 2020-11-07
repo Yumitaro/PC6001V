@@ -577,7 +577,7 @@ bool KEY6::ScanMatrix( void )
 	if( KeyPUSH ){	// キー押した?
 		switch( MatData ){	// マトリクスコード
 		case 0x96:	// CAPS
-			ON_CAPS = ON_CAPS ? false : true;
+			ON_CAPS = !ON_CAPS;
 			ON_FUNC = true;
 			break;
 			
@@ -586,7 +586,7 @@ bool KEY6::ScanMatrix( void )
 			break;
 			
 		case 0x90:	// かな
-			ON_KANA = ON_KANA ? false : true;
+			ON_KANA = !ON_KANA;
 			ON_FUNC = true;
 			break;
 			
@@ -596,7 +596,7 @@ bool KEY6::ScanMatrix( void )
 			
 		case 0x93:	// PAGE or かな/カナ切り替え
 			if( ON_SHIFT ){
-				ON_KKANA = ON_KKANA ? false : true;
+				ON_KKANA = !ON_KKANA;
 				ON_FUNC  = true;
 			}
 			break;
@@ -796,7 +796,7 @@ void KEY6::SetVKeySymbols( std::vector<VKeyConv>& vcnv )
 ////////////////////////////////////////////////////////////////
 void KEY6::ChangeKana( void )
 {
-	ON_KANA = ON_KANA ? false : true;
+	ON_KANA = !ON_KANA;
 }
 
 
@@ -808,7 +808,7 @@ void KEY6::ChangeKana( void )
 ////////////////////////////////////////////////////////////////
 void KEY6::ChangeKKana( void )
 {
-	ON_KKANA = ON_KKANA ? false : true;
+	ON_KKANA = !ON_KKANA;
 }
 
 
@@ -822,20 +822,20 @@ bool KEY6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutYesNo( "KEY", "ON_KANA",	"", ON_KANA  );
-	Ini->PutYesNo( "KEY", "ON_KKANA",	"", ON_KKANA );
-	Ini->PutYesNo( "KEY", "ON_STOP",	"", ON_STOP  );
-	Ini->PutYesNo( "KEY", "ON_CAPS",	"", ON_CAPS  );
+	Ini->SetVal( "KEY", "ON_KANA",	"", ON_KANA  );
+	Ini->SetVal( "KEY", "ON_KKANA",	"", ON_KKANA );
+	Ini->SetVal( "KEY", "ON_STOP",	"", ON_STOP  );
+	Ini->SetVal( "KEY", "ON_CAPS",	"", ON_CAPS  );
 	
 	std::string strva;
 	for( auto &i : P6Matrix )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "P6Matrix",	"", strva.c_str() );
+	Ini->SetEntry( "KEY", "P6Matrix",	"", strva.c_str() );
 	
 	strva.clear();
 	for( auto &i : P6Mtrx )
 		strva += Stringf( "%02X", i );
-	Ini->PutEntry( "KEY", "P6Mtrx",		"", strva.c_str() );
+	Ini->SetEntry( "KEY", "P6Mtrx",		"", strva.c_str() );
 	
 	return true;
 }
@@ -853,10 +853,10 @@ bool KEY6::DokoLoad( cIni* Ini )
 	
 	if( !Ini ) return false;
 	
-	Ini->GetYesNo( "KEY", "ON_KANA",	ON_KANA  );
-	Ini->GetYesNo( "KEY", "ON_KKANA",	ON_KKANA );
-	Ini->GetYesNo( "KEY", "ON_STOP",	ON_STOP  );
-	Ini->GetYesNo( "KEY", "ON_CAPS",	ON_CAPS  );
+	Ini->GetVal( "KEY", "ON_KANA",	ON_KANA  );
+	Ini->GetVal( "KEY", "ON_KKANA",	ON_KKANA );
+	Ini->GetVal( "KEY", "ON_STOP",	ON_STOP  );
+	Ini->GetVal( "KEY", "ON_CAPS",	ON_CAPS  );
 	
 	if( Ini->GetEntry( "KEY", "P6Matrix", strva ) ){
 		strva.resize( P6Matrix.size() * 2, 'F' );

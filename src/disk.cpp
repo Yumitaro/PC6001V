@@ -1901,17 +1901,17 @@ bool DSK6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutValue( "DISK", "DrvNum",  "", DrvNum );
-	Ini->PutValue( "DISK", "WaitCnt", "", waitcnt );
+	Ini->SetVal( "DISK", "DrvNum",  "", DrvNum );
+	Ini->SetVal( "DISK", "WaitCnt", "", waitcnt );
 	
 	// ディスクイメージオブジェクト
 	for( int i=0; i<DrvNum; i++ ){
 		if( Dimg[i] ){
 			P6VPATH tpath = Dimg[i]->GetFileName();
 			OSD_RelativePath( tpath );
-			Ini->PutPath ( "DISK", Stringf( "DISK_%d_FileName", i ),	"", tpath             );
-			Ini->PutValue( "DISK", Stringf( "DISK_%d_trkno",    i ),	"", Dimg[i]->Track()  );
-			Ini->PutValue( "DISK", Stringf( "DISK_%d_secno",    i ),	"", Dimg[i]->Sector() );
+			Ini->SetVal( "DISK", Stringf( "DISK_%d_FileName", i ),	"", tpath             );
+			Ini->SetVal( "DISK", Stringf( "DISK_%d_trkno",    i ),	"", Dimg[i]->Track()  );
+			Ini->SetVal( "DISK", Stringf( "DISK_%d_secno",    i ),	"", Dimg[i]->Sector() );
 		}
 	}
 	
@@ -1923,40 +1923,40 @@ bool DSK60::DokoSave( cIni* Ini )
 	if( !Ini || !DSK6::DokoSave( Ini ) ) return false;
 	
 	// DSK60
-	Ini->PutYesNo( "P66DISK", "mdisk_PD_ATN",	"", mdisk.PD_ATN );
-	Ini->PutYesNo( "P66DISK", "mdisk_PD_DAC",	"", mdisk.PD_DAC );
-	Ini->PutYesNo( "P66DISK", "mdisk_PD_RFD",	"", mdisk.PD_RFD );
-	Ini->PutYesNo( "P66DISK", "mdisk_PD_DAV",	"", mdisk.PD_DAV );
-	Ini->PutYesNo( "P66DISK", "mdisk_DP_DAC",	"", mdisk.DP_DAC );
-	Ini->PutYesNo( "P66DISK", "mdisk_DP_RFD",	"", mdisk.DP_RFD );
-	Ini->PutYesNo( "P66DISK", "mdisk_DP_DAV",	"", mdisk.DP_DAV );
-	Ini->PutValue( "P60DISK", "mdisk_command",	"", mdisk.command );
-	Ini->PutValue( "P60DISK", "mdisk_step",		"", mdisk.step );
-	Ini->PutValue( "P60DISK", "mdisk_blk",		"", mdisk.blk );
-	Ini->PutValue( "P60DISK", "mdisk_drv",		"", mdisk.drv );
-	Ini->PutValue( "P60DISK", "mdisk_trk",		"", mdisk.trk );
-	Ini->PutValue( "P60DISK", "mdisk_sct",		"", mdisk.sct );
-	Ini->PutValue( "P60DISK", "mdisk_rsize",	"", mdisk.rsize );
-	Ini->PutValue( "P60DISK", "mdisk_wsize",	"", mdisk.wsize );
-	Ini->PutValue( "P60DISK", "mdisk_ridx",		"", mdisk.ridx );
-	Ini->PutValue( "P60DISK", "mdisk_size",		"", mdisk.size );
-	Ini->PutValue( "P60DISK", "mdisk_retdat",	"", mdisk.retdat,	"0x%02X" );
-	Ini->PutValue( "P60DISK", "mdisk_busy",		"", mdisk.busy );
-	Ini->PutYesNo( "P66DISK", "mdisk_error",	"", mdisk.error );
+	Ini->SetVal( "P66DISK", "mdisk_PD_ATN",		"", mdisk.PD_ATN );
+	Ini->SetVal( "P66DISK", "mdisk_PD_DAC",		"", mdisk.PD_DAC );
+	Ini->SetVal( "P66DISK", "mdisk_PD_RFD",		"", mdisk.PD_RFD );
+	Ini->SetVal( "P66DISK", "mdisk_PD_DAV",		"", mdisk.PD_DAV );
+	Ini->SetVal( "P66DISK", "mdisk_DP_DAC",		"", mdisk.DP_DAC );
+	Ini->SetVal( "P66DISK", "mdisk_DP_RFD",		"", mdisk.DP_RFD );
+	Ini->SetVal( "P66DISK", "mdisk_DP_DAV",		"", mdisk.DP_DAV );
+	Ini->SetVal( "P60DISK", "mdisk_command",	"", mdisk.command );
+	Ini->SetVal( "P60DISK", "mdisk_step",		"", mdisk.step );
+	Ini->SetVal( "P60DISK", "mdisk_blk",		"", mdisk.blk );
+	Ini->SetVal( "P60DISK", "mdisk_drv",		"", mdisk.drv );
+	Ini->SetVal( "P60DISK", "mdisk_trk",		"", mdisk.trk );
+	Ini->SetVal( "P60DISK", "mdisk_sct",		"", mdisk.sct );
+	Ini->SetVal( "P60DISK", "mdisk_rsize",		"", mdisk.rsize );
+	Ini->SetVal( "P60DISK", "mdisk_wsize",		"", mdisk.wsize );
+	Ini->SetVal( "P60DISK", "mdisk_ridx",		"", mdisk.ridx );
+	Ini->SetVal( "P60DISK", "mdisk_size",		"", mdisk.size );
+	Ini->SetVal( "P60DISK", "mdisk_retdat",		"", "0x%02X", mdisk.retdat );
+	Ini->SetVal( "P60DISK", "mdisk_busy",		"", mdisk.busy );
+	Ini->SetVal( "P66DISK", "mdisk_error",		"", mdisk.error );
 	
-	Ini->PutValue( "P60DISK", "io_D1H",			"", io_D1H,	"0x%02X" );
+	Ini->SetVal( "P60DISK", "io_D1H",			"", "0x%02X", io_D1H );
 	
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		for( int j=0; j<64; j++ )
 			strva += Stringf( "%02X", RBuf[i+j] );
-		Ini->PutEntry( "P60DISK", Stringf( "RBuf_%04X", i ), "", strva.c_str() );
+		Ini->SetEntry( "P60DISK", Stringf( "RBuf_%04X", i ), "", strva.c_str() );
 	}
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		for( int j=0; j<64; j++ )
 			strva += Stringf( "%02X", WBuf[i+j] );
-		Ini->PutEntry( "P60DISK", Stringf( "WBuf_%04X", i ), "", strva.c_str() );
+		Ini->SetEntry( "P60DISK", Stringf( "WBuf_%04X", i ), "", strva.c_str() );
 	}
 	
 	return true;
@@ -1968,54 +1968,54 @@ bool DSK66::DokoSave( cIni* Ini )
 	
 	// DSK66
 	for( int i=0; i<10; i++ ){
-		Ini->PutValue( "P66DISK", Stringf( "CmdIn_Data_%d", i ),	"", CmdIn.Data[i],	"0x%02X" );
-		Ini->PutValue( "P66DISK", Stringf( "CmdOut_Data_%d", i ),	"", CmdOut.Data[i],	"0x%02X" );
+		Ini->SetVal( "P66DISK", Stringf( "CmdIn_Data_%d", i ),	"", "0x%02X", CmdIn.Data[i]  );
+		Ini->SetVal( "P66DISK", Stringf( "CmdOut_Data_%d", i ),	"", "0x%02X", CmdOut.Data[i] );
 	}
-	Ini->PutValue( "P66DISK", "CmdIn_Index",	"", CmdIn.Index );
-	Ini->PutValue( "P66DISK", "CmdOut_Index",	"", CmdOut.Index );
+	Ini->SetVal( "P66DISK", "CmdIn_Index",	"", CmdIn.Index );
+	Ini->SetVal( "P66DISK", "CmdOut_Index",	"", CmdOut.Index );
 	
 	// FDC
 	for( int i=0; i<4; i++ ){
-		Ini->PutValue( "P66DISK", Stringf( "fdc_SeekSta_%d", i ), "", (int)fdc.SeekSta[i] );
-		Ini->PutValue( "P66DISK", Stringf( "fdc_NCN_%d",     i ), "", fdc.NCN[i],	"0x%02X" );
-		Ini->PutValue( "P66DISK", Stringf( "fdc_PCN_%d",     i ), "", fdc.PCN[i],	"0x%02X" );
+		Ini->SetVal( "P66DISK", Stringf( "fdc_SeekSta_%d", i ), "", (int)fdc.SeekSta[i] );
+		Ini->SetVal( "P66DISK", Stringf( "fdc_NCN_%d",     i ), "", "0x%02X", fdc.NCN[i] );
+		Ini->SetVal( "P66DISK", Stringf( "fdc_PCN_%d",     i ), "", "0x%02X", fdc.PCN[i] );
 	}
-	Ini->PutValue( "P66DISK", "fdc_SRT",	"", fdc.SRT,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_HUT",	"", fdc.HUT,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_HLT",	"", fdc.HLT,	"0x%02X" );
-	Ini->PutYesNo( "P66DISK", "fdc_ND",		"", fdc.ND );
-	Ini->PutValue( "P66DISK", "fdc_MT",		"", fdc.MT,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_MF",		"", fdc.MF,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_SK",		"", fdc.SK,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_HD",		"", fdc.HD,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_US",		"", fdc.US,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_C",		"", fdc.C,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_H",		"", fdc.H,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_R",		"", fdc.R,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_N",		"", fdc.N,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_EOT",	"", fdc.EOT,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_GPL",	"", fdc.GPL,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_DTL",	"", fdc.DTL,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_D",		"", fdc.D,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_SC",		"", fdc.SC,		"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_ST0",	"", fdc.ST0,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_ST1",	"", fdc.ST1,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_ST2",	"", fdc.ST2,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_ST3",	"", fdc.ST3,	"0x%02X" );
-	Ini->PutValue( "P66DISK", "fdc_Status",	"", fdc.Status,	"0x%02X" );
-	Ini->PutYesNo( "P66DISK", "fdc_Intr",	"", fdc.Intr );
+	Ini->SetVal( "P66DISK", "fdc_SRT",		"", "0x%02X", fdc.SRT    );
+	Ini->SetVal( "P66DISK", "fdc_HUT",		"", "0x%02X", fdc.HUT    );
+	Ini->SetVal( "P66DISK", "fdc_HLT",		"", "0x%02X", fdc.HLT    );
+	Ini->SetVal( "P66DISK", "fdc_ND",		"",           fdc.ND     );
+	Ini->SetVal( "P66DISK", "fdc_MT",		"", "0x%02X", fdc.MT     );
+	Ini->SetVal( "P66DISK", "fdc_MF",		"", "0x%02X", fdc.MF     );
+	Ini->SetVal( "P66DISK", "fdc_SK",		"", "0x%02X", fdc.SK     );
+	Ini->SetVal( "P66DISK", "fdc_HD",		"", "0x%02X", fdc.HD     );
+	Ini->SetVal( "P66DISK", "fdc_US",		"", "0x%02X", fdc.US     );
+	Ini->SetVal( "P66DISK", "fdc_C",		"", "0x%02X", fdc.C      );
+	Ini->SetVal( "P66DISK", "fdc_H",		"", "0x%02X", fdc.H      );
+	Ini->SetVal( "P66DISK", "fdc_R",		"", "0x%02X", fdc.R      );
+	Ini->SetVal( "P66DISK", "fdc_N",		"", "0x%02X", fdc.N      );
+	Ini->SetVal( "P66DISK", "fdc_EOT",		"", "0x%02X", fdc.EOT    );
+	Ini->SetVal( "P66DISK", "fdc_GPL",		"", "0x%02X", fdc.GPL    );
+	Ini->SetVal( "P66DISK", "fdc_DTL",		"", "0x%02X", fdc.DTL    );
+	Ini->SetVal( "P66DISK", "fdc_D",		"", "0x%02X", fdc.D      );
+	Ini->SetVal( "P66DISK", "fdc_SC",		"", "0x%02X", fdc.SC     );
+	Ini->SetVal( "P66DISK", "fdc_ST0",		"", "0x%02X", fdc.ST0    );
+	Ini->SetVal( "P66DISK", "fdc_ST1",		"", "0x%02X", fdc.ST1    );
+	Ini->SetVal( "P66DISK", "fdc_ST2",		"", "0x%02X", fdc.ST2    );
+	Ini->SetVal( "P66DISK", "fdc_ST3",		"", "0x%02X", fdc.ST3    );
+	Ini->SetVal( "P66DISK", "fdc_Status",	"", "0x%02X", fdc.Status );
+	Ini->SetVal( "P66DISK", "fdc_Intr",		"",           fdc.Intr   );
 	
 	// FDCI
-	Ini->PutValue( "P66DISK", "SendBytes",	"", SendBytes );
-	Ini->PutYesNo( "P66DISK", "ExtDrv",		"", ExtDrv );
-	Ini->PutYesNo( "P66DISK", "B2Dir",		"", B2Dir  );
+	Ini->SetVal( "P66DISK", "SendBytes",	"", SendBytes );
+	Ini->SetVal( "P66DISK", "ExtDrv",		"", ExtDrv );
+	Ini->SetVal( "P66DISK", "B2Dir",		"", B2Dir  );
 	
 	for( int i=0; i<4; i++ ){
 		for( int j=0; j<256; j+=64 ){
 			std::string strva;
 			for( int k=0; k<64; k++ )
 				strva += Stringf( "%02X", FDDBuf[i*256+j+k] );
-			Ini->PutEntry( "P66DISK", Stringf( "FDDBuf_%d_%02X", i, j ), "", strva.c_str() );
+			Ini->SetEntry( "P66DISK", Stringf( "FDDBuf_%d_%02X", i, j ), "", strva.c_str() );
 		}
 	}
 	
@@ -2033,16 +2033,16 @@ bool DSK6::DokoLoad( cIni* Ini )
 	// とりあえず全部アンマウント
 	for( int i=0; i<DrvNum; i++ ) if( Dimg[i] ) Unmount( i) ;
 	
-	Ini->GetValue("DISK", "DrvNum",		DrvNum  );
-	Ini->GetValue("DISK", "WaitCnt",	waitcnt );
+	Ini->GetVal("DISK", "DrvNum",	DrvNum  );
+	Ini->GetVal("DISK", "WaitCnt",	waitcnt );
 	
 	// ディスクイメージオブジェクト
 	for( int i=0; i<DrvNum; i++ ){
 		P6VPATH tpath = "";
-		if( Ini->GetPath( "DISK", Stringf( "DISK_%d_FileName", i ), tpath ) && Mount( i, tpath ) ){
+		if( Ini->GetVal( "DISK", Stringf( "DISK_%d_FileName", i ), tpath ) && Mount( i, tpath ) ){
 			int tr = 0, sc = 0;
-			Ini->GetValue( "DISK", Stringf( "DISK_%d_trkno", i ), tr );
-			Ini->GetValue( "DISK", Stringf( "DISK_%d_secno", i ), sc );
+			Ini->GetVal( "DISK", Stringf( "DISK_%d_trkno", i ), tr );
+			Ini->GetVal( "DISK", Stringf( "DISK_%d_secno", i ), sc );
 			Dimg[i]->Seek( tr, sc );
 		}
 	}
@@ -2055,27 +2055,27 @@ bool DSK60::DokoLoad( cIni* Ini )
 	if( !Ini || !DSK6::DokoLoad( Ini ) ) return false;
 	
 	// DSK60
-	Ini->GetYesNo( "P66DISK", "mdisk_PD_ATN",	mdisk.PD_ATN );
-	Ini->GetYesNo( "P66DISK", "mdisk_PD_DAC",	mdisk.PD_DAC );
-	Ini->GetYesNo( "P66DISK", "mdisk_PD_RFD",	mdisk.PD_RFD );
-	Ini->GetYesNo( "P66DISK", "mdisk_PD_DAV",	mdisk.PD_DAV );
-	Ini->GetYesNo( "P66DISK", "mdisk_DP_DAC",	mdisk.DP_DAC );
-	Ini->GetYesNo( "P66DISK", "mdisk_DP_RFD",	mdisk.DP_RFD );
-	Ini->GetYesNo( "P66DISK", "mdisk_DP_DAV",	mdisk.DP_DAV );
-	Ini->GetValue( "P60DISK", "mdisk_command",	mdisk.command );
-	Ini->GetValue( "P60DISK", "mdisk_step",		mdisk.step );
-	Ini->GetValue( "P60DISK", "mdisk_blk",		mdisk.blk );
-	Ini->GetValue( "P60DISK", "mdisk_drv",		mdisk.drv );
-	Ini->GetValue( "P60DISK", "mdisk_trk",		mdisk.trk );
-	Ini->GetValue( "P60DISK", "mdisk_sct",		mdisk.sct );
-	Ini->GetValue( "P60DISK", "mdisk_rsize",	mdisk.rsize );
-	Ini->GetValue( "P60DISK", "mdisk_wsize",	mdisk.wsize );
-	Ini->GetValue( "P60DISK", "mdisk_ridx",		mdisk.ridx );
-	Ini->GetValue( "P60DISK", "mdisk_size",		mdisk.size );
-	Ini->GetValue( "P60DISK", "mdisk_retdat",	mdisk.retdat );
-	Ini->GetValue( "P60DISK", "mdisk_busy",		mdisk.busy );
-	Ini->GetYesNo( "P66DISK", "fdc_Intr",		mdisk.error );
-	Ini->GetValue( "P60DISK", "io_D1H",			io_D1H );
+	Ini->GetVal( "P66DISK", "mdisk_PD_ATN",		mdisk.PD_ATN );
+	Ini->GetVal( "P66DISK", "mdisk_PD_DAC",		mdisk.PD_DAC );
+	Ini->GetVal( "P66DISK", "mdisk_PD_RFD",		mdisk.PD_RFD );
+	Ini->GetVal( "P66DISK", "mdisk_PD_DAV",		mdisk.PD_DAV );
+	Ini->GetVal( "P66DISK", "mdisk_DP_DAC",		mdisk.DP_DAC );
+	Ini->GetVal( "P66DISK", "mdisk_DP_RFD",		mdisk.DP_RFD );
+	Ini->GetVal( "P66DISK", "mdisk_DP_DAV",		mdisk.DP_DAV );
+	Ini->GetVal( "P60DISK", "mdisk_command",	mdisk.command );
+	Ini->GetVal( "P60DISK", "mdisk_step",		mdisk.step );
+	Ini->GetVal( "P60DISK", "mdisk_blk",		mdisk.blk );
+	Ini->GetVal( "P60DISK", "mdisk_drv",		mdisk.drv );
+	Ini->GetVal( "P60DISK", "mdisk_trk",		mdisk.trk );
+	Ini->GetVal( "P60DISK", "mdisk_sct",		mdisk.sct );
+	Ini->GetVal( "P60DISK", "mdisk_rsize",		mdisk.rsize );
+	Ini->GetVal( "P60DISK", "mdisk_wsize",		mdisk.wsize );
+	Ini->GetVal( "P60DISK", "mdisk_ridx",		mdisk.ridx );
+	Ini->GetVal( "P60DISK", "mdisk_size",		mdisk.size );
+	Ini->GetVal( "P60DISK", "mdisk_retdat",		mdisk.retdat );
+	Ini->GetVal( "P60DISK", "mdisk_busy",		mdisk.busy );
+	Ini->GetVal( "P66DISK", "fdc_Intr",			mdisk.error );
+	Ini->GetVal( "P60DISK", "io_D1H",			io_D1H );
 	
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
@@ -2103,47 +2103,47 @@ bool DSK66::DokoLoad( cIni* Ini )
 	
 	// DSK66
 	for( int i=0; i<10; i++ ){
-		Ini->GetValue( "P66DISK", Stringf( "CmdIn_Data_%d", i ),		CmdIn.Data[i]  );
-		Ini->GetValue( "P66DISK", Stringf( "CmdOut_Data_%d", i ),	CmdOut.Data[i] );
+		Ini->GetVal( "P66DISK", Stringf( "CmdIn_Data_%d", i ),	CmdIn.Data[i]  );
+		Ini->GetVal( "P66DISK", Stringf( "CmdOut_Data_%d", i ),	CmdOut.Data[i] );
 	}
-	Ini->GetValue( "P66DISK", "CmdIn_Index",		CmdIn.Index  );
-	Ini->GetValue( "P66DISK", "CmdOut_Index",	CmdOut.Index );
+	Ini->GetVal( "P66DISK", "CmdIn_Index",		CmdIn.Index  );
+	Ini->GetVal( "P66DISK", "CmdOut_Index",	CmdOut.Index );
 	
 	// FDC
 	for( int i=0; i<4; i++ ){
-		Ini->GetValue( "P66DISK", Stringf( "fdc_NCN_%d", i ),	fdc.NCN[i] );
-		Ini->GetValue( "P66DISK", Stringf( "fdc_PCN_%d", i ),	fdc.PCN[i] );
-		Ini->GetValue( "P66DISK", Stringf( "fdc_SeekSta%d", i ),	(int&)fdc.SeekSta[i] );	// このキャスト危険？
+		Ini->GetVal( "P66DISK", Stringf( "fdc_NCN_%d", i ),	fdc.NCN[i] );
+		Ini->GetVal( "P66DISK", Stringf( "fdc_PCN_%d", i ),	fdc.PCN[i] );
+		Ini->GetVal( "P66DISK", Stringf( "fdc_SeekSta%d", i ),	(int&)fdc.SeekSta[i] );	// このキャスト危険？
 	}
-	Ini->GetValue( "P66DISK", "fdc_SRT",	fdc.SRT );
-	Ini->GetValue( "P66DISK", "fdc_HUT",	fdc.HUT );
-	Ini->GetValue( "P66DISK", "fdc_HLT",	fdc.HLT );
-	Ini->GetYesNo( "P66DISK", "fdc_ND",		fdc.ND );
-	Ini->GetValue( "P66DISK", "fdc_MT",		fdc.MT );
-	Ini->GetValue( "P66DISK", "fdc_MF",		fdc.MF );
-	Ini->GetValue( "P66DISK", "fdc_SK",		fdc.SK );
-	Ini->GetValue( "P66DISK", "fdc_HD",		fdc.HD );
-	Ini->GetValue( "P66DISK", "fdc_US",		fdc.US );
-	Ini->GetValue( "P66DISK", "fdc_C",		fdc.C );
-	Ini->GetValue( "P66DISK", "fdc_H",		fdc.H );
-	Ini->GetValue( "P66DISK", "fdc_R",		fdc.R );
-	Ini->GetValue( "P66DISK", "fdc_N",		fdc.N );
-	Ini->GetValue( "P66DISK", "fdc_EOT",	fdc.EOT );
-	Ini->GetValue( "P66DISK", "fdc_GPL",	fdc.GPL );
-	Ini->GetValue( "P66DISK", "fdc_DTL",	fdc.DTL );
-	Ini->GetValue( "P66DISK", "fdc_D",		fdc.D );
-	Ini->GetValue( "P66DISK", "fdc_SC",		fdc.SC );
-	Ini->GetValue( "P66DISK", "fdc_ST0",	fdc.ST0 );
-	Ini->GetValue( "P66DISK", "fdc_ST1",	fdc.ST1 );
-	Ini->GetValue( "P66DISK", "fdc_ST2",	fdc.ST2 );
-	Ini->GetValue( "P66DISK", "fdc_ST3",	fdc.ST3 );
-	Ini->GetValue( "P66DISK", "fdc_Status",	fdc.Status );
-	Ini->GetYesNo( "P66DISK", "fdc_Intr",	fdc.Intr );
+	Ini->GetVal( "P66DISK", "fdc_SRT",		fdc.SRT );
+	Ini->GetVal( "P66DISK", "fdc_HUT",		fdc.HUT );
+	Ini->GetVal( "P66DISK", "fdc_HLT",		fdc.HLT );
+	Ini->GetVal( "P66DISK", "fdc_ND",		fdc.ND );
+	Ini->GetVal( "P66DISK", "fdc_MT",		fdc.MT );
+	Ini->GetVal( "P66DISK", "fdc_MF",		fdc.MF );
+	Ini->GetVal( "P66DISK", "fdc_SK",		fdc.SK );
+	Ini->GetVal( "P66DISK", "fdc_HD",		fdc.HD );
+	Ini->GetVal( "P66DISK", "fdc_US",		fdc.US );
+	Ini->GetVal( "P66DISK", "fdc_C",		fdc.C );
+	Ini->GetVal( "P66DISK", "fdc_H",		fdc.H );
+	Ini->GetVal( "P66DISK", "fdc_R",		fdc.R );
+	Ini->GetVal( "P66DISK", "fdc_N",		fdc.N );
+	Ini->GetVal( "P66DISK", "fdc_EOT",		fdc.EOT );
+	Ini->GetVal( "P66DISK", "fdc_GPL",		fdc.GPL );
+	Ini->GetVal( "P66DISK", "fdc_DTL",		fdc.DTL );
+	Ini->GetVal( "P66DISK", "fdc_D",		fdc.D );
+	Ini->GetVal( "P66DISK", "fdc_SC",		fdc.SC );
+	Ini->GetVal( "P66DISK", "fdc_ST0",		fdc.ST0 );
+	Ini->GetVal( "P66DISK", "fdc_ST1",		fdc.ST1 );
+	Ini->GetVal( "P66DISK", "fdc_ST2",		fdc.ST2 );
+	Ini->GetVal( "P66DISK", "fdc_ST3",		fdc.ST3 );
+	Ini->GetVal( "P66DISK", "fdc_Status",	fdc.Status );
+	Ini->GetVal( "P66DISK", "fdc_Intr",		fdc.Intr );
 	
 	// FDCI
-	Ini->GetValue( "P66DISK", "SendBytes",	SendBytes );
-	Ini->GetYesNo( "P66DISK", "ExtDrv",		ExtDrv );
-	Ini->GetYesNo( "P66DISK", "B2Dir",		B2Dir  );
+	Ini->GetVal( "P66DISK", "SendBytes",	SendBytes );
+	Ini->GetVal( "P66DISK", "ExtDrv",		ExtDrv );
+	Ini->GetVal( "P66DISK", "B2Dir",		B2Dir  );
 	
 	for( int i=0; i<4; i++ ){
 		for( int j=0; j<256; j+=64 ){

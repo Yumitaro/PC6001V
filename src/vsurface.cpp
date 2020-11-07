@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "common.h"
 #include "vsurface.h"
 

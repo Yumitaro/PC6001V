@@ -1,6 +1,7 @@
 #ifndef DEVICE_H_INCLUDE
 #define DEVICE_H_INCLUDE
 
+#include <functional>
 #include <memory>
 #include <unordered_map>
 
@@ -19,12 +20,19 @@ class VM6;
 //	  Modification : Yumitaro
 // ---------------------------------------------------------------------------
 struct IDevice {
-	typedef DWORD ID;
-	typedef BYTE (IDevice::*InFuncPtr)( int );
-	typedef void (IDevice::*OutFuncPtr)( int, BYTE );
-	typedef BYTE (IDevice::*RFuncPtr)( BYTE*, WORD );
-	typedef void (IDevice::*WFuncPtr)( BYTE*, WORD, BYTE );
-	
+	using ID         = DWORD;
+	using InFuncPtr  = BYTE (IDevice::*)( int );
+	using OutFuncPtr = void (IDevice::*)( int, BYTE );
+	using RFuncPtr   = BYTE (IDevice::*)( BYTE*, WORD );
+	using WFuncPtr   = void (IDevice::*)( BYTE*, WORD, BYTE );
+
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	using RFunc = std::function<BYTE(BYTE*,WORD)>;
+	using WFunc = std::function<void(BYTE*,WORD,BYTE)>;
+	RFunc SetRFunc( RFuncPtr fn, IDevice* obj ){ return std::bind( fn, std::ref(obj), std::placeholders::_1, std::placeholders::_2 ); }
+	WFunc SetWFunc( WFuncPtr fn, IDevice* obj ){ return std::bind( fn, std::ref(obj), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3 ); }
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 	struct Descriptor{
 		std::unordered_map<int, InFuncPtr>  indef;
 		std::unordered_map<int, OutFuncPtr> outdef;
@@ -65,7 +73,7 @@ public:
 // ---------------------------------------------------------------------------
 class DeviceList {
 public:
-	typedef IDevice::ID ID;
+	using ID = IDevice::ID;
 
 private:
 	struct Node{

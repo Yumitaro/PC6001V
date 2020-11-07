@@ -293,11 +293,11 @@ bool VM6::AllocObject( const std::shared_ptr<CFG6>& cnfg )
 		
 		
 		// 全メモリ確保とROMファイル読込み
-		BYTE flg = (cnfg->GetYesNo( CF_CheckCRC ) ? MCRCCHK   : 0)
-				 | (cnfg->GetYesNo( CF_ExtRam )   ? MUSEEXRAM : 0)
-				 | (cnfg->GetValue( CF_UseSoldier ) );
+		BYTE flg = (cnfg->GetValue( CB_CheckCRC ) ? MCRCCHK   : 0)
+				 | (cnfg->GetValue( CB_ExtRam )   ? MUSEEXRAM : 0)
+				 | (cnfg->GetValue( CV_Soldier ) );
 		
-		if( !mem->AllocAllMemory( cnfg->GetPath( CF_RomPath ), flg ) ) throw Error::GetError();
+		if( !mem->AllocAllMemory( cnfg->GetValue( CF_RomPath ), flg ) ) throw Error::GetError();
 	}
 	catch( std::bad_alloc& ){	// new に失敗した場合
 		Error::SetError( Error::MemAllocFailed );
@@ -320,7 +320,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	if( !AllocObject( cnfg ) ) return false;
 	
 	// イベントスケジューラ
-	evsc->SetMasterClock( cclock * cnfg->GetValue( CF_OverClock ) / 100 );
+	evsc->SetMasterClock( cclock * cnfg->GetValue( CV_OverClock ) / 100 );
 	const std::vector<std::shared_ptr<IDevice>> devs = { intr, cpum, cpus, vdg, psg, voice, pio, key, cmtl, cmts, disk };
 	evsc->Entry( devs );
 	
@@ -342,51 +342,51 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	// メモリ -----
 	if( !mem->Init() ) return false;
 	mem->Reset();
-	if( !cnfg->GetPath( CF_ExtRom ).empty() ) if( !mem->MountExtRom( cnfg->GetPath( CF_ExtRom ) ) ) return false;
+	if( !cnfg->GetValue( CF_ExtRom ).empty() ) if( !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ) return false;
 	
 	// VDG -----
 	if( !vdg->Init() ) return false;
-	vdg->SetMode4Color( cnfg->GetValue( CF_Mode4Color ) );
+	vdg->SetMode4Color( cnfg->GetValue( CV_Mode4Color ) );
 	
 	// PSG/OPN -----
-	psg->SetVolume( cnfg->GetValue( CF_PsgVolume ) );	// 音量設定
-	psg->SetLPF( cnfg->GetValue( CF_PsgLPF ) );			// ローパスフィルタ カットオフ周波数設定
+	psg->SetVolume( cnfg->GetValue( CV_PsgVolume ) );	// 音量設定
+	psg->SetLPF( cnfg->GetValue( CV_PsgLPF ) );			// ローパスフィルタ カットオフ周波数設定
 	for( auto &i : *DevTable.Psg ){				// ウェイト設定
 		if( i.rule == IOBus::portout ) iom->SetOutWait( i.bank, 1 );
 		else						   iom->SetInWait ( i.bank, 1 );
 	}
-	if( !psg->Init( pclock, cnfg->GetValue( CF_SampleRate ) ) ) return false;
+	if( !psg->Init( pclock, cnfg->GetValue( CV_SampleRate ) ) ) return false;
 	
 	// 8255 -----
 	pio->Reset();
-	pio->cPRT::SetFile( cnfg->GetPath( CF_printer ) );
+	pio->cPRT::SetFile( cnfg->GetValue( CF_printer ) );
 	
 	// キー -----
-	if( !key->Init( cnfg->GetValue( CF_KeyRepeat ) ) ) return false;
+	if( !key->Init( cnfg->GetValue( CV_KeyRepeat ) ) ) return false;
 	std::vector<VKeyConv> vk;
 	if( cnfg->GetVKeyDef( vk ) )				// キー定義配列取得
 		key->SetVKeySymbols( vk );				// 仮想キーコード -> P6キーコード 設定
 	
 	// CMT(LOAD) -----
-	if( !cmtl->Init( cnfg->GetValue( CF_SampleRate ) ) ) return false;
-	cmtl->SetVolume( cnfg->GetValue( CF_TapeVolume ) );	// 音量設定
-	cmtl->SetLPF( cnfg->GetValue( CF_TapeLPF ) );		// ローパスフィルタ カットオフ周波数設定
-	cmtl->SetBoost( cnfg->GetYesNo( CF_BoostUp ) );
-	cmtl->SetMaxBoost( cnfg->GetValue( CF_MaxBoost60 ), cnfg->GetValue( CF_MaxBoost62 ) );
-	cmtl->SetStopBit( cnfg->GetValue( CF_StopBit ) );	// ストップビット数
+	if( !cmtl->Init( cnfg->GetValue( CV_SampleRate ) ) ) return false;
+	cmtl->SetVolume( cnfg->GetValue( CV_TapeVolume ) );	// 音量設定
+	cmtl->SetLPF( cnfg->GetValue( CV_TapeLPF ) );		// ローパスフィルタ カットオフ周波数設定
+	cmtl->SetBoost( cnfg->GetValue( CB_BoostUp ) );
+	cmtl->SetMaxBoost( cnfg->GetValue( CV_MaxBoost60 ), cnfg->GetValue( CV_MaxBoost62 ) );
+	cmtl->SetStopBit( cnfg->GetValue( CV_StopBit ) );	// ストップビット数
 	
 	// CMT(SAVE) -----
-	if( !cmts->Init( cnfg->GetPath( CF_save ) ) ) return false;
+	if( !cmts->Init( cnfg->GetValue( CF_save ) ) ) return false;
 	
 	// DISK -----
-	if( !disk->Init( cnfg->GetValue( CF_FDD ) ) ) return false;
-	disk->WaitEnable( cnfg->GetYesNo( CF_FDDWait ) );
+	if( !disk->Init( cnfg->GetValue( CV_FDD ) ) ) return false;
+	disk->WaitEnable( cnfg->GetValue( CB_FDDWait ) );
 	
 	// 音声合成 -----
 	if( DevTable.Voice ){
-		if( !voice->Init( cnfg->GetValue( CF_SampleRate ) ) ) return false;
-		voice->SetVolume( cnfg->GetValue( CF_VoiceVolume ) );	// 音量設定
-		voice->SetPath( cnfg->GetPath( CF_WavePath ) );
+		if( !voice->Init( cnfg->GetValue( CV_SampleRate ) ) ) return false;
+		voice->SetVolume( cnfg->GetValue( CV_VoiceVolume ) );	// 音量設定
+		voice->SetPath( cnfg->GetValue( CF_WavePath ) );
 	}
 	
 	
@@ -397,7 +397,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	if( !iom->Connect( intr, *DevTable.Intr  ) ) return false;	// 割込み
 	if( !iom->Connect( vdg,  *DevTable.Vdg   ) ) return false;	// VDG
 	if( !iom->Connect( psg,  *DevTable.Psg   ) ) return false;	// PSG/OPN
-	if( cnfg->GetValue( CF_FDD ) || (cnfg->GetValue( CF_Model ) == 66) || (cnfg->GetValue( CF_Model ) == 68) )	// DISK
+	if( cnfg->GetValue( CV_FDD ) || (cnfg->GetValue( CV_Model ) == 66) || (cnfg->GetValue( CV_Model ) == 68) )	// DISK
 		if( !iom->Connect( disk,  *DevTable.Disk   ) ) return false;
 	if( DevTable.Memory )										// メモリ
 		if( !iom->Connect( mem,   *DevTable.Memory ) ) return false;
@@ -405,7 +405,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 		if( !iom->Connect( voice, *DevTable.Voice  ) ) return false;
 	
 	// オプション機能 -----
-	if( cnfg->GetValue( CF_UseSoldier ) )						// 戦士のカートリッジ
+	if( cnfg->GetValue( CV_Soldier ) )							// 戦士のカートリッジ
 		if( !iom->Connect( mem, *DevTable.Soldier ) ) return false;
 	
 	

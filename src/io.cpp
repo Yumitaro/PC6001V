@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include "error.h"
 #include "io.h"
 #include "log.h"

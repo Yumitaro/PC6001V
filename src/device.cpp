@@ -3,6 +3,8 @@
 //	  Original     : cisc
 //	  Modification : Yumitaro
 // ---------------------------------------------------------------------------
+#include <stdexcept>
+
 #include "device.h"
 
 

@@ -281,25 +281,25 @@ bool PIO6::DokoSave( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->PutValue( "8255", "PortA",		"",	PortA,		"0x%02X" );
-	Ini->PutValue( "8255", "PortB",		"",	PortB,		"0x%02X" );
-	Ini->PutValue( "8255", "PortC",		"",	PortC,		"0x%02X" );
-	Ini->PutValue( "8255", "PortAbuf",	"",	PortAbuf,	"0x%02X" );
-	Ini->PutValue( "8255", "ModeA",		"", ModeA     );
-	Ini->PutValue( "8255", "ModeB",		"", ModeB     );
-	Ini->PutYesNo( "8255", "PortAdir",	"", PortAdir  );
-	Ini->PutYesNo( "8255", "PortBdir",	"", PortBdir  );
-	Ini->PutYesNo( "8255", "PortC1dir",	"", PortC1dir );
-	Ini->PutYesNo( "8255", "PortC2dir",	"", PortC2dir );
-	Ini->PutYesNo( "8255", "HSINT0",	"", HSINT0    );
-	Ini->PutYesNo( "8255", "HSWINT0",	"", HSWINT0   );
-	Ini->PutYesNo( "8255", "HSRINT0",	"", HSRINT0   );
-	Ini->PutYesNo( "8255", "HSSTB0",	"", HSSTB0    );
-	Ini->PutYesNo( "8255", "HSIBF0",	"", HSIBF0    );
-	Ini->PutYesNo( "8255", "HSDAK0",	"", HSDAK0    );
-	Ini->PutYesNo( "8255", "HSOBF0",	"", HSOBF0    );
-	Ini->PutYesNo( "8255", "RIE0",		"", RIE0      );
-	Ini->PutYesNo( "8255", "WIE0",		"", WIE0      );
+	Ini->SetVal( "8255", "PortA",		"", "0x%02X", PortA    );
+	Ini->SetVal( "8255", "PortB",		"", "0x%02X", PortB    );
+	Ini->SetVal( "8255", "PortC",		"", "0x%02X", PortC    );
+	Ini->SetVal( "8255", "PortAbuf",	"", "0x%02X", PortAbuf );
+	Ini->SetVal( "8255", "ModeA",		"", ModeA     );
+	Ini->SetVal( "8255", "ModeB",		"", ModeB     );
+	Ini->SetVal( "8255", "PortAdir",	"", PortAdir  );
+	Ini->SetVal( "8255", "PortBdir",	"", PortBdir  );
+	Ini->SetVal( "8255", "PortC1dir",	"", PortC1dir );
+	Ini->SetVal( "8255", "PortC2dir",	"", PortC2dir );
+	Ini->SetVal( "8255", "HSINT0",		"", HSINT0    );
+	Ini->SetVal( "8255", "HSWINT0",		"", HSWINT0   );
+	Ini->SetVal( "8255", "HSRINT0",		"", HSRINT0   );
+	Ini->SetVal( "8255", "HSSTB0",		"", HSSTB0    );
+	Ini->SetVal( "8255", "HSIBF0",		"", HSIBF0    );
+	Ini->SetVal( "8255", "HSDAK0",		"", HSDAK0    );
+	Ini->SetVal( "8255", "HSOBF0",		"", HSOBF0    );
+	Ini->SetVal( "8255", "RIE0",		"", RIE0      );
+	Ini->SetVal( "8255", "WIE0",		"", WIE0      );
 	
 	return true;
 }
@@ -315,25 +315,25 @@ bool PIO6::DokoLoad( cIni* Ini )
 {
 	if( !Ini ) return false;
 	
-	Ini->GetValue( "8255", "PortA",		PortA     );
-	Ini->GetValue( "8255", "PortB",		PortB     );
-	Ini->GetValue( "8255", "PortC",		PortC     );
-	Ini->GetValue( "8255", "PortAbuf",	PortAbuf  );
-	Ini->GetValue( "8255", "ModeA",		ModeA     );
-	Ini->GetValue( "8255", "ModeB",		ModeB     );
-	Ini->GetYesNo( "8255", "PortAdir",	PortAdir  );
-	Ini->GetYesNo( "8255", "PortBdir",	PortBdir  );
-	Ini->GetYesNo( "8255", "PortC1dir",	PortC1dir );
-	Ini->GetYesNo( "8255", "PortC2dir",	PortC2dir );
-	Ini->GetYesNo( "8255", "HSINT0",	HSINT0    );
-	Ini->GetYesNo( "8255", "HSWINT0",	HSWINT0   );
-	Ini->GetYesNo( "8255", "HSRINT0",	HSRINT0   );
-	Ini->GetYesNo( "8255", "HSSTB0",	HSSTB0    );
-	Ini->GetYesNo( "8255", "HSIBF0",	HSIBF0    );
-	Ini->GetYesNo( "8255", "HSDAK0",	HSDAK0    );
-	Ini->GetYesNo( "8255", "HSOBF0",	HSOBF0    );
-	Ini->GetYesNo( "8255", "RIE0",		RIE0      );
-	Ini->GetYesNo( "8255", "WIE0",		WIE0      );
+	Ini->GetVal( "8255", "PortA",		PortA     );
+	Ini->GetVal( "8255", "PortB",		PortB     );
+	Ini->GetVal( "8255", "PortC",		PortC     );
+	Ini->GetVal( "8255", "PortAbuf",	PortAbuf  );
+	Ini->GetVal( "8255", "ModeA",		ModeA     );
+	Ini->GetVal( "8255", "ModeB",		ModeB     );
+	Ini->GetVal( "8255", "PortAdir",	PortAdir  );
+	Ini->GetVal( "8255", "PortBdir",	PortBdir  );
+	Ini->GetVal( "8255", "PortC1dir",	PortC1dir );
+	Ini->GetVal( "8255", "PortC2dir",	PortC2dir );
+	Ini->GetVal( "8255", "HSINT0",		HSINT0    );
+	Ini->GetVal( "8255", "HSWINT0",		HSWINT0   );
+	Ini->GetVal( "8255", "HSRINT0",		HSRINT0   );
+	Ini->GetVal( "8255", "HSSTB0",		HSSTB0    );
+	Ini->GetVal( "8255", "HSIBF0",		HSIBF0    );
+	Ini->GetVal( "8255", "HSDAK0",		HSDAK0    );
+	Ini->GetVal( "8255", "HSOBF0",		HSOBF0    );
+	Ini->GetVal( "8255", "RIE0",		RIE0      );
+	Ini->GetVal( "8255", "WIE0",		WIE0      );
 	
 	return true;
 }

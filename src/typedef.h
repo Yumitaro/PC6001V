@@ -14,40 +14,40 @@
 #define	NOMINMAX	1				// max,min無効化
 #include <windows.h>
 #else
-typedef uint8_t		BYTE;
-typedef uint16_t	WORD;
-typedef uint32_t	DWORD;
+using BYTE  = uint8_t;
+using WORD  = uint16_t;
+using DWORD = uint32_t;
 #endif
 
 
 // OSD関連オブジェクトハンドル
 // 面倒なのでとりあえず何でもvoid *
-typedef	void*		HTHREAD;		// スレッド
-typedef	void*		HCRSECT;		// クリティカルセクション
-typedef	void*		HSEMAPHORE;		// セマフォ
-typedef	void*		HWINDOW;		// ウィンドウハンドル的な
-typedef	void*		HSURFACE;		// サーフェス的な
-typedef	void*		HJOYINFO;		// ジョイスティック
+using HTHREAD    = void*;	// スレッド
+using HCRSECT    = void*;	// クリティカルセクション
+using HSEMAPHORE = void*;	// セマフォ
+using HWINDOW    = void*;	// ウィンドウハンドル的な
+using HSURFACE   = void*;	// サーフェス的な
+using HJOYINFO   = void*;	// ジョイスティック
 
 // OSD関連変数型
-typedef DWORD		TIMERID;		// タイマID
+using TIMERID = DWORD;		// タイマID
 
 // OSD関連コールバック関数へのポインタ
-typedef void (*CBF_SND)( void *, BYTE *, int );	// サウンドストリーム
-typedef DWORD (*CBF_TMR)( DWORD, void * );		// タイマ
+using CBF_SND = void  (*)( void*, BYTE*, int );	// サウンドストリーム
+using CBF_TMR = DWORD (*)( DWORD, void* );		// タイマ
 
 // filesystem
 #ifdef	USEFILESYSTEM
 
 #include <filesystem>
-typedef std::filesystem::path	P6VPATH;
-#define P6VSTR2PATH(st)			std::filesystem::u8path(st)
+using P6VPATH = std::filesystem::path;
+#define STR2P6VPATH(st)			std::filesystem::u8path(st)
 #define P6VPATH2STR(st)			(st).u8string()
 
 #else
 
-typedef std::string				P6VPATH;
-#define P6VSTR2PATH(st)			(st)
+using P6VPATH = std::string;
+#define STR2P6VPATH(st)			(st)
 #define P6VPATH2STR(st)			(st)
 
 #endif

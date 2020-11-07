@@ -642,49 +642,49 @@ bool VDG6::DokoSave( cIni* Ini )
 	if( !Ini ) return false;
 	
 	// Core
-	Ini->PutYesNo( "VDG", "CrtDisp",		"",	CrtDisp );
-	Ini->PutYesNo( "VDG", "BusReq",			"",	BusReq  );
-	Ini->PutYesNo( "VDG", "N60Win",			"",	N60Win  );
-	Ini->PutValue( "VDG", "VAddr",			"",	VAddr,	"0x%04X" );
-	Ini->PutValue( "VDG", "HAddr",			"",	HAddr,	"0x%04X" );
-	Ini->PutValue( "VDG", "RowCntA",		"",	RowCntA );
-	Ini->PutValue( "VDG", "RowCntG",		"",	RowCntG );
-	Ini->PutValue( "VDG", "AT_AG",			"",	AT_AG,	"0x%02X" );
-	Ini->PutValue( "VDG", "AT_AS",			"",	AT_AS,	"0x%02X" );
-	Ini->PutValue( "VDG", "AT_IE",			"",	AT_IE,	"0x%02X" );
-	Ini->PutValue( "VDG", "AT_GM",			"",	AT_GM,	"0x%02X" );
-	Ini->PutValue( "VDG", "AT_CSS",			"",	AT_CSS,	"0x%02X" );
-	Ini->PutValue( "VDG", "AT_INV",			"",	AT_INV,	"0x%02X" );
+	Ini->SetVal( "VDG", "CrtDisp",		"", CrtDisp );
+	Ini->SetVal( "VDG", "BusReq",		"", BusReq  );
+	Ini->SetVal( "VDG", "N60Win",		"", N60Win  );
+	Ini->SetVal( "VDG", "VAddr",		"", "0x%04X", VAddr );
+	Ini->SetVal( "VDG", "HAddr",		"", "0x%04X", HAddr );
+	Ini->SetVal( "VDG", "RowCntA",		"", RowCntA );
+	Ini->SetVal( "VDG", "RowCntG",		"", RowCntG );
+	Ini->SetVal( "VDG", "AT_AG",		"", "0x%02X", AT_AG );
+	Ini->SetVal( "VDG", "AT_AS",		"", "0x%02X", AT_AS );
+	Ini->SetVal( "VDG", "AT_IE",		"", "0x%02X", AT_IE );
+	Ini->SetVal( "VDG", "AT_GM",		"", "0x%02X", AT_GM );
+	Ini->SetVal( "VDG", "AT_CSS",		"", "0x%02X", AT_CSS );
+	Ini->SetVal( "VDG", "AT_INV",		"", "0x%02X", AT_INV );
 	
 	// 62,66,64,68
-	Ini->PutYesNo( "VDG", "CharMode",		"",	CharMode  );
-	Ini->PutYesNo( "VDG", "GraphMode",		"",	GraphMode );
-	Ini->PutValue( "VDG", "Css1",			"",	Css1 );
-	Ini->PutValue( "VDG", "Css2",			"",	Css2 );
-	Ini->PutValue( "VDG", "Css3",			"",	Css3 );
+	Ini->SetVal( "VDG", "CharMode",		"",	CharMode  );
+	Ini->SetVal( "VDG", "GraphMode",	"",	GraphMode );
+	Ini->SetVal( "VDG", "Css1",			"",	Css1 );
+	Ini->SetVal( "VDG", "Css2",			"",	Css2 );
+	Ini->SetVal( "VDG", "Css3",			"",	Css3 );
 	
 	// 64,68
-	Ini->PutYesNo( "VDG", "SRmode",			"",	SRmode      );
-	Ini->PutYesNo( "VDG", "SRBitmap",		"",	SRBitmap    );
-	Ini->PutYesNo( "VDG", "SRBMPage",		"",	SRBMPage    );
-	Ini->PutYesNo( "VDG", "SRLine204",		"",	SRLine204   );
-	Ini->PutYesNo( "VDG", "SRCharLine",		"",	SRCharLine  );
-	Ini->PutYesNo( "VDG", "SRCharWidth",	"",	SRCharWidth );
-	Ini->PutValue( "VDG", "SRTextAddr",		"", SRTextAddr,		"0x%02X" );
-	Ini->PutValue( "VDG", "SRRollX",		"",	SRRollX );
-	Ini->PutValue( "VDG", "SRRollY",		"",	SRRollY );
-	Ini->PutValue( "VDG", "SRVramAddrY",	"", SRVramAddrY,	"0x%04X" );
+	Ini->SetVal( "VDG", "SRmode",		"",	SRmode      );
+	Ini->SetVal( "VDG", "SRBitmap",		"",	SRBitmap    );
+	Ini->SetVal( "VDG", "SRBMPage",		"",	SRBMPage    );
+	Ini->SetVal( "VDG", "SRLine204",	"",	SRLine204   );
+	Ini->SetVal( "VDG", "SRCharLine",	"",	SRCharLine  );
+	Ini->SetVal( "VDG", "SRCharWidth",	"",	SRCharWidth );
+	Ini->SetVal( "VDG", "SRTextAddr",	"", "0x%02X", SRTextAddr );
+	Ini->SetVal( "VDG", "SRRollX",		"",	SRRollX );
+	Ini->SetVal( "VDG", "SRRollY",		"",	SRRollY );
+	Ini->SetVal( "VDG", "SRVramAddrY",	"", "0x%04X", SRVramAddrY );
 	
 	// VDG6
-	Ini->PutValue( "VDG", "AddrOff",		"", AddrOff,		"0x%04X" );
-	Ini->PutYesNo( "VDG", "VSYNC",			"",	VSYNC );
-	Ini->PutYesNo( "VDG", "HSYNC",			"",	HSYNC );
-	Ini->PutValue( "VDG", "VLcnt",			"",	VLcnt );
+	Ini->SetVal( "VDG", "AddrOff",		"", "0x%04X", AddrOff );
+	Ini->SetVal( "VDG", "VSYNC",		"",	VSYNC );
+	Ini->SetVal( "VDG", "HSYNC",		"",	HSYNC );
+	Ini->SetVal( "VDG", "VLcnt",		"",	VLcnt );
 	
 	for( int i=0; i<16; i++ ){
-		Ini->PutValue( "VDG", Stringf( "COL_AN2_%02d", i ),		"",	COL_AN2[i] );
-		Ini->PutValue( "VDG", Stringf( "COL_CG2_0_%02d", i ),	"",	COL_CG2[0][i] );
-		Ini->PutValue( "VDG", Stringf( "COL_CG2_1_%02d", i ),	"",	COL_CG2[1][i] );
+		Ini->SetVal( "VDG", Stringf( "COL_AN2_%02d", i ),	"",	COL_AN2[i] );
+		Ini->SetVal( "VDG", Stringf( "COL_CG2_0_%02d", i ),	"",	COL_CG2[0][i] );
+		Ini->SetVal( "VDG", Stringf( "COL_CG2_1_%02d", i ),	"",	COL_CG2[1][i] );
 	}
 	
 	return true;
@@ -699,49 +699,49 @@ bool VDG6::DokoLoad( cIni* Ini )
 	if( !Ini ) return false;
 	
 	// Core
-	Ini->GetYesNo( "VDG", "CrtDisp",		CrtDisp );
-	Ini->GetYesNo( "VDG", "BusReq",			BusReq  );
-	Ini->GetYesNo( "VDG", "N60Win",			N60Win  );
-	Ini->GetValue( "VDG", "VAddr",			VAddr   );
-	Ini->GetValue( "VDG", "HAddr",			HAddr   );
-	Ini->GetValue( "VDG", "RowCntA",		RowCntA );
-	Ini->GetValue( "VDG", "RowCntG",		RowCntG );
-	Ini->GetValue( "VDG", "AT_AG",			AT_AG   );
-	Ini->GetValue( "VDG", "AT_AS",			AT_AS   );
-	Ini->GetValue( "VDG", "AT_IE",			AT_IE   );
-	Ini->GetValue( "VDG", "AT_GM",			AT_GM   );
-	Ini->GetValue( "VDG", "AT_CSS",			AT_CSS  );
-	Ini->GetValue( "VDG", "AT_INV",			AT_INV  );
+	Ini->GetVal( "VDG", "CrtDisp",		CrtDisp );
+	Ini->GetVal( "VDG", "BusReq",		BusReq  );
+	Ini->GetVal( "VDG", "N60Win",		N60Win  );
+	Ini->GetVal( "VDG", "VAddr",		VAddr   );
+	Ini->GetVal( "VDG", "HAddr",		HAddr   );
+	Ini->GetVal( "VDG", "RowCntA",		RowCntA );
+	Ini->GetVal( "VDG", "RowCntG",		RowCntG );
+	Ini->GetVal( "VDG", "AT_AG",		AT_AG   );
+	Ini->GetVal( "VDG", "AT_AS",		AT_AS   );
+	Ini->GetVal( "VDG", "AT_IE",		AT_IE   );
+	Ini->GetVal( "VDG", "AT_GM",		AT_GM   );
+	Ini->GetVal( "VDG", "AT_CSS",		AT_CSS  );
+	Ini->GetVal( "VDG", "AT_INV",		AT_INV  );
 	
 	// 62,66,64,68
-	Ini->GetYesNo( "VDG", "CharMode",		CharMode  );
-	Ini->GetYesNo( "VDG", "GraphMode",		GraphMode );
-	Ini->GetValue( "VDG", "Css1",			Css1      );
-	Ini->GetValue( "VDG", "Css2",			Css2      );
-	Ini->GetValue( "VDG", "Css3",			Css3      );
+	Ini->GetVal( "VDG", "CharMode",		CharMode  );
+	Ini->GetVal( "VDG", "GraphMode",	GraphMode );
+	Ini->GetVal( "VDG", "Css1",			Css1      );
+	Ini->GetVal( "VDG", "Css2",			Css2      );
+	Ini->GetVal( "VDG", "Css3",			Css3      );
 	
 	// 64,68
-	Ini->GetYesNo( "VDG", "SRmode",			SRmode      );
-	Ini->GetYesNo( "VDG", "SRBitmap",		SRBitmap    );
-	Ini->GetYesNo( "VDG", "SRBMPage",		SRBMPage    );
-	Ini->GetYesNo( "VDG", "SRLine204",		SRLine204   );
-	Ini->GetYesNo( "VDG", "SRCharLine",		SRCharLine  );
-	Ini->GetYesNo( "VDG", "SRCharWidth",	SRCharWidth );
-	Ini->GetValue( "VDG", "SRTextAddr",		SRTextAddr  );
-	Ini->GetValue( "VDG", "SRRollX",		SRRollX     );
-	Ini->GetValue( "VDG", "SRRollY",		SRRollY     );
-	Ini->GetValue( "VDG", "SRVramAddrY",	SRVramAddrY );
+	Ini->GetVal( "VDG", "SRmode",		SRmode      );
+	Ini->GetVal( "VDG", "SRBitmap",		SRBitmap    );
+	Ini->GetVal( "VDG", "SRBMPage",		SRBMPage    );
+	Ini->GetVal( "VDG", "SRLine204",	SRLine204   );
+	Ini->GetVal( "VDG", "SRCharLine",	SRCharLine  );
+	Ini->GetVal( "VDG", "SRCharWidth",	SRCharWidth );
+	Ini->GetVal( "VDG", "SRTextAddr",	SRTextAddr  );
+	Ini->GetVal( "VDG", "SRRollX",		SRRollX     );
+	Ini->GetVal( "VDG", "SRRollY",		SRRollY     );
+	Ini->GetVal( "VDG", "SRVramAddrY",	SRVramAddrY );
 	
 	// VDG6
-	Ini->GetValue( "VDG", "AddrOff",		AddrOff );
-	Ini->GetYesNo( "VDG", "VSYNC",			VSYNC   );
-	Ini->GetYesNo( "VDG", "HSYNC",			HSYNC   );
-	Ini->GetValue( "VDG", "VLcnt",			VLcnt   );
+	Ini->GetVal( "VDG", "AddrOff",		AddrOff );
+	Ini->GetVal( "VDG", "VSYNC",		VSYNC   );
+	Ini->GetVal( "VDG", "HSYNC",		HSYNC   );
+	Ini->GetVal( "VDG", "VLcnt",		VLcnt   );
 	
 	for( int i=0; i<16; i++ ){
-		Ini->GetValue( "VDG", Stringf( "COL_AN2_%02d",   i ),	COL_AN2[i]    );
-		Ini->GetValue( "VDG", Stringf( "COL_CG2_0_%02d", i ),	COL_CG2[0][i] );
-		Ini->GetValue( "VDG", Stringf( "COL_CG2_1_%02d", i ),	COL_CG2[1][i] );
+		Ini->GetVal( "VDG", Stringf( "COL_AN2_%02d",   i ),	COL_AN2[i]    );
+		Ini->GetVal( "VDG", Stringf( "COL_CG2_0_%02d", i ),	COL_CG2[0][i] );
+		Ini->GetVal( "VDG", Stringf( "COL_CG2_1_%02d", i ),	COL_CG2[1][i] );
 	}
 	return true;
 }

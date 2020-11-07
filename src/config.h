@@ -5,42 +5,55 @@
 #include <vector>
 
 #include "ini.h"
+#include "common.h"
 #include "keydef.h"
 #include "vsurface.h"
 
 
-// 設定項目
+// 設定項目(数値)
 typedef enum {
-	CF_Model = 0,
-	CF_FDD,
-	CF_ExtRam,
-	CF_OverClock,
-	CF_CheckCRC,
-	CF_FDDWait,
-	CF_TurboTAPE,
-	CF_BoostUp,
-	CF_MaxBoost60,
-	CF_MaxBoost62,
-	CF_StopBit,
-	CF_Mode4Color,
-	CF_ScanLine,
-	CF_ScanLineBr,
-	CF_Filtering,
-	CF_DispNTSC,
-	CF_FullScreen,
-	CF_WindowZoom,
-	CF_DispStatus,
-	CF_FrameSkip,
-	CF_SampleRate,
-	CF_SoundBuffer,
-	CF_MasterVolume,
-	CF_PsgVolume,
-	CF_PsgLPF,
-	CF_VoiceVolume,
-	CF_TapeVolume,
-	CF_TapeLPF,
-	CF_AviBpp,
-	CF_ExtRom,
+	CV_Model = 0,
+	CV_FDD,
+	CV_OverClock,
+	CV_MaxBoost60,
+	CV_MaxBoost62,
+	CV_StopBit,
+	CV_Mode4Color,
+	CV_ScanLineBr,
+	CV_WindowZoom,
+	CV_FrameSkip,
+	CV_SampleRate,
+	CV_SoundBuffer,
+	CV_MasterVol,
+	CV_PsgVolume,
+	CV_PsgLPF,
+	CV_VoiceVolume,
+	CV_TapeVolume,
+	CV_TapeLPF,
+	CV_AviBpp,
+	CV_Soldier,
+	CV_KeyRepeat
+} TCValue;
+
+// 設定項目(bool)
+typedef enum {
+	CB_ExtRam = 0,
+	CB_CheckCRC,
+	CB_FDDWait,
+	CB_TurboTAPE,
+	CB_BoostUp,
+	CB_ScanLine,
+	CB_Filtering,
+	CB_DispNTSC,
+	CB_FullScreen,
+	CB_DispStatus,
+	CB_CkQuit,
+	CB_SaveQuit
+} TCBool;
+
+// 設定項目(path)
+typedef enum {
+	CF_ExtRom = 0,
 	CF_tape,
 	CF_save,
 	CF_disk1,
@@ -53,12 +66,40 @@ typedef enum {
 	CF_ImgPath,
 	CF_WavePath,
 	CF_FontPath,
-	CF_DokoPath,
-	CF_CkQuit,
-	CF_SaveQuit,
-	CF_UseSoldier,
-	CF_KeyRepeat
-} TConfig;
+	CF_DokoPath
+} TCPath;
+
+
+// 設定項目定義
+template <typename T> struct CfgSet{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+};
+
+template <> struct CfgSet<TCValue>{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	int Default;			// 初期値
+	int Max;				// 最大値
+	int Min;				// 最小値
+};
+
+template <> struct CfgSet<TCBool>{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	bool Default;			// 初期値
+};
+
+template <> struct CfgSet<TCPath>{
+	std::string Section;	// セクション
+	std::string Entry;		// ノード
+	TextID Comment;			// コメント
+	P6VPATH Default;		// 初期値
+	bool IsFile;			// true:ファイル false:パス
+};
 
 
 ////////////////////////////////////////////////////////////////
@@ -78,7 +119,7 @@ protected:
 	PCKEYsym GetPCKeyCode( const std::string& );			// キー名称から仮想キーコードを取得
 	P6KEYsym GetP6KeyCode( const std::string& );			// キー名称からP6キーコードを取得
 	
-	void SetDefault( TConfig, bool );						// 初期値設定
+	template <typename T> void SetDefault( const T&, const bool );	// 初期値設定
 
 public:
 	CFG6();
@@ -88,14 +129,8 @@ public:
 	bool Write();											// INIファイル書込み
 	
 	// メンバアクセス関数
-	int GetValue( TConfig );								// 値 取得
-	void SetValue( TConfig, int );							//    設定
-	
-	bool GetYesNo( TConfig );								// bool取得
-	void SetYesNo( TConfig, bool );							//     設定
-	
-	P6VPATH GetPath( TConfig );								// path取得
-	void SetPath( TConfig, const P6VPATH& );				//     設定
+	template <typename T> auto GetValue( const T& ) -> decltype(CfgSet<T>::Default);	// 値設定(数値,bool,path)
+	template <typename T1,typename T2> void SetValue( const T1&, const T2& );			// 値設定(数値,bool,path)
 	
 	
 	// [KEY] -------------------------------------------------------

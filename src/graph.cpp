@@ -11,7 +11,7 @@
 
 
 // スクリーン表示倍率(%)
-#define	WSCALE		el->cfg->GetValue( CF_WindowZoom )
+#define	WSCALE		el->cfg->GetValue( CV_WindowZoom )
 
 // スクリーンサイズ(標準)
 #define	P6WINW		el->GetVideoInfo().w
@@ -34,16 +34,16 @@
 // フルスクリーンモード時はステータスバー表示禁止
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #define	DISPMON		el->vm->IsMonitor()
-#define	DISPFULL	(!DISPMON && el->cfg->GetYesNo( CF_FullScreen ))
-#define	DISPSCAN	(!DISPMON && el->cfg->GetYesNo( CF_ScanLine ))
-#define	DISPNTSC	(!DISPMON && el->cfg->GetYesNo( CF_DispNTSC ))
+#define	DISPFULL	(!DISPMON && el->cfg->GetValue( CB_FullScreen ))
+#define	DISPSCAN	(!DISPMON && el->cfg->GetValue( CB_ScanLine ))
+#define	DISPNTSC	(!DISPMON && el->cfg->GetValue( CB_DispNTSC ))
 #else
-#define	DISPFULL	el->cfg->GetYesNo( CF_FullScreen )
-#define	DISPSCAN	el->cfg->GetYesNo( CF_ScanLine )
-#define	DISPNTSC	el->cfg->GetYesNo( CF_DispNTSC )
+#define	DISPFULL	el->cfg->GetValue( CB_FullScreen )
+#define	DISPSCAN	el->cfg->GetValue( CB_ScanLine )
+#define	DISPNTSC	el->cfg->GetValue( CB_DispNTSC )
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-#define	DISPSTAT	(!DISPFULL && el->cfg->GetYesNo( CF_DispStatus ))
+#define	DISPSTAT	(!DISPFULL && el->cfg->GetValue( CB_DispStatus ))
 
 
 ////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ bool DSP6::SetScreenSurface( void )
 	}
 	
 	// ウィンドウ作成
-	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetYesNo( CF_Filtering ), el->cfg->GetValue( CF_ScanLineBr ) );
+	OSD_CreateWindow( &Wh, x, y, P6WINW, P6WINH, DISPFULL, el->cfg->GetValue( CB_Filtering ), el->cfg->GetValue( CV_ScanLineBr ) );
 	
 	// フルスクリーン，モニタモード時はウィンドウサイズ変更不可
 	OSD_SetWindowResizable( Wh, !(DISPFULL | DISPMON) );
@@ -179,7 +179,7 @@ bool DSP6::ResizeScreen( void )
 	}
 	
 	// ウィンドウサイズ変更 or フィルタリング変更なら作り直す
-	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetYesNo( CF_Filtering ) ){
+	if( !Wh || (x != OSD_GetWindowWidth( Wh )) || (y != OSD_GetWindowHeight( Wh )) || (OSD_IsFullScreen( Wh ) != DISPFULL) || OSD_IsFiltering( Wh ) != el->cfg->GetValue( CB_Filtering ) ){
 		if( !SetScreenSurface() ) return false;
 		el->staw->Init( OSD_GetWindowWidth( Wh ) );	// ステータスバーも
 		
@@ -310,7 +310,7 @@ void DSP6::SnapShot( const P6VPATH& path )
 	
 	// スナップショットファイル名を決める
 	do{
-		OSD_AddPath( tpath, path, P6VSTR2PATH( Stringf( "%s%03d.%s", FILE_SNAP, ++Index, EXT_IMG ) ) );
+		OSD_AddPath( tpath, path, STR2P6VPATH( Stringf( "%s%03d.%s", FILE_SNAP, ++Index, EXT_IMG ) ) );
 	}while( OSD_FileExist( tpath ) || (Index > 999) );
 	
 	// 連番が有効なら画像ファイル保存

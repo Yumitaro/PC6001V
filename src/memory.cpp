@@ -54,14 +54,14 @@
 #define INEXRAM		(RamB[16])	// IntRam+ExtRam
 
 
-#define rMAINROM0	((UseSol && Sol60Mode) ? &EXTRAM0 : &MAINROM0)
-#define rMAINROM1	((UseSol && Sol60Mode) ? &EXTRAM1 : &MAINROM1)
-#define wMAINROM0	((UseSol && Sol60Mode) ? &EXTRAM0 : &EMPTYROM)
-#define wMAINROM1	((UseSol && Sol60Mode) ? &EXTRAM1 : &EMPTYROM)
-#define pEXTRAM0	(UseSol ? &EXTRAM4 : &EXTRAM0)
-#define pEXTRAM1	(UseSol ? &EXTRAM5 : &EXTRAM1)
-#define wEXTROM0	(UseSol ? &EXTRAM2 : &EMPTYROM)
-#define wEXTROM1	(UseSol ? &EXTRAM3 : &EMPTYROM)
+#define rMAINROM0	((SolVer && Sol60Mode) ? &EXTRAM0 : &MAINROM0)
+#define rMAINROM1	((SolVer && Sol60Mode) ? &EXTRAM1 : &MAINROM1)
+#define wMAINROM0	((SolVer && Sol60Mode) ? &EXTRAM0 : &EMPTYROM)
+#define wMAINROM1	((SolVer && Sol60Mode) ? &EXTRAM1 : &EMPTYROM)
+#define pEXTRAM0	(SolVer ? &EXTRAM4 : &EXTRAM0)
+#define pEXTRAM1	(SolVer ? &EXTRAM5 : &EXTRAM1)
+#define wEXTROM0	(SolVer ? &EXTRAM2 : &EMPTYROM)
+#define wEXTROM1	(SolVer ? &EXTRAM3 : &EMPTYROM)
 
 #define pKNJROM0	(kj_rom ? ( kj_LR ? &KANJIROM2 : &KANJIROM0 ) : &SRMENROM0 )
 #define pKNJROM1	(kj_rom ? ( kj_LR ? &KANJIROM3 : &KANJIROM1 ) : &SRMENROM1 )
@@ -201,6 +201,333 @@ const MEM6::MEMINFO MEM64::IINTRAM   = { NOROM,		0x10000,	0x00,	0 };
 
 
 
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+// ダミーメモリセル
+MemCell EmptyCell( 0xff, true );
+
+
+//--------------------------------------------------------------
+// メモリセル(最小単位)
+//--------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// コンストラクタ
+////////////////////////////////////////////////////////////////
+MemCell::MemCell( BYTE idata, bool wp ) : Name( "" ), WPt( wp )
+{
+	Data.assign( Size(), idata );
+}
+
+
+////////////////////////////////////////////////////////////////
+// デストラクタ
+////////////////////////////////////////////////////////////////
+MemCell::~MemCell( void )
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// データ読込み
+////////////////////////////////////////////////////////////////
+void MemCell::ReadFile( std::fstream& fs )
+{
+	fs.read( (char*)Data.data(), PAGEMASK+1 );
+	WPt = true;	// データ読込んだらROM扱い
+}
+
+
+////////////////////////////////////////////////////////////////
+// サイズ取得
+////////////////////////////////////////////////////////////////
+size_t MemCell::Size( void ) const
+{
+	return PAGEMASK+1;
+}
+
+
+////////////////////////////////////////////////////////////////
+// ライトプロテクト設定
+//
+// 引数:	prt		ライトプロテクトフラグ true:セット false：解除
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void MemCell::SetProtect( bool prt )
+{
+	WPt = prt;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリブロック名設定
+//
+// 引数:	std::string& 	メモリブロック名への参照
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void MemCell::SetName( const std::string& str )
+{
+	Name = str;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリブロック名取得
+//
+// 引数:	なし
+// 返値:	std::string& 	メモリブロック名への参照
+////////////////////////////////////////////////////////////////
+const std::string& MemCell::GetName( void ) const
+{
+	return Name;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリリード
+////////////////////////////////////////////////////////////////
+BYTE MemCell::Read( WORD addr ) const
+{
+	return Data[addr & PAGEMASK];
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリライト
+////////////////////////////////////////////////////////////////
+void MemCell::Write( WORD addr, BYTE data )
+{
+	if( WPt ){
+		Data[addr & PAGEMASK] = data;
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// ※暫定※ データポインタ取得
+////////////////////////////////////////////////////////////////
+BYTE* MemCell::GetData( void )
+{
+	return Data.data();
+}
+
+
+
+
+//--------------------------------------------------------------
+// メモリ集合体(ROM/RAMチップ相当)
+//--------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// コンストラクタ
+////////////////////////////////////////////////////////////////
+MemCells::MemCells(  size_t cnum, BYTE idata, bool wp  )
+{
+	Cells.assign( cnum, MemCell( idata, wp ) );
+}
+
+
+////////////////////////////////////////////////////////////////
+// デストラクタ
+////////////////////////////////////////////////////////////////
+MemCells::~MemCells( void )
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// ROMファイル読込み
+////////////////////////////////////////////////////////////////
+bool MemCells::ReadFile( const P6VPATH& filepath )
+{
+	try{
+		// ファイルサイズに合わせてメモリセル再設定
+		Cells.resize( OSD_GetFileSize( filepath )>>MemCell::PAGEBITS );
+		
+		std::fstream fs;
+		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) throw Error::NoRom;
+		
+		std::for_each( Cells.begin(), Cells.end(), [&]( MemCell mc ){
+			mc.ReadFile( fs );
+		});
+		fs.close();
+	}
+	// 例外発生
+	catch( Error::Errno i ){
+		Error::SetError( i );
+		return false;
+	}
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// サイズ(メモリセル数)取得
+////////////////////////////////////////////////////////////////
+size_t MemCells::Size( void ) const
+{
+	return Cells.size();
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリセル取得
+////////////////////////////////////////////////////////////////
+const MemCell& MemCells::GetCell( const int num ) const
+{
+	try{
+		return Cells.at( num );
+	}
+	catch( std::out_of_range& ){}
+	
+	return EmptyCell;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリリード
+////////////////////////////////////////////////////////////////
+BYTE MemCells::Read( WORD addr ) const
+{
+	try{
+		return Cells.at( addr>>MemCell::PAGEBITS ).Read( addr&MemCell::PAGEMASK );
+	}
+	catch( std::out_of_range& ){}
+	
+	return 0xff;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリライト
+////////////////////////////////////////////////////////////////
+void MemCells::Write( WORD addr, BYTE data )
+{
+	try{
+		Cells.at( addr>>MemCell::PAGEBITS ).Write( addr&MemCell::PAGEMASK, data );
+	}
+	catch( std::out_of_range& ){}
+}
+
+
+
+
+//--------------------------------------------------------------
+// メモリブロック
+//--------------------------------------------------------------
+
+////////////////////////////////////////////////////////////////
+// コンストラクタ
+////////////////////////////////////////////////////////////////
+MemBlk::MemBlk( const std::string& name ) : Name( name ), PRead( EmptyCell ), PWrite( EmptyCell ),
+											FRead( nullptr ), FWrite( nullptr ), Inst( nullptr ), Wait( 0 )
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// デストラクタ
+////////////////////////////////////////////////////////////////
+MemBlk::~MemBlk( void )
+{
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリ割当て
+//
+// 引数:	mem		メモリセルへの参照
+//			wait	アクセスウェイト(-1:変更しない)
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void MemBlk::SetMemory( MemCell& mem, int wait )
+{
+	PRead  = PWrite = mem;
+	FRead  = nullptr;
+	FWrite = nullptr;
+	Inst   = nullptr;
+	Wait   = wait == -1 ? Wait : wait;
+}
+
+
+////////////////////////////////////////////////////////////////
+// アクセスウェイト設定
+//
+// 引数:	wait	アクセスウェイト(0-255)
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void MemBlk::SetWait( int wt )
+{
+	Wait = wt & 0xff;
+}
+
+
+////////////////////////////////////////////////////////////////
+// アクセスウェイト取得
+//
+// 引数:	なし
+// 返値:	ウェイト
+////////////////////////////////////////////////////////////////
+int MemBlk::GetWait( void ) const
+{
+	return Wait;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリブロック名取得
+//
+// 引数:	なし
+// 返値:	std::string& 	メモリブロック名への参照
+////////////////////////////////////////////////////////////////
+const std::string& MemBlk::GetName( void ) const
+{
+	return Name;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリリード
+////////////////////////////////////////////////////////////////
+BYTE MemBlk::Read( WORD addr, int* wcnt ) const
+{
+	if( wcnt ) (*wcnt) += Wait;
+	
+	if( Inst && FRead ) return (Inst->*FRead)( PRead.GetData(), addr );
+	else                return PRead.Read( addr );
+	
+	return 0xff;
+}
+
+
+////////////////////////////////////////////////////////////////
+// メモリライト
+////////////////////////////////////////////////////////////////
+void MemBlk::Write( WORD addr, BYTE data, int* wcnt ) const
+{
+	if( wcnt ) (*wcnt) += Wait;
+	
+	if( Inst && FWrite ) (Inst->*FWrite)( PWrite.GetData(), addr, data );
+	else                 PWrite.Write( addr, data );
+}
+
+
+
+// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+
+
+
 //--------------------------------------------------------------
 // メモリブロック
 //--------------------------------------------------------------
@@ -332,18 +659,6 @@ void MemBlock::SetProtect( bool prt )
 
 
 ////////////////////////////////////////////////////////////////
-// ライトプロテクト取得
-//
-// 引数:	なし
-// 返値:	bool	true:セット false：解除
-////////////////////////////////////////////////////////////////
-bool MemBlock::GetProtect( void ) const
-{
-	return WPt;
-}
-
-
-////////////////////////////////////////////////////////////////
 // メモリブロック名取得
 //
 // 引数:	なし
@@ -400,7 +715,7 @@ MEM6::MEM6( VM6* vm, const ID& id ) : Device( vm, id ),
 	KanjiRom( nullptr ), VoiceRom( nullptr ), IntRam( nullptr ), ExtRam( nullptr ),
 	FilePath( "" ), M1Wait( 1 ), EnableChkCRC( true ),
 	cgrom( true ), kj_rom( true ), kj_LR( true ), cgenable( true ), cgaden( 0 ), cgaddr( 3 ), c2acc( 0xff ),
-	UseSol( 0 ), Sol60Mode( false ), SolBankSet( 0 )
+	SolVer( 0 ), Sol60Mode( false ), SolBankSet( 0 )
 {
 	Rf[0] = INIT_RF0;
 	Rf[1] = INIT_RF1;
@@ -747,7 +1062,7 @@ bool MEM6::AllocMemory( BYTE** buf, const MEMINFO* info, const P6VPATH& path )
 			
 			// ファイルから読込み
 			P6VPATH fpath = path;
-			OSD_AddPath( fpath, fpath, P6VSTR2PATH( info->Rinfo[i].FileName ) );
+			OSD_AddPath( fpath, fpath, STR2P6VPATH( info->Rinfo[i].FileName ) );
 			
 			// ファイルの存在チェック
 			if( !OSD_FileExist( fpath ) ) continue;
@@ -808,10 +1123,10 @@ bool MEM6::AllocAllMemory( const P6VPATH& path, BYTE data )
 	
 	EnableChkCRC = data & MCRCCHK   ? true : false;		// CRCチェック有効
 	UseExtRam    = data & MUSEEXRAM ? true : false;		// 外部RAM有効
-	UseSol       = data & MUSESOL;						// 戦士のカートリッジ有無&バージョン
+	SolVer       = data & MUSESOL;						// 戦士のカートリッジ有無&バージョン
 	
 	// 戦士のカートリッジ使用時はRAM128KB
-	if( UseSol ){
+	if( SolVer ){
 		MemTable.ExtRom = &MEM6::IEXTROM512;
 		MemTable.ExtRam = &MEM6::IEXTRAM128;
 	}
@@ -948,7 +1263,7 @@ bool MEM6::Init( void )
 		RamB[i].SetFunc( "EMPTY", nullptr, nullptr, nullptr, nullptr, 0 );
 	
 	// 拡張ROM領域
-	if( UseSol ){			// 戦士のカートリッジ
+	if( SolVer ){			// 戦士のカートリッジ
 		EXTROM0.SetFunc( "EXROM0", ExtRom,        this, (RFuncPtr)&MEM6::SolReadEx, nullptr, MemTable.ExtRom->Wait );
 		EXTROM1.SetFunc( "EXROM1", ExtRom+0x2000, this, (RFuncPtr)&MEM6::SolReadEx, nullptr, MemTable.ExtRom->Wait );
 	}else{
@@ -957,7 +1272,7 @@ bool MEM6::Init( void )
 	}
 	
 	// 外部RAM設定(排他)
-	if( UseSol ){			// 戦士のカートリッジ
+	if( SolVer ){			// 戦士のカートリッジ
 		SetSolBank( 3, RAMBANK | 3 );
 		SetSolBank( 4, RAMBANK | 4 );
 		SetSolBank( 5, RAMBANK | 5 );
@@ -994,7 +1309,7 @@ bool MEM60::InitSpecific( void )
 	INTRAM0.SetRam ( "INRAM0", IntRam,         MemTable.IntRam->Wait );
 	INTRAM1.SetRam ( "INRAM1", IntRam+0x2000,  MemTable.IntRam->Wait );
 	
-	if( UseSol ){			// 戦士のカートリッジ
+	if( SolVer ){			// 戦士のカートリッジ
 		EXTRAM0.SetWait( MemTable.System1->Wait );
 		EXTRAM1.SetWait( MemTable.System1->Wait );
 		EXTRAM2.SetWait( MemTable.ExtRom->Wait );
@@ -1111,7 +1426,7 @@ void MEM6::Reset()
 	SetMemBlockW( Rf[2] );
 	
 	// 戦士のカートリッジ ------------------------------------------
-	if( UseSol ){
+	if( SolVer ){
 		Sol60Mode = false;
 		
 		// メモリバンク初期化
@@ -1886,59 +2201,59 @@ bool MEM6::DokoSave( cIni* Ini )
 	
 	if( !Ini ) return false;
 	
-	Ini->PutYesNo( "MEMORY", "CGBank",		"", CGBank );
-	Ini->PutYesNo( "MEMORY", "UseExtRam",	"", UseExtRam );
-	Ini->PutValue( "MEMORY", "M1Wait",		"", M1Wait );
-	Ini->PutValue( "MEMORY", "UseSoldier",	"", UseSol );
-	Ini->PutYesNo( "MEMORY", "Soldier60",	"", Sol60Mode );
-	Ini->PutValue( "MEMORY", "SoldierBank",	"", SolBankSet );
+	Ini->SetVal( "MEMORY", "CGBank",		"", CGBank );
+	Ini->SetVal( "MEMORY", "UseExtRam",		"", UseExtRam );
+	Ini->SetVal( "MEMORY", "M1Wait",		"", M1Wait );
+	Ini->SetVal( "MEMORY", "Soldier",		"", SolVer );
+	Ini->SetVal( "MEMORY", "Soldier60",		"", Sol60Mode );
+	Ini->SetVal( "MEMORY", "SoldierBank",	"", SolBankSet );
 	
 	// 62,66,64,68
-	Ini->PutYesNo( "MEMORY", "cgrom",		"", cgrom    );
-	Ini->PutYesNo( "MEMORY", "kj_rom",		"", kj_rom   );
-	Ini->PutYesNo( "MEMORY", "kj_LR",		"", kj_LR    );
-	Ini->PutYesNo( "MEMORY", "cgenable",	"", cgenable );
-	Ini->PutValue( "MEMORY", "cgaden",		"", cgaden );
-	Ini->PutValue( "MEMORY", "cgaddr",		"", cgaddr );
-	Ini->PutValue( "MEMORY", "Rf0",	 		"", Rf[0],	"0x%02X" );
-	Ini->PutValue( "MEMORY", "Rf1",	 		"", Rf[1],	"0x%02X" );
-	Ini->PutValue( "MEMORY", "Rf2",	 		"", Rf[2],	"0x%02X" );
+	Ini->SetVal( "MEMORY", "cgrom",			"", cgrom    );
+	Ini->SetVal( "MEMORY", "kj_rom",		"", kj_rom   );
+	Ini->SetVal( "MEMORY", "kj_LR",			"", kj_LR    );
+	Ini->SetVal( "MEMORY", "cgenable",		"", cgenable );
+	Ini->SetVal( "MEMORY", "cgaden",		"", cgaden );
+	Ini->SetVal( "MEMORY", "cgaddr",		"", cgaddr );
+	Ini->SetVal( "MEMORY", "Rf0",	 		"", "0x%02X", Rf[0] );
+	Ini->SetVal( "MEMORY", "Rf1",	 		"", "0x%02X", Rf[1] );
+	Ini->SetVal( "MEMORY", "Rf2",	 		"", "0x%02X", Rf[2] );
 	
 	// 拡張ROMがマウントされている場合
 	if( UseExtRom ){
 		P6VPATH tpath = FilePath;
 		OSD_RelativePath( tpath );
-		Ini->PutPath( "MEMORY", "FilePath",	"", tpath );
+		Ini->SetVal( "MEMORY", "FilePath",	"", tpath );
 	}
 	
 	// メモリウェイト
-	Ini->PutValue( "MEMORY", "Wait",		"", GetWait() );
+	Ini->SetVal( "MEMORY", "Wait",		"", GetWait() );
 	// CGRomウェイト
-	Ini->PutValue( "MEMORY", "CgRomWait",	"", CGROM1.GetWait() );
+	Ini->SetVal( "MEMORY", "CgRomWait",	"", CGROM1.GetWait() );
 	
 	// 内部RAM
 	for( int i=0; i<(int)MemTable.IntRam->Size; i+=64 ){
 		std::string strva;
 		for( int j=0; j<64; j++ )
 			strva += Stringf( "%02X", IntRam[i+j] );
-		Ini->PutEntry( "MEMORY", Stringf( "IntRam_%04X", i ), "", strva.c_str() );
+		Ini->SetEntry( "MEMORY", Stringf( "IntRam_%04X", i ), "", strva.c_str() );
 	}
 	
 	// 外部RAM
-	if( UseExtRam || UseSol ){
+	if( UseExtRam || SolVer ){
 		for( int i=0; i<(int)MemTable.ExtRam->Size; i+=64 ){
 			std::string strva;
 			for( int j=0; j<64; j++ )
 				strva += Stringf( "%02X", ExtRam[i+j] );
-			Ini->PutEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), "", strva.c_str() );
+			Ini->SetEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), "", strva.c_str() );
 		}
 	}
 	
 	// 戦士のカートリッジ
-	if( UseSol ){
+	if( SolVer ){
 		// メモリバンクレジスタ
 		for( int i=0; i<8; i++ )
-			Ini->PutValue( "MEMORY", Stringf( "SolBank%d", i ), "", SolBank[i], "0x%02X" );
+			Ini->SetVal( "MEMORY", Stringf( "SolBank%d", i ), "", "0x%02X", SolBank[i] );
 	}
 	
 	return true;
@@ -1949,7 +2264,7 @@ bool MEM64::DokoSave( cIni* Ini )
 	if( !MEM6::DokoSave( Ini ) ) return false;
 	
 	for( int i=0; i<16; i++ )
-		Ini->PutValue( "MEMORY", Stringf( "RfSR_%02d", i ), "", RfSR[i], "0x%02X" );
+		Ini->SetVal( "MEMORY", Stringf( "RfSR_%02d", i ), "", "0x%02X", RfSR[i] );
 	
 	return true;
 }
@@ -1970,26 +2285,26 @@ bool MEM6::DokoLoad( cIni* Ini )
 	
 	if( !Ini ) return false;
 	
-	Ini->GetYesNo( "MEMORY", "CGBank",		CGBank     );
-	Ini->GetYesNo( "MEMORY", "UseExtRam",	UseExtRam  );
-	Ini->GetValue( "MEMORY", "M1Wait",		M1Wait     );
-	Ini->GetValue( "MEMORY", "UseSoldier",	UseSol     );
-	Ini->GetYesNo( "MEMORY", "Soldier60",	Sol60Mode  );
-	Ini->GetValue( "MEMORY", "SoldierBank",	SolBankSet );
+	Ini->GetVal( "MEMORY", "CGBank",		CGBank     );
+	Ini->GetVal( "MEMORY", "UseExtRam",		UseExtRam  );
+	Ini->GetVal( "MEMORY", "M1Wait",		M1Wait     );
+	Ini->GetVal( "MEMORY", "Soldier",		SolVer     );
+	Ini->GetVal( "MEMORY", "Soldier60",		Sol60Mode  );
+	Ini->GetVal( "MEMORY", "SoldierBank",	SolBankSet );
 	
 	// 62,66,64,68
-	Ini->GetYesNo( "MEMORY", "cgrom",		cgrom    );
-	Ini->GetYesNo( "MEMORY", "kj_rom",		kj_rom   );
-	Ini->GetYesNo( "MEMORY", "kj_LR",		kj_LR    );
-	Ini->GetYesNo( "MEMORY", "cgenable",	cgenable );
-	Ini->GetValue( "MEMORY", "cgaden",		cgaden   );
-	Ini->GetValue( "MEMORY", "cgaddr",		cgaddr   );
-	Ini->GetValue( "MEMORY", "Rf0",			Rf[0]    );
-	Ini->GetValue( "MEMORY", "Rf1",			Rf[1]    );
-	Ini->GetValue( "MEMORY", "Rf2",			Rf[2]    );
+	Ini->GetVal( "MEMORY", "cgrom",			cgrom    );
+	Ini->GetVal( "MEMORY", "kj_rom",		kj_rom   );
+	Ini->GetVal( "MEMORY", "kj_LR",			kj_LR    );
+	Ini->GetVal( "MEMORY", "cgenable",		cgenable );
+	Ini->GetVal( "MEMORY", "cgaden",		cgaden   );
+	Ini->GetVal( "MEMORY", "cgaddr",		cgaddr   );
+	Ini->GetVal( "MEMORY", "Rf0",			Rf[0]    );
+	Ini->GetVal( "MEMORY", "Rf1",			Rf[1]    );
+	Ini->GetVal( "MEMORY", "Rf2",			Rf[2]    );
 	
 	// 拡張ROM
-	if( Ini->GetPath( "MEMORY", "FilePath", tpath ) )
+	if( Ini->GetVal( "MEMORY", "FilePath", tpath ) )
 		MountExtRom( tpath );
 	
 	// メモリブロック設定
@@ -2000,11 +2315,11 @@ bool MEM6::DokoLoad( cIni* Ini )
 	
 	// メモリウェイト
 	st = GetWait();
-	Ini->GetValue( "MEMORY", "Wait",      st );
+	Ini->GetVal( "MEMORY", "Wait",      st );
 	SetWait( st );
 	// CGRomウェイト
 	st = CGROM1.GetWait();
-	Ini->GetValue( "MEMORY", "CgRomWait", st );
+	Ini->GetVal( "MEMORY", "CgRomWait", st );
 	st &= 0xff;
 	CGROM1.SetWait( st );
 	CGROM2.SetWait( st );
@@ -2021,7 +2336,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 	}
 	
 	// 外部RAM
-	if( UseExtRam || UseSol ){
+	if( UseExtRam || SolVer ){
 		for( int i=0; i<(int)MemTable.ExtRam->Size; i+=64 ){
 			std::string strva;
 			if( Ini->GetEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), strva ) ){
@@ -2033,10 +2348,10 @@ bool MEM6::DokoLoad( cIni* Ini )
 	}
 	
 	// 戦士のカートリッジ
-	if( UseSol ){
+	if( SolVer ){
 		// メモリバンクレジスタ
 		for( int i=0; i<8; i++ ){
-			Ini->GetValue( "MEMORY", Stringf( "SolBank%d", i ), SolBank[i] );
+			Ini->GetVal( "MEMORY", Stringf( "SolBank%d", i ), SolBank[i] );
 			SetSolBank( i, SolBank[i] );	// メモリバンク設定
 		}
 	}
@@ -2049,7 +2364,7 @@ bool MEM64::DokoLoad( cIni* Ini )
 	if( !MEM6::DokoLoad( Ini ) ) return false;
 	
 	for( int i=0; i<16; i++ ){
-		Ini->GetValue( "MEMORY", Stringf( "RfSR_%02d", i ), RfSR[i] );
+		Ini->GetVal( "MEMORY", Stringf( "RfSR_%02d", i ), RfSR[i] );
 		SetMemBlockSR( i, RfSR[i] );
 	}
 	

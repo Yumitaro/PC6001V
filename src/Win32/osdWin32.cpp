@@ -97,7 +97,7 @@ const P6VPATH& OSD_GetConfigPath( void )
 		// マイドキュメントを取得する場合
 //		if( SHGetSpecialFolderPath( nullptr, str, CSIDL_PERSONAL, 0 ) ){
 //			ConfigPath = str;
-//			OSD_AddPath( ConfigPath, ConfigPath, P6VSTR2PATH( DIR_CONFIG ) );
+//			OSD_AddPath( ConfigPath, ConfigPath, STR2P6VPATH( DIR_CONFIG ) );
 //			OSD_AddDelimiter( ConfigPath );
 //		}
 		// モジュールパスを取得する場合
