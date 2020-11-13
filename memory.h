@@ -29,23 +29,20 @@ class MemCell {
 public:
 	enum {
 		PAGEBITS = 13,			// 8KB
-		PAGEMASK = (1 << PAGEBITS) - 1
+		PAGESIZE = 1 << PAGEBITS,
+		PAGEMASK = PAGESIZE - 1
 	};
 
 protected:
-	std::string Name;			// メモリブロック名
 	std::vector<BYTE> Data;		// データ
 	bool WPt;					// ライトプロテクトフラグ
-	
+
 public:
 	MemCell( BYTE = 0xff, bool = false );
 	~MemCell();
 	
-	void ReadFile( std::fstream& );					// データ読込み
+	void SetData( std::fstream& );					// ROMデータをファイルから読込み
 	size_t Size() const;							// サイズ取得
-	void SetProtect( bool );						// ライトプロテクト設定
-	void SetName( const std::string& );				// メモリブロック名設定
-	const std::string& GetName() const;				// メモリブロック名取得
 	
 	BYTE Read( WORD ) const;						// メモリリード
 	void Write( WORD, BYTE );						// メモリライト
@@ -58,44 +55,41 @@ public:
 class MemCells {
 protected:
 	std::vector<MemCell> Cells;	// データ
-	
+
 public:
 	MemCells( size_t = 1, BYTE = 0xff, bool = false );
 	~MemCells();
 	
-	bool ReadFile( const P6VPATH& );				// ROMファイル読込み
+	bool SetData( const P6VPATH& );				// ROMデータをファイルから読込み
 	size_t Size() const;							// サイズ(メモリセル数)取得
-	const MemCell& GetCell( const int ) const;		// メモリセル取得
 	
 	BYTE Read( WORD ) const;						// メモリリード
 	void Write( WORD, BYTE );						// メモリライト
+	
+	const MemCell& GetCell( const int ) const;		// メモリセル取得
 };
 
 
 // メモリブロッククラス
 class MemBlk {
 public:
-	typedef IDevice::RFuncPtr RFuncPtr;
-	typedef IDevice::WFuncPtr WFuncPtr;
+	using RFuncPtr = IDevice::RFuncPtr;
+	using WFuncPtr = IDevice::WFuncPtr;
 
 protected:
 	std::string Name;			// メモリブロック名
-	
-	MemCell& PRead;				// メモリセル参照(読込み)
-	MemCell& PWrite;			// メモリセル参照(書込み)
+	MemCell& PMem;				// メモリセル参照
+	IDevice* Inst;				// オブジェクトポインタ
 	RFuncPtr FRead;				// 関数ポインタ(読込み)
 	WFuncPtr FWrite;			// 関数ポインタ(書込み)
-	IDevice* Inst;				// オブジェクトポインタ
 	int Wait;					// アクセスウェイト
-	
+
 public:
-	MemBlk( const std::string& = "" );
+	MemBlk();
 	~MemBlk();
 	
-	void SetMemory( MemCell&, int );				// メモリ割当て
-	void SetRom   ( MemCell&, int = -1 );			// ROM割当て
-	void SetRam   ( MemCell&, int = -1 );			// RAM割当て
-	void SetFunc  ( MemCell&, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
+	void SetMemory( const std::string&, MemCell&, int = -1 );	// メモリ割当て
+	void SetFunc  ( const std::string&, MemCell&, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
 	
 	void SetWait( int );							// アクセスウェイト設定
 	int GetWait() const;							// アクセスウェイト取得
@@ -140,33 +134,33 @@ class MemBlock {
 public:
 	enum {
 		PAGEBITS = 13,			// 8KB
-		PAGEMASK = (1 << PAGEBITS) - 1
+		PAGESIZE = 1 << PAGEBITS,
+		PAGEMASK = PAGESIZE - 1
 	};
 	
-	typedef IDevice::RFuncPtr RFuncPtr;
-	typedef IDevice::WFuncPtr WFuncPtr;
+	using RFuncPtr = IDevice::RFuncPtr;
+	using WFuncPtr = IDevice::WFuncPtr;
 
 protected:
 	std::string Name;			// メモリブロック名
-	BYTE* PRead;				// メモリポインタ(読込み)
-	BYTE* PWrite;				// メモリポインタ(書込み)
+	BYTE* PMem;					// メモリポインタ
+	IDevice* Inst;				// オブジェクトポインタ
 	RFuncPtr FRead;				// 関数ポインタ(読込み)
 	WFuncPtr FWrite;			// 関数ポインタ(書込み)
-	IDevice* Inst;				// オブジェクトポインタ
 	int Wait;					// アクセスウェイト
 	bool WPt;					// ライトプロテクトフラグ
+	
+	void SetMemory( const std::string&, BYTE*, int, bool );	// メモリ割当て
 	
 public:
 	MemBlock();
 	~MemBlock();
 	
-	void SetMemory( const std::string&, BYTE*, int, bool );	// メモリ割当て
-	void SetRom   ( const std::string&, BYTE*, int = -1 );	// ROM割当て
-	void SetRam   ( const std::string&, BYTE*, int = -1 );	// RAM割当て
-	void SetFunc  ( const std::string&, BYTE*, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
+	void SetRom ( const std::string&, BYTE*, int = -1 );	// ROM割当て
+	void SetRam ( const std::string&, BYTE*, int = -1 );	// RAM割当て
+	void SetFunc( const std::string&, BYTE*, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
 	void SetWait( int );									// アクセスウェイト設定
 	int GetWait() const;									// アクセスウェイト取得
-	void SetProtect( bool );								// ライトプロテクト設定
 	
 	const std::string& GetName() const;						// メモリブロック名取得
 	
@@ -184,6 +178,16 @@ protected:
 		BYTE Init;							// 初期化データ
 		int Wait;							// アクセスウェイト
 	};
+	
+	// メモリ情報
+	static const MEMINFO IEMPTROM;
+	static const MEMINFO IEMPTRAM;
+	static const MEMINFO IEXTROM16;
+	static const MEMINFO IEXTROM128;
+	static const MEMINFO IEXTROM512;
+	static const MEMINFO IEXTRAM16;
+	static const MEMINFO IEXTRAM64;
+	static const MEMINFO IEXTRAM128;
 	
 	// メモリ情報テーブル構造体
 	struct MEMINFOTABLE {
@@ -205,16 +209,6 @@ protected:
 			System1( nullptr ), System2( nullptr ), CGRom1( nullptr ), CGRom2( nullptr ),
 			Kanji( nullptr ), Voice( nullptr ) {}
 	};
-	
-	// メモリ情報
-	static const MEMINFO IEMPTROM;
-	static const MEMINFO IEMPTRAM;
-	static const MEMINFO IEXTROM16;
-	static const MEMINFO IEXTROM128;
-	static const MEMINFO IEXTROM512;
-	static const MEMINFO IEXTRAM16;
-	static const MEMINFO IEXTRAM64;
-	static const MEMINFO IEXTRAM128;
 	
 	MEMINFOTABLE MemTable;		// メモリ情報テーブル
 	
@@ -260,6 +254,7 @@ protected:
 	BYTE RfSR[16];				// メモリコントローラ内部レジスタ			SRモード用
 	// ---------------------------------------------------------------------------------------
 	
+	DWORD CalcCrc32( BYTE*, int );			// CRC32計算
 	bool AllocMemory( BYTE**, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
 	virtual bool AllocMemorySpecific( const P6VPATH& ) = 0;		// 全メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() = 0;			// RAMの初期値を設定
