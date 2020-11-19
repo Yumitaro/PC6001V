@@ -51,7 +51,7 @@ public:
 };
 
 
-// メモリ集合体(ROM/RAMチップ相当)
+// メモリセル集合体(ROM/RAMチップ相当)
 class MemCells {
 protected:
 	std::vector<MemCell> Cells;	// データ
@@ -60,7 +60,7 @@ public:
 	MemCells( size_t = 1, BYTE = 0xff, bool = false );
 	~MemCells();
 	
-	bool SetData( const P6VPATH& );				// ROMデータをファイルから読込み
+	bool SetData( const P6VPATH& );					// ROMデータをファイルから読込み
 	size_t Size() const;							// サイズ(メモリセル数)取得
 	
 	BYTE Read( WORD ) const;						// メモリリード
@@ -112,8 +112,8 @@ public:
 // ROM情報構造体
 struct ROMINFO {
 	const std::string FileName;	// ファイル名
-	DWORD Size;					// サイズ
-	DWORD Crc;					// CRC32
+	const DWORD Size;			// サイズ
+	const DWORD Crc;			// CRC32
 };
 
 
@@ -174,9 +174,9 @@ protected:
 	// メモリ情報構造体
 	struct MEMINFO {
 		const std::vector<ROMINFO>& Rinfo;	// ROM情報へのポインタ
-		DWORD Size;							// サイズ
-		BYTE Init;							// 初期化データ
-		int Wait;							// アクセスウェイト
+		const DWORD Size;					// サイズ
+		const BYTE Init;					// 初期化データ
+		const int Wait;						// アクセスウェイト
 	};
 	
 	// メモリ情報
@@ -191,8 +191,6 @@ protected:
 	
 	// メモリ情報テーブル構造体
 	struct MEMINFOTABLE {
-		const MEMINFO* EmptRom;
-		const MEMINFO* EmptRam;
 		const MEMINFO* ExtRom;
 		const MEMINFO* IntRam;
 		const MEMINFO* ExtRam;
@@ -205,9 +203,9 @@ protected:
 		const MEMINFO* Voice;
 		
 		MEMINFOTABLE() :
-			EmptRom( nullptr ), EmptRam( nullptr ), ExtRom( nullptr ), IntRam( nullptr ), ExtRam( nullptr ),
-			System1( nullptr ), System2( nullptr ), CGRom1( nullptr ), CGRom2( nullptr ),
-			Kanji( nullptr ), Voice( nullptr ) {}
+			ExtRom( &IEMPTROM ), IntRam( &IEMPTRAM ), ExtRam( &IEMPTROM ),
+			System1( &IEMPTROM ), System2( &IEMPTROM ), CGRom1( &IEMPTROM ), CGRom2( &IEMPTROM ),
+			Kanji( &IEMPTROM ), Voice( &IEMPTROM ) {}
 	};
 	
 	MEMINFOTABLE MemTable;		// メモリ情報テーブル
@@ -216,16 +214,16 @@ protected:
 	bool UseExtRom;				// 拡張ROM		true:有効 false:無効
 	bool UseExtRam;				// 拡張RAM		true:有効 false:無効
 	
-	BYTE* MainRom;				// BASIC ROM	ALL (64,68の時はSystem ROM1)
-	BYTE* SysRom2;				// System ROM2	64,68
-	BYTE* ExtRom;				// 拡張 ROM		ALL
-	BYTE* CGRom1;				// CG ROM1		ALL
-	BYTE* CGRom2;				// CG ROM2		62,66
-	BYTE* KanjiRom;				// 漢字 ROM		62,66
-	BYTE* VoiceRom;				// 音声合成 ROM	62,66
+	std::vector<std::vector<BYTE>> SysRom1;		// BASIC ROM	ALL (64,68の時はSystem ROM1)
+	std::vector<std::vector<BYTE>> SysRom2;		// System ROM2	64,68
+	std::vector<std::vector<BYTE>> ExtRom;		// 拡張 ROM		ALL
+	std::vector<std::vector<BYTE>> CGRom1;		// CG ROM1		ALL
+	std::vector<std::vector<BYTE>> CGRom2;		// CG ROM2		62,66
+	std::vector<std::vector<BYTE>> KanjiRom;	// 漢字 ROM		62,66
+	std::vector<std::vector<BYTE>> VoiceRom;	// 音声合成 ROM	62,66
 	
-	BYTE* IntRam;				// 内部 RAM		ALL
-	BYTE* ExtRam;				// 外部 RAM		ALL
+	std::vector<std::vector<BYTE>> IntRam;		// 内部 RAM		ALL
+	std::vector<std::vector<BYTE>> ExtRam;		// 外部 RAM		ALL
 	
 	MemBlock RomB[MAXRMB];		// ROMブロック
 	MemBlock RamB[MAXWMB];		// RAMブロック
@@ -254,8 +252,8 @@ protected:
 	BYTE RfSR[16];				// メモリコントローラ内部レジスタ			SRモード用
 	// ---------------------------------------------------------------------------------------
 	
-	DWORD CalcCrc32( BYTE*, int );			// CRC32計算
-	bool AllocMemory( BYTE**, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
+	DWORD CalcCrc32( std::vector<std::vector<BYTE>>&, int );	// CRC32計算
+	bool AllocMemory( std::vector<std::vector<BYTE>>&, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
 	virtual bool AllocMemorySpecific( const P6VPATH& ) = 0;		// 全メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() = 0;			// RAMの初期値を設定
 	virtual bool InitSpecific() = 0;		// 初期化(機種別)
@@ -319,7 +317,7 @@ public:
 	
 	BYTE Fetch( WORD, int* = nullptr ) const;			// フェッチ(M1)
 	BYTE Read( WORD, int* = nullptr ) const;			// メモリリード
-	void Write( WORD, BYTE, int* = nullptr ) const;		// メモリライト
+	void Write( WORD, BYTE, int* = nullptr );			// メモリライト
 	
 	bool MountExtRom( const P6VPATH& );					// 拡張ROM マウント
 	void UnmountExtRom();								// 拡張ROM アンマウント
