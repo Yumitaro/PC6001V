@@ -1,6 +1,7 @@
 #ifndef MEMORY_H_INCLUDED
 #define MEMORY_H_INCLUDED
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,100 +11,11 @@
 #include "ini.h"
 
 
-// メモリブロック数
-#define MAXRMB		(22)
-#define MAXWMB		(17)
-
 // 各種フラグ
 #define MCRCCHK		0b00010000	// CRCチェック有効
 #define MUSEEXRAM	0b00100000	// 拡張RAM使う
 #define MUSESOL		0b00001111	// 戦士のカートリッジ バージョン(bit0-3)
 
-
-
-
-
-// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// メモリセル(最小単位)
-class MemCell {
-public:
-	enum {
-		PAGEBITS = 13,			// 8KB
-		PAGESIZE = 1 << PAGEBITS,
-		PAGEMASK = PAGESIZE - 1
-	};
-
-protected:
-	std::vector<BYTE> Data;		// データ
-	bool WPt;					// ライトプロテクトフラグ
-
-public:
-	MemCell( BYTE = 0xff, bool = false );
-	~MemCell();
-	
-	void SetData( std::fstream& );					// ROMデータをファイルから読込み
-	size_t Size() const;							// サイズ取得
-	
-	BYTE Read( WORD ) const;						// メモリリード
-	void Write( WORD, BYTE );						// メモリライト
-	
-	BYTE* GetData();								// ※暫定※ データポインタ取得
-};
-
-
-// メモリセル集合体(ROM/RAMチップ相当)
-class MemCells {
-protected:
-	std::vector<MemCell> Cells;	// データ
-
-public:
-	MemCells( size_t = 1, BYTE = 0xff, bool = false );
-	~MemCells();
-	
-	bool SetData( const P6VPATH& );					// ROMデータをファイルから読込み
-	size_t Size() const;							// サイズ(メモリセル数)取得
-	
-	BYTE Read( WORD ) const;						// メモリリード
-	void Write( WORD, BYTE );						// メモリライト
-	
-	const MemCell& GetCell( const int ) const;		// メモリセル取得
-};
-
-
-// メモリブロッククラス
-class MemBlk {
-public:
-	using RFuncPtr = IDevice::RFuncPtr;
-	using WFuncPtr = IDevice::WFuncPtr;
-
-protected:
-	std::string Name;			// メモリブロック名
-	MemCell& PMem;				// メモリセル参照
-	IDevice* Inst;				// オブジェクトポインタ
-	RFuncPtr FRead;				// 関数ポインタ(読込み)
-	WFuncPtr FWrite;			// 関数ポインタ(書込み)
-	int Wait;					// アクセスウェイト
-
-public:
-	MemBlk();
-	~MemBlk();
-	
-	void SetMemory( const std::string&, MemCell&, int = -1 );	// メモリ割当て
-	void SetFunc  ( const std::string&, MemCell&, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
-	
-	void SetWait( int );							// アクセスウェイト設定
-	int GetWait() const;							// アクセスウェイト取得
-	const std::string& GetName() const;				// メモリブロック名取得
-	
-	BYTE Read( WORD, int* = nullptr ) const;		// メモリリード
-	void Write( WORD, BYTE, int* = nullptr ) const;	// メモリライト
-};
-
-
-
-
-
-// 実験 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 
@@ -125,9 +37,57 @@ const std::vector<std::vector<ROMINFO>>& GetRomSetList( const int );
 ////////////////////////////////////////////////////////////////
 
 
+
+
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
+
+// メモリセルクラス(最小単位)
+class MemCell {
+public:
+	enum {
+		PAGEBITS = 13,			// 8KB
+		PAGESIZE = 1 << PAGEBITS,
+		PAGEMASK = PAGESIZE - 1
+	};
+
+protected:
+	std::vector<BYTE> Data;		// データ
+	bool WPt;					// ライトプロテクトフラグ
+
+public:
+	MemCell( BYTE = 0xff, bool = false );
+	~MemCell();
+	
+	void Resize( size_t, BYTE = 0xff );				// リサイズ
+	void SetData( std::fstream& );					// ROMデータをファイルから読込み
+	size_t Size() const;							// サイズ取得
+	
+	BYTE Read( WORD ) const;						// メモリリード
+	void Write( WORD, BYTE );						// メモリライト
+};
+
+
+// メモリセル集合体クラス(ROM/RAMチップ相当)
+class MemCells {
+protected:
+	std::vector<MemCell> Cells;	// データ
+
+public:
+	MemCells( size_t = 1, BYTE = 0xff, bool = false );
+	~MemCells();
+	
+	void Resize( size_t, BYTE = 0xff );				// リサイズ
+	bool SetData( const P6VPATH& );					// ROMデータをファイルから読込み
+	size_t Size() const;							// サイズ(メモリセル数)取得
+	
+	BYTE Read( WORD ) const;						// メモリリード
+	void Write( WORD, BYTE );						// メモリライト
+	
+	MemCell& operator()( const int );				// メモリセル取得 - operator ()
+};
+
 
 // メモリブロッククラス
 class MemBlock {
@@ -140,29 +100,25 @@ public:
 	
 	using RFuncPtr = IDevice::RFuncPtr;
 	using WFuncPtr = IDevice::WFuncPtr;
+	using RFunc    = IDevice::RFunc;
+	using WFunc    = IDevice::WFunc;
 
 protected:
 	std::string Name;			// メモリブロック名
-	BYTE* PMem;					// メモリポインタ
-	IDevice* Inst;				// オブジェクトポインタ
-	RFuncPtr FRead;				// 関数ポインタ(読込み)
-	WFuncPtr FWrite;			// 関数ポインタ(書込み)
+	MemCell* PMem;				// メモリポインタ
+	RFunc FRead;				// 関数ポインタ(読込み)
+	WFunc FWrite;				// 関数ポインタ(書込み)
 	int Wait;					// アクセスウェイト
-	bool WPt;					// ライトプロテクトフラグ
-	
-	void SetMemory( const std::string&, BYTE*, int, bool );	// メモリ割当て
-	
+
 public:
 	MemBlock();
 	~MemBlock();
 	
-	void SetRom ( const std::string&, BYTE*, int = -1 );	// ROM割当て
-	void SetRam ( const std::string&, BYTE*, int = -1 );	// RAM割当て
-	void SetFunc( const std::string&, BYTE*, IDevice*, RFuncPtr, WFuncPtr, int = -1 );	// 関数割当て
+	void SetMemory( const std::string&, MemCell&, int = -1 );	// メモリ割当て
+	void SetFunc  ( const std::string&, MemCell&, RFunc, WFunc, int = -1 );	// 関数割当て
+	const std::string& GetName() const;						// メモリブロック名取得
 	void SetWait( int );									// アクセスウェイト設定
 	int GetWait() const;									// アクセスウェイト取得
-	
-	const std::string& GetName() const;						// メモリブロック名取得
 	
 	BYTE Read( WORD, int* = nullptr ) const;				// メモリリード
 	void Write( WORD, BYTE, int* = nullptr ) const;			// メモリライト
@@ -214,22 +170,24 @@ protected:
 	bool UseExtRom;				// 拡張ROM		true:有効 false:無効
 	bool UseExtRam;				// 拡張RAM		true:有効 false:無効
 	
-	std::vector<std::vector<BYTE>> SysRom1;		// BASIC ROM	ALL (64,68の時はSystem ROM1)
-	std::vector<std::vector<BYTE>> SysRom2;		// System ROM2	64,68
-	std::vector<std::vector<BYTE>> ExtRom;		// 拡張 ROM		ALL
-	std::vector<std::vector<BYTE>> CGRom1;		// CG ROM1		ALL
-	std::vector<std::vector<BYTE>> CGRom2;		// CG ROM2		62,66
-	std::vector<std::vector<BYTE>> KanjiRom;	// 漢字 ROM		62,66
-	std::vector<std::vector<BYTE>> VoiceRom;	// 音声合成 ROM	62,66
+	MemCells SysRom1;			// BASIC ROM	ALL (64,68の時はSystem ROM1)
+	MemCells SysRom2;			// System ROM2	64,68
+	MemCells ExtRom;			// 拡張 ROM		ALL
+	MemCells CGRom1;			// CG ROM1		ALL
+	MemCells CGRom2;			// CG ROM2		62,66
+	MemCells KanjiRom;			// 漢字 ROM		62,66
+	MemCells VoiceRom;			// 音声合成 ROM	62,66
 	
-	std::vector<std::vector<BYTE>> IntRam;		// 内部 RAM		ALL
-	std::vector<std::vector<BYTE>> ExtRam;		// 外部 RAM		ALL
+	MemCells IntRam;			// 内部 RAM		ALL
+	MemCells ExtRam;			// 外部 RAM		ALL
 	
-	MemBlock RomB[MAXRMB];		// ROMブロック
-	MemBlock RamB[MAXWMB];		// RAMブロック
+	std::vector<MemBlock> RomB;		// ROMブロック
+	std::vector<MemBlock> InRamB;	// RAMブロック(内部)
+	std::vector<MemBlock> ExRamB;	// RAMブロック(外部)
+	MemBlock InExRamB;			// RAMブロック(内部/外部RAM書込み)
 	
-	MemBlock* Rm_blk[8];		// リード時メモリブロックポインタ(8KB*8)
-	MemBlock* Wm_blk[8];		// ライト時メモリブロックポインタ(8KB*8)
+	std::array<MemBlock*,8> RD_Blk;	// リード時メモリブロックポインタ(8KB*8)
+	std::array<MemBlock*,8> WR_Blk;	// ライト時メモリブロックポインタ(8KB*8)
 	
 	P6VPATH FilePath;			// 拡張ROMファイルフルパス
 	int M1Wait;					// M1ウェイト
@@ -242,19 +200,19 @@ protected:
 	bool cgenable;				// CG ROMアクセスフラグ true:アクセス可 false:アクセス不可
 	BYTE cgaden;				// CG ROMアドレスイネーブル
 	BYTE cgaddr;				// CG ROMアドレス A13,14,15
-	BYTE Rf[3];					// メモリコントローラ内部レジスタ
+	std::array<BYTE,3> Rf;		// メモリコントローラ内部レジスタ
 	BYTE c2acc;					// PortC2Hアクセスフラグ
 	// ---------------------------------------------------------------------------------------
 	
 	// for 64,68 -----------------------------------------------------------------------------
-	MemBlock* Rm_blkSR[8];		// リード時メモリブロックポインタ(8KB*8)	SRモード用
-	MemBlock* Wm_blkSR[8];		// ライト時メモリブロックポインタ(8KB*8)	SRモード用
-	BYTE RfSR[16];				// メモリコントローラ内部レジスタ			SRモード用
+	std::array<MemBlock*,8> RD_BlkSR;	// リード時メモリブロックポインタ(8KB*8)	SRモード用
+	std::array<MemBlock*,8> WR_BlkSR;	// ライト時メモリブロックポインタ(8KB*8)	SRモード用
+	std::array<BYTE,16> RfSR;			// メモリコントローラ内部レジスタ			SRモード用
 	// ---------------------------------------------------------------------------------------
 	
-	DWORD CalcCrc32( std::vector<std::vector<BYTE>>&, int );	// CRC32計算
-	bool AllocMemory( std::vector<std::vector<BYTE>>&, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
-	virtual bool AllocMemorySpecific( const P6VPATH& ) = 0;		// 全メモリ確保とROMファイル読込み(機種別)
+	DWORD CalcCrc32( MemCells&, int );		// CRC32計算
+	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
+	virtual bool AllocMemorySpecific( const P6VPATH& ) = 0;			// 全メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() = 0;			// RAMの初期値を設定
 	virtual bool InitSpecific() = 0;		// 初期化(機種別)
 	virtual void SetMemBlockR( BYTE, BYTE ) = 0;	// メモリリード時のメモリブロック指定(62,66)
@@ -273,17 +231,15 @@ protected:
 	// 戦士のカートリッジ --------------------------------------------------------------------
 	int SolVer;					// バージョン 0:なし 1:無印 2:mkⅡ 3:mkⅢ
 	bool Sol60Mode;				// 初代機モード　true:有効 false:無効
-	BYTE SolBank[8];			// メモリバンクレジスタ
+	std::array<BYTE,8> SolBank;	// メモリバンクレジスタ
 	int SolBankSet;				// ROMバンクセット
 	
 	void SetSolBank( BYTE, BYTE );			// メモリバンクレジスタ設定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	BYTE SolReadEx( BYTE*, WORD );			// 戦士のカートリッジ読込み(拡張ROM領域)
-	BYTE SolMemRead( BYTE*, WORD );			// 戦士のカートリッジROM/RAM読込み
-	void SolMemWrite( BYTE*, WORD, BYTE );	// 戦士のカートリッジRAM書込み
-	BYTE SolSccRead( BYTE*, WORD );			// 戦士のカートリッジSCC読込み
-	void SolSccWrite( BYTE*, WORD, BYTE );	// 戦士のカートリッジSCC書込み
+	BYTE SolReadEx( MemCell*, WORD );		// 戦士のカートリッジ読込み(拡張ROM領域)
+	BYTE SolSccRead( MemCell*, WORD );		// 戦士のカートリッジSCC読込み
+	void SolSccWrite( MemCell*, WORD, BYTE );	// 戦士のカートリッジSCC書込み
 	// ---------------------------------------------------------------------------------------
 	
 	// I/Oアクセス関数 -----------------------------------------------------------------------
@@ -306,7 +262,7 @@ protected:
 	BYTE InF2H( int );
 	BYTE InF3H( int );
 	// ---------------------------------------------------------------------------------------
-	
+
 public:
 	MEM6( VM6*, const ID& );
 	virtual ~MEM6();
@@ -366,12 +322,12 @@ private:
 	void SetMemBlockW( BYTE ) override;					// メモリライト時のメモリブロック指定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	BYTE CGromRead( BYTE*, WORD );			// PC-6001 CGROM読込み
+	BYTE CGromRead( MemCell*, WORD );		// PC-6001 CGROM読込み
 	// ---------------------------------------------------------------------------------------
 	
 	// I/Oアクセス関数
 	void Out06H( int, BYTE ) override;
-	
+
 public:
 	MEM60( VM6*, const ID& );
 	~MEM60();
@@ -389,7 +345,7 @@ private:
 	static const MEMINFO ICGROM0;
 	static const MEMINFO ICGROM1;
 	static const MEMINFO IINTRAM;
-	
+
 public:
 	MEM61( VM6*, const ID& );
 	~MEM61();
@@ -413,9 +369,9 @@ protected:
 	void SetMemBlockW( BYTE );								// メモリライト時のメモリブロック指定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	void IERamWrite( BYTE*, WORD, BYTE );	// PC-6001mk2以降 内部/外部RAM書込み
+	void IERamWrite( MemCell*, WORD, BYTE );	// PC-6001mk2以降 内部/外部RAM書込み
 	// ---------------------------------------------------------------------------------------
-	
+
 public:
 	MEM62( VM6*, const ID& );
 	virtual ~MEM62();
@@ -443,7 +399,7 @@ private:
 	static const MEMINFO IKANJI;
 	static const MEMINFO IVOICE;
 	static const MEMINFO IINTRAM;
-	
+
 public:
 	MEM66( VM6*, const ID& );
 	~MEM66();
@@ -470,7 +426,7 @@ protected:
 	
 	BYTE In6xH( int );
 	virtual BYTE InB2H( int );
-	
+
 public:
 	MEM64( VM6*, const ID& );
 	virtual ~MEM64();
@@ -502,7 +458,7 @@ protected:
 	
 	// I/Oアクセス関数
 	BYTE InB2H( int ) override;
-	
+
 public:
 	MEM68( VM6*, const ID& );
 	virtual ~MEM68();
