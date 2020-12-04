@@ -57,36 +57,38 @@ void cWndStat::Update( const std::shared_ptr<VM6>& vm )
 	
 	// TAPE
 	ZCons::Locate( 0, 0 );
-	ZCons::SPrint( "[TAPE]" );
+	ZCons::Printf( "[TAPE]" );
 	if( vm->CmtlIsMount() ){
 		ZCons::SetColor( vm->CmtlIsAutoStart() ? FC_YELLOW : FC_WHITE );
-		ZCons::SPrint( Stringf( " %-16s", vm->CmtlGetName().empty() ? OSD_GetFileNamePart( vm->CmtlGetFile() ).c_str() : vm->CmtlGetName().c_str() ) );
+		ZCons::Printf( " %-16s", vm->CmtlGetName().empty() ? OSD_GetFileNamePart( vm->CmtlGetFile() ).c_str() : vm->CmtlGetName().c_str() );
 		ZCons::SetColor( FC_WHITE );
 		ZCons::Locate( ZCons::GetXline()-19, 0 );
-		if( vm->CpusIsCmtIntrReady() == LOADOPEN ) ZCons::SetColor( FC_WHITE, FC_MAGENTA );
-		ZCons::SPrint( Stringf( "[%05d/%05d]", vm->CmtlGetCount(), vm->CmtlGetBetaSize() ) );
+		if( vm->CpusIsCmtIntrReady() == LOADOPEN ){
+			ZCons::SetColor( FC_WHITE, FC_MAGENTA );
+		}
+		ZCons::Printf( "[%05d/%05d]", vm->CmtlGetCount(), vm->CmtlGetBetaSize() );
 		ZCons::SetColor( FC_WHITE, FC_GRAY );
 	}
 	
 	// DISK
 	if( DrvNum > 0 ){
-		if( vm->DskInAccess( 0 ) ) ZCons::SetColor( FC_WHITE, FC_RED );
-		else					   ZCons::SetColor( FC_WHITE, FC_GRAY );
+		if( vm->DskInAccess( 0 ) ){ ZCons::SetColor( FC_WHITE, FC_RED  ); }
+		else					  { ZCons::SetColor( FC_WHITE, FC_GRAY ); }
 		ZCons::Locate( 0, 1 );
-		ZCons::SPrint( "[DRV1]" );
+		ZCons::Printf( "[DRV1]" );
 		if( vm->DskIsMount( 0 ) ){
 			ZCons::SetColor( vm->DskIsSystem( 0 ) ? FC_YELLOW : FC_WHITE, vm->DskIsProtect( 0 ) ? FC_DRED : FC_GRAY );
-			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 0 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 0 ) ).c_str() : vm->DskGetName( 0 ).c_str() ) );
+			ZCons::Printf( " %-16s", vm->DskGetName( 0 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 0 ) ).c_str() : vm->DskGetName( 0 ).c_str() );
 		}
 	}
 	if( DrvNum > 1 ){
-		if( vm->DskInAccess( 1 ) ) ZCons::SetColor( FC_WHITE, FC_RED );
-		else					   ZCons::SetColor( FC_WHITE, FC_GRAY );
+		if( vm->DskInAccess( 1 ) ){ ZCons::SetColor( FC_WHITE, FC_RED  ); }
+		else					  { ZCons::SetColor( FC_WHITE, FC_GRAY ); }
 		ZCons::Locate( 0, 2 );
-		ZCons::SPrint( "[DRV2]" );
+		ZCons::Printf( "[DRV2]" );
 		if( vm->DskIsMount( 1 ) ){
 			ZCons::SetColor( vm->DskIsSystem( 1 ) ? FC_YELLOW : FC_WHITE, vm->DskIsProtect( 1 ) ? FC_DRED : FC_GRAY );
-			ZCons::SPrint( Stringf( " %-16s", vm->DskGetName( 1 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 1 ) ).c_str() : vm->DskGetName( 1 ).c_str() ) );
+			ZCons::Printf( " %-16s", vm->DskGetName( 1 ).empty() ? OSD_GetFileNamePart( vm->DskGetFile( 1 ) ).c_str() : vm->DskGetName( 1 ).c_str() );
 		}
 		// アクセスランプ
 	}
@@ -105,19 +107,20 @@ void cWndStat::Update( const std::shared_ptr<VM6>& vm )
 	}
 	
 	// CAPSキー
-	if( vm->KeyGetKeyIndicator() & KI_CAPS ) ZCons::SPrintcr( "ABC" );	// ABC
-	else                                     ZCons::SPrintcr( "abc" );	// abc
+	if( vm->KeyGetKeyIndicator() & KI_CAPS ){ ZCons::PrintfR( "ABC" ); }	// ABC
+	else                                    { ZCons::PrintfR( "abc" ); }	// abc
 	
 	// リプレイステータス
 	ZCons::Locate( -2, 0 );
 	switch( ReplayStatus ){
 	case REP_RECORD:	// 記録中
 		ZCons::SetColor( FC_RED );
-		ZCons::SPrint( "●" );
+		ZCons::Printf( "●" );
 		break;
+		
 	case REP_REPLAY:	// 再生中
 		ZCons::SetColor( FC_GREEN );
-		ZCons::SPrint( "■" );
+		ZCons::Printf( "■" );
 		break;
 	}
 }

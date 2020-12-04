@@ -1,7 +1,7 @@
 #ifndef MOVIE_H_INCLUDED
 #define MOVIE_H_INCLUDED
 
-#include <string>
+#include <vector>
 
 #include "sound.h"
 #include "vsurface.h"
@@ -102,7 +102,7 @@ protected:
 	WAVEFORMATEX6 awf;
 	
 	int ABPP;					// 色深度 (16,24,32)
-	BYTE* Sbuf;					// イメージデータバッファポインタ
+	std::vector<BYTE> Sbuf;					// イメージデータバッファポインタ
 	
 	DWORD PosMOVI;
 	

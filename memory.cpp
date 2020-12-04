@@ -449,7 +449,7 @@ MemCell& MemCells::operator()( const int num )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-MemBlock::MemBlock( void ) : Name( "" ), PMem( nullptr ), FRead( nullptr ), FWrite( nullptr ), Wait( 0 )
+MemBlock::MemBlock( void ) : Name( "" ), PMem( &EmptyCell ), FRead( nullptr ), FWrite( nullptr ), Wait( 0 )
 {
 }
 
@@ -484,16 +484,15 @@ void MemBlock::SetMemory( const std::string& name, MemCell& data, int wait )
 // 関数割当て
 //
 // 引数:	name	メモリブロック名への参照
-//			data	メモリセルへの参照
 //			rd		読込み関数ポインタ(bind)
 //			wr		書込み関数ポインタ(bind)
 //			wait	アクセスウェイト(-1:変更しない)
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void MemBlock::SetFunc( const std::string& name, MemCell& data, RFunc rd, WFunc wr, int wait )
+void MemBlock::SetFunc( const std::string& name, RFunc rd, WFunc wr, int wait )
 {
 	Name   = name;
-	PMem   = &data;
+	PMem   = &EmptyCell;
 	FRead  = rd;
 	FWrite = wr;
 	Wait   = wait < 0 ? Wait : wait;
@@ -549,7 +548,7 @@ BYTE MemBlock::Read( WORD addr, int* wcnt ) const
 	
 	if( FRead ){
 		return FRead( PMem, addr );
-	}else if( PMem ){
+	}else if( PMem->Size() ){
 		return PMem->Read( addr );
 	}
 	
@@ -571,7 +570,7 @@ void MemBlock::Write( WORD addr, BYTE data, int* wcnt ) const
 	
 	if( FWrite ){
 		FWrite( PMem, addr, data );
-	}else if( PMem){
+	}else if( PMem->Size() ){
 		PMem->Write( addr, data );
 	}
 }
@@ -1074,20 +1073,20 @@ bool MEM6::Init( void )
 	// メモリブロック設定
 	// とりあえず全てEmptyに設定(ROMはウェイトあり)
 	std::for_each( RomB.begin(), RomB.end(), [&]( MemBlock& mb ){
-		mb.SetFunc( "EMPTY", EmptyCell, nullptr, nullptr, 1 );
+		mb.SetFunc( "EMPTY", nullptr, nullptr, 1 );
 	});
 	std::for_each( InRamB.begin(), InRamB.end(), [&]( MemBlock& mb ){
-		mb.SetFunc( "EMPTY", EmptyCell, nullptr, nullptr, 0 );
+		mb.SetFunc( "EMPTY", nullptr, nullptr, 0 );
 	});
 	std::for_each( ExRamB.begin(), ExRamB.end(), [&]( MemBlock& mb ){
-		mb.SetFunc( "EMPTY", EmptyCell, nullptr, nullptr, 0 );
+		mb.SetFunc( "EMPTY", nullptr, nullptr, 0 );
 	});
-	InExRamB.SetFunc( "EMPTY", EmptyCell, nullptr, nullptr, 0 );
+	InExRamB.SetFunc( "EMPTY", nullptr, nullptr, 0 );
 	
 	// 拡張ROM領域
 	if( SolVer ){			// 戦士のカートリッジ
-		EXTROM0.SetFunc  ( "EXROM0", EmptyCell, FR( STATIC_CAST( RFuncPtr, &MEM6::SolReadEx ) ), nullptr, MemTable.ExtRom->Wait );
-		EXTROM1.SetFunc  ( "EXROM1", EmptyCell, FR( STATIC_CAST( RFuncPtr, &MEM6::SolReadEx ) ), nullptr, MemTable.ExtRom->Wait );
+		EXTROM0.SetFunc  ( "EXROM0", FR( STATIC_CAST( RFuncPtr, &MEM6::SolReadEx ) ), nullptr, MemTable.ExtRom->Wait );
+		EXTROM1.SetFunc  ( "EXROM1", FR( STATIC_CAST( RFuncPtr, &MEM6::SolReadEx ) ), nullptr, MemTable.ExtRom->Wait );
 	}else{
 		EXTROM0.SetMemory( "EXROM0", ExtRom( 0 ), MemTable.ExtRom->Wait );
 		EXTROM1.SetMemory( "EXROM1", ExtRom( 1 ), MemTable.ExtRom->Wait );
@@ -1126,7 +1125,7 @@ bool MEM60::InitSpecific( void )
 	MAINROM1.SetMemory( "BASIC1", SysRom1( 1 ), MemTable.System1->Wait );
 	
 	// CG ROM
-	CGROM1.SetFunc    ( "CGROM1", EmptyCell, FR( STATIC_CAST( RFuncPtr, &MEM60::CGromRead ) ), nullptr, MemTable.CGRom1->Wait );
+	CGROM1.SetFunc    ( "CGROM1", FR( STATIC_CAST( RFuncPtr, &MEM60::CGromRead ) ), nullptr, MemTable.CGRom1->Wait );
 	
 	// 内部RAM
 	INTRAM0.SetMemory ( "INRAM0", IntRam( 0 ),  MemTable.IntRam->Wait );
@@ -1175,7 +1174,7 @@ bool MEM62::InitSpecific( void )
 	});
 	
 	// 内部/外部RAM書込み
-	INEXRAM.SetFunc    ( "IERAM", EmptyCell, nullptr, FW( STATIC_CAST( WFuncPtr, &MEM62::IERamWrite ) ), MemTable.IntRam->Wait );
+	INEXRAM.SetFunc    ( "IERAM", nullptr, FW( STATIC_CAST( WFuncPtr, &MEM62::IERamWrite ) ), MemTable.IntRam->Wait );
 	
 	return true;
 }
@@ -1944,12 +1943,12 @@ void MEM6::SetSolBank( BYTE port, BYTE data )
 		break;
 		
 	case SCCBANK:	// SCC
-		ExRamB[area].SetFunc( "SCC", EmptyCell, FR( STATIC_CAST( RFuncPtr, &MEM6::SolSccRead ) ), FW( STATIC_CAST( WFuncPtr, &MEM6::SolSccWrite ) ) );
+		ExRamB[area].SetFunc( "SCC", FR( STATIC_CAST( RFuncPtr, &MEM6::SolSccRead ) ), FW( STATIC_CAST( WFuncPtr, &MEM6::SolSccWrite ) ) );
 		break;
 		
 	case NONBANK:	// 無効
 	default:
-		ExRamB[area].SetFunc( "EMPTY", EmptyCell, nullptr, nullptr );
+		ExRamB[area].SetFunc( "EMPTY", nullptr, nullptr );
 	}
 }
 

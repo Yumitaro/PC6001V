@@ -145,9 +145,9 @@ bool OSD_CreateFont( const P6VPATH& hfile, const P6VPATH& zfile, int size )
 								FW_DONTCARE, FW_DONTCARE, FW_REGULAR,
 								false, false, false,
 								SHIFTJIS_CHARSET,
-								OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+								OUT_RASTER_PRECIS, CLIP_DEFAULT_PRECIS,
 								DEFAULT_QUALITY,
-								FF_MODERN | FIXED_PITCH, "" );
+								FF_DONTCARE | FIXED_PITCH, "" );
 	HFONT OldFont = (HFONT)SelectObject( hBmpDC, NewFont );
 	SetTextColor( hBmpDC, RGB(255,255,255) );
 	SetBkColor(   hBmpDC, RGB(  0,  0,  0) );
