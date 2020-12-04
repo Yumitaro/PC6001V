@@ -4,7 +4,6 @@
 #include "vsurface.h"
 
 
-//std::vector<DWORD> VSurface::col32( 256, 0 );	// 32bitカラーテーブル
 std::array<DWORD,256> VSurface::col32;	// 32bitカラーテーブル
 
 

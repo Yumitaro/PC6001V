@@ -32,24 +32,20 @@
 ////////////////////////////////////////////////////////////////
 class JFont {
 protected:
-	static VSurface* ZFont;		// 全角フォントデータサーフェスへのポインタ
-	static VSurface* HFont;		// 半角フォントデータサーフェスへのポインタ
+	static VSurface ZFont;		// 全角フォントデータサーフェス
+	static VSurface HFont;		// 半角フォントデータサーフェス
 	
 	static int zWidth, zHeight;	// 全角文字の幅,高さ
 	static int hWidth, hHeight;	// 半角文字の幅,高さ
-	
+
 public:
 	JFont();
 	~JFont();
 	
-	static bool OpenFont( const P6VPATH&, const P6VPATH& );	// ファイルファイルを開く
-	static void CloseFont();					// フォントを破棄する
+	static bool OpenFont( const P6VPATH&, const P6VPATH& );	// フォントファイルを開く
 	
 	static int FontWidth(){ return hWidth; }	// フォントの幅取得(半角)
-	static int FontHeight(){ return hHeight; }	// フォントの高さ取得
-	
-	void PutCharh( VSurface*, int, int, BYTE, BYTE,  BYTE  );	// 半角文字描画
-	void PutCharz( VSurface*, int, int, WORD, BYTE,  BYTE  );	// 全角文字描画
+	static int FontHeight(){ return hHeight; }	// フォントの高さ取得(半角)
 };
 
 
@@ -64,6 +60,12 @@ protected:
 	void DrawFrame();							// 枠描画
 	void ScrollUp();							// スクロールアップ
 	
+	void PutCharh( int, int, BYTE, BYTE,  BYTE );	// 半角文字描画
+	void PutCharz( int, int, WORD, BYTE,  BYTE );	// 全角文字描画
+	
+	void sprintc( const std::string& );			// 文字列描画(制御文字対応)
+	void sprintr( const std::string& );			// 文字列描画(右詰め)
+
 public:
 	ZCons();
 	virtual ~ZCons();
@@ -80,12 +82,19 @@ public:
 	void PutCharH( BYTE );						// 半角1文字描画
 	void PutCharZ( WORD );						// 全角1文字描画(SJIS)
 	
-	void SPrint( const std::string& );			// 文字列描画(制御文字非対応)
-	void SPrintc( const std::string& );			// 文字列描画(制御文字対応)
-	void SPrintcr( const std::string& );		// 文字列描画(右詰め)
-//	void Print( const std::string&, ... );		// 書式付文字列描画(制御文字非対応)
-//	void Printf( const std::string&, ... );		// 書式付文字列描画(制御文字対応)
-//	void Printfr( const std::string&, ... );	// 書式付文字列描画(右詰め)
+	template <typename ... Args> void Printf( const std::string& fmt, Args ... args )	// 書式付文字列描画
+	{
+		std::vector<char> buf( std::snprintf( nullptr, 0, fmt.c_str(), args ... ) + 1 );
+		std::snprintf( &buf[0], buf.size(), fmt.c_str(), args ... );
+		sprintc( std::string( buf.data(), buf.data() + buf.size() - 1 ) );
+	}
+	
+	template <typename ... Args> void PrintfR( const std::string& fmt, Args ... args )	// 書式付文字列描画(右詰め)
+	{
+		std::vector<char> buf( std::snprintf( nullptr, 0, fmt.c_str(), args ... ) + 1 );
+		std::snprintf( &buf[0], buf.size(), fmt.c_str(), args ... );
+		sprintr( std::string( buf.data(), buf.data() + buf.size() - 1 ) );
+	}
 	
 	int GetXline();								// 横最大文字数取得
 	int GetYline();								// 縦最大文字数取得

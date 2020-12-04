@@ -9,22 +9,62 @@
 #include "osd.h"
 
 
-#define	BLNKW	(2)	// 横方向の余白
-#define	BLNKH	(2)	// 縦方向の余白
+#define	BLNKW	(2)			// 横方向の余白
+#define	BLNKH	(2)			// 縦方向の余白
 
 
-VSurface* JFont::ZFont = nullptr;	// 全角フォントデータサーフェスへのポインタ
-VSurface* JFont::HFont = nullptr;	// 半角フォントデータサーフェスへのポインタ
-int JFont::zWidth  = 0;				// 全角文字の幅
-int JFont::zHeight = 0;				//           高さ
-int JFont::hWidth  = 0;				// 半角文字の幅
-int JFont::hHeight = 0;				//           高さ
+VSurface JFont::ZFont;		// 全角フォントデータサーフェス
+VSurface JFont::HFont;		// 半角フォントデータサーフェス
+int JFont::zWidth  = 0;		// 全角文字の幅
+int JFont::zHeight = 0;		//           高さ
+int JFont::hWidth  = 0;		// 半角文字の幅
+int JFont::hHeight = 0;		//           高さ
 
 
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-JFont::JFont( void ){}
+JFont::JFont( void )
+{
+	VRect ff;
+	
+	// ダミーフォント(半角)
+	if( HFont.GetPixels().empty() ){
+		hWidth  = FSIZE;
+		hHeight = FSIZE * 2;
+		
+		HFont.InitSurface( hWidth * 192, hHeight * 2 );
+		HFont.Fill( FC_BLACK );
+		ff.w = hWidth -1;
+		ff.h = hHeight-1;
+		for( int y=0; y<2; y++ ){
+			ff.y = hHeight * y + 1;
+			for( int x=0; x<192; x++ ){
+				ff.x = hWidth * x + 1;
+				HFont.Fill( FC_WHITE, &ff );
+			}
+		}
+	}
+	
+	// ダミーフォント(全角)
+	if( ZFont.GetPixels().empty() ){
+		zWidth  = FSIZE * 2;
+		zHeight = FSIZE * 2;
+		
+		ZFont.InitSurface( zWidth * 192, zHeight * 48 );
+		ZFont.Fill( FC_BLACK );
+		ff.w = zWidth-1;
+		ff.h = zHeight-1;
+		for( int y=0; y<48; y++ ){
+			ff.y = zHeight * y + 1;
+			for( int x=0; x<192; x++ ){
+				ff.x = zWidth * x + 1;
+				ZFont.Fill( FC_WHITE, &ff );
+			}
+		}
+	}
+}
+
 
 ////////////////////////////////////////////////////////////////
 // デストラクタ
@@ -37,126 +77,20 @@ JFont::~JFont( void ){}
 ////////////////////////////////////////////////////////////////
 bool JFont::OpenFont( const P6VPATH& zfilename, const P6VPATH& hfilename )
 {
-	VRect ff;
-	
-	// 既に読込まれていたら破棄する
-	CloseFont();
-	
-	// とりあえずサイズ指定
-	hWidth  = FSIZE;
-	hHeight = FSIZE * 2;
-	zWidth  = FSIZE * 2;
-	zHeight = FSIZE * 2;
+	VSurface* fnt;
 	
 	// フォントファイル読み込み
-	// フォントファイルが無ければダミー作成
-	if( !(HFont = LoadImg( hfilename )) ){
-		HFont = new VSurface;
-		HFont->InitSurface( hWidth * 192, hHeight * 2 );
-		HFont->Fill( FC_BLACK );
-		ff.w = hWidth-1;
-		ff.h = hHeight-1;
-		for( int y=0; y<2; y++ ){
-			ff.y = hHeight * y + 1;
-			for( int x=0; x<192; x++ ){
-				ff.x = hWidth * x + 1;
-				HFont->Fill( FC_WHITE, &ff );
-			}
-		}
-		Error::SetError( Error::FontLoadFailed );
-	}
-	if( !(ZFont = LoadImg( zfilename )) ){
-		ZFont = new VSurface;
-		ZFont->InitSurface( zWidth * 192, zHeight * 48 );
-		ZFont->Fill( FC_BLACK );
-		ff.w = zWidth-1;
-		ff.h = zHeight-1;
-		for( int y=0; y<48; y++ ){
-			ff.y = zHeight * y + 1;
-			for( int x=0; x<192; x++ ){
-				ff.x = zWidth * x + 1;
-				ZFont->Fill( FC_WHITE, &ff );
-			}
-		}
-		Error::SetError( Error::FontLoadFailed );
-	}
+	if( (fnt = LoadImg( hfilename )) ){ HFont = *fnt; }
+	if( (fnt = LoadImg( zfilename )) ){ ZFont = *fnt; }
 	
 	// 半角と全角でサイズが異なった場合は小さいほうに合わせる(当然表示がズレる)
-	hWidth  = min( HFont->Width()  / 192, ZFont->Width()  / 192 / 2 );
-	hHeight = min( HFont->Height() / 2,   ZFont->Height() / 48 );
+	hWidth  = min( HFont.Width()  / 192, ZFont.Width()  / 192 / 2 );
+	hHeight = min( HFont.Height() / 2,   ZFont.Height() / 48 );
 	zWidth  = hWidth * 2;
 	zHeight = hHeight;
 	
 	return ( Error::GetError() == Error::NoError );
 }
-
-
-////////////////////////////////////////////////////////////////
-// フォントを破棄する
-////////////////////////////////////////////////////////////////
-void JFont::CloseFont( void )
-{
-	if( HFont ){ delete HFont; HFont = nullptr; }
-	if( ZFont ){ delete ZFont; ZFont = nullptr; }
-}
-
-
-////////////////////////////////////////////////////////////////
-// 半角文字描画
-////////////////////////////////////////////////////////////////
-void JFont::PutCharh( VSurface* dst, int dx, int dy, BYTE txt, BYTE fg, BYTE bg )
-{
-	PRINTD( GRP_LOG, "[JFont][PutCharh]\n" );
-	
-	int index = txt;
-	
-	// クリッピング
-	VRect sr,dr;
-	sr.x = ( index % 128 ) * hWidth;
-	sr.y = ( index / 128 ) * hHeight;
-	dr.x = dx;
-	dr.y = dy;
-	sr.w = dr.w = hWidth;
-	sr.h = dr.h = hHeight;
-	
-	// 転送
-	for( int y=0; y<sr.h; y++ )
-		for( int x=0; x<sr.w; x++ )
-			dst->PSet( dr.x + x, dr.y + y, HFont && HFont->PGet( sr.x + x, sr.y + y ) ? fg : bg );
-}
-
-
-////////////////////////////////////////////////////////////////
-// 全角文字描画
-////////////////////////////////////////////////////////////////
-void JFont::PutCharz( VSurface* dst, int dx, int dy, WORD txt, BYTE fg, BYTE bg )
-{
-	PRINTD( GRP_LOG, "[JFont][PutCharz]\n" );
-	
-	BYTE th = (txt>>8) & 0xff;
-	BYTE tl =  txt     & 0xff;
-	
-	// 上位 0x81-0x9f, 0xe0-0xef
-	// 下位 0x40-0x7e, 0x80-0xfc
-	int index = ( th - (th<0xe0 ? 0x80 : 0xc0) ) * 192 + tl - 0x40;
-	
-	// クリッピング
-	VRect sr,dr;
-	sr.x = ( index % 192 ) * zWidth;
-	sr.y = ( index / 192 ) * zHeight;
-	dr.x = dx;
-	dr.y = dy;
-	sr.w = dr.w = zWidth;
-	sr.h = dr.h = zHeight;
-	
-	// 転送
-	for( int y=0; y<sr.h; y++ )
-		for( int x=0; x<sr.w; x++ )
-			dst->PSet( dr.x + x, dr.y + y, ZFont && ZFont->PGet( sr.x + x, sr.y + y ) ? fg : bg );
-}
-
-
-
 
 
 
@@ -242,11 +176,11 @@ void ZCons::Locate( int xx, int yy )
 {
 	// 右端，下端チェック
 	// 負だったら右端，下端から
-	if( ( xx >= 0 )&&( xx < Xmax ) ) x = xx;
-	else if( ( xx < 0 )&&( (Xmax-xx)>=0 ) ) x = Xmax + xx;
+	if( ( xx >= 0 )&&( xx < Xmax ) )       { x = xx; }
+	else if( ( xx < 0 )&&( (Xmax-xx)>=0 ) ){ x = Xmax + xx; }
 	
-	if( ( yy >= 0 )&&( yy < Ymax ) ) y = yy;
-	else if( ( yy < 0 )&&( (Ymax-yy)>=0 ) ) y = Ymax + yy;
+	if( ( yy >= 0 )&&( yy < Ymax ) )       { y = yy; }
+	else if( ( yy < 0 )&&( (Ymax-yy)>=0 ) ){ y = Ymax + yy; }
 }
 
 
@@ -266,8 +200,8 @@ void ZCons::LocateR( int xx, int yy )
 	}
 	
 	y += yy;
-	if( y < 0 )    y = 0;
-	if( y > Ymax ) y = Ymax;
+	if( y < 0 )   { y = 0; }
+	if( y > Ymax ){ y = Ymax; }
 }
 
 
@@ -303,7 +237,7 @@ void ZCons::Cls( void )
 ////////////////////////////////////////////////////////////////
 void ZCons::PutCharH( BYTE c )
 {
-	JFont::PutCharh( this, x * hWidth + con.x, y * hHeight + con.y, c, fgc, bgc );
+	PutCharh( x * hWidth + con.x, y * hHeight + con.y, c, fgc, bgc );
 	
 	// 次のカーソルを設定
 	x++;
@@ -315,7 +249,7 @@ void ZCons::PutCharH( BYTE c )
 ////////////////////////////////////////////////////////////////
 void ZCons::PutCharZ( WORD c )
 {
-	JFont::PutCharz( this, x * hWidth + con.x, y * hHeight + con.y, c, fgc, bgc );
+	PutCharz( x * hWidth + con.x, y * hHeight + con.y, c, fgc, bgc );
 	
 	// 次のカーソルを設定
 	x += 2;
@@ -323,28 +257,9 @@ void ZCons::PutCharZ( WORD c )
 
 
 ////////////////////////////////////////////////////////////////
-// 文字列描画(制御文字非対応)
-////////////////////////////////////////////////////////////////
-void ZCons::SPrint( const std::string& text )
-{
-	std::string str = text;
-	OSD_UTF8toSJIS( str );
-	
-	for( size_t i=0; i<str.length(); i++ ){
-		if( std::isprint( str[i] ) )
-			PutCharH( str[i] );
-		else{
-			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
-			i++;
-		}
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
 // 文字列描画(制御文字対応)
 ////////////////////////////////////////////////////////////////
-void ZCons::SPrintc( const std::string& text )
+void ZCons::sprintc( const std::string& text )
 {
 	std::string str = text;
 	OSD_UTF8toSJIS( str );
@@ -363,9 +278,9 @@ void ZCons::SPrintc( const std::string& text )
 			break;
 			
 		default:	// 普通の文字
-			if( std::isprint( str[i] ) )
+			if( std::isprint( str[i] ) ){
 				PutCharH( str[i] );
-			else{
+			}else{
 				PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
 				i++;
 			}
@@ -389,7 +304,7 @@ void ZCons::SPrintc( const std::string& text )
 ////////////////////////////////////////////////////////////////
 // 文字列描画(右詰め)
 ////////////////////////////////////////////////////////////////
-void ZCons::SPrintcr( const std::string& text )
+void ZCons::sprintr( const std::string& text )
 {
 	std::string str = text;
 	OSD_UTF8toSJIS( str );
@@ -398,135 +313,14 @@ void ZCons::SPrintcr( const std::string& text )
 	Locate( -num, y );
 	
 	for( size_t i=0; i<num; i++ ){
-		if( std::isprint( str[i] ) )
+		if( std::isprint( str[i] ) ){
 			PutCharH( str[i] );
-		else{
+		}else{
 			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
 			i++;
 		}
 	}
 }
-
-
-/*
-////////////////////////////////////////////////////////////////
-// 書式付文字列描画(制御文字非対応)
-////////////////////////////////////////////////////////////////
-void ZCons::Print( const std::string& text, ... )
-{
-	char str[1024];
-	int num;
-	std::va_list arg;
-	
-	// C的可変長引数展開
-	std::va_start( arg, text );
-	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
-	std::va_end( arg );
-	
-	std::string tstr = str;
-	OSD_UTF8toSJIS( tstr );
-	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
-	
-	for( int i=0; i<num; i++ ){
-		if( std::isprint( str[i] ) )
-			PutCharH( str[i] );
-		else{
-			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
-			i++;
-		}
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 書式付文字列描画(制御文字対応)
-////////////////////////////////////////////////////////////////
-void ZCons::Printf( const std::string& text, ... )
-{
-	char str[1024];
-	int num;
-	std::va_list arg;
-	
-	// C的可変長引数展開
-	std::va_start( arg, text );
-	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
-	std::va_end( arg );
-	
-	std::string tstr = str;
-	OSD_UTF8toSJIS( tstr );
-	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
-	
-	for( int i=0; i<num; i++ ){
-		switch( str[i] ){
-		case '\n':	// 改行
-			x = 0;
-			y++;
-			break;
-			
-		case '\b':	// Back space
-			LocateR( -1, 0 );
-			PutCharH( ' ' );
-			LocateR( -1, 0 );
-			break;
-			
-		default:	// 普通の文字
-			if( std::isprint( str[i] ) )
-				PutCharH( str[i] );
-			else{
-				PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
-				i++;
-			}
-			
-			// 次のカーソルを設定
-			if( x >= Xmax ){
-				x = 0;
-				y++;
-			}
-		}
-		
-		// スクロール?
-		if( y >= Ymax){
-			y = Ymax - 1;
-			ScrollUp();
-		}
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 書式付文字列描画(右詰め)
-////////////////////////////////////////////////////////////////
-void ZCons::Printfr( const std::string& text, ... )
-{
-	char str[1024];
-	int num;
-	std::va_list arg;
-	
-	// C的可変長引数展開
-	std::va_start( arg, text );
-	num = std::vsnprintf( str, sizeof(str), text.c_str(), arg );
-	std::va_end( arg );
-	
-
-
-	std::string tstr = str;
-	OSD_UTF8toSJIS( tstr );
-	std::strncpy( str, tstr.c_str(), sizeof(str)-1 );
-
-
-	if( num > Xmax ) num = Xmax;
-	Locate( -num, y );
-	
-	for( int i=0; i<num; i++ ){
-		if( std::isprint( str[i] ) )
-			PutCharH( str[i] );
-		else{
-			PutCharZ( ((BYTE)str[i]<<8) | (BYTE)str[i+1] );
-			i++;
-		}
-	}
-}
-*/
 
 
 ////////////////////////////////////////////////////////////////
@@ -569,7 +363,7 @@ void ZCons::DrawFrame( void )
 	// キャプション
 	if( !Caption.empty() ){
 		Locate( 1, 0 );
-		SPrint( ' ' + Caption + ' ' );
+		sprintc( ' ' + Caption + ' ' );
 	}
 }
 
@@ -602,3 +396,63 @@ void ZCons::ScrollUp( void )
 	DPos.h = hHeight;
 	VSurface::Fill( bgc, &DPos );
 }
+
+
+////////////////////////////////////////////////////////////////
+// 半角文字描画
+////////////////////////////////////////////////////////////////
+void ZCons::PutCharh( int dx, int dy, BYTE txt, BYTE fg, BYTE bg )
+{
+	PRINTD( GRP_LOG, "[ZCons][PutCharh]\n" );
+	
+	int index = txt;
+	
+	// クリッピング
+	VRect sr,dr;
+	sr.x = ( index % 128 ) * JFont::FontWidth();
+	sr.y = ( index / 128 ) * JFont::FontHeight();
+	dr.x = dx;
+	dr.y = dy;
+	sr.w = dr.w = JFont::FontWidth();
+	sr.h = dr.h = JFont::FontHeight();
+	
+	// 転送
+	for( int y=0; y<sr.h; y++ ){
+		for( int x=0; x<sr.w; x++ ){
+			VSurface::PSet( dr.x + x, dr.y + y, JFont::HFont.PGet( sr.x + x, sr.y + y ) ? fg : bg );
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// 全角文字描画
+////////////////////////////////////////////////////////////////
+void ZCons::PutCharz( int dx, int dy, WORD txt, BYTE fg, BYTE bg )
+{
+	PRINTD( GRP_LOG, "[ZCons][PutCharz]\n" );
+	
+	BYTE th = (txt>>8) & 0xff;
+	BYTE tl =  txt     & 0xff;
+	
+	// 上位 0x81-0x9f, 0xe0-0xef
+	// 下位 0x40-0x7e, 0x80-0xfc
+	int index = ( th - (th<0xe0 ? 0x80 : 0xc0) ) * 192 + tl - 0x40;
+	
+	// クリッピング
+	VRect sr,dr;
+	sr.x = ( index % 192 ) * JFont::FontWidth() * 2;
+	sr.y = ( index / 192 ) * JFont::FontHeight();
+	dr.x = dx;
+	dr.y = dy;
+	sr.w = dr.w = JFont::FontWidth() * 2;
+	sr.h = dr.h = JFont::FontHeight();
+	
+	// 転送
+	for( int y=0; y<sr.h; y++ ){
+		for( int x=0; x<sr.w; x++ ){
+			VSurface::PSet( dr.x + x, dr.y + y, JFont::ZFont.PGet( sr.x + x, sr.y + y ) ? fg : bg );
+		}
+	}
+}
+

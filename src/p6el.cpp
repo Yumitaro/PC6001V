@@ -79,7 +79,9 @@ void EL6::OnThread( void* inst )
 	// モニタモード
 		while( !this->cThread::IsCancel() ){
 			// 画面更新
-			if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+			if( p6->ScreenUpdate() ){
+				OSD_PushEvent( EV_RENDER );
+			}
 			
 			// ウェイト
 			p6->Wait();
@@ -92,7 +94,9 @@ void EL6::OnThread( void* inst )
 				// ポーズ中なら画面更新のみ
 				if( p6->sche->GetPauseEnable() ){
 					// 画面更新
-					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+					if( p6->ScreenUpdate() ){
+						OSD_PushEvent( EV_RENDER );
+					}
 					
 					// ウェイト
 					p6->Wait();
@@ -112,14 +116,16 @@ void EL6::OnThread( void* inst )
 						// サウンド更新
 						p6->SoundUpdate( 0 );
 						// 画面更新
-						if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+						if( p6->ScreenUpdate() ){
+							OSD_PushEvent( EV_RENDER );
+						}
 						
 						// 自動キー入力
 						if( IsAutoKey() ){
 							BYTE key = GetAutoKey();
 							if( key ){
-								if( key == 0x14 ) p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() );
-								else			  p6->vm->cpus->ReqKeyIntr( 0, key );
+								if( key == 0x14 ){ p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() ); }
+								else			 { p6->vm->cpus->ReqKeyIntr( 0, key ); }
 							}
 						}
 						
@@ -135,18 +141,22 @@ void EL6::OnThread( void* inst )
 			// ポーズ中なら画面更新のみ
 			if( p6->sche->GetPauseEnable() ){
 				// 画面更新
-				if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+				if( p6->ScreenUpdate() ){
+					OSD_PushEvent( EV_RENDER );
+				}
 			}else{
 				// キーマトリクススキャン
 				bool matchg = p6->vm->key->ScanMatrix();
 				
 				// リプレイ記録中
-				if( REPLAY::GetStatus() == REP_RECORD )
+				if( REPLAY::GetStatus() == REP_RECORD ){
 					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix2(), matchg );
+				}
 				
 				// リプレイ再生中
-				if( REPLAY::GetStatus() == REP_REPLAY )
+				if( REPLAY::GetStatus() == REP_REPLAY ){
 					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix() );
+				}
 				
 				p6->EmuVSYNC();			// 1画面分実行
 				
@@ -156,21 +166,25 @@ void EL6::OnThread( void* inst )
 					// サウンド更新
 					p6->SoundUpdate( 0, AVI6::GetAudioBuffer() );
 					// 画面更新されたら AVI1画面保存
-					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_CAPTURE );
+					if( p6->ScreenUpdate() ){
+						OSD_PushEvent( EV_CAPTURE );
+					}
 				}else{
 					// ビデオキャプチャ中でないなら通常の更新
 					// サウンド更新
 					p6->SoundUpdate( 0 );
 					// 画面更新
-					if( p6->ScreenUpdate() ) OSD_PushEvent( EV_RENDER );
+					if( p6->ScreenUpdate() ){
+						OSD_PushEvent( EV_RENDER );
+					}
 				}
 				
 				// 自動キー入力
 				if( IsAutoKey() ){
 					BYTE key = GetAutoKey();
 					if( key ){
-						if( key == 0x14 ) p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() );
-						else			  p6->vm->cpus->ReqKeyIntr( 0, key );
+						if( key == 0x14 ){ p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() ); }
+						else			 { p6->vm->cpus->ReqKeyIntr( 0, key ); }
 					}
 				}
 			}
@@ -563,7 +577,12 @@ EL6::ReturnCode EL6::EventLoop( void )
 			// ResizeScreen()でリサイズしたなら何もしないで戻る
 			if( graph->CheckResize() ) break;
 			
-			int zoom = (int)((double)event.window.w / (double)GetVideoInfo().w * (double)((cfg->GetValue( CB_DispNTSC ) ? GetVideoInfo().ratio : 100.0) + 0.5));
+			// 変化率が大きい方の軸のサイズを優先
+			double rx = (double) event.window.w                   / (double)graph->ScreenX();
+			double ry = (double)(event.window.h - staw->Height()) / (double)graph->ScreenY();
+			
+			// 倍率を逆算
+			int zoom = cfg->GetValue( CV_WindowZoom ) * (((rx < 1 ? 1/rx : rx) > (ry < 1 ? 1/ry : ry)) ? rx : ry);
 			
 			Stop();
 			cfg->SetValue( CV_WindowZoom, zoom );	// ウィンドウサイズに合わせて倍率再設定

@@ -37,14 +37,6 @@ struct VRect{
 	VRect() : x(0), y(0), w(0), h(0) {}
 };
 
-/*
-struct VPalette{
-	COLOR24* colors;
-	
-	VPalette() : colors(nullptr) {}
-};
-*/
-
 #define COL2DW(c)	(DWORD)(((DWORD)c.a<<ASHIFT32)|((DWORD)c.r<<RSHIFT32)|((DWORD)c.g<<GSHIFT32)|((DWORD)c.b<<BSHIFT32))
 
 
@@ -58,7 +50,6 @@ protected:
 	std::vector<BYTE> pixels;	// ピクセルデータへのポインタ
 	VRect rect;					// 描画領域
 	
-//	static std::vector<DWORD> col32;	// 32bitカラーテーブル
 	static std::array<DWORD,256> col32;	// 32bitカラーテーブル
 	
 	void RectAdd( VRect*, VRect*, VRect* );		// 矩形領域合成

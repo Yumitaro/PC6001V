@@ -33,7 +33,7 @@
 // Renderer,Texture作成用オプション
 #define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE)
 #define SDLOP_FMT32		SDL_PIXELFORMAT_ARGB8888
-#define SDLOP_FMT24		SDL_PIXELFORMAT_RGB24
+#define SDLOP_FMT24		SDL_PIXELFORMAT_BGR24
 #define SDLOP_FMT16		SDL_PIXELFORMAT_RGB555
 
 
@@ -1339,6 +1339,7 @@ bool OSD_PushEvent( EventType ev, ... )
 	case EV_REPLAY:
 	case EV_FPSUPDATE:
 	case EV_RENDER:
+	case EV_CAPTURE:
 		event.type		= ev + UEVnum;
 		break;
 		

@@ -114,8 +114,8 @@ public:
 	MemBlock();
 	~MemBlock();
 	
-	void SetMemory( const std::string&, MemCell&, int = -1 );	// メモリ割当て
-	void SetFunc  ( const std::string&, MemCell&, RFunc, WFunc, int = -1 );	// 関数割当て
+	void SetMemory( const std::string&, MemCell&, int = -1 );		// メモリ割当て
+	void SetFunc  ( const std::string&, RFunc, WFunc, int = -1 );	// 関数割当て
 	const std::string& GetName() const;						// メモリブロック名取得
 	void SetWait( int );									// アクセスウェイト設定
 	int GetWait() const;									// アクセスウェイト取得

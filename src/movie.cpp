@@ -26,7 +26,7 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-AVI6::AVI6( void ) : vfp(nullptr), ABPP(32), Sbuf(nullptr), PosMOVI(0),
+AVI6::AVI6( void ) : vfp(nullptr), ABPP(32), PosMOVI(0),
 						RiffSize(0), MoviSize(0), anum(0) {}
 
 
@@ -138,8 +138,7 @@ bool AVI6::Init( void )
 	
 	ABPP     = 32;
 	
-	if( Sbuf ) delete [] Sbuf;
-	Sbuf     = nullptr;
+	Sbuf.clear();
 	
 	PosMOVI  = 0;
 	
@@ -166,8 +165,7 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	Init();
 	
 	// イメージデータバッファ取得
-	Sbuf = new BYTE[sw*sh*sizeof(DWORD)];
-	if( !Sbuf ) return false;
+	Sbuf.resize( sw * sh * bpp / 8 );
 	
 	vfp = OSD_Fopen( filepath, "w+b" );
 	if( !vfp ) return false;
@@ -383,8 +381,7 @@ void AVI6::StopAVI( void )
 	fclose( vfp );
 	vfp = nullptr;
 	
-	if( Sbuf ) delete [] Sbuf;
-	Sbuf = nullptr;
+	Sbuf.clear();
 }
 
 
@@ -422,7 +419,7 @@ bool AVI6::AVIWriteFrame( HWINDOW wh )
 	if( !OSD_GetWindowImage( wh, (void**)&Sbuf, &ss, ABPP ) ) return false;
 	
 	for( int y = vbf.biHeight - 1; y >= 0; y-- )
-		fwrite( (BYTE*)((DWORD*)Sbuf + (vbf.biWidth * ABPP / 8 + 3) / 4 * y), sizeof(DWORD), (vbf.biWidth * ABPP / 8 + 3) / 4, vfp );
+		fwrite( (BYTE*)((DWORD*)Sbuf.data() + (vbf.biWidth * ABPP / 8 + 3) / 4 * y), sizeof(DWORD), (vbf.biWidth * ABPP / 8 + 3) / 4, vfp );
 	
 	// オーディオストリーム出力
 	if( ABuf.ReadySize() > 0 ){

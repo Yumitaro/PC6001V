@@ -165,10 +165,9 @@ BYTE GetKeyChar( PCKEYsym, bool );
 ////////////////////////////////////////////////////////////////
 template <typename ... Args> std::string Stringf( const std::string& fmt, Args ... args )
 {
-	size_t len = std::snprintf( nullptr, 0, fmt.c_str(), args ... );
-	std::vector<char> buf(len + 1);
-	std::snprintf( &buf[0], len + 1, fmt.c_str(), args ... );
-	return std::string( &buf[0], &buf[0] + len );
+	std::vector<char> buf( std::snprintf( nullptr, 0, fmt.c_str(), args ... ) + 1 );
+	std::snprintf( &buf[0], buf.size(), fmt.c_str(), args ... );
+	return std::string( buf.data(), buf.data() + buf.size() - 1 );
 }
 
 
