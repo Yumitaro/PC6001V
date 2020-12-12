@@ -89,19 +89,13 @@ using P6VPATH = std::string;
 #define STATIC_CAST(t, o)	static_cast<t> (o)
 #define CONST_CAST(t, o)	const_cast<t> (o)
 
-#define FGETBYTE(fp)		((BYTE)std::fgetc(fp))
-#define FGETWORD(fp)		((WORD)(FGETBYTE(fp)|(FGETBYTE(fp)<<8)))
-#define FGETDWORD(fp)		((DWORD)(FGETBYTE(fp)|(FGETBYTE(fp)<<8)|(FGETBYTE(fp)<<16)|(FGETBYTE(fp)<<24)))
-#define FPUTBYTE(data,fp)	std::fputc((data)&0xff,fp)
-#define FPUTWORD(data,fp)	{ FPUTBYTE(data,fp); FPUTBYTE(data>>8,fp); }
-#define FPUTDWORD(data,fp)	{ FPUTBYTE(data,fp); FPUTBYTE(data>>8,fp); FPUTBYTE(data>>16,fp); FPUTBYTE(data>>24,fp); }
-
 #define FSGETBYTE(fs)		((BYTE)fs.get())
 #define FSGETWORD(fs)		((WORD)(FSGETBYTE(fs)|(FSGETBYTE(fs)<<8)))
 #define FSGETDWORD(fs)		((DWORD)((FSGETBYTE(fs))|(FSGETBYTE(fs)<<8)|(FSGETBYTE(fs)<<16)|(FSGETBYTE(fs)<<24)))
 #define FSPUTBYTE(data,fs)	fs.put((data)&0xff)
 #define FSPUTWORD(data,fs)	{ FSPUTBYTE(data,fs); FSPUTBYTE(data>>8,fs); }
 #define FSPUTDWORD(data,fs)	{ FSPUTBYTE(data,fs); FSPUTBYTE(data>>8,fs); FSPUTBYTE(data>>16,fs); FSPUTBYTE(data>>24,fs); }
+#define FSPUTSTR(str,fs)	fs.write(str,std::strlen(str))
 
 #define CTODW(a,b,c,d)		((DWORD)(((BYTE)(a))|(((DWORD)((BYTE)(b)))<<8)|(((DWORD)((BYTE)(c)))<<16)|(((DWORD)((BYTE)(d)))<<24)))
 

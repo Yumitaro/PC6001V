@@ -431,20 +431,24 @@ int SND6::PreUpdate( int samples, cRing* exbuf )
 	}
 	PRINTD( SND_LOG,"\n" );
 	
-	exsam = min( exsam, this->cRing::FreeSize( true ) );
+//	exsam = min( exsam, this->cRing::FreeSize( true ) );
+	exsam = min( exsam, exbuf ? exbuf->cRing::FreeSize( true ) : this->cRing::FreeSize( true ) );
 	
 	for( int i=0; i<exsam; i++ ){
 		int dat = 0;
 		
-		for( auto p = sdev.begin(); p != sdev.end(); ++p )
+		for( auto p = sdev.begin(); p != sdev.end(); ++p ){
 			dat += (*p)->Get();
+		}
 		
 		dat = ( dat * Volume ) / 100;
 		dat = min( max( dat, INT16_MIN ), INT16_MAX );
 		
 		this->cRing::Put( (int16_t)dat );
 		// 外部バッファが存在すれば書込み
-		if( exbuf ) exbuf->Put( (int16_t)dat );
+		if( exbuf ){
+			exbuf->Put( (int16_t)dat );
+		}
 	}
 	
 	return exsam;

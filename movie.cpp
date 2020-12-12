@@ -26,8 +26,8 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-AVI6::AVI6( void ) : vfp(nullptr), ABPP(32), PosMOVI(0),
-						RiffSize(0), MoviSize(0), anum(0) {}
+AVI6::AVI6( void ) : ABPP(32), PosMOVI(0), RiffSize(0), MoviSize(0), anum(0), afrm(0)
+{}
 
 
 ////////////////////////////////////////////////////////////////
@@ -35,7 +35,7 @@ AVI6::AVI6( void ) : vfp(nullptr), ABPP(32), PosMOVI(0),
 ////////////////////////////////////////////////////////////////
 AVI6::~AVI6( void )
 {
-	if( IsAVI() ) StopAVI();
+	StopAVI();
 }
 
 
@@ -44,74 +44,74 @@ AVI6::~AVI6( void )
 ////////////////////////////////////////////////////////////////
 void AVI6::putBMPINFOHEADER6( BMPINFOHEADER6* p )
 {
-	FPUTDWORD( p->biSize,			vfp );
-	FPUTDWORD( p->biWidth,			vfp );	// LONG
-	FPUTDWORD( p->biHeight,			vfp );	// LONG
-	FPUTWORD(  p->biPlanes,			vfp );
-	FPUTWORD(  p->biBitCount,		vfp );
-	FPUTDWORD( p->biCompression,	vfp );
-	FPUTDWORD( p->biSizeImage,		vfp );
-	FPUTDWORD( p->biXPelsPerMeter,	vfp );	// LONG
-	FPUTDWORD( p->biYPelsPerMeter,	vfp );	// LONG
-	FPUTDWORD( p->biClrUsed,		vfp );
-	FPUTDWORD( p->biClrImportant,	vfp );
+	FSPUTDWORD( p->biSize,					vfp );
+	FSPUTDWORD( p->biWidth,					vfp );	// LONG
+	FSPUTDWORD( p->biHeight,				vfp );	// LONG
+	FSPUTWORD(  p->biPlanes,				vfp );
+	FSPUTWORD(  p->biBitCount,				vfp );
+	FSPUTDWORD( p->biCompression,			vfp );
+	FSPUTDWORD( p->biSizeImage,				vfp );
+	FSPUTDWORD( p->biXPelsPerMeter,			vfp );	// LONG
+	FSPUTDWORD( p->biYPelsPerMeter,			vfp );	// LONG
+	FSPUTDWORD( p->biClrUsed,				vfp );
+	FSPUTDWORD( p->biClrImportant,			vfp );
 }
 
 void AVI6::putMAINAVIHEADER6( MAINAVIHEADER6* p )
 {
-	FPUTDWORD( p->dwMicroSecPerFrame,		vfp );
-	FPUTDWORD( p->dwMaxBytesPerSec,			vfp );
-	FPUTDWORD( p->dwReserved1,				vfp );
-	FPUTDWORD( p->dwFlags,					vfp );
-	FPUTDWORD( p->dwTotalFrames,			vfp );
-	FPUTDWORD( p->dwInitialFrames,			vfp );
-	FPUTDWORD( p->dwStreams,				vfp );
-	FPUTDWORD( p->dwSuggestedBufferSize,	vfp );
-	FPUTDWORD( p->dwWidth,					vfp );
-	FPUTDWORD( p->dwHeight,					vfp );
-	fwrite( (DWORD*)&p->dwReserved ,sizeof(DWORD), 4, vfp );
+	FSPUTDWORD( p->dwMicroSecPerFrame,		vfp );
+	FSPUTDWORD( p->dwMaxBytesPerSec,		vfp );
+	FSPUTDWORD( p->dwReserved1,				vfp );
+	FSPUTDWORD( p->dwFlags,					vfp );
+	FSPUTDWORD( p->dwTotalFrames,			vfp );
+	FSPUTDWORD( p->dwInitialFrames,			vfp );
+	FSPUTDWORD( p->dwStreams,				vfp );
+	FSPUTDWORD( p->dwSuggestedBufferSize,	vfp );
+	FSPUTDWORD( p->dwWidth,					vfp );
+	FSPUTDWORD( p->dwHeight,				vfp );
+	vfp.write( (const char*)&p->dwReserved, sizeof(DWORD) * 4 );
 }
 
 void AVI6::putAVISTRMHEADER6( AVISTRMHEADER6* p )
 {
-	FPUTDWORD( p->fccType,					vfp );
-	FPUTDWORD( p->fccHandler,				vfp );
-	FPUTDWORD( p->dwFlags,					vfp );
-	FPUTDWORD( p->dwPriority,				vfp );
-	FPUTDWORD( p->dwInitialFrames,			vfp );
-	FPUTDWORD( p->dwScale,					vfp );
-	FPUTDWORD( p->dwRate,					vfp );
-	FPUTDWORD( p->dwStart,					vfp );
-	FPUTDWORD( p->dwLength,					vfp );
-	FPUTDWORD( p->dwSuggestedBufferSize,	vfp );
-	FPUTDWORD( p->dwQuality,				vfp );
-	FPUTDWORD( p->dwSampleSize,				vfp );
+	FSPUTDWORD( p->fccType,					vfp );
+	FSPUTDWORD( p->fccHandler,				vfp );
+	FSPUTDWORD( p->dwFlags,					vfp );
+	FSPUTDWORD( p->dwPriority,				vfp );
+	FSPUTDWORD( p->dwInitialFrames,			vfp );
+	FSPUTDWORD( p->dwScale,					vfp );
+	FSPUTDWORD( p->dwRate,					vfp );
+	FSPUTDWORD( p->dwStart,					vfp );
+	FSPUTDWORD( p->dwLength,				vfp );
+	FSPUTDWORD( p->dwSuggestedBufferSize,	vfp );
+	FSPUTDWORD( p->dwQuality,				vfp );
+	FSPUTDWORD( p->dwSampleSize,			vfp );
 	
-	FPUTWORD( p->rcFrame.left,		vfp );	// short int
-	FPUTWORD( p->rcFrame.top,		vfp );	// short int
-	FPUTWORD( p->rcFrame.right,		vfp );	// short int
-	FPUTWORD( p->rcFrame.bottom,	vfp );	// short int
+	FSPUTWORD( p->rcFrame.left,				vfp );	// short int
+	FSPUTWORD( p->rcFrame.top,				vfp );	// short int
+	FSPUTWORD( p->rcFrame.right,			vfp );	// short int
+	FSPUTWORD( p->rcFrame.bottom,			vfp );	// short int
 }
 
 // AVIINDEXENTRY相当
 void AVI6::putAVIINDEXENTRY6( AVIINDEXENTRY6* p )
 {
-	FPUTDWORD( p->ckid,				vfp );
-	FPUTDWORD( p->dwFlags,			vfp );
-	FPUTDWORD( p->dwChunkOffset,	vfp );
-	FPUTDWORD( p->dwChunkLength,	vfp );
+	FSPUTDWORD( p->ckid,					vfp );
+	FSPUTDWORD( p->dwFlags,					vfp );
+	FSPUTDWORD( p->dwChunkOffset,			vfp );
+	FSPUTDWORD( p->dwChunkLength,			vfp );
 } 
 
 // WAVEFORMATEX相当
 void AVI6::putWAVEFORMATEX6( WAVEFORMATEX6* p )
 {
-	FPUTWORD( p->wFormatTag,		vfp );
-	FPUTWORD( p->nChannels,			vfp );
-	FPUTDWORD(p->nSamplesPerSec,	vfp );
-	FPUTDWORD(p->nAvgBytesPerSec,	vfp );
-	FPUTWORD( p->nBlockAlign,		vfp );
-	FPUTWORD( p->wBitsPerSample,	vfp );
-//	FPUTWORD( p->cbSize,			vfp );	// WAVE_FORMAT_PCMの場合 無視される
+	FSPUTWORD( p->wFormatTag,				vfp );
+	FSPUTWORD( p->nChannels,				vfp );
+	FSPUTDWORD(p->nSamplesPerSec,			vfp );
+	FSPUTDWORD(p->nAvgBytesPerSec,			vfp );
+	FSPUTWORD( p->nBlockAlign,				vfp );
+	FSPUTWORD( p->wBitsPerSample,			vfp );
+//	FSPUTWORD( p->cbSize,					vfp );	// WAVE_FORMAT_PCMの場合 無視される
 }
 
 
@@ -127,8 +127,9 @@ bool AVI6::Init( void )
 {
 	PRINTD( GRP_LOG, "[MOVIE][Init]\n" );
 	
-	if( vfp ) fclose( vfp );
-	vfp = nullptr;
+	if( IsAVI() ){
+		vfp.close();
+	}
 	
 	ZeroMemory( &vmh, sizeof(MAINAVIHEADER6) );
 	ZeroMemory( &vsh, sizeof(AVISTRMHEADER6) );
@@ -167,8 +168,9 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	// イメージデータバッファ取得
 	Sbuf.resize( sw * sh * bpp / 8 );
 	
-	vfp = OSD_Fopen( filepath, "w+b" );
-	if( !vfp ) return false;
+	if( !OSD_FSopen( vfp, filepath, std::ios_base::in|std::ios_base::out|std::ios_base::trunc|std::ios_base::binary ) ){
+		return false;
+	}
 	
 	ABPP = bpp;
 	
@@ -180,7 +182,7 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	// (とりあえず無視)
 	vmh.dwMaxBytesPerSec = 0;
 	// ファイルに対するフラグを含む。以下のフラグが定義されている。
-	//  AVIF_HASINDEX AVI	ファイルの終わりにインデックスを含む 'idx1'チャンクがあることを示す。
+	//  AVIF_HASINDEX		AVIファイルの終わりにインデックスを含む 'idx1'チャンクがあることを示す。
 	//						良好なパフォーマンスのためには,すべての AVIファイルがインデックスを含む必要がある。
 	//  AVIF_MUSTUSEINDEX	データのプレゼンテーションの順序を決定するために,ファイル内のチャンクの物理的な順序ではなく
 	//						インデックスを使用することを示す。たとえば,これを使ってフレームのリストを作成して編集することができる。
@@ -246,7 +248,8 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	// 1 秒あたりのサンプル数が求められる。ビデオストリームの場合,このレートはフレームレートに等しくなる。
 	// オーディオストリームの場合,このレートは nBlockAlign バイトのオーディオデータに必要な時間に対応する。
 	// これは PCMオーディオの場合はサンプルレートに等しくなる。
-	vsh.dwScale = 1;
+//	vsh.dwScale = 1;
+	vsh.dwScale = 1000000;
 	ash.dwScale = 2;
 	// dwScale を参照すること。
 	vsh.dwRate = vsh.dwScale * vrate;
@@ -344,7 +347,7 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	ABuf.InitBuffer( arate / vrate * 2 );
 	// カウンタ初期化
 	anum = 0;
-	
+	afrm = 0;
 	
 	return true;
 }
@@ -358,28 +361,28 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 ////////////////////////////////////////////////////////////////
 void AVI6::StopAVI( void )
 {
-	if( !vfp ) return;
+	if( !IsAVI() ){ return; }
 	
 	// 総フレーム数
 	vsh.dwLength = vmh.dwTotalFrames;
 	ash.dwLength = anum;
 	
 	// この時点でファイルポインタは末尾にあるはずだが念のため
-	fseek( vfp, 0, SEEK_END );
+	vfp.flush();
+	vfp.seekp( 0, std::ios_base::end );
 	
 	// Moviチャンクのサイズ取得
-	MoviSize = ftell( vfp ) - PosMOVI;
+	MoviSize = (DWORD)vfp.tellp() - PosMOVI;
 	
 	// インデックスチャンク出力
 	WriteIndexr();
 	
-	RiffSize = ftell( vfp ) - 8;
+	RiffSize = (DWORD)vfp.tellp() - 8;
 	
 	// ヘッダチャンク再書出し
 	WriteHeader();
 	
-	fclose( vfp );
-	vfp = nullptr;
+	vfp.close();
 	
 	Sbuf.clear();
 }
@@ -393,47 +396,68 @@ void AVI6::StopAVI( void )
 ////////////////////////////////////////////////////////////////
 bool AVI6::IsAVI( void )
 {
-	return vfp ? true : false;
+	return vfp.is_open();
 }
 
 
 ////////////////////////////////////////////////////////////////
-// AVI1フレーム書出し
+// AVI1フレーム書出し(Video)
 //
 // 引数:	wh		ウィンドウハンドル
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool AVI6::AVIWriteFrame( HWINDOW wh )
+bool AVI6::AVIWriteFrameVideo( HWINDOW wh )
 {
-	if( !vfp || !wh ) return false;
+	if( !IsAVI() || !wh ){ return false; }
 	
 	// ビデオストリーム出力
-	FPUTDWORD( CID00DB, vfp );
-	FPUTDWORD( vbf.biSizeImage, vfp );
+	FSPUTDWORD( CID00DB, vfp );
+	FSPUTDWORD( vbf.biSizeImage, vfp );
 	
 	VRect ss;
 	ss.x = 0;
 	ss.y = 0;
 	ss.w = vbf.biWidth;
 	ss.h = vbf.biHeight;
-	if( !OSD_GetWindowImage( wh, (void**)&Sbuf, &ss, ABPP ) ) return false;
+	if( !OSD_GetWindowImage( wh, (void**)&Sbuf, &ss, ABPP ) ){
+		return false;
+	}
 	
-	for( int y = vbf.biHeight - 1; y >= 0; y-- )
-		fwrite( (BYTE*)((DWORD*)Sbuf.data() + (vbf.biWidth * ABPP / 8 + 3) / 4 * y), sizeof(DWORD), (vbf.biWidth * ABPP / 8 + 3) / 4, vfp );
-	
-	// オーディオストリーム出力
-	if( ABuf.ReadySize() > 0 ){
-		anum += ABuf.ReadySize();
-		FPUTDWORD( CID01WB, vfp );
-		FPUTDWORD( ABuf.ReadySize() * 2, vfp );
-		while( ABuf.ReadySize() > 0 ){
-			short dat = ABuf.Get();
-			FPUTWORD( dat, vfp );
-		}
+	for( int y = vbf.biHeight - 1; y >= 0; y-- ){
+		size_t sz = ((vbf.biWidth * ABPP / 8 + sizeof(DWORD) - 1) / sizeof(DWORD)) * sizeof(DWORD);
+		vfp.write( (const char*)(Sbuf.data() + sz * y), sz );
 	}
 	
 	// 総フレーム数を1増やす
 	vmh.dwTotalFrames++;
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// AVI1フレーム書出し(Audio)
+//
+// 引数:	なし
+// 返値:	bool	true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool AVI6::AVIWriteFrameAudio( void )
+{
+	if( !IsAVI() ){ return false; }
+	
+	// オーディオストリーム出力
+	DWORD sam = max( 0, (DWORD)((double)vmh.dwMicroSecPerFrame * (double)vmh.dwTotalFrames * (double)awf.nSamplesPerSec / 1000000.0) - anum );
+	
+	FSPUTDWORD( CID01WB, vfp );
+	FSPUTDWORD( sam * 2, vfp );
+	anum += sam;
+	while( sam-- > 0 ){
+		int16_t dat = ABuf.Get();
+		FSPUTWORD( dat, vfp );
+	}
+	
+	// 総フレーム数を1増やす
+	afrm++;
 	
 	return true;
 }
@@ -452,6 +476,18 @@ cRing* AVI6::GetAudioBuffer( void )
 
 
 ////////////////////////////////////////////////////////////////
+// 追加更新が必要なサンプル数取得
+//
+// 引数:	なし
+// 返値:	DWORD		サンプル数
+////////////////////////////////////////////////////////////////
+DWORD AVI6::GetUpdateSample( void )
+{
+	return max( 0, (DWORD)((double)vmh.dwMicroSecPerFrame * (double)vmh.dwTotalFrames * (double)awf.nSamplesPerSec / 1000000.0) - anum - ABuf.ReadySize() );
+}
+
+
+////////////////////////////////////////////////////////////////
 // ヘッダチャンク書出し
 //
 // 引数:	なし
@@ -459,61 +495,65 @@ cRing* AVI6::GetAudioBuffer( void )
 ////////////////////////////////////////////////////////////////
 bool AVI6::WriteHeader( void )
 {
-	if( !vfp ) return false;
+	if( !IsAVI() ){ return false; }
 	
 	DWORD SIZESTRLV	= sizeof(AVISTRMHEADER6) + sizeof(BMPINFOHEADER6) + sizeof(DWORD) * 5 + (ABPP==8 ? (sizeof(RGBPAL6) * 256) : 0);
 	DWORD SIZESTRLA	= sizeof(AVISTRMHEADER6) + sizeof(WAVEFORMATEX6)  + sizeof(DWORD) * 5;
 	DWORD SIZEHDRL  = SIZESTRLV + SIZESTRLA  + sizeof(MAINAVIHEADER6) + sizeof(DWORD) * 7;
 	DWORD SIZEJUNK  = 0x800 - ((SIZEHDRL + sizeof(DWORD) * 7) & 0x7ff);
 	
-	fseek( vfp, 0, SEEK_SET );
+	vfp.flush();
+	vfp.seekp( 0, std::ios_base::beg );
 	
-	fputs( "RIFF", vfp );
-	FPUTDWORD( RiffSize, vfp );
-		fputs( "AVI ", vfp );
-			fputs( "LIST", vfp );
-			FPUTDWORD( SIZEHDRL, vfp );
-			fputs( "hdrl", vfp );
-				fputs( "avih", vfp );
-				FPUTDWORD( sizeof(MAINAVIHEADER6), vfp );
+	FSPUTSTR( "RIFF", vfp );
+	FSPUTDWORD( RiffSize, vfp );
+		FSPUTSTR( "AVI ", vfp );
+			FSPUTSTR( "LIST", vfp );
+			FSPUTDWORD( SIZEHDRL, vfp );
+			FSPUTSTR( "hdrl", vfp );
+				FSPUTSTR( "avih", vfp );
+				FSPUTDWORD( sizeof(MAINAVIHEADER6), vfp );
 				putMAINAVIHEADER6( &vmh );
 				
 				// ビデオ
-				fputs( "LIST", vfp );
-				FPUTDWORD( SIZESTRLV, vfp );
-				fputs( "strl", vfp );
-					fputs( "strh", vfp );
-					FPUTDWORD( sizeof(AVISTRMHEADER6), vfp );
+				FSPUTSTR( "LIST", vfp );
+				FSPUTDWORD( SIZESTRLV, vfp );
+				FSPUTSTR( "strl", vfp );
+					FSPUTSTR( "strh", vfp );
+					FSPUTDWORD( sizeof(AVISTRMHEADER6), vfp );
 					putAVISTRMHEADER6( &vsh );
 					
-					fputs( "strf", vfp );
-					FPUTDWORD( sizeof(BMPINFOHEADER6), vfp );
+					FSPUTSTR( "strf", vfp );
+					FSPUTDWORD( sizeof(BMPINFOHEADER6), vfp );
 					putBMPINFOHEADER6( &vbf );
 					
 				// オーディオ
-				fputs( "LIST", vfp );
-				FPUTDWORD( SIZESTRLA, vfp );
-				fputs( "strl", vfp );
-					fputs( "strh", vfp );
-					FPUTDWORD( sizeof(AVISTRMHEADER6), vfp );
+				FSPUTSTR( "LIST", vfp );
+				FSPUTDWORD( SIZESTRLA, vfp );
+				FSPUTSTR( "strl", vfp );
+					FSPUTSTR( "strh", vfp );
+					FSPUTDWORD( sizeof(AVISTRMHEADER6), vfp );
 					putAVISTRMHEADER6( &ash );
 					
-					fputs( "strf", vfp );
-					FPUTDWORD( sizeof(WAVEFORMATEX6), vfp );
+					FSPUTSTR( "strf", vfp );
+					FSPUTDWORD( sizeof(WAVEFORMATEX6), vfp );
 					putWAVEFORMATEX6( &awf );
 				
-			fputs( "JUNK", vfp );
-			FPUTDWORD( SIZEJUNK, vfp );
-			for( DWORD i=0; i<SIZEJUNK; i++ ) FPUTBYTE( 0, vfp );
+			FSPUTSTR( "JUNK", vfp );
+			FSPUTDWORD( SIZEJUNK, vfp );
+			for( DWORD i=0; i<SIZEJUNK; i++ ){
+				FSPUTBYTE( 0, vfp );
+			}
 			
-			fputs( "LIST", vfp );
-			FPUTDWORD( MoviSize, vfp );
+			FSPUTSTR( "LIST", vfp );
+			FSPUTDWORD( MoviSize, vfp );
 			
-			PosMOVI = ftell( vfp );
+			PosMOVI = vfp.tellp();
 			
-			fputs( "movi", vfp );
+			FSPUTSTR( "movi", vfp );
 	
-	fseek( vfp, 0, SEEK_END );
+	vfp.flush();
+	vfp.seekp( 0, std::ios_base::end );
 	
 	return true;
 }
@@ -527,30 +567,36 @@ bool AVI6::WriteHeader( void )
 ////////////////////////////////////////////////////////////////
 bool AVI6::WriteIndexr( void )
 {
-	if( !vfp ) return false;
+	if( !vfp.is_open() ){ return false; }
 	
-	DWORD frames = vmh.dwTotalFrames * 2;
+	DWORD frames = vmh.dwTotalFrames + afrm;	// Video + Audio
 	
-	fseek( vfp, 0, SEEK_END );
+	vfp.flush();
+	vfp.seekp( 0, std::ios_base::end );
 	
 	// インデックスチャンク出力
-	fputs( "idx1", vfp );
-	FPUTDWORD( sizeof(AVIINDEXENTRY6) * frames, vfp );
+	FSPUTSTR( "idx1", vfp );
+	FSPUTDWORD( sizeof(AVIINDEXENTRY6) * frames, vfp );
 	DWORD ipos = 4;
-	for( DWORD i=0; i<frames; i++ ){
+	while( frames-- ){
 		AVIINDEXENTRY6 idx;
 		
-		fseek( vfp, PosMOVI + ipos, SEEK_SET );
-		idx.ckid          = FGETDWORD( vfp );
-//		if( idx.ckid == CID01WB ) idx.dwFlags = 0x00000000;
-//		else                      idx.dwFlags = 0x00000010;	// AVIIF_KEYFRAME
+		vfp.flush();
+		vfp.seekp( PosMOVI + ipos, std::ios_base::beg );
+		idx.ckid          = FSGETDWORD( vfp );
+//		if( idx.ckid == CID00DB ) idx.dwFlags = 0x00000010;	// AVIIF_KEYFRAME
+//		else                      idx.dwFlags = 0x00000000;
 		idx.dwFlags       = 0x00000010;	// AVIIF_KEYFRAME
 		idx.dwChunkOffset = ipos;
-		idx.dwChunkLength = FGETDWORD( vfp );
-		fseek( vfp, 0, SEEK_END );
+		idx.dwChunkLength = FSGETDWORD( vfp );
+		
+		vfp.flush();
+		vfp.seekp( 0, std::ios_base::end );
 		putAVIINDEXENTRY6( &idx );
 		ipos += idx.dwChunkLength + 8;
 	}
+	vfp.flush();
 	
 	return true;
 }
+

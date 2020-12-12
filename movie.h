@@ -1,8 +1,10 @@
 #ifndef MOVIE_H_INCLUDED
 #define MOVIE_H_INCLUDED
 
+#include <fstream>
 #include <vector>
 
+#include "semaphore.h"
 #include "sound.h"
 #include "vsurface.h"
 
@@ -93,16 +95,16 @@ typedef struct {
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
-class AVI6 {
+class AVI6 : public cSemaphore {
 protected:
-	FILE* vfp;
+	std::fstream vfp;
 	MAINAVIHEADER6 vmh;
 	AVISTRMHEADER6 vsh, ash;
 	BMPINFOHEADER6 vbf;
 	WAVEFORMATEX6 awf;
 	
 	int ABPP;					// 色深度 (16,24,32)
-	std::vector<BYTE> Sbuf;					// イメージデータバッファポインタ
+	std::vector<BYTE> Sbuf;		// イメージデータバッファポインタ
 	
 	DWORD PosMOVI;
 	
@@ -111,6 +113,7 @@ protected:
 	
 	cRing ABuf;					// オーディオバッファ
 	DWORD anum;					// オーディオサンプル数カウント用
+	DWORD afrm;					// (暫定)オーディオ総フレーム数
 	
 	bool WriteHeader();						// ヘッダチャンク書出し
 	bool WriteIndexr();						// インデックスチャンク書出し
@@ -132,9 +135,11 @@ public:
 	void StopAVI();							// ビデオキャプチャ停止
 	bool IsAVI();							// ビデオキャプチャ中?
 	
-	bool AVIWriteFrame( HWINDOW );			// AVI1フレーム書出し
+	bool AVIWriteFrameVideo( HWINDOW );		// AVI1フレーム書出し(Video)
+	bool AVIWriteFrameAudio();				// AVI1フレーム書出し(Audio)
 	
 	cRing* GetAudioBuffer();				// オーディオバッファ取得
+	DWORD GetUpdateSample();				// 追加更新が必要なサンプル数取得
 };
 
 
