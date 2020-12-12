@@ -752,45 +752,66 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		Start();
 		break;
 		
-/*
-	case KVC_MUHENKAN:      // どこでもSAVE
+	case KVC_MUHENKAN:		// どこでもSAVE
 		Stop();
-		if( REPLAY::GetStatus() == REP_RECORD ){
-			UI_ReplayDokoSave();
-		}else{
-			P6VPATH tpath = STR2P6VPATH( Stringf( "%s/.1.dds", cfg->GetValue( CF_DokoPath ) );
-			DokoDemoSave( tpath );
-			
-			cIni save;
-			if( save.Init( tpath ) ){
-				// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-				save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-				save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-			}
-		}
+		DokoDemoSave( 1 );
 		Start();
 		break;
 		
-	case KVC_HENKAN:      // どこでもLOAD
+	case KVC_HENKAN:		// どこでもLOAD
 		Stop();
-		if( REPLAY::GetStatus() == REP_RECORD ){
-			UI_ReplayDokoLoad();
-		} else {
-			P6VPATH tpath = STR2P6VPATH( Stringf( "%s/.1.dds", cfg->GetValue( CF_DokoPath ) ) );
-			if( OSD_FileExist( tpath ) ){
-				cfg->SetValue( CV_Model, GetDokoModel( tpath ) );
-				cfg->SetDokoFile( tpath );
-				OSD_PushEvent( EV_DOKOLOAD );
-			}
-		}
+		DokoDemoLoad( 1 );
 		Start();
 		break;
-*/
 		
 	default:				// どれでもない
 		return false;
 	}
 	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 簡易どこでもSAVE(スロット使用)
+////////////////////////////////////////////////////////////////
+void EL6::DokoDemoSave( int slot )
+{
+	if( REPLAY::GetStatus() == REP_RECORD ){
+		UI_ReplayDokoSave();
+	}else{
+		P6VPATH tpath;
+		OSD_AddPath( tpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
+		DokoDemoSave( tpath );
+		
+		cIni save;
+		if( save.Read( tpath ) ){
+			// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
+			save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+			save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+			
+			save.Write();
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// 簡易どこでもLOAD(スロット使用)
+////////////////////////////////////////////////////////////////
+void EL6::DokoDemoLoad( int slot )
+{
+	if( REPLAY::GetStatus() == REP_RECORD ){
+		UI_ReplayDokoLoad();
+	}else{
+		P6VPATH tpath;
+		OSD_AddPath( tpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
+		
+		if( OSD_FileExist( tpath ) ){
+			cfg->SetValue( CV_Model, GetDokoModel( tpath ) );
+			cfg->SetDokoFile( tpath );
+			OSD_PushEvent( EV_DOKOLOAD );
+		}
+	}
 }
 
 
