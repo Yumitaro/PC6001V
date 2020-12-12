@@ -34,7 +34,7 @@
 #include "vsurface.h"
 
 
-#define	FRAMERATE	((double)VSYNC_HZ/(double)(cfg->GetValue( CV_FrameSkip )+1))
+#define	FRAMERATE	((double)VSYNC_HZ/(double)(cfg->GetValue( CV_FrameSkip )+1.0))
 
 int EL6::Speed = 100;
 
@@ -167,7 +167,17 @@ void EL6::OnThread( void* inst )
 					p6->SoundUpdate( 0, AVI6::GetAudioBuffer() );
 					// 画面更新されたら AVI1画面保存
 					if( p6->ScreenUpdate() ){
+						// 画面キャプチャ処理はSDLと同じメインスレッドで実施
 						OSD_PushEvent( EV_CAPTURE );
+						// ここでメインスレッドのイベントループの処理待ちが必要
+						AVI6::cSemaphore::Wait();
+						
+						// サンプル数が足りなければ更にサウンド更新
+						DWORD sam = AVI6::GetUpdateSample();
+						if( sam ){
+							p6->SoundUpdate( sam, AVI6::GetAudioBuffer() );
+						}
+						AVI6::AVIWriteFrameAudio();
 					}
 				}else{
 					// ビデオキャプチャ中でないなら通常の更新
@@ -175,6 +185,7 @@ void EL6::OnThread( void* inst )
 					p6->SoundUpdate( 0 );
 					// 画面更新
 					if( p6->ScreenUpdate() ){
+						// 画面更新処理はSDLと同じメインスレッドで実施
 						OSD_PushEvent( EV_RENDER );
 					}
 				}
@@ -569,7 +580,8 @@ EL6::ReturnCode EL6::EventLoop( void )
 			
 		case EV_CAPTURE:			// ビデオキャプチャ
 			graph->DrawScreen();
-			AVI6::AVIWriteFrame( GetWindowHandle() );
+			AVI6::AVIWriteFrameVideo( GetWindowHandle() );
+			AVI6::cSemaphore::Post();
 			break;
 			
 //		case EV_WINDOWRESIZED:{		// ウィンドウサイズ変更
