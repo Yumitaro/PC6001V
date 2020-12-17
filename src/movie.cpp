@@ -419,7 +419,10 @@ bool AVI6::AVIWriteFrameVideo( HWINDOW wh )
 	ss.y = 0;
 	ss.w = vbf.biWidth;
 	ss.h = vbf.biHeight;
-	if( !OSD_GetWindowImage( wh, (void**)&Sbuf, &ss, ABPP ) ){
+	PixelFMT pf = ABPP == 16 ? PX16RGB :
+				  ABPP == 24 ? PX24BGR :
+							   PX32ARGB;
+	if( !OSD_GetWindowImage( wh, (void**)&Sbuf, &ss, pf ) ){
 		return false;
 	}
 	

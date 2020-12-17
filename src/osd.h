@@ -13,6 +13,9 @@
 #include "vsurface.h"
 
 
+// ピクセルフォーマット
+enum PixelFMT{ PX32ARGB, PX24RGB, PX24BGR, PX16RGB };
+
 // ファイル選択ダイアログ用
 enum FileMode{ FM_Load, FM_Save };
 enum FileDlg{ FD_TapeLoad, FD_TapeSave, FD_Disk, FD_ExtRom, FD_Printer, FD_FontZ, FD_FontH,
@@ -185,7 +188,7 @@ void OSD_BlitToWindow( HWINDOW, VSurface*, const int, const int );
 // ウィンドウに転送(拡大等)
 void OSD_BlitToWindowEx( HWINDOW, VSurface*,  const VRect*, const bool );
 // ウィンドウのイメージデータ取得
-bool OSD_GetWindowImage( HWINDOW, void**, VRect*, int );
+bool OSD_GetWindowImage( HWINDOW, void**, VRect*, PixelFMT );
 // アイコン設定
 void OSD_SetIcon( HWINDOW, int );
 // キャプション設定
