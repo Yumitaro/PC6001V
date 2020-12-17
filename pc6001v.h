@@ -116,6 +116,7 @@
 #define	DIR_WAVE				"wave"				// WAVEファイル
 #define	DIR_FONT				"font"				// フォント
 #define	DIR_DOKO				"doko"				// どこでもSAVEファイル
+#define	DIR_CONFIG				"P6V"				// 設定ファイル
 
 
 /////////////////////////////////////////////////////////////////////////////

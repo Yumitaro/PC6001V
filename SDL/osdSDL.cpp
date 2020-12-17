@@ -16,9 +16,6 @@
 #include "icons2.h"
 
 
-#define	DIR_CONFIG		"P6V"	// 設定ファイルフォルダ
-
-
 ////////////////////////////////////////////////////////////////
 // SDL関連
 ////////////////////////////////////////////////////////////////
@@ -32,9 +29,6 @@
 
 // Renderer,Texture作成用オプション
 #define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE)
-#define SDLOP_FMT32		SDL_PIXELFORMAT_ARGB8888
-#define SDLOP_FMT24		SDL_PIXELFORMAT_BGR24
-#define SDLOP_FMT16		SDL_PIXELFORMAT_RGB555
 
 
 ////////////////////////////////////////////////////////////////
@@ -1008,35 +1002,40 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 // 引数:	hwnd			ウィンドウハンドル
 //			pixels			転送先配列ポインタへのポインタ
 //			pos				保存する領域情報へのポインタ
-//			bpp				色深度
+//			pxfmt			ピクセルフォーマット
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_GetWindowImage( HWINDOW hwnd, void** pixels, VRect* pos, int bpp )
+bool OSD_GetWindowImage( HWINDOW hwnd, void** pixels, VRect* pos, PixelFMT pxfmt )
 {
 	VRect src1;
 	int fmt, dpt;
 	
-	if( !hwnd || !pixels || !( bpp == 32 || bpp == 24 || bpp == 16 ) ) return false;
+	if( !hwnd || !pixels ) return false;
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
 	if( !rend ) return false;
 	
 	SDL_RenderGetLogicalSize( rend, &src1.w, &src1.h );
 	dpt = ( pos ? pos->w : src1.w );
-	switch( bpp ){
-	case 16:
-		fmt  = SDLOP_FMT16;
+	switch( pxfmt ){
+	case PX16RGB:
+		fmt  = SDL_PIXELFORMAT_RGB555;
 		dpt  = ((dpt * 16 + 31) / 32 ) * sizeof(DWORD);
 		break;
 		
-	case 24:
-		fmt  = SDLOP_FMT24;
+	case PX24RGB:
+		fmt  = SDL_PIXELFORMAT_RGB24;
 		dpt  = ((dpt * 24 + 31) / 32 ) * sizeof(DWORD);
 		break;
 		
-	case 32:
+	case PX24BGR:
+		fmt  = SDL_PIXELFORMAT_BGR24;
+		dpt  = ((dpt * 24 + 31) / 32 ) * sizeof(DWORD);
+		break;
+		
+	case PX32ARGB:
 	default:
-		fmt  = SDLOP_FMT32;
+		fmt  = SDL_PIXELFORMAT_ARGB8888;
 		dpt *= sizeof(DWORD);
 	}
 	

@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "common.h"
 #include "config.h"
 #include "debug.h"
@@ -316,21 +318,18 @@ void DSP6::SnapShot( const P6VPATH& path )
 	// 連番が有効なら画像ファイル保存
 	if( !(Index > 999) ){
 		VRect scr;
+		std::vector<BYTE> pixels;
 		
 		scr.x = scr.y = 0;
 		scr.w = ScreenX();
 		scr.h = ScreenY();
 		
-		BYTE* pixels = new BYTE[( (scr.w * 24 + 31) / 32 ) * sizeof(DWORD) * scr.h];
-		if( !pixels ) return;
+		pixels.resize( ((scr.w * 24 + 31) / 32) * sizeof(DWORD) * scr.h );
 		
-		if( !OSD_GetWindowImage( Wh, (void**)(&pixels), &scr, 24 ) ){
-			delete [] pixels;
+		if( !OSD_GetWindowImage( Wh, (void**)(&pixels), &scr, PX24RGB ) ){
 			return;
 		}
-		SaveImgData( tpath, pixels, 24, scr.w, scr.h, nullptr );
-		
-		delete [] pixels;
+		SaveImgData( tpath, pixels.data(), 24, scr.w, scr.h, nullptr );
 	}
 }
 
