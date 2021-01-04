@@ -21,7 +21,8 @@ enum FileMode{ FM_Load, FM_Save };
 enum FileDlg{ FD_TapeLoad, FD_TapeSave, FD_Disk, FD_ExtRom, FD_Printer, FD_FontZ, FD_FontH,
 			  FD_DokoLoad, FD_DokoSave, FD_RepLoad, FD_RepSave, FD_AVISave, FD_LoadAll };
 
-
+// イベントState
+enum EventState{ EVS_QUERY, EVS_DISABLE, EVS_ENABLE };
 
 
 ////////////////////////////////////////////////////////////////
@@ -188,7 +189,7 @@ void OSD_BlitToWindow( HWINDOW, VSurface*, const int, const int );
 // ウィンドウに転送(拡大等)
 void OSD_BlitToWindowEx( HWINDOW, VSurface*,  const VRect*, const bool );
 // ウィンドウのイメージデータ取得
-bool OSD_GetWindowImage( HWINDOW, void**, VRect*, PixelFMT );
+bool OSD_GetWindowImage( HWINDOW, std::vector<BYTE>&, VRect*, PixelFMT );
 // アイコン設定
 void OSD_SetIcon( HWINDOW, int );
 // キャプション設定
@@ -212,6 +213,10 @@ void OSD_FlushEvents();
 bool OSD_GetEvent( Event* );
 // イベントをキューにプッシュする
 bool OSD_PushEvent( EventType, ... );
+// キューに指定のイベントが存在するか調査する
+bool OSD_HasEvent( EventType );
+// イベント処理の状態を種類ごとに設定する
+bool OSD_EventState( EventType, EventState );
 
 
 ////////////////////////////////////////////////////////////////

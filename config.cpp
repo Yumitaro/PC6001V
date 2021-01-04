@@ -31,6 +31,8 @@ static const std::map<TCValue, const CfgSet<TCValue>> ConfigValue = {
 	{ CV_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
 	{ CV_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,	MAX_LPF,		MIN_LPF			} },
 	{ CV_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,		MAX_AVIBPP,		MIN_AVIBPP		} },
+	{ CV_AviZoom,		{ "MOVIE",		"AviZoom",		TINI_AviZoom,		DEFAULT_AVIZOOM,	MAX_AVIZOOM,	MIN_AVIZOOM		} },
+	{ CV_AviFrameSkip,	{ "MOVIE",		"AviFrameSkip",	TINI_AviFrameSkip,	DEFAULT_AVIFRMSKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
 	{ CV_Soldier,		{ "OPTION",		"Soldier",		TINI_Soldier,		DEFAULT_SOLDIER,	0x0f,			0				} },
 	{ CV_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,		MAX_REPEAT,		MIN_REPEAT		} }
 };
@@ -46,6 +48,7 @@ static const std::map<TCBool, const CfgSet<TCBool>> ConfigBool = {
 	{ CB_DispNTSC,		{ "DISPLAY",	"DispNTSC",		TINI_DispNTSC,		DEFAULT_DISPNTSC	} },
 	{ CB_FullScreen,	{ "DISPLAY",	"FullScreen",	TINI_FullScreen,	DEFAULT_FULLSCREEN	} },
 	{ CB_DispStatus,	{ "DISPLAY",	"DispStatus",	TINI_DispStatus,	DEFAULT_DISPSTATUS	} },
+	{ CB_AviScanLine,	{ "MOVIE",		"AviScanLine",	TINI_AviScanLine,	DEFAULT_AVISCANLINE	} },
 	{ CB_CkQuit,		{ "CHECK",		"CkQuit",		TINI_CkQuit,		DEFAULT_CKQUIT		} },
 	{ CB_SaveQuit,		{ "CHECK",		"SaveQuit",		TINI_SaveQuit,		DEFAULT_SAVEQUIT	} }
 };
@@ -68,9 +71,9 @@ static const std::map<TCPath, const CfgSet<TCPath>> ConfigPath = {
 };
 
 // 見つからなければ例外 std::out_of_range
-auto GetCfgSet( const TCValue& tc){ return ConfigValue.at( tc ); }
-auto GetCfgSet( const TCBool&  tc){ return ConfigBool.at( tc ); }
-auto GetCfgSet( const TCPath&  tc){ return ConfigPath.at( tc ); }
+auto GetCfgSet( const TCValue& tc ){ return ConfigValue.at( tc ); }
+auto GetCfgSet( const TCBool&  tc ){ return ConfigBool.at( tc ); }
+auto GetCfgSet( const TCPath&  tc ){ return ConfigPath.at( tc ); }
 
 
 static const std::vector<P6KeyName> P6KeyNameDef = {
@@ -548,7 +551,7 @@ static const std::vector<COLOR24> STDColor = {	// 標準カラーデータ ( R,G
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-CFG6::CFG6( void ) : DokoFile(""), Caption("")
+CFG6::CFG6( void ) : DokoFile(""), Caption(""), tmp_AviZoom(DEFAULT_WINDOWZOOM), tmp_AviFrameSkip(DEFAULT_FRAMESKIP), tmp_AviScanLine(DEFAULT_SCANLINE)
 {
 	PRINTD( CONST_LOG, "[[CFG6]]\n" );
 	
@@ -693,6 +696,7 @@ template <> void CFG6::SetValue<TCValue,int>( const TCValue& tc, const int& val 
 	catch( std::out_of_range& ){}
 }
 
+
 // 値設定(bool)
 template <> void CFG6::SetValue<TCBool,bool>( const TCBool& tc, const bool& yn )
 {
@@ -703,6 +707,7 @@ template <> void CFG6::SetValue<TCBool,bool>( const TCBool& tc, const bool& yn )
 	}
 	catch( std::out_of_range& ){}
 }
+
 
 // 値設定(path)
 template <> void CFG6::SetValue<TCPath,P6VPATH>( const TCPath& tc, const P6VPATH& path )
@@ -736,6 +741,7 @@ template <> void CFG6::SetDefault<TCValue>( const TCValue& tc, const bool ow )
 	catch( std::out_of_range& ){}
 }
 
+
 // 初期値設定(bool)
 template <> void CFG6::SetDefault<TCBool>( const TCBool& tc, const bool ow )
 {
@@ -749,6 +755,7 @@ template <> void CFG6::SetDefault<TCBool>( const TCBool& tc, const bool ow )
 	}
 	catch( std::out_of_range& ){}
 }
+
 
 // 初期値設定(path)
 template <> void CFG6::SetDefault<TCPath>( const TCPath& tc, const bool ow )
@@ -764,6 +771,29 @@ template <> void CFG6::SetDefault<TCPath>( const TCPath& tc, const bool ow )
 	catch( std::out_of_range& ){}
 }
 
+
+// 最大値取得
+int CFG6::GetMax( TCValue tc ) const
+{
+	try{
+		return GetCfgSet( tc ).Max;
+	}
+	catch( std::out_of_range& ){}
+	
+	return 0;
+}
+
+
+// 最小値取得
+int CFG6::GetMin( TCValue tc ) const
+{
+	try{
+		return GetCfgSet( tc ).Min;
+	}
+	catch( std::out_of_range& ){}
+	
+	return 0;
+}
 
 
 // [COLOR] -----------------------------------------------------
@@ -865,6 +895,27 @@ void CFG6::SetDokoFile( const P6VPATH& path )
 }
 
 
+// ビデオキャプチャ用一時保存 ----------------------------------
+
+// 退避
+void CFG6::PushAviPara( void )
+{
+	tmp_AviZoom      = GetValue( CV_WindowZoom );
+	tmp_AviFrameSkip = GetValue( CV_FrameSkip  );
+	tmp_AviScanLine  = GetValue( CB_ScanLine   );
+}
+
+// 復帰
+void CFG6::PopAviPara( void )
+{
+	SetValue( CV_WindowZoom, tmp_AviZoom      );
+	SetValue( CV_FrameSkip,  tmp_AviFrameSkip );
+	SetValue( CB_ScanLine,   tmp_AviScanLine  );
+}
+
+
+
+
 ////////////////////////////////////////////////////////////////
 // INIオブジェクト初期値設定
 //
@@ -900,7 +951,7 @@ void CFG6::InitIni( bool over )
 		CB_Filtering,		// フィルタリング
 		CB_DispNTSC,		// 4:3表示
 		CB_FullScreen,		// フルスクリーン
-		CV_WindowZoom,		// ウィンドウ表示倍率設定
+		CV_WindowZoom,		// ウィンドウ表示倍率
 		CB_DispStatus,		// ステータスバー表示状態
 		CV_FrameSkip,		// フレームスキップ
 		
@@ -916,6 +967,9 @@ void CFG6::InitIni( bool over )
 		
 		// [MOVIE] -------------------------------------------------
 		CV_AviBpp,			// ビデオキャプチャ色深度
+		CV_AviZoom,			// ビデオキャプチャ時ウィンドウ表示倍率
+		CV_AviFrameSkip,	// ビデオキャプチャ時フレームスキップ
+		CB_AviScanLine,		// ビデオキャプチャ時スキャンライン
 		
 		// [FILES] -------------------------------------------------
 		CF_ExtRom,			// 拡張ROMファイル名(起動時に自動マウント)
@@ -976,7 +1030,7 @@ void CFG6::InitIni( bool over )
 		CB_Filtering,		// フィルタリング
 		CB_DispNTSC,		// 4:3表示
 		CB_FullScreen,		// フルスクリーン
-		CV_WindowZoom,		// ウィンドウ表示倍率設定
+		CV_WindowZoom,		// ウィンドウ表示倍率
 		CB_DispStatus,		// ステータスバー表示状態
 		CV_FrameSkip,		// フレームスキップ
 		
@@ -992,6 +1046,9 @@ void CFG6::InitIni( bool over )
 		
 		// [MOVIE] -------------------------------------------------
 		CV_AviBpp,			// ビデオキャプチャ色深度
+		CV_AviZoom,			// ビデオキャプチャ時ウィンドウ表示倍率
+		CV_AviFrameSkip,	// ビデオキャプチャ時フレームスキップ
+		CB_AviScanLine,		// ビデオキャプチャ時スキャンライン
 		
 		// [FILES] -------------------------------------------------
 		CF_ExtRom,			// 拡張ROMファイル名(起動時に自動マウント)
@@ -1026,71 +1083,74 @@ void CFG6::InitIni( bool over )
 	// 後でstd::tupleか何かでループ処理させたい
 	
 	// [CONFIG] ------------------------------------------------
-	SetDefault( CV_Model,		over );	// 機種
-	SetDefault( CV_FDD,			over );	// FDD
-	SetDefault( CB_ExtRam,		over );	// 拡張RAM使用
-	SetDefault( CV_OverClock,	over );	// オーバークロック率
-	SetDefault( CB_CheckCRC,	over );	// CRCチェック
-	SetDefault( CB_FDDWait,		over );	// FDDウェイト有効フラグ
+	SetDefault( CV_Model,			over );	// 機種
+	SetDefault( CV_FDD,				over );	// FDD
+	SetDefault( CB_ExtRam,			over );	// 拡張RAM使用
+	SetDefault( CV_OverClock,		over );	// オーバークロック率
+	SetDefault( CB_CheckCRC,		over );	// CRCチェック
+	SetDefault( CB_FDDWait,			over );	// FDDウェイト有効フラグ
 	
 	// [CMT] ---------------------------------------------------
-	SetDefault( CB_TurboTAPE,	over );	// Turbo TAPE
-	SetDefault( CB_BoostUp,		over );	// Boost Up
-	SetDefault( CV_MaxBoost60,	over );	// BoostUp 最大倍率(N60モード)
-	SetDefault( CV_MaxBoost62,	over );	// BoostUp 最大倍率(N60m/N66モード)
-	SetDefault( CV_StopBit,		over );	// TAPEストップビット数
+	SetDefault( CB_TurboTAPE,		over );	// Turbo TAPE
+	SetDefault( CB_BoostUp,			over );	// Boost Up
+	SetDefault( CV_MaxBoost60,		over );	// BoostUp 最大倍率(N60モード)
+	SetDefault( CV_MaxBoost62,		over );	// BoostUp 最大倍率(N60m/N66モード)
+	SetDefault( CV_StopBit,			over );	// TAPEストップビット数
 	
 	// [DISPLAY] -----------------------------------------------
-	SetDefault( CV_Mode4Color,	over );	// MODE4カラー
-	SetDefault( CB_ScanLine,	over );	// スキャンライン
-	SetDefault( CV_ScanLineBr,	over );	// スキャンライン輝度
-	SetDefault( CB_Filtering,	over );	// フィルタリング
-	SetDefault( CB_DispNTSC,	over );	// 4:3表示
-	SetDefault( CB_FullScreen,	over );	// フルスクリーン
-	SetDefault( CV_WindowZoom,	over );	// ウィンドウ表示倍率設定
-	SetDefault( CB_DispStatus,	over );	// ステータスバー表示状態
-	SetDefault( CV_FrameSkip,	over );	// フレームスキップ
+	SetDefault( CV_Mode4Color,		over );	// MODE4カラー
+	SetDefault( CB_ScanLine,		over );	// スキャンライン
+	SetDefault( CV_ScanLineBr,		over );	// スキャンライン輝度
+	SetDefault( CB_Filtering,		over );	// フィルタリング
+	SetDefault( CB_DispNTSC,		over );	// 4:3表示
+	SetDefault( CB_FullScreen,		over );	// フルスクリーン
+	SetDefault( CV_WindowZoom,		over );	// ウィンドウ表示倍率
+	SetDefault( CB_DispStatus,		over );	// ステータスバー表示状態
+	SetDefault( CV_FrameSkip,		over );	// フレームスキップ
 	
 	// [SOUND] -------------------------------------------------
-	SetDefault( CV_SampleRate,	over );	// サンプリングレート
-	SetDefault( CV_SoundBuffer,	over );	// サウンドバッファ長倍率
-	SetDefault( CV_MasterVol,	over );	// マスター音量
-	SetDefault( CV_PsgVolume,	over );	// PSG音量
-	SetDefault( CV_PsgLPF,		over );	// PSG LPFカットオフ周波数
-	SetDefault( CV_VoiceVolume,	over );	// 音声合成音量
-	SetDefault( CV_TapeVolume,	over );	// TAPEモニタ音量
-	SetDefault( CV_TapeLPF,		over );	// TAPE LPFカットオフ周波数
+	SetDefault( CV_SampleRate,		over );	// サンプリングレート
+	SetDefault( CV_SoundBuffer,		over );	// サウンドバッファ長倍率
+	SetDefault( CV_MasterVol,		over );	// マスター音量
+	SetDefault( CV_PsgVolume,		over );	// PSG音量
+	SetDefault( CV_PsgLPF,			over );	// PSG LPFカットオフ周波数
+	SetDefault( CV_VoiceVolume,		over );	// 音声合成音量
+	SetDefault( CV_TapeVolume,		over );	// TAPEモニタ音量
+	SetDefault( CV_TapeLPF,			over );	// TAPE LPFカットオフ周波数
 	
 	// [MOVIE] -------------------------------------------------
-	SetDefault( CV_AviBpp,		over );	// ビデオキャプチャ色深度
+	SetDefault( CV_AviBpp,			over );	// ビデオキャプチャ色深度
+	SetDefault( CV_AviZoom,			over );	// ビデオキャプチャ時ウィンドウ表示倍率
+	SetDefault( CV_AviFrameSkip,	over );	// ビデオキャプチャ時フレームスキップ
+	SetDefault( CB_AviScanLine,		over );	// ビデオキャプチャ時スキャンライン
 	
 	// [FILES] -------------------------------------------------
-	SetDefault( CF_ExtRom,		over );	// 拡張ROMファイル名(起動時に自動マウント)
-	SetDefault( CF_tape,		over );	// TAPEファイル名(起動時に自動マウント)
-	SetDefault( CF_save,		over );	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
-	SetDefault( CF_disk1,		over );	// DISK1ファイル名(起動時に自動マウント)
-	SetDefault( CF_disk2,		over );	// DISK2ファイル名(起動時に自動マウント)
-	SetDefault( CF_printer,		over );	// プリンタファイル名
+	SetDefault( CF_ExtRom,			over );	// 拡張ROMファイル名(起動時に自動マウント)
+	SetDefault( CF_tape,			over );	// TAPEファイル名(起動時に自動マウント)
+	SetDefault( CF_save,			over );	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)
+	SetDefault( CF_disk1,			over );	// DISK1ファイル名(起動時に自動マウント)
+	SetDefault( CF_disk2,			over );	// DISK2ファイル名(起動時に自動マウント)
+	SetDefault( CF_printer,			over );	// プリンタファイル名
 	
 	// [PATH] --------------------------------------------------
-	SetDefault( CF_RomPath,		over );	// ROMパス
-	SetDefault( CF_TapePath,	over );	// TAPEパス
-	SetDefault( CF_DiskPath,	over );	// DISKパス
-	SetDefault( CF_ExtRomPath,	over );	// 拡張ROMパス
-	SetDefault( CF_ImgPath,		over );	// IMGパス
-	SetDefault( CF_WavePath,	over );	// WAVEパス
-	SetDefault( CF_FontPath,	over );	// フォントパス設定
-	SetDefault( CF_DokoPath,	over );	// どこでもSAVEパス
+	SetDefault( CF_RomPath,			over );	// ROMパス
+	SetDefault( CF_TapePath,		over );	// TAPEパス
+	SetDefault( CF_DiskPath,		over );	// DISKパス
+	SetDefault( CF_ExtRomPath,		over );	// 拡張ROMパス
+	SetDefault( CF_ImgPath,			over );	// IMGパス
+	SetDefault( CF_WavePath,		over );	// WAVEパス
+	SetDefault( CF_FontPath,		over );	// フォントパス設定
+	SetDefault( CF_DokoPath,		over );	// どこでもSAVEパス
 	
 	// [CHECK] -------------------------------------------------
-	SetDefault( CB_CkQuit,		over );	// 終了時確認
-	SetDefault( CB_SaveQuit,	over );	// 終了時INI保存
+	SetDefault( CB_CkQuit,			over );	// 終了時確認
+	SetDefault( CB_SaveQuit,		over );	// 終了時INI保存
 	
 	// [OPTION] ------------------------------------------------
-	SetDefault( CV_Soldier,		over );	// 戦士のカートリッジ使うフラグ
+	SetDefault( CV_Soldier,			over );	// 戦士のカートリッジ使うフラグ
 	
 	// [KEY] ---------------------------------------------------
-	SetDefault( CV_KeyRepeat,	over );	// キーリピート
+	SetDefault( CV_KeyRepeat,		over );	// キーリピート
 	
 	
 	// TAPE(SAVE)ファイル名(SAVE時に自動マウント)

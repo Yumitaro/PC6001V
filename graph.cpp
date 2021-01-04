@@ -326,7 +326,7 @@ void DSP6::SnapShot( const P6VPATH& path )
 		
 		pixels.resize( ((scr.w * 24 + 31) / 32) * sizeof(DWORD) * scr.h );
 		
-		if( !OSD_GetWindowImage( Wh, (void**)(&pixels), &scr, PX24RGB ) ){
+		if( !OSD_GetWindowImage( Wh, pixels, &scr, PX24RGB ) ){
 			return;
 		}
 		SaveImgData( tpath, pixels.data(), 24, scr.w, scr.h, nullptr );

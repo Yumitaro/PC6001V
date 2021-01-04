@@ -37,6 +37,7 @@ public:
 		ReplayPlayError,
 		ReplayRecError,
 		NoReplayData,
+		CaptureFailed,
 		
 		EndofErrors
 	};

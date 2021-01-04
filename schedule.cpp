@@ -711,11 +711,11 @@ int SCH6::GetRatio( void ) const
 {
 	DWORD sum = 0;
 	
-	if( WRClk.size() > 0 ){
-		for( auto &i : WRClk )
-			sum += i;
+	for( auto &i : WRClk ){
+		sum += i;
 	}
-	return (int)(double)( sum * 100.0 / MasterClock * 1000.0 / (WRUPDATE*WRClk.size()) + 0.5 );
+	
+	return WRClk.size() ? (int)(double)( sum * 100.0 / MasterClock * 1000.0 / (WRUPDATE * WRClk.size()) + 0.5 ) : 100;
 }
 
 

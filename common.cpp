@@ -494,6 +494,9 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TINI_TapeLPF,				"TAPE LPFカットオフ周波数(0で無効)" },
 	// [MOVIE]
 	{ TINI_AviBpp,				"ビデオキャプチャ色深度 (16,24,32)" },
+	{ TINI_AviZoom,				"ビデオキャプチャ時ウィンドウ表示倍率 (100-400%)" },
+	{ TINI_AviFrameSkip,		"ビデオキャプチャ時フレームスキップ" },
+	{ TINI_AviScanLine,			"ビデオキャプチャ時スキャンライン Yes:あり No:なし" },
 	// [FILES]
 	{ TINI_ExtRom,				"拡張ROMファイル名" },
 	{ TINI_tape,				"TAPE(LODE)ファイル名(起動時に自動マウント)" },
@@ -547,7 +550,8 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TERR_DokoDiffVersion,		"どこでもLOADに失敗しました\n保存時とPC6001Vのバージョンが異なります" },
 	{ TERR_ReplayPlayError,		"リプレイ再生に失敗しました" },
 	{ TERR_ReplayRecError,		"リプレイ記録に失敗しました" },
-	{ TERR_NoReplayData,		"リプレイデータがありません" }
+	{ TERR_NoReplayData,		"リプレイデータがありません" },
+	{ TERR_CaptureFailed,		"ビデオキャプチャに失敗しました" }
 };
 
 

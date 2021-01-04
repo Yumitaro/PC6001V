@@ -15,7 +15,7 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-cWndStat::cWndStat( void ) : DrvNum( 0 ), ReplayStatus( 0 )
+cWndStat::cWndStat( void ) : DrvNum( 0 ), Indicator( ST_IDLE )
 {
 }
 
@@ -110,29 +110,39 @@ void cWndStat::Update( const std::shared_ptr<VM6>& vm )
 	if( vm->KeyGetKeyIndicator() & KI_CAPS ){ ZCons::PrintfR( "ABC" ); }	// ABC
 	else                                    { ZCons::PrintfR( "abc" ); }	// abc
 	
-	// リプレイステータス
+	// インジケータ
 	ZCons::Locate( -2, 0 );
-	switch( ReplayStatus ){
-	case REP_RECORD:	// 記録中
+	switch( Indicator ){
+	case ST_REPLAYREC:					// リプレイ記録中
 		ZCons::SetColor( FC_RED );
-		ZCons::Printf( "●" );
+		ZCons::PrintfR( "●" );
 		break;
 		
-	case REP_REPLAY:	// 再生中
+	case ST_REPLAYPLAY:					// リプレイ再生中
 		ZCons::SetColor( FC_GREEN );
-		ZCons::Printf( "■" );
+		ZCons::PrintfR( "■" );
+		break;
+		
+	case ST_CAPTUREREC:					// ビデオキャプチャ中
+		ZCons::SetColor( FC_RED );
+		ZCons::PrintfR( "◎" );
+		break;
+		
+	case ST_REPLAYPLAY|ST_CAPTUREREC:	// リプレイ再生中＆ビデオキャプチャ中
+		ZCons::SetColor( FC_RED );
+		ZCons::PrintfR( "◆" );
 		break;
 	}
 }
 
 
 ////////////////////////////////////////////////////////////////
-// リプレイステータスセット
+// インジケータセット
 //
-// 引数:	stat		リプレイステータス
+// 引数:	ind			インジケータID
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void cWndStat::SetReplayStatus( int stat )
+void cWndStat::SetIndicator( DWORD ind )
 {
-	ReplayStatus = stat;
+	Indicator = ind;
 }

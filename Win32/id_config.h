@@ -1,15 +1,7 @@
 #define ID_G1			2001
-#define ID_G2			2002
-#define ID_G3			2003
-#define ID_G4			2004
-#define ID_G5			2005
-#define ID_G6			2006
-#define ID_G7			2007
-#define ID_G8			2008
-#define ID_G10			2010
-#define ID_G11			2011
-#define ID_G12			2012
-#define ID_G13			2013
+#define ID_G7			2002
+#define ID_G8			2003
+#define ID_G13			2004
 
 #define ID_RB01			2101
 #define ID_RB02			2102
@@ -17,20 +9,9 @@
 #define ID_RB04			2104
 #define ID_RB05			2105
 #define ID_RB06			2106
-#define ID_RB07			2107
-#define ID_RB08			2108
-#define ID_RB09			2109
-#define ID_RB11			2111
-#define ID_RB12			2112
-#define ID_RB13			2113
-#define ID_RB14			2114
-#define ID_RB15			2115
-#define ID_RB21			2121
-#define ID_RB22			2122
-#define ID_RB23			2123
-#define ID_RB31			2131
-#define ID_RB32			2132
-#define ID_RB33			2133
+#define ID_RB31			2107
+#define ID_RB32			2108
+#define ID_RB33			2109
 
 #define ID_CB1			2201
 #define ID_CB2			2202
@@ -46,13 +27,13 @@
 #define ID_CB13			2213
 #define ID_CB14			2214
 #define ID_CB15			2215
+#define ID_CBAVISLINE	2216
 
-#define ID_TBFPS		2301
-#define ID_TBPSG		2302
-#define ID_TBTAPE		2303
-#define ID_TBMST		2304
-#define ID_TBVCE		2305
-#define ID_TBBUF		2306
+#define ID_TBPSG		2301
+#define ID_TBTAPE		2302
+#define ID_TBMST		2303
+#define ID_TBVCE		2304
+#define ID_TBBUF		2305
 
 #define ID_B01			2401
 #define ID_B02			2402
@@ -88,6 +69,8 @@
 #define ID_BOOST60		2510
 #define ID_BOOST62		2511
 #define ID_STOPBIT		2512
+#define ID_ZOOM			2513
+#define ID_AVIZOOM		2514
 
 #define ID_FEXROM		2601
 #define ID_FTPLD		2602
@@ -164,6 +147,21 @@
 #define ID_COL79		2779
 #define ID_COL80		2780
 
+#define ID_LBMODEL		2801
+#define ID_LBMODE4		2802
+#define ID_LBFSKIP		2803
+#define ID_LBAVIBPP		2804
+#define ID_LBAVIFSKIP	2805
+#define ID_LBSAMPLE		2806
+
+#define ID_SPZOOM		2901
+#define ID_SPSCANLINEBR	2902
+#define ID_SPAVIZOOM	2903
+#define ID_SPOVERCLK	2904
+#define ID_SPBOOST60	2905
+#define ID_SPBOOST62	2906
+#define ID_SPSTOPBIT	2907
+
 #define ID_CNFG1		3001
 #define ID_CNFG2		3002
 #define ID_CNFG3		3003
@@ -176,8 +174,7 @@
 
 #define ID_VER			4001
 #define ID_URL			4002
-#define ID_VERSTR		4003
-#define ID_VERICON		4004
+#define ID_VERICON		4003
 
 // ÉÅÉjÉÖÅ[
 #define IDS_AVI0		9001
