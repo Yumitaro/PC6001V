@@ -116,11 +116,14 @@ protected:
 	void UI_ReplayDokoLoad();										// リプレイ中どこでもLOAD
 	void UI_ReplayDokoSave();										// リプレイ中どこでもSAVE
 	void UI_ReplayLoad( const P6VPATH& = "" );						// リプレイ再生
-	void UI_AVISave();												// ビデオキャプチャ
+	void UI_AVISaveStart();											// ビデオキャプチャ開始
+	void UI_AVISaveStop();											// ビデオキャプチャ停止
+	void UI_SnapShot();												// スナップショット
 	void UI_AutoType( const P6VPATH& = "" );						// 打込み代行
 	void UI_Reset();												// リセット
 	void UI_Restart();												// 再起動
 	void UI_Quit();													// 終了
+	void UI_Pause();												// Pause変更
 	void UI_NoWait();												// Wait変更
 	void UI_TurboTape();											// Turbo TAPE変更
 	void UI_BoostUp();												// Boost Up変更
@@ -133,11 +136,13 @@ protected:
 	void UI_Mode4Color( int );										// MODE4カラー変更
 	void UI_FrameSkip( int );										// フレームスキップ変更
 	void UI_SampleRate( int );										// サンプリングレート変更
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	void UI_Monitor();												// モニタモード切替え
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	void UI_Config();												// 環境設定
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	void Exec( int );							// 指定ステート数実行
-	void ToggleMonitor();						// モニタモード切替え
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 	

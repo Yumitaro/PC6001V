@@ -31,6 +31,8 @@ typedef enum {
 	CV_TapeVolume,
 	CV_TapeLPF,
 	CV_AviBpp,
+	CV_AviZoom,
+	CV_AviFrameSkip,
 	CV_Soldier,
 	CV_KeyRepeat
 } TCValue;
@@ -47,6 +49,7 @@ typedef enum {
 	CB_DispNTSC,
 	CB_FullScreen,
 	CB_DispStatus,
+	CB_AviScanLine,
 	CB_CkQuit,
 	CB_SaveQuit
 } TCBool;
@@ -112,6 +115,12 @@ protected:
 	P6VPATH DokoFile;		// どこでもSAVEファイル名
 	std::string Caption;	// ウィンドウキャプション
 	
+	// ビデオキャプチャ用一時保存
+	int tmp_AviZoom;
+	int tmp_AviFrameSkip;
+	bool tmp_AviScanLine;
+	
+	
 	void InitIni( bool );									// INIオブジェクト初期値設定
 	
 	const std::string& GetPCKeyName( PCKEYsym );			// 仮想キーコードから名称取得
@@ -131,7 +140,8 @@ public:
 	// メンバアクセス関数
 	template <typename T> auto GetValue( const T& ) -> decltype(CfgSet<T>::Default);	// 値設定(数値,bool,path)
 	template <typename T1,typename T2> void SetValue( const T1&, const T2& );			// 値設定(数値,bool,path)
-	
+	int GetMax( TCValue ) const;							// 最大値取得
+	int GetMin( TCValue ) const;							// 最小値取得
 	
 	// [KEY] -------------------------------------------------------
 	P6KEYsym GetVKey( PCKEYsym );							// キー定義取得
@@ -147,6 +157,10 @@ public:
 	const std::string& GetCaption();						// ウィンドウキャプション取得
 	const P6VPATH GetDokoFile();							// どこでもSAVEファイル名取得
 	void SetDokoFile( const P6VPATH& );						//                       設定
+	
+	// ビデオキャプチャ用一時保存 ----------------------------------
+	void PushAviPara();										// 退避
+	void PopAviPara();										// 復帰
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* );		// どこでもSAVE

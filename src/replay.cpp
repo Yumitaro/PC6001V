@@ -7,7 +7,7 @@
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-REPLAY::REPLAY( void ) : RepST(REP_IDLE), RepFrm(0), EndFrm(0)
+REPLAY::REPLAY( void ) : RepST(ST_IDLE), RepFrm(0), EndFrm(0)
 {
 }
 
@@ -18,8 +18,8 @@ REPLAY::REPLAY( void ) : RepST(REP_IDLE), RepFrm(0), EndFrm(0)
 REPLAY::~REPLAY( void )
 {
 	switch( RepST ){
-	case REP_RECORD:	StopRecord(); break;
-	case REP_REPLAY:	StopReplay(); break;
+	case ST_REPLAYREC:	StopRecord(); break;
+	case ST_REPLAYPLAY:	StopReplay(); break;
 	}
 }
 
@@ -36,7 +36,7 @@ bool REPLAY::Init( void )
 	
 	cIni::Init();
 	
-	RepST   = REP_IDLE;
+	RepST   = ST_IDLE;
 	RepFrm  = 0;
 	EndFrm  = 0;
 	
@@ -48,9 +48,9 @@ bool REPLAY::Init( void )
 // ステータス取得
 //
 // 引数:	なし
-// 返値:	int		ステータス
+// 返値:	DWORD		ステータス
 ////////////////////////////////////////////////////////////////
-int REPLAY::GetStatus( void ) const
+DWORD REPLAY::GetStatus( void ) const
 {
 	return RepST;
 }
@@ -67,7 +67,7 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
-		if( RepST != REP_IDLE ) throw Error::ReplayRecError;
+		if( RepST != ST_IDLE ) throw Error::ReplayRecError;
 		
 		if( !cIni::Read( filepath ) ) throw Error::ReplayRecError;
 	}
@@ -78,7 +78,7 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 	}
 	
 	RepFrm = 0;
-	RepST  = REP_RECORD;
+	RepST  = ST_REPLAYREC;
 	
 	// 無事だったのでエラーなし
 	Error::Reset();
@@ -114,13 +114,13 @@ bool REPLAY::ResumeRecord( const P6VPATH& filepath, int frame )
 ////////////////////////////////////////////////////////////////
 void REPLAY::StopRecord( void )
 {
-	if( RepST != REP_RECORD ) return;
+	if( RepST != ST_REPLAYREC ) return;
 	
 	cIni::SetEntry( "REPLAY", "EndFrm", "", "0x%08lX", RepFrm );
 	cIni::Write();
 	cIni::Init();
 	
-	RepST = REP_IDLE;
+	RepST = ST_IDLE;
 }
 
 
@@ -135,7 +135,7 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 {
 	std::string strva;
 	
-	if( RepST != REP_RECORD ) return false;
+	if( RepST != ST_REPLAYREC ) return false;
 	
 	// マトリクスを書出し
 	for( auto &i : mt )
@@ -159,7 +159,7 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
-		if( RepST != REP_IDLE ) throw Error::ReplayPlayError;
+		if( RepST != ST_IDLE ) throw Error::ReplayPlayError;
 		
 		if( !cIni::Read( filepath ) ) throw Error::ReplayPlayError;
 		if( !cIni::GetVal( "REPLAY", "EndFrm", EndFrm ) ) throw Error::NoReplayData;
@@ -171,7 +171,7 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 	}
 	
 	RepFrm = 1;
-	RepST  = REP_REPLAY;
+	RepST  = ST_REPLAYPLAY;
 	
 	// 無事だったのでエラーなし
 	Error::Reset();
@@ -188,11 +188,11 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 ////////////////////////////////////////////////////////////////
 void REPLAY::StopReplay( void )
 {
-	if( RepST != REP_REPLAY ) return;
+	if( RepST != ST_REPLAYPLAY ) return;
 	
 	cIni::Init();
 	
-	RepST = REP_IDLE;
+	RepST = ST_IDLE;
 }
 
 
@@ -206,7 +206,7 @@ bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 {
 	std::string strva;
 	
-	if( RepST != REP_REPLAY ) return false;
+	if( RepST != ST_REPLAYPLAY ) return false;
 	
 	if( cIni::GetEntry( "REPLAY", Stringf( "%08lX", RepFrm ), strva ) ){
 		strva.resize( mt.size() * 2, 'F' );

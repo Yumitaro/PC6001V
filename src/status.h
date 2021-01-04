@@ -12,8 +12,8 @@
 //------------------------------------------------------
 class cWndStat : public ZCons {
 private:
-	int DrvNum;					// ドライブ数
-	int	ReplayStatus;			// リプレイステータス
+	int 	DrvNum;				// ドライブ数
+	DWORD	Indicator;			// リプレイステータス
 	
 public:
 	cWndStat();
@@ -22,7 +22,7 @@ public:
 	bool Init( int, int = -1 );					// 初期化
 	void Update( const std::shared_ptr<VM6>& );	// ウィンドウ更新
 	
-	void SetReplayStatus( int );				// リプレイステータスセット
+	void SetIndicator( DWORD );					// インジケータセット
 };
 
 #endif	// STATUS_H_INCLUDED

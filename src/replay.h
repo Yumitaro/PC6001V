@@ -6,17 +6,13 @@
 #include "typedef.h"
 #include "ini.h"
 
-#define	REP_IDLE	(0)
-#define	REP_RECORD	(1)
-#define	REP_REPLAY	(2)
-
 
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
 class REPLAY : public cIni {
 protected:
-	int RepST;					// ステータス
+	DWORD RepST;				// ステータス
 	DWORD RepFrm;				// フレームNo.カウンタ
 	DWORD EndFrm;				// リプレイ終了フレーム
 	
@@ -26,7 +22,7 @@ public:
 	
 	bool Init();												// 初期化
 	
-	int GetStatus() const;										// ステータス取得
+	DWORD GetStatus() const;									// ステータス取得
 	
 	bool StartRecord( const P6VPATH& );							// リプレイ記録開始
 	bool ResumeRecord( const P6VPATH&, int );					// リプレイ記録再開

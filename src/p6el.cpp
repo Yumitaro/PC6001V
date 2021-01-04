@@ -144,17 +144,18 @@ void EL6::OnThread( void* inst )
 				if( p6->ScreenUpdate() ){
 					OSD_PushEvent( EV_RENDER );
 				}
-			}else{
+			// ビデオキャプチャ フレーム出力が終わるまで空回り
+			}else if( !AVI6::GetRequest() ){
 				// キーマトリクススキャン
 				bool matchg = p6->vm->key->ScanMatrix();
 				
 				// リプレイ記録中
-				if( REPLAY::GetStatus() == REP_RECORD ){
+				if( REPLAY::GetStatus() == ST_REPLAYREC ){
 					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix2(), matchg );
 				}
 				
 				// リプレイ再生中
-				if( REPLAY::GetStatus() == REP_REPLAY ){
+				if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
 					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix() );
 				}
 				
@@ -167,17 +168,14 @@ void EL6::OnThread( void* inst )
 					p6->SoundUpdate( 0, AVI6::GetAudioBuffer() );
 					// 画面更新されたら AVI1画面保存
 					if( p6->ScreenUpdate() ){
-						// 画面キャプチャ処理はSDLと同じメインスレッドで実施
-						OSD_PushEvent( EV_CAPTURE );
-						// ここでメインスレッドのイベントループの処理待ちが必要
-						AVI6::cSemaphore::Wait();
-						
 						// サンプル数が足りなければ更にサウンド更新
 						DWORD sam = AVI6::GetUpdateSample();
 						if( sam ){
 							p6->SoundUpdate( sam, AVI6::GetAudioBuffer() );
 						}
-						AVI6::AVIWriteFrameAudio();
+						// 画面キャプチャ処理はSDLと同じメインスレッドで実施
+						AVI6::Request();
+						OSD_PushEvent( EV_CAPTURE );
 					}
 				}else{
 					// ビデオキャプチャ中でないなら通常の更新
@@ -262,26 +260,6 @@ void EL6::Exec( int st )
 	
 	while( State > 0 ) State -= Emu();
 }
-
-
-////////////////////////////////////////////////////////////////
-// モニタモード切替え
-////////////////////////////////////////////////////////////////
-void EL6::ToggleMonitor( void )
-{
-	// VM停止
-	Stop();
-	
-	// モニタウィンドウ表示状態切換え
-	vm->SetMonitor( !vm->IsMonitor() );
-	
-	// スクリーンサイズ変更
-	graph->ResizeScreen();
-	
-	// VM再開
-	Start();
-}
-
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
@@ -359,9 +337,6 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		// モニタウィンドウ　-----
 		if( !monw->Init() ) throw Error::GetError();
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		
-		// ビデオキャプチャ -----
-		if( !AVI6::Init() ) throw Error::GetError();
 		
 		// リプレイ -----
 		if( !REPLAY::Init() ) throw Error::GetError();
@@ -461,6 +436,9 @@ EL6::ReturnCode EL6::EventLoop( void )
 	// イベントキュークリア
 	OSD_FlushEvents();
 	
+	// タイトルバーをすぐに表示するためにイベントを投げる
+	OSD_PushEvent( EV_FPSUPDATE );
+	
 	// ResizeScreen()でリサイズしたかチェック 空読みしてリセット
 	graph->CheckResize();
 	
@@ -497,7 +475,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 				break;
 			
 			// リプレイ再生中 or 自動キー入力実行中でなければ
-			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() ){
+			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
 				// キーリピート無効化実験
 //				if( event.key.sym != lastkey.key.sym || lastkey.key.state == false ){
 					// キーマトリクス更新(キー)
@@ -509,7 +487,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			
 		case EV_KEYUP:
 			// リプレイ再生中 or 自動キー入力実行中でなければ
-			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() ){
+			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
 				// キーマトリクス更新(キー)
 				vm->key->UpdateMatrixKey( event.key.sym, event.key.state );
 			}
@@ -524,7 +502,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 		case EV_JOYBUTTONDOWN:
 		case EV_JOYBUTTONUP:
 			// リプレイ再生中 or 自動キー入力実行中でなければ
-			if( REPLAY::GetStatus() != REP_REPLAY && !IsAutoKey() )
+			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() )
 				// キーマトリクス更新(ジョイスティック)
 				vm->key->UpdateMatrixJoy( joy->GetJoyState( 0 ), joy->GetJoyState( 1 ) );
 			break;
@@ -535,7 +513,9 @@ EL6::ReturnCode EL6::EventLoop( void )
 			[[fallthrough]];
 			
 		case EV_DEBUGMODETOGGLE:	// モニタモード変更(モニタモードから通常モードへの復帰)
-			ToggleMonitor();
+			Stop();
+			UI_Monitor();
+			Start();
 			break;
 			
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -567,11 +547,12 @@ EL6::ReturnCode EL6::EventLoop( void )
 			break;
 			
 		case EV_MOUSEWHEEL:	// マウスホイール
-			if( event.mousewh.y > 0 )	// スピードアップ
+			if( event.mousewh.y > 0 ){	// スピードアップ
 				sche->SetSpeedRatio( 1 );
-			
-			if( event.mousewh.y < 0 )	// スピードダウン
+			}
+			if( event.mousewh.y < 0 ){	// スピードダウン
 				sche->SetSpeedRatio( -1 );
+			}
 			break;
 			
 		case EV_RENDER:				// 画面描画
@@ -580,8 +561,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			
 		case EV_CAPTURE:			// ビデオキャプチャ
 			graph->DrawScreen();
-			AVI6::AVIWriteFrameVideo( GetWindowHandle() );
-			AVI6::cSemaphore::Post();
+			AVI6::AVIWriteFrame( GetWindowHandle() );
 			break;
 			
 //		case EV_WINDOWRESIZED:{		// ウィンドウサイズ変更
@@ -610,9 +590,20 @@ EL6::ReturnCode EL6::EventLoop( void )
 			break;
 			
 		case EV_QUIT:			// 終了
-			if( cfg->GetValue( CB_CkQuit ) )
-				if( OSD_Message( GetWindowHandle(), GetText( T_QUIT ), GetText( T_QUITC ), OSDM_YESNO | OSDM_ICONQUESTION ) != OSDR_YES )
-					break;
+			// もし未処理のEV_CAPTUREが残っていたら1周待ってからEV_QUIT
+			if( OSD_HasEvent( EV_CAPTURE ) ){
+				Stop();			// 新たなイベントを発生させないためにVM停止
+				OSD_PushEvent( EV_QUIT );
+				break;
+			}
+			
+			if( cfg->GetValue( CB_CkQuit ) && OSD_Message( GetWindowHandle(), GetText( T_QUIT ), GetText( T_QUITC ), OSDM_YESNO | OSDM_ICONQUESTION ) != OSDR_YES ){
+				break;
+			}
+			
+			// ビデオキャプチャ中なら停止
+			UI_AVISaveStop();
+			
 			return Quit;
 			
 		case EV_RESTART:		// 再起動
@@ -643,7 +634,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 				UI_DokoLoad( tpath );
 			}else if( ext == EXT_REPLAY ){
 				UI_ReplayLoad( tpath );
-			}else if( ext == EXT_ATYPE1 || ext == EXT_ATYPE2 ){
+			}else if( ext == EXT_BASIC || ext == EXT_TEXT ){
 				UI_AutoType( tpath );
 			}
 			
@@ -675,65 +666,56 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 {
 	switch( kcode ){	// キーコード
 	case KVC_F6:		// モニタモード変更 or スクリーンモード変更
-		// ビデオキャプチャ中は無効
-		if( AVI6::IsAVI() ) return false;
-		
 		if( OnALT ){
 			Stop();
-			cfg->SetValue( CB_FullScreen, !cfg->GetValue( CB_FullScreen ) );
-			graph->ResizeScreen();	// スクリーンサイズ変更
+			UI_FullScreen();
 			Start();
 		}else{
 			#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-			ToggleMonitor();
+			Stop();
+			UI_Monitor();
+			Start();
 			#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		}
 		break;
 		
 	case KVC_F7:			// スキャンラインモード変更
-		// ビデオキャプチャ中は無効
-		if( AVI6::IsAVI() ) return false;
-		
-		Stop();
 		if( OnALT ){
-			cfg->SetValue( CB_DispNTSC, !cfg->GetValue( CB_DispNTSC ) );
-			graph->ResizeScreen();	// スクリーンサイズ変更
+			Stop();
+			UI_Disp43();
+			Start();
 		}else{
-			cfg->SetValue( CB_ScanLine, !cfg->GetValue( CB_ScanLine ) );
+			UI_ScanLine();
 		}
-		Start();
 		break;
 		
 	case KVC_F8:			// モード4カラー変更 or ステータスバー表示状態変更
 		if( OnALT ){
 			Stop();
-			cfg->SetValue( CB_DispStatus, !cfg->GetValue( CB_DispStatus ) );
-			graph->ResizeScreen();	// スクリーンサイズ変更
+			UI_StatusBar();
 			Start();
 		}else{
-			int c = vm->vdg->GetMode4Color();
-			if( ++c > 4 ) c = 0;
-			vm->vdg->SetMode4Color( c );
+			UI_Mode4Color( cfg->GetValue( CV_Mode4Color ) + 1 );
 		}
 		break;
 		
-	case KVC_F9:			// ポーズ有効無効変更
+	case KVC_F9:			// ポーズ変更
 		if( OnALT ){
 		}else{
-			sche->SetPauseEnable( !sche->GetPauseEnable() );
+			UI_Pause();
 		}
 		break;
 		
-	case KVC_F10:			// Wait有効無効変更
+	case KVC_F10:			// Wait変更
 		if( OnALT ){
 		}else{
-			sche->SetWaitEnable( !sche->GetWaitEnable() );
+			UI_NoWait();
 		}
 		break;
 		
 	case KVC_F11:			// リセット or 再起動
 		if( OnALT ){
-			OSD_PushEvent( EV_RESTART );
+			UI_Restart();
 		}else{
 			UI_Reset();
 		}
@@ -742,7 +724,9 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 	case KVC_F12:			// スナップショット
 		if( OnALT ){
 		}else{
-			graph->SnapShot( cfg->GetValue( CF_ImgPath ) );
+			Stop();
+			UI_SnapShot();
+			Start();
 		}
 		break;
 		
@@ -776,7 +760,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 ////////////////////////////////////////////////////////////////
 void EL6::DokoDemoSave( int slot )
 {
-	if( REPLAY::GetStatus() == REP_RECORD ){
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		UI_ReplayDokoSave();
 	}else{
 		P6VPATH tpath;
@@ -800,7 +784,7 @@ void EL6::DokoDemoSave( int slot )
 ////////////////////////////////////////////////////////////////
 void EL6::DokoDemoLoad( int slot )
 {
-	if( REPLAY::GetStatus() == REP_RECORD ){
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		UI_ReplayDokoLoad();
 	}else{
 		P6VPATH tpath;
@@ -822,8 +806,10 @@ void EL6::DokoDemoLoad( int slot )
 void EL6::CheckMonKey( int kcode, int ccode, bool OnSHIFT )
 {
 	switch( kcode ){		// キーコード
-	case KVC_F6:			// モニタモード変更
-		ToggleMonitor();
+	case KVC_F6:			// モニタモード変更(モニタモードから通常モードへの復帰)
+		Stop();
+		UI_Monitor();
+		Start();
 		break;
 		
 	// メモリウィンドウ
@@ -848,10 +834,10 @@ void EL6::CheckMonKey( int kcode, int ccode, bool OnSHIFT )
 bool EL6::ScreenUpdate( void )
 {
 	// 画面更新時期を迎えた?(ビデオキャプチャ中は無視)
-	if( !AVI6::IsAVI() && !sche->IsScreenUpdate() ) return false;
+	if( !AVI6::IsAVI() && !sche->IsScreenUpdate() ){ return false; }
 	
 	// フレームスキップチェック
-	if( FSkipCount++ < cfg->GetValue( CV_FrameSkip ) ) return false;
+	if( FSkipCount++ < cfg->GetValue( CV_FrameSkip ) ){ return false; }
 	
 	
 	// ここではバックバッファの更新のみ
@@ -862,7 +848,7 @@ bool EL6::ScreenUpdate( void )
 	vm->vdg->UpdateBackBuf();
 	
 	// ステータスバー更新
-	staw->SetReplayStatus( REPLAY::GetStatus() );	// リプレイステータス
+	staw->SetIndicator( REPLAY::GetStatus() | (AVI6::IsAVI() ? ST_CAPTUREREC : ST_IDLE) );
 	staw->Update( vm );
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -893,6 +879,7 @@ bool EL6::ScreenUpdate( void )
 int EL6::SoundUpdate( int samples, cRing* exbuf )
 {
 	// PSG更新
+	// PSGは常に発音されているためこれをサンプル数の基準とする)
 	int size = vm->psg->SoundUpdate( samples );
 	
 	// CMT(LOAD)更新
@@ -902,9 +889,7 @@ int EL6::SoundUpdate( int samples, cRing* exbuf )
 	vm->voice->SoundUpdate( size );
 	
 	// サウンドバッファ更新
-	int ret = snd->PreUpdate( size, exbuf );
-	
-	return ret;
+	return snd->PreUpdate( size, exbuf );
 }
 
 
@@ -1361,7 +1346,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 			}
 		}
 		
-		// ディスクドライブ数によってスクリーンサイズ変更
+		// ディスクドライブ数によってステータスバーサイズ変更
 		if( !staw->Init( -1, vm->disk->GetDrives() ) ) throw Error::GetError();
 		if( !graph->ResizeScreen() ) throw Error::GetError();
 	}
@@ -1504,7 +1489,7 @@ bool EL6::ReplayRecResume( const P6VPATH& path )
 ////////////////////////////////////////////////////////////////
 bool EL6::ReplayRecDokoLoad( void )
 {
-	if( REPLAY::GetStatus() == REP_RECORD ){
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		P6VPATH tpath = REPLAY::cIni::GetFilePath();
 		REPLAY::StopRecord();
 		return ReplayRecResume( tpath );
@@ -1522,7 +1507,7 @@ bool EL6::ReplayRecDokoLoad( void )
 ////////////////////////////////////////////////////////////////
 bool EL6::ReplayRecDokoSave( void )
 {
-	if( REPLAY::GetStatus() == REP_RECORD ){
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		// 途中セーブファイルを保存
 		P6VPATH tpath = REPLAY::cIni::GetFilePath();
 		OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
@@ -1600,11 +1585,13 @@ void EL6::UI_TapeInsert( const P6VPATH& path )
 	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
-		if( !OSD_FileExist( TapePathUI ) )
+		if( !OSD_FileExist( TapePathUI ) ){
 			TapePathUI = cfg->GetValue( CF_TapePath );
-		OSD_FileSelect( GetWindowHandle(), FD_TapeLoad, fpath, TapePathUI );
+		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_TapeLoad, fpath, TapePathUI ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
 	if( !TapeMount( fpath ) ) Error::SetError( Error::TapeMountFailed );
 }
@@ -1622,11 +1609,13 @@ void EL6::UI_DiskInsert( int drv, const P6VPATH& path )
 	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
-		if( !OSD_FileExist( DiskPathUI ) )
+		if( !OSD_FileExist( DiskPathUI ) ){
 			DiskPathUI = cfg->GetValue( CF_DiskPath );
-		OSD_FileSelect( GetWindowHandle(), FD_Disk, fpath, DiskPathUI );
+		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_Disk, fpath, DiskPathUI ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
 	if( !DiskMount( drv, fpath ) ) Error::SetError( Error::DiskMountFailed );
 }
@@ -1643,11 +1632,13 @@ void EL6::UI_RomInsert( const P6VPATH& path )
 	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
-		if( !OSD_FileExist( ExRomPathUI ) )
+		if( !OSD_FileExist( ExRomPathUI ) ){
 			ExRomPathUI = cfg->GetValue( CF_ExtRomPath );
-		OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI );
+		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
 	// リセットを伴うのでメッセージ表示
 	OSD_Message( GetWindowHandle(), GetText( T_RESETI ), GetText( T_RESETC ), OSDM_OK | OSDM_ICONINFO );
@@ -1684,11 +1675,13 @@ void EL6::UI_DokoSave( const P6VPATH& path )
 	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
-		if( !OSD_FileExist( DokoPathUI ) )
+		if( !OSD_FileExist( DokoPathUI ) ){
 			DokoPathUI = cfg->GetValue( CF_DokoPath );
-		OSD_FileSelect( GetWindowHandle(), FD_DokoSave, fpath, DokoPathUI );
+		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_DokoSave, fpath, DokoPathUI ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
 	if( !DokoDemoSave( fpath ) ) Error::SetError( Error::DokoWriteFailed );
 }
@@ -1705,11 +1698,13 @@ void EL6::UI_DokoLoad( const P6VPATH& path )
 	P6VPATH fpath = path;
 	
 	if( fpath.empty() ){
-		if( !OSD_FileExist( DokoPathUI ) )
+		if( !OSD_FileExist( DokoPathUI ) ){
 			DokoPathUI = cfg->GetValue( CF_DokoPath );
-		OSD_FileSelect( GetWindowHandle(), FD_DokoLoad, fpath, DokoPathUI );
+		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_DokoLoad, fpath, DokoPathUI ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
 	cfg->SetValue( CV_Model, GetDokoModel( fpath ) );
 	cfg->SetDokoFile( fpath );
@@ -1727,18 +1722,21 @@ void EL6::UI_ReplaySave( const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
-	if( REPLAY::GetStatus() == REP_IDLE ){
+	if( REPLAY::GetStatus() == ST_IDLE ){
 		if( fpath.empty() ){
-			if( !OSD_FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) ){
 				DokoPathUI = cfg->GetValue( CF_DokoPath );
-			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
+			}
+			if( !OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI ) ){
+				return;
+			}
 		}
-		if( fpath.empty() ) return;
 		
-		if( !DokoDemoSave( fpath ) || !ReplayRecStart( fpath ) )
+		if( !DokoDemoSave( fpath ) || !ReplayRecStart( fpath ) ){
 			Error::SetError( Error::ReplayRecError );
+		}
 		
-	}else if( REPLAY::GetStatus() == REP_RECORD ){
+	}else if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		ReplayRecStop();
 	}
 }
@@ -1754,13 +1752,15 @@ void EL6::UI_ReplayResumeSave( const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
-	if( REPLAY::GetStatus() == REP_IDLE ){
+	if( REPLAY::GetStatus() == ST_IDLE ){
 		if( fpath.empty() ){
-			if( !OSD_FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) ){
 				DokoPathUI = cfg->GetValue( CF_DokoPath );
-			OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI );
+			}
+			if( !OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI ) ){
+				return;
+			}
 		}
-		if( fpath.empty() ) return;
 		
 		if( !ReplayRecResume( fpath ) ) Error::SetError( Error::ReplayRecError );
 	}
@@ -1801,40 +1801,82 @@ void EL6::UI_ReplayLoad( const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
-	if( REPLAY::GetStatus() == REP_IDLE ){
+	if( REPLAY::GetStatus() == ST_IDLE ){
 		if( fpath.empty() ){
-			if( !OSD_FileExist( DokoPathUI ) )
+			if( !OSD_FileExist( DokoPathUI ) ){
 				DokoPathUI = cfg->GetValue( CF_DokoPath );
-			OSD_FileSelect( GetWindowHandle(), FD_RepLoad, fpath, DokoPathUI );
+			}
+			if( !OSD_FileSelect( GetWindowHandle(), FD_RepLoad, fpath, DokoPathUI ) ){
+				return;
+			}
 		}
-	}else if( REPLAY::GetStatus() == REP_REPLAY ){
+	}else if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
 		ReplayPlayStop();
+		if( fpath.empty() ) return;
 	}
-	
-	if( fpath.empty() ) return;
 	
 	ReplayPlayStart( fpath );
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:ビデオキャプチャ
+// UI:ビデオキャプチャ開始
 //
 // 引数:	なし
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_AVISave( void )
+void EL6::UI_AVISaveStart( void )
 {
 	P6VPATH fpath;
 	P6VPATH mpath = OSD_GetConfigPath();
 	
-	if( !AVI6::IsAVI() ){
-		if( OSD_FileSelect( GetWindowHandle(), FD_AVISave, fpath, mpath ) ){
-			AVI6::StartAVI( fpath, graph->ScreenX(), graph->ScreenY(), FRAMERATE, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_AviBpp ) );
-		}
-	}else{
-		AVI6::StopAVI();
+	if( !OSD_FileSelect( GetWindowHandle(), FD_AVISave, fpath, mpath ) ){
+		return;
 	}
+	// ビデオキャプチャ用の画面設定に変更
+	cfg->PushAviPara();		// 退避
+	
+	cfg->SetValue( CV_WindowZoom, cfg->GetValue( CV_AviZoom      ) );
+	cfg->SetValue( CV_FrameSkip,  cfg->GetValue( CV_AviFrameSkip ) );
+	cfg->SetValue( CB_ScanLine,   cfg->GetValue( CB_AviScanLine  ) );
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
+	
+	if( AVI6::StartAVI( fpath, graph->ScreenX(), graph->ScreenY(), FRAMERATE, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_AviBpp ) ) ){
+		return;
+	}
+	
+	Error::SetError( Error::CaptureFailed );
+	UI_AVISaveStop();
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:ビデオキャプチャ停止
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_AVISaveStop( void )
+{
+	AVI6::StopAVI();
+	
+	// 通常画面設定に戻す
+	cfg->PopAviPara();		// 復帰
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:スナップショット
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_SnapShot( void )
+{
+	graph->SnapShot( cfg->GetValue( CF_ImgPath ) );
 }
 
 
@@ -1850,11 +1892,14 @@ void EL6::UI_AutoType( const P6VPATH& path )
 	P6VPATH mpath = OSD_GetConfigPath();
 	
 	if( fpath.empty() ){
-		OSD_FileSelect( GetWindowHandle(), FD_LoadAll, fpath, mpath );
+		if( !OSD_FileSelect( GetWindowHandle(), FD_LoadAll, fpath, mpath ) ){
+			return;
+		}
 	}
-	if( fpath.empty() ) return;
 	
-	if( !SetAutoKeyFile( fpath ) ) Error::SetError( Error::Unknown );
+	if( !SetAutoKeyFile( fpath ) ){
+		Error::SetError( Error::Unknown );
+	}
 }
 
 
@@ -1868,15 +1913,16 @@ void EL6::UI_Reset( void )
 {
 	bool can = this->cThread::IsCancel();	// スレッド停止済み?
 	
-	if( !can ) Stop();	// スレッド動いてたら一旦止める
+	if( !can ){ Stop(); }	// スレッド動いてたら一旦止める
 	
 	// システムディスクが入っていたらTAPEのオートスタート無効
-	if( !vm->disk->IsSystem(0) && !vm->disk->IsSystem(1) )
+	if( !vm->disk->IsSystem(0) && !vm->disk->IsSystem(1) ){
 		SetAutoStart();
+	}
 	
 	vm->Reset();
 	
-	if( !can ) Start();	// 元々スレッドが動いていたら再始動
+	if( !can ){ Start(); }	// 元々スレッドが動いていたら再始動
 }
 
 
@@ -1888,6 +1934,9 @@ void EL6::UI_Reset( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_Restart( void )
 {
+	// ビデオキャプチャ中は無効
+	if( AVI6::IsAVI() ){ return; }
+	
 	OSD_PushEvent( EV_RESTART );
 }
 
@@ -1901,6 +1950,18 @@ void EL6::UI_Restart( void )
 void EL6::UI_Quit( void )
 {
 	OSD_PushEvent( EV_QUIT );
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:Pause変更
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_Pause( void )
+{
+	sche->SetPauseEnable( !sche->GetPauseEnable() );
 }
 
 
@@ -1950,10 +2011,11 @@ void EL6::UI_BoostUp( void )
 void EL6::UI_FullScreen( void )
 {
 	// ビデオキャプチャ中は無効
-	if( !AVI6::IsAVI() ){
-		cfg->SetValue( CB_FullScreen, !cfg->GetValue( CB_FullScreen ) );
-		graph->ResizeScreen();	// スクリーンサイズ変更
-	}
+	if( AVI6::IsAVI() ){ return; }
+	
+	cfg->SetValue( CB_FullScreen, !cfg->GetValue( CB_FullScreen ) );
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
 }
 
 
@@ -1966,10 +2028,11 @@ void EL6::UI_FullScreen( void )
 void EL6::UI_WindowZoom( int zoom )
 {
 	// ビデオキャプチャ中は無効
-	if( !AVI6::IsAVI() ){
-		cfg->SetValue( CV_WindowZoom, zoom );
-		graph->ResizeScreen();	// スクリーンサイズ変更
-	}
+	if( AVI6::IsAVI() ){ return; }
+	
+	cfg->SetValue( CV_WindowZoom, zoom );
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
 }
 
 
@@ -1981,8 +2044,12 @@ void EL6::UI_WindowZoom( int zoom )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_StatusBar( void )
 {
+	// ビデオキャプチャ中は無効
+	if( AVI6::IsAVI() ){ return; }
+	
 	cfg->SetValue( CB_DispStatus, !cfg->GetValue( CB_DispStatus ) );
 	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
 }
 
 
@@ -1995,10 +2062,11 @@ void EL6::UI_StatusBar( void )
 void EL6::UI_Disp43( void )
 {
 	// ビデオキャプチャ中は無効
-	if( !AVI6::IsAVI() ){
-		cfg->SetValue( CB_DispNTSC, !cfg->GetValue( CB_DispNTSC ) );
-		graph->ResizeScreen();	// スクリーンサイズ変更
-	}
+	if( AVI6::IsAVI() ){ return; }
+	
+	cfg->SetValue( CB_DispNTSC, !cfg->GetValue( CB_DispNTSC ) );
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
 }
 
 
@@ -2010,10 +2078,7 @@ void EL6::UI_Disp43( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_ScanLine( void )
 {
-	// ビデオキャプチャ中は無効
-	if( !AVI6::IsAVI() ){
-		cfg->SetValue( CB_ScanLine, !cfg->GetValue( CB_ScanLine ) );
-	}
+	cfg->SetValue( CB_ScanLine, !cfg->GetValue( CB_ScanLine ) );
 }
 
 
@@ -2026,10 +2091,11 @@ void EL6::UI_ScanLine( void )
 void EL6::UI_Filtering( void )
 {
 	// ビデオキャプチャ中は無効
-	if( !AVI6::IsAVI() ){
-		cfg->SetValue( CB_Filtering, !cfg->GetValue( CB_Filtering ) );
-		graph->ResizeScreen();	// スクリーンサイズ変更
-	}
+	if( AVI6::IsAVI() ){ return; }
+	
+	cfg->SetValue( CB_Filtering, !cfg->GetValue( CB_Filtering ) );
+	graph->ResizeScreen();	// スクリーンサイズ変更
+	graph->DrawScreen();
 }
 
 
@@ -2041,6 +2107,7 @@ void EL6::UI_Filtering( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_Mode4Color( int col )
 {
+	col = col % 5;
 	cfg->SetValue( CV_Mode4Color, col );
 	vm->vdg->SetMode4Color( col );
 }
@@ -2054,7 +2121,10 @@ void EL6::UI_Mode4Color( int col )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_FrameSkip( int sk )
 {
-	if( !AVI6::IsAVI() ) cfg->SetValue( CV_FrameSkip, sk );
+	// ビデオキャプチャ中は無効
+	if( AVI6::IsAVI() ){ return; }
+	
+	cfg->SetValue( CV_FrameSkip, sk );
 }
 
 
@@ -2066,9 +2136,29 @@ void EL6::UI_FrameSkip( int sk )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_SampleRate( int rate )
 {
+	// ビデオキャプチャ中は無効
+	if( AVI6::IsAVI() ){ return; }
+	
 	cfg->SetValue( CV_SampleRate, rate );
 	snd->SetSampleRate( rate );
 }
+
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+////////////////////////////////////////////////////////////////
+// UI:モニタモード切替え
+////////////////////////////////////////////////////////////////
+void EL6::UI_Monitor( void )
+{
+	// ビデオキャプチャ中は無効
+	if( AVI6::IsAVI() ){ return; }
+	
+	vm->SetMonitor( !vm->IsMonitor() );
+	graph->ResizeScreen();
+	graph->DrawScreen();
+}
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -2179,10 +2269,10 @@ void EL6::ExecMenu( int id )
 	case ID_REPLAYDOKOLOAD:	UI_ReplayDokoLoad();					break;	// リプレイ中どこでもLOAD
 	case ID_REPLAYDOKOSAVE:	UI_ReplayDokoSave();					break;	// リプレイ中どこでもSAVE
 	case ID_REPLAYLOAD:		UI_ReplayLoad();						break;	// リプレイ再生
-	case ID_AVISAVE:		UI_AVISave();							break;	// ビデオキャプチャ
+	case ID_AVISAVE:		AVI6::IsAVI() ? UI_AVISaveStop() : UI_AVISaveStart();	break;	// ビデオキャプチャ
 	case ID_AUTOTYPE:		UI_AutoType();							break;	// 打込み代行
 	case ID_QUIT:			UI_Quit();								break;	// 終了
-	case ID_NOWAIT:			UI_NoWait();							break;	// Wait有効無効変更
+	case ID_NOWAIT:			UI_NoWait();							break;	// Wait変更
 	case ID_TURBO:			UI_TurboTape();							break;	// Turbo TAPE
 	case ID_BOOST:			UI_BoostUp();							break;	// Boost Up
 	case ID_FULLSCRN:		UI_FullScreen();						break;	// フルスクリーン変更
@@ -2209,7 +2299,7 @@ void EL6::ExecMenu( int id )
 	case ID_SPR11:			UI_SampleRate( 44100 >> (id - ID_SPR44 ) );	break;	// サンプリングレート 11025Hz
 	case ID_VERSION:		OSD_VersionDialog( GetWindowHandle(), cfg->GetValue( CV_Model ) );	break;	// バージョン情報
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	case ID_MONITOR:		ToggleMonitor();						break;	// モニターモード
+	case ID_MONITOR:		UI_Monitor();							break;	// モニターモード
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	}
 }

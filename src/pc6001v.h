@@ -57,6 +57,9 @@
 #define	DEFAULT_FULLSCREEN		(false) 			// フルスクリーン
 #define	DEFAULT_DISPSTATUS		(true) 				// ステータスバー表示状態
 #define	DEFAULT_AVIBPP			(24) 				// ビデオキャプチャ色深度
+#define	DEFAULT_AVIZOOM			(100) 				// ビデオキャプチャ時ウィンドウ表示倍率
+#define	DEFAULT_AVIFRMSKIP		(1)					// ビデオキャプチャ時フレームスキップ
+#define	DEFAULT_AVISCANLINE		(false)				// ビデオキャプチャ時スキャンライン true:あり false:なし
 #define	DEFAULT_CKQUIT			(false) 			// 終了時確認
 #define	DEFAULT_SAVEQUIT		(true) 				// 終了時INI保存
 #define	DEFAULT_SOLDIER			(0) 				// 戦士のカートリッジ使うフラグ
@@ -74,7 +77,7 @@
 #define	MIN_SAMPLERATE			(11025)				// サンプリングレート 最小値
 #define	MAX_SAMPLERATE			(44100)				// サンプリングレート 最大値
 #define	MIN_SOUNDBUF			(1)					// サウンドバッファ長倍率 最小値
-#define	MAX_SOUNDBUF			(10)				// サウンドバッファ長倍率 最大値
+#define	MAX_SOUNDBUF			(5)					// サウンドバッファ長倍率 最大値
 #define	MIN_VOLUME				(0)					// 音量 最小値
 #define	MAX_VOLUME				(100)				// 音量 最大値
 #define	MIN_LPF					(0)					// LPFカットオフ周波数 最小値
@@ -84,13 +87,15 @@
 #define	MIN_SCANLINEBR			(0)					// スキャンライン輝度 最小値
 #define	MAX_SCANLINEBR			(100)				// スキャンライン輝度 最大値
 #define	MIN_FRAMESKIP			(0)					// フレームスキップ 最小値
-#define	MAX_FRAMESKIP			(60)				// フレームスキップ 最大値
+#define	MAX_FRAMESKIP			(5)					// フレームスキップ 最大値
 #define	MIN_WINDOWZOOM			(50)				// ウィンドウ表示倍率 最小値
 #define	MAX_WINDOWZOOM			(400)				// ウィンドウ表示倍率 最大値
 #define	MIN_OVERCLOCK			(1)					// オーバークロック率 最小値
 #define	MAX_OVERCLOCK			(1000)				// オーバークロック率 最大値
 #define	MIN_AVIBPP				(16)				// ビデオキャプチャ色深度 最小値
 #define	MAX_AVIBPP				(32)				// ビデオキャプチャ色深度 最大値
+#define	MIN_AVIZOOM				(100)				// ビデオキャプチャ時ウィンドウ表示倍率 最小値
+#define	MAX_AVIZOOM				(400)				// ビデオキャプチャ時ウィンドウ表示倍率 最大値
 
 #define	CPUM_CLOCK60			(3993600)			// メインCPUクロック(Hz) 60,62
 #define	CPUM_CLOCK66			(4000000)			// メインCPUクロック(Hz) 66
@@ -132,8 +137,9 @@
 #define	EXT_ROM2				"bin"				// 拡張ROMイメージ
 #define	EXT_DOKO				"dds"				// どこでもSAVE
 #define	EXT_REPLAY				"ddr"				// リプレイ
-#define	EXT_ATYPE1				"bas"				// 打ち込み代行
-#define	EXT_ATYPE2				"txt"				// 打ち込み代行
+#define	EXT_BASIC				"bas"				// BASICプログラム(打ち込み代行用)
+#define	EXT_TEXT				"txt"				// テキストファイル
+#define	EXT_VIDEO				"webm"				// ビデオキャプチャ
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -36,7 +36,7 @@ bool cRing::InitBuffer( int size )
 {
 	PRINTD( SND_LOG, "[cRing][Init] Size:%d\n", size );
 	
-	std::queue<int32_t>().swap( Buffer );
+	std::deque<int32_t>().swap( Buffer );
 	Size = size;
 	
 	return true;
@@ -56,7 +56,7 @@ int cRing::Get( void )
 	int ret = 0;
 	if( !Buffer.empty() ){
 		ret = Buffer.front();
-		Buffer.pop();
+		Buffer.pop_front();
 	}
 	
 	return ret;
@@ -74,7 +74,7 @@ void cRing::Put( int data )
 	std::lock_guard<cMutex> lock( Mutex );
 	
 	if( (int)Buffer.size() < (Size * MULTI) )
-		Buffer.emplace( data );
+		Buffer.emplace_back( data );
 }
 
 

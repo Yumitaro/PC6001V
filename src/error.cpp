@@ -33,7 +33,9 @@ const TextID ErrorText[Error::EndofErrors] =
 	TERR_DokoDiffVersion,	// DokoDiffVersion
 	TERR_ReplayPlayError,	// ReplayPlayError
 	TERR_ReplayRecError,	// ReplayRecError
-	TERR_NoReplayData		// NoReplayData
+	TERR_NoReplayData,		// NoReplayData
+	TERR_CaptureFailed		// CaptureFailed
+
 };
 
 Error::Errno Error::err = Error::NoError;

@@ -177,6 +177,67 @@ static std::unordered_map<SDL_Scancode, PCKEYsym> VKMapTable =
 };
 
 
+////////////////////////////////////////////////////////////////
+// 仮想イベントタイプ -> SDLイベントタイプ 変換テーブル
+////////////////////////////////////////////////////////////////
+static std::unordered_map<EventType, DWORD> EvConv =
+{
+	{ EV_QUIT,					SDL_QUIT						},	// User-requested quit
+	{ EV_DROPFILE,				SDL_DROPFILE					},	// File dropped
+	{ EV_KEYDOWN,				SDL_KEYDOWN						},	// Keys pressed
+	{ EV_KEYUP,					SDL_KEYUP						},	// Keys released
+	{ EV_MOUSEMOTION,			SDL_MOUSEMOTION					},	// Mouse moved
+	{ EV_MOUSEBUTTONDOWN,		SDL_MOUSEBUTTONDOWN				},	// Mouse button pressed
+	{ EV_MOUSEBUTTONUP,			SDL_MOUSEBUTTONUP				},	// Mouse button released
+	{ EV_MOUSEWHEEL,			SDL_MOUSEWHEEL					},	// Mouse wheel motion
+	{ EV_JOYAXISMOTION,			SDL_JOYAXISMOTION				},	// Joystick axis motion
+	{ EV_JOYBUTTONDOWN,			SDL_JOYBUTTONDOWN				},	// Joystick button pressed
+	{ EV_JOYBUTTONUP,			SDL_JOYBUTTONUP					},	// Joystick button released
+	{ EV_WINDOWRESIZED,			SDL_WINDOWEVENT_RESIZED			},	// Window resized
+	{ EV_WINDOWSIZECHANGED,		SDL_WINDOWEVENT_SIZE_CHANGED	},	// Window size changed
+	{ EV_WINDOWEVENT_MINIMIZED,	SDL_WINDOWEVENT_MINIMIZED		},	// Window minimized
+	{ EV_WINDOWEVENT_MAXIMIZED,	SDL_WINDOWEVENT_MAXIMIZED		},	// Window maximized
+	{ EV_WINDOWEVENT_RESTORED,	SDL_WINDOWEVENT_RESTORED		}	// Window restored to normal size and position
+};
+
+
+////////////////////////////////////////////////////////////////
+// イベント変換(仮想 -> SDL)
+//
+// 引数:	ev				イベントタイプ
+// 返値:	DWORD			SDLイベントタイプ
+////////////////////////////////////////////////////////////////
+static DWORD ConvEventOSD2SDL( EventType ev )
+{
+	DWORD type;
+	
+	switch( ev ){
+	case EV_RESTART:
+	case EV_DOKOLOAD:
+	case EV_REPLAY:
+	case EV_FPSUPDATE:
+	case EV_RENDER:
+	case EV_CAPTURE:
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	case EV_DEBUGMODEBP:
+	case EV_DEBUGMODETOGGLE:
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		type = ev + UEVnum;
+		break;
+		
+	default:
+		try{
+			type = EvConv.at( ev );
+		}
+		catch( std::out_of_range& ){
+			type = SDL_FIRSTEVENT;
+		}
+	}
+	
+	return type;
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -187,7 +248,7 @@ static std::unordered_map<SDL_Scancode, PCKEYsym> VKMapTable =
 //			y				Y座標
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void ConvertLogicalToAbsolute( DWORD winid, int* x, int* y )
+static void ConvertLogicalToAbsolute( DWORD winid, int* x, int* y )
 {
 	int wa, ha, wl, hl;
 	
@@ -1000,17 +1061,17 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 // ウィンドウのイメージデータ取得
 //
 // 引数:	hwnd			ウィンドウハンドル
-//			pixels			転送先配列ポインタへのポインタ
+//			pixels			転送先配列への参照
 //			pos				保存する領域情報へのポインタ
 //			pxfmt			ピクセルフォーマット
 // 返値:	bool			true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool OSD_GetWindowImage( HWINDOW hwnd, void** pixels, VRect* pos, PixelFMT pxfmt )
+bool OSD_GetWindowImage( HWINDOW hwnd, std::vector<BYTE>& pixels, VRect* pos, PixelFMT pxfmt )
 {
 	VRect src1;
 	int fmt, dpt;
 	
-	if( !hwnd || !pixels ) return false;
+	if( !hwnd ) return false;
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
 	if( !rend ) return false;
@@ -1035,11 +1096,11 @@ bool OSD_GetWindowImage( HWINDOW hwnd, void** pixels, VRect* pos, PixelFMT pxfmt
 		
 	case PX32ARGB:
 	default:
-		fmt  = SDL_PIXELFORMAT_ARGB8888;
+		fmt  = SDL_PIXELFORMAT_ARGB32;
 		dpt *= sizeof(DWORD);
 	}
 	
-	if( SDL_RenderReadPixels( rend, (SDL_Rect*)pos, fmt, (void*)(*pixels), dpt ) )
+	if( SDL_RenderReadPixels( rend, (SDL_Rect*)pos, fmt, (void*)(&pixels[0]), dpt ) )
 		return false;
 	
 	return true;
@@ -1323,37 +1384,59 @@ bool OSD_PushEvent( EventType ev, ... )
 	SDL_Event event;
 	std::va_list args;
 	
-	// C的可変長引数展開
-	va_start( args, ev );
-	
-	event.type = SDL_FIRSTEVENT;
+	event.type = ConvEventOSD2SDL( ev );
+	if( event.type == SDL_FIRSTEVENT ){
+		return false;
+	}
 	
 	switch( ev ){
-	case EV_QUIT:
-		event.type		= SDL_QUIT;
-		break;
-		
-	case EV_RESTART:
-	case EV_DOKOLOAD:
-	case EV_REPLAY:
-	case EV_FPSUPDATE:
-	case EV_RENDER:
-	case EV_CAPTURE:
-		event.type		= ev + UEVnum;
-		break;
-		
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	case EV_DEBUGMODEBP:
-		event.type		= ev + UEVnum;
+		// C的可変長引数展開
+		va_start( args, ev );
 		event.user.code	= va_arg( args, int );
+		va_end( args );
 		break;
+	case EV_DEBUGMODETOGGLE:
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	default:;
+	}
+	
+	return SDL_PushEvent( &event ) < 0 ? false : true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// キューに指定のイベントが存在するか調査する
+//
+// 引数:	ev				イベントタイプ
+// 返値:	bool			true:ある false:ない
+////////////////////////////////////////////////////////////////
+bool OSD_HasEvent( EventType ev )
+{
+	return SDL_HasEvent( ConvEventOSD2SDL( ev ) ) == SDL_TRUE ? true : false;
+}
+
+
+////////////////////////////////////////////////////////////////
+// イベント処理の状態を種類ごとに設定する
+//
+// 引数:	ev				イベントタイプ
+//			st				ステータス
+// 返値:	bool			変更前の状態 true:有効 false:無効
+////////////////////////////////////////////////////////////////
+bool OSD_EventState( EventType ev, EventState st )
+{
+	int state;
+	
+	switch( st ){
+	case EVS_QUERY:		state = SDL_QUERY;		break;
+	case EVS_DISABLE:	state = SDL_DISABLE;	break;
+	case EVS_ENABLE:	state = SDL_ENABLE;		break;
 	default:
 		return false;
 	}
 	
-	va_end( args );
-	
-	return SDL_PushEvent( &event ) ? false : true;
+	return SDL_EventState( ConvEventOSD2SDL( ev ), state ) == SDL_ENABLE  ? true : false;
 }
 

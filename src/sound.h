@@ -2,7 +2,7 @@
 #define SOUND_H_INCLUDED
 
 #include <memory>
-#include <queue>
+#include <deque>
 
 #include "semaphore.h"
 
@@ -13,7 +13,7 @@
 // リングバッファオブジェクト
 class cRing {
 private:
-	std::queue<int32_t> Buffer;	// バッファ
+	std::deque<int32_t> Buffer;	// バッファ
 	int Size;					// バッファサイズ(データ数)
 	mutable cMutex Mutex;
 	

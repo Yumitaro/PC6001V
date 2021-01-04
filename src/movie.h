@@ -1,95 +1,32 @@
 #ifndef MOVIE_H_INCLUDED
 #define MOVIE_H_INCLUDED
 
-#include <fstream>
 #include <vector>
 
-#include "semaphore.h"
+#include "osd.h"
 #include "sound.h"
 #include "vsurface.h"
 
-// short int RECT相当
-typedef struct {
-	short int left;
-	short int top;
-	short int right;
-	short int bottom;
-} RECT6;
+struct AVFormatContext;
+struct AVCodec;
+struct AVStream;
+struct AVFrame;
 
-// RGBQUAD相当
-typedef struct {
-	BYTE	b;
-	BYTE	g;
-	BYTE	r;
-	BYTE	reserved;
-} RGBPAL6;
-
-// BITMAPINFOHEADER相当
-typedef struct {
-	DWORD  biSize;
-	long   biWidth;			// LONG
-	long   biHeight;		// LONG
-	WORD   biPlanes;
-	WORD   biBitCount;
-	DWORD  biCompression;
-	DWORD  biSizeImage;
-	long   biXPelsPerMeter;	// LONG
-	long   biYPelsPerMeter;	// LONG
-	DWORD  biClrUsed;
-	DWORD  biClrImportant;
-} BMPINFOHEADER6;
-
-// MainAVIHeader相当
-typedef struct {
-	DWORD dwMicroSecPerFrame;
-	DWORD dwMaxBytesPerSec;
-	DWORD dwReserved1;
-	DWORD dwFlags;
-	DWORD dwTotalFrames;
-	DWORD dwInitialFrames;
-	DWORD dwStreams;
-	DWORD dwSuggestedBufferSize;
-	DWORD dwWidth;
-	DWORD dwHeight;
-	DWORD dwReserved[4];
-} MAINAVIHEADER6;
-
-// AVIStreamHeader相当
-typedef struct {
-	DWORD fccType;		// FOURCC
-	DWORD fccHandler;	// FOURCC
-	DWORD dwFlags;
-	DWORD dwPriority;
-	DWORD dwInitialFrames;
-	DWORD dwScale;
-	DWORD dwRate;
-	DWORD dwStart;
-	DWORD dwLength;
-	DWORD dwSuggestedBufferSize;
-	DWORD dwQuality;
-	DWORD dwSampleSize;
-	RECT6 rcFrame;
-} AVISTRMHEADER6;
-
-// AVIINDEXENTRY相当
-typedef struct {
-	DWORD ckid;
-	DWORD dwFlags;
-	DWORD dwChunkOffset;
-	DWORD dwChunkLength;
-} AVIINDEXENTRY6;
-
-// WAVEFORMATEX相当
-typedef struct {
-	WORD  wFormatTag;
-	WORD  nChannels;
-	DWORD nSamplesPerSec;
-	DWORD nAvgBytesPerSec;
-	WORD  nBlockAlign;
-	WORD  wBitsPerSample;
-//	WORD  cbSize;	// 無視
-} WAVEFORMATEX6;
-
+// FFMpegのサンプルmuxing.cより抜粋
+// a wrapper around a single output AVStream
+typedef struct OutputStream {
+	AVStream* st;
+	
+	/* pts of the next frame that will be generated */
+	int64_t next_pts;
+	int samples_count;
+	
+	AVFrame* frame;
+	AVFrame* tmp_frame;
+	
+	struct SwsContext* sws_ctx;
+	struct SwrContext* swr_ctx;
+} OutputStream;
 
 
 ////////////////////////////////////////////////////////////////
@@ -97,50 +34,38 @@ typedef struct {
 ////////////////////////////////////////////////////////////////
 class AVI6 : public cSemaphore {
 protected:
-	std::fstream vfp;
-	MAINAVIHEADER6 vmh;
-	AVISTRMHEADER6 vsh, ash;
-	BMPINFOHEADER6 vbf;
-	WAVEFORMATEX6 awf;
+	bool isAVI;
 	
-	int ABPP;					// 色深度 (16,24,32)
-	std::vector<BYTE> Sbuf;		// イメージデータバッファポインタ
+	AVFormatContext* oc;
+	AVCodec* audio_codec;
+	AVCodec* video_codec;
+	OutputStream video_st;
+	OutputStream audio_st;
 	
-	DWORD PosMOVI;
-	
-	DWORD RiffSize;
-	DWORD MoviSize;
-	
+	std::vector<BYTE> Sbuf;		// イメージデータバッファ
 	cRing ABuf;					// オーディオバッファ
-	DWORD anum;					// オーディオサンプル数カウント用
-	DWORD afrm;					// (暫定)オーディオ総フレーム数
 	
-	bool WriteHeader();						// ヘッダチャンク書出し
-	bool WriteIndexr();						// インデックスチャンク書出し
+	VRect ss;					// キャプチャフレーム設定
+	PixelFMT pixfmt;			// ピクセルフォーマット
+	int req;					// フレーム出力リクエスト数
 	
-	void putBMPINFOHEADER6( BMPINFOHEADER6* );
-	void putMAINAVIHEADER6( MAINAVIHEADER6* );
-	void putAVISTRMHEADER6( AVISTRMHEADER6* );
-	void putAVIINDEXENTRY6( AVIINDEXENTRY6* );
-	void putWAVEFORMATEX6( WAVEFORMATEX6* );
-	
+	mutable cMutex Mutex;
+
 public:
 	AVI6();
 	~AVI6();
 	
-	bool Init();							// 初期化
-	
 	bool StartAVI( const P6VPATH&, int, int, double, int, int );	// ビデオキャプチャ開始
-	
 	void StopAVI();							// ビデオキャプチャ停止
+	
 	bool IsAVI();							// ビデオキャプチャ中?
+	void Request();							// フレーム出力リクエスト
+	int GetRequest();						// フレーム出力リクエスト数取得
 	
-	bool AVIWriteFrameVideo( HWINDOW );		// AVI1フレーム書出し(Video)
-	bool AVIWriteFrameAudio();				// AVI1フレーム書出し(Audio)
+	bool AVIWriteFrame( HWINDOW );			// AVI1フレーム書出し
 	
-	cRing* GetAudioBuffer();				// オーディオバッファ取得
+	cRing *GetAudioBuffer();				// オーディオバッファ取得
 	DWORD GetUpdateSample();				// 追加更新が必要なサンプル数取得
 };
-
 
 #endif	// MOVIE_H_INCLUDED
