@@ -137,13 +137,4 @@ using P6VPATH = std::string;
 template <class T, class S> T max( T v1, S v2 ){ T v2_(v2); return v1 > v2_ ? v1 : v2_; }
 template <class T, class S> T min( T v1, S v2 ){ T v2_(v2); return v1 < v2_ ? v1 : v2_; }
 
-template <typename T1,typename T2> size_t FindIndex( T1 val, T2& con )
-{
-	auto iter  = std::find( con.begin(), con.end(), val );
-	size_t idx = std::distance( con.begin(), iter );
-	if( idx == con.size() ){ return -1; }
-	return idx;
-}
-
-
 #endif	// TYPEDEF_H_INCLUDED

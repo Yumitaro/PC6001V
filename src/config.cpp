@@ -796,6 +796,18 @@ int CFG6::GetMin( TCValue tc ) const
 }
 
 
+// 初期値取得
+int CFG6::GetDefault( TCValue tc ) const
+{
+	try{
+		return GetCfgSet( tc ).Default;
+	}
+	catch( std::out_of_range& ){}
+	
+	return 0;
+}
+
+
 // [COLOR] -----------------------------------------------------
 
 // カラーデータ取得

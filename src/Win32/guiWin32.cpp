@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -746,7 +747,7 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 	
 	
 	psh.dwSize     = sizeof(PROPSHEETHEADER);
-	psh.dwFlags    = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
+	psh.dwFlags    = PSH_DEFAULT | PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW;
 	psh.hwndParent = hhwnd;
 	psh.hInstance  = hinst;
 	psh.pszIcon    = nullptr;
@@ -766,34 +767,9 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 
 
 ///////////////////////////////////////////////////////////
-// テキストボックスにパスを設定
-///////////////////////////////////////////////////////////
-void SetTextBoxPath( const HWND hwnd, const int id, const TCPath path )
-{
-	P6VPATH tpath = ecfg.GetValue( path );
-	OSD_DelDelimiter( tpath );
-	std::string str = P6VPATH2STR( tpath );
-	OSD_UTF8toSJIS( str );
-	SetDlgItemText( hwnd, id, str.c_str() );
-}
-
-///////////////////////////////////////////////////////////
-// テキストボックスからパスを取得
-///////////////////////////////////////////////////////////
-P6VPATH GetTextBoxPath( const HWND hwnd, const int id )
-{
-	char str[PATH_MAX+1];			// 文字列取得用
-	
-	GetDlgItemText( hwnd, id, str, sizeof(str) );
-	std::string tstr = str;
-	OSD_SJIStoUTF8( tstr );
-	return STR2P6VPATH( tstr );
-}
-
-///////////////////////////////////////////////////////////
 // ファイルを選択してテキストボックスに設定
 ///////////////////////////////////////////////////////////
-void FileSelCom( const HWND hwnd, const int id, const FileDlg type, const P6VPATH& path )
+static void FileSelCom( const HWND hwnd, const int id, const FileDlg type, const P6VPATH& path )
 {
 	char str[PATH_MAX+1];			// 文字列取得用
 	std::string tstr;				// 文字列取得用
@@ -814,7 +790,7 @@ void FileSelCom( const HWND hwnd, const int id, const FileDlg type, const P6VPAT
 ///////////////////////////////////////////////////////////
 // フォルダを選択してテキストボックスに設定
 ///////////////////////////////////////////////////////////
-void FolderSelCom( const HWND hwnd, const int id )
+static void FolderSelCom( const HWND hwnd, const int id )
 {
 	char str[PATH_MAX+1];			// 文字列取得用
 	std::string tstr;				// 文字列取得用
@@ -833,22 +809,68 @@ void FolderSelCom( const HWND hwnd, const int id )
 
 
 ///////////////////////////////////////////////////////////
+// チェックボックス設定
+///////////////////////////////////////////////////////////
+static void SetCheckBox( const HWND hwnd, const int id, const TCBool cb )
+{
+	SendMessage( GetDlgItem( hwnd, id ), BM_SETCHECK, ecfg.GetValue( cb ), 0 );
+}
+
+
+///////////////////////////////////////////////////////////
+// チェックボックス保存
+///////////////////////////////////////////////////////////
+static void SaveCheckBox( const HWND hwnd, const int id, const TCBool cb )
+{
+	ecfg.SetValue( cb, IsDlgButtonChecked( hwnd, id ) == BST_CHECKED ? true : false );
+}
+
+
+///////////////////////////////////////////////////////////
 // スピンコントロール設定
 ///////////////////////////////////////////////////////////
-void SetSpinControl( const HWND hwnd, const int id, const int ide, const TCValue cv )
+static void SetSpinControl( const HWND hwnd, const int ids, const int ide, const TCValue cv )
 {
 	int st = min( max( ecfg.GetMin( cv ), ecfg.GetValue( cv ) ), ecfg.GetMax( cv ) );
 	SetDlgItemText( hwnd, ide, std::to_string( st ).c_str() );
-	SendMessage( GetDlgItem( hwnd, id ), UDM_SETBUDDY, (WPARAM)GetDlgItem( hwnd, ide ), 0 );
-	SendMessage( GetDlgItem( hwnd, id ), UDM_SETRANGE32, ecfg.GetMin( cv ), ecfg.GetMax( cv ) );
-	SendMessage( GetDlgItem( hwnd, id ), UDM_SETPOS, 0, st );
+	SendMessage( GetDlgItem( hwnd, ids ), UDM_SETBUDDY, (WPARAM)GetDlgItem( hwnd, ide ), 0 );
+	SendMessage( GetDlgItem( hwnd, ids ), UDM_SETRANGE32, ecfg.GetMin( cv ), ecfg.GetMax( cv ) );
+	SendMessage( GetDlgItem( hwnd, ids ), UDM_SETPOS, 0, st );
+}
+
+
+///////////////////////////////////////////////////////////
+// スピンコントロール保存
+///////////////////////////////////////////////////////////
+static void SaveSpinControl( const HWND hwnd, const int id, const TCValue cv )
+{
+	char str[PATH_MAX+1];			// 文字列取得用
+	
+	GetDlgItemText( hwnd, id, str, sizeof(str) );
+	ecfg.SetValue( cv, (int)std::strtol( str, nullptr, 0 ) );
+}
+
+
+///////////////////////////////////////////////////////////
+// スピンコントロール コールバック
+///////////////////////////////////////////////////////////
+static void CallbackSpinControl( const HWND hwnd, const int ids, const int delta )
+{
+	int st, spmin, spmax;
+	char str[PATH_MAX+1];
+	HWND hedit = (HWND)SendMessage( GetDlgItem( hwnd, ids ), UDM_GETBUDDY, 0, 0 );
+	
+	SendMessage( GetDlgItem( hwnd, ids ), UDM_GETRANGE32, (WPARAM)&spmin, (LPARAM)&spmax );
+	GetWindowText( hedit, str, sizeof(str) );
+	st = min( max( std::strtol( str, nullptr, 0 ) + delta, spmin ), spmax );
+	SetWindowText( hedit, std::to_string( st ).c_str() );
 }
 
 
 ///////////////////////////////////////////////////////////
 // トラックバー設定
 ///////////////////////////////////////////////////////////
-void SetTrackbar( const HWND hwnd, const int id, const TCValue cv )
+static void SetTrackbar( const HWND hwnd, const int id, const TCValue cv )
 {
 	SendMessage( GetDlgItem( hwnd, id ), TBM_SETRANGE, true, MAKELPARAM( ecfg.GetMin( cv ), ecfg.GetMax( cv ) ) );
 	SendMessage( GetDlgItem( hwnd, id ), TBM_SETPOS, true, ecfg.GetValue( cv ) );
@@ -856,30 +878,89 @@ void SetTrackbar( const HWND hwnd, const int id, const TCValue cv )
 
 
 ///////////////////////////////////////////////////////////
-// ドロップダウンリスト設定
+// トラックバー保存
 ///////////////////////////////////////////////////////////
-void SetDropDownList( const HWND hwnd, const int id, const TCValue cv, std::vector<std::string>& item )
+static void SaveTrackbar( const HWND hwnd, const int id, const TCValue cv )
 {
-	for( std::string str : item ){
-		std::string s = str;
-		OSD_UTF8toSJIS( s );
-		SendMessage( GetDlgItem( hwnd, id ), CB_ADDSTRING , 0, (LPARAM)s.c_str() );
-	}
-	SendMessage( GetDlgItem( hwnd, id ), CB_SETCURSEL, ecfg.GetValue( cv ), 0 );
+	ecfg.SetValue( cv, (int)SendMessage( GetDlgItem( hwnd, id ), TBM_GETPOS, 0, 0 ) );
 }
+
+
+// リストボックス項目用
+static std::map<TCValue, std::map<int, std::string>> LBpairs = {
+	{ CV_Model,			{ { 60, "PC-6001" }, { 61, "PC-6001A" }, { 62, "PC-6001mk2" }, { 66, "PC-6601" }, { 64, "PC-6001mk2SR" }, { 68, "PC-6601SR" } } },
+	{ CV_Soldier,		{ { 0, "なし" }, { 2, "戦士のカートリッジmkⅡ" } } },
+	{ CV_Mode4Color,	{ { 0, "モノクロ" }, { 1, "赤/青" }, { 2, "青/赤" }, { 3, "桃/緑" }, { 4, "緑/桃" } } },
+	{ CV_AviBpp,		{ { 16, "16 bit" }, { 24, "24 bit" }, { 32, "32 bit" } } },
+	{ CV_SampleRate,	{ { 11025, "11025 Hz" }, { 22050, "22050 Hz" }, { 44100, "44100 Hz" } } }
+};
 
 
 ///////////////////////////////////////////////////////////
 // ドロップダウンリスト設定(インデックスに変換)
 ///////////////////////////////////////////////////////////
-void SetDropDownListIndex( const HWND hwnd, const int id, const TCValue cv, std::vector<std::string>& item )
+static void SetDropDownListIndex( const HWND hwnd, const int id, const TCValue cv )
 {
-	for( std::string str : item ){
-		std::string s = str;
-		OSD_UTF8toSJIS( s );
-		SendMessage( GetDlgItem( hwnd, id ), CB_ADDSTRING , 0, (LPARAM)s.c_str() );
+	try{
+		auto& item = LBpairs.at( cv );
+		
+		for( std::pair str : item ){
+			std::string s = str.second;
+			OSD_UTF8toSJIS( s );
+			SendMessage( GetDlgItem( hwnd, id ), CB_ADDSTRING , 0, (LPARAM)s.c_str() );
+		}
+		size_t idx = std::distance( item.begin(), item.find( ecfg.GetValue( cv ) ) );
+		if( idx == item.size() ){ idx = 0; }
+		SendMessage( GetDlgItem( hwnd, id ), CB_SETCURSEL, idx, 0 );
 	}
-	SendMessage( GetDlgItem( hwnd, id ), CB_SETCURSEL, FindIndex( std::to_string( ecfg.GetValue( cv ) ), item ), 0 );
+	catch( std::out_of_range& ){}
+}
+
+
+///////////////////////////////////////////////////////////
+// ドロップダウンリスト保存(インデックスに変換)
+///////////////////////////////////////////////////////////
+static void SaveDropDownListIndex( const HWND hwnd, const int id, const TCValue cv )
+{
+	int st = SendMessage( GetDlgItem( hwnd, id ), CB_GETCURSEL, 0 , 0 );
+	try{
+		if( st == LB_ERR ) throw std::out_of_range("");
+		
+		auto it = LBpairs.at( cv ).begin();
+		advance( it, st );	// it += st;
+		st = it->first;
+	}
+	catch( std::out_of_range& ){
+		st = ecfg.GetDefault( cv );
+	}
+	ecfg.SetValue( cv, st );
+}
+
+
+///////////////////////////////////////////////////////////
+// テキストボックスにパスを設定
+///////////////////////////////////////////////////////////
+static void SetTextBoxPath( const HWND hwnd, const int id, const TCPath path )
+{
+	P6VPATH tpath = ecfg.GetValue( path );
+	OSD_DelDelimiter( tpath );
+	std::string str = P6VPATH2STR( tpath );
+	OSD_UTF8toSJIS( str );
+	SetDlgItemText( hwnd, id, str.c_str() );
+}
+
+
+///////////////////////////////////////////////////////////
+// テキストボックスのパスを保存
+///////////////////////////////////////////////////////////
+static void SaveTextBoxPath( const HWND hwnd, const int id, const TCPath path )
+{
+	char str[PATH_MAX+1];			// 文字列取得用
+	
+	GetDlgItemText( hwnd, id, str, sizeof(str) );
+	std::string tstr = str;
+	OSD_SJIStoUTF8( tstr );
+	ecfg.SetValue( path, STR2P6VPATH( tstr ) );
 }
 
 
@@ -892,90 +973,79 @@ enum { PP_BASE, PP_DISP, PP_SOUND, PP_FILE, PP_FOLDER, PP_COL, PP_ETC, PP_INPUT 
 ///////////////////////////////////////////////////////////
 static bool OsdReadINI( HWND hwnd, int page )
 {
-	int st;								// 状態取得用
-	std::vector<std::string> LBitems;	// リストボックス項目用
-	
 	switch( page ){
 	case PP_BASE:	// 基本
 		// 機種
-		st = ecfg.GetValue( CV_Model );
-		SendMessage( GetDlgItem( hwnd, ID_RB01 ), BM_SETCHECK, (st==60)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB02 ), BM_SETCHECK, (st==61)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB03 ), BM_SETCHECK, (st==62)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB04 ), BM_SETCHECK, (st==66)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB05 ), BM_SETCHECK, (st==64)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB06 ), BM_SETCHECK, (st==68)? BST_CHECKED:BST_UNCHECKED, 0 );
+		SetDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
 		// FDD
-		st = ecfg.GetValue( CV_FDD );
-		SendMessage( GetDlgItem( hwnd, ID_RB31 ), BM_SETCHECK, (st==0)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB32 ), BM_SETCHECK, (st==1)? BST_CHECKED:BST_UNCHECKED, 0 );
-		SendMessage( GetDlgItem( hwnd, ID_RB33 ), BM_SETCHECK, (st==2)? BST_CHECKED:BST_UNCHECKED, 0 );
+		SetSpinControl( hwnd, ID_SPFDDRV, ID_FDDRV, CV_FDD );
 		
 		// 拡張RAM使用
-		SendMessage( GetDlgItem( hwnd, ID_CB1 ), BM_SETCHECK, ecfg.GetValue( CB_ExtRam ), 0 );
+		SetCheckBox( hwnd, ID_CB1, CB_ExtRam );
 		
 		// 戦士のカートリッジ使用
-		SendMessage( GetDlgItem( hwnd, ID_CB13 ), BM_SETCHECK, ecfg.GetValue( CV_Soldier ) ? true : false, 0 );
+		SetDropDownListIndex( hwnd, ID_LBSOLDIER, CV_Soldier );
 		
 		break;
 		
 	case PP_DISP:	// 画面
 		// MODE4カラー
-		LBitems = { "モノクロ", "赤/青", "青/赤", "桃/緑", "緑/桃" };
-		SetDropDownList( hwnd, ID_LBMODE4, CV_Mode4Color, LBitems );
+		SetDropDownListIndex( hwnd, ID_LBMODE4, CV_Mode4Color );
 		
 		// ウィンドウ表示倍率
 		SetSpinControl( hwnd, ID_SPZOOM, ID_ZOOM, CV_WindowZoom );
 		
 		// スキャンライン
-		SendMessage( GetDlgItem( hwnd, ID_CB2 ), BM_SETCHECK, ecfg.GetValue( CB_ScanLine ), 0 );
+		SetCheckBox( hwnd, ID_CB2, CB_ScanLine );
 		
 		// スキャンライン輝度
 		SetSpinControl( hwnd, ID_SPSCANLINEBR, ID_SCANLINEBR, CV_ScanLineBr );
 		
 		// フィルタリング
-		SendMessage( GetDlgItem( hwnd, ID_CB15 ), BM_SETCHECK, ecfg.GetValue( CB_Filtering ), 0 );
+		SetCheckBox( hwnd, ID_CB15, CB_Filtering );
 		
 		// 4:3表示
-		SendMessage( GetDlgItem( hwnd, ID_CB7 ), BM_SETCHECK, ecfg.GetValue( CB_DispNTSC ), 0 );
+		SetCheckBox( hwnd, ID_CB7, CB_DispNTSC );
 		
 		// フルスクリーン
-		SendMessage( GetDlgItem( hwnd, ID_CB10 ), BM_SETCHECK, ecfg.GetValue( CB_FullScreen ), 0 );
+		SetCheckBox( hwnd, ID_CB10, CB_FullScreen );
 		
 		// ステータスバー表示状態
-		SendMessage( GetDlgItem( hwnd, ID_CB11 ), BM_SETCHECK, ecfg.GetValue( CB_DispStatus ), 0 );
+		SetCheckBox( hwnd, ID_CB11, CB_DispStatus );
 		
 		// フレームスキップ / ビデオキャプチャ時フレームスキップ
-		LBitems.clear();
-		for( int i = MIN_FRAMESKIP; i <= MAX_FRAMESKIP; i++ ){
-			LBitems.emplace_back( Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i+1) ) );
+		if( LBpairs.find( CV_FrameSkip ) == LBpairs.end() ){
+			std::map<int, std::string> item;
+			for( int i = ecfg.GetMin( CV_FrameSkip ); i <= ecfg.GetMax( CV_FrameSkip ); i++ ){
+				item.emplace( i, Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i+1) ) );
+			}
+			LBpairs.emplace( CV_FrameSkip,    item );
+			LBpairs.emplace( CV_AviFrameSkip, item );
 		}
-		SetDropDownList( hwnd, ID_LBFSKIP,    CV_FrameSkip,    LBitems );
-		SetDropDownList( hwnd, ID_LBAVIFSKIP, CV_AviFrameSkip, LBitems );
+		SetDropDownListIndex( hwnd, ID_LBFSKIP,    CV_FrameSkip );
+		SetDropDownListIndex( hwnd, ID_LBAVIFSKIP, CV_AviFrameSkip );
 		
 		// ビデオキャプチャ色深度
-		LBitems = { "16", "24", "32" };
-		SetDropDownListIndex( hwnd, ID_LBAVIBPP, CV_AviBpp, LBitems );
+		SetDropDownListIndex( hwnd, ID_LBAVIBPP, CV_AviBpp );
 		
 		// ビデオキャプチャ時ウィンドウ表示倍率
 		SetSpinControl( hwnd, ID_SPAVIZOOM, ID_AVIZOOM, CV_AviZoom );
 		
 		// ビデオキャプチャ時スキャンライン
-		SendMessage( GetDlgItem( hwnd, ID_CBAVISLINE ), BM_SETCHECK, ecfg.GetValue( CB_AviScanLine ), 0 );
+		SetCheckBox( hwnd, ID_CBAVISLINE, CB_AviScanLine );
 		
 		break;
 		
 	case PP_SOUND:	// サウンド
 		// サンプリングレート
-		LBitems = { "44100", "22050", "11025" };
-		SetDropDownListIndex( hwnd, ID_LBSAMPLE, CV_SampleRate, LBitems );
+		SetDropDownListIndex( hwnd, ID_LBSAMPLE, CV_SampleRate );
 		
 		// バッファサイズ
 		SetTrackbar( hwnd, ID_TBBUF, CV_SoundBuffer );
 		
 		// PSG LPFカットオフ周波数
-		SetDlgItemText( hwnd, ID_EDIT1, std::to_string( ecfg.GetValue( CV_PsgLPF ) ).c_str() );
+		SetSpinControl( hwnd, ID_SPPSGLPF, ID_PSGLPF, CV_PsgLPF );
 		
 		// マスター音量
 		SetTrackbar( hwnd, ID_TBMST, CV_MasterVol );
@@ -993,7 +1063,7 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 	case PP_INPUT:	// 入力関係
 		// キーリピート間隔
-		SetDlgItemText( hwnd, ID_KEYREP, std::to_string( ecfg.GetValue( CV_KeyRepeat ) ).c_str() );
+		SetSpinControl( hwnd, ID_SPKEYREP, ID_KEYREP, CV_KeyRepeat );
 		
 		break;
 		
@@ -1048,41 +1118,33 @@ static bool OsdReadINI( HWND hwnd, int page )
 	case PP_ETC:	// その他
 		// オーバークロック率
 		SetSpinControl( hwnd, ID_SPOVERCLK, ID_OVERCLK, CV_OverClock );
-//		st = min( max( MIN_OVERCLOCK, ecfg.GetValue( CV_OverClock ) ), MAX_OVERCLOCK );
-//		SetDlgItemText( hwnd, ID_OVERCLK, std::to_string( st ).c_str() );
 		
 		// CRCチェック
-		SendMessage( GetDlgItem( hwnd, ID_CB4 ), BM_SETCHECK, ecfg.GetValue( CB_CheckCRC ), 0 );
+		SetCheckBox( hwnd, ID_CB4, CB_CheckCRC );
 		
 		// Turbo TAPE
-		SendMessage( GetDlgItem( hwnd, ID_CB3 ), BM_SETCHECK, ecfg.GetValue( CB_TurboTAPE ), 0 );
+		SetCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
 		
 		// Boost Up
-		SendMessage( GetDlgItem( hwnd, ID_CB5 ), BM_SETCHECK, ecfg.GetValue( CB_BoostUp ), 0 );
+		SetCheckBox( hwnd, ID_CB5, CB_BoostUp );
 		
 		// BoostUp 最大倍率(N60モード)
 		SetSpinControl( hwnd, ID_SPBOOST60, ID_BOOST60, CV_MaxBoost60 );
-//		st = min( max( MIN_BOOST, ecfg.GetValue( CV_MaxBoost60 ) ), MAX_BOOST );
-//		SetDlgItemText( hwnd, ID_BOOST60, std::to_string( st ).c_str() );
 		
 		// BoostUp 最大倍率(N60m/N66モード)
 		SetSpinControl( hwnd, ID_SPBOOST62, ID_BOOST62, CV_MaxBoost62 );
-//		st = min( max( MIN_BOOST, ecfg.GetValue( CV_MaxBoost62 ) ), MAX_BOOST );
-//		SetDlgItemText( hwnd, ID_BOOST62, std::to_string( st ).c_str() );
 		
 		// TAPEストップビット数
 		SetSpinControl( hwnd, ID_SPSTOPBIT, ID_STOPBIT, CV_StopBit );
-//		st = min( max( MIN_STOPBIT, ecfg.GetValue( CV_StopBit ) ), MAX_STOPBIT );
-//		SetDlgItemText( hwnd, ID_STOPBIT, std::to_string( st ).c_str() );
 		
 		// FDDウェイト
-		SendMessage( GetDlgItem( hwnd, ID_CB14 ), BM_SETCHECK, ecfg.GetValue( CB_FDDWait ), 0 );
+		SetCheckBox( hwnd, ID_CB14, CB_FDDWait );
 		
 		// 終了時 確認する
-		SendMessage( GetDlgItem( hwnd, ID_CB8 ), BM_SETCHECK, ecfg.GetValue( CB_CkQuit ), 0 );
+		SetCheckBox( hwnd, ID_CB8, CB_CkQuit );
 		
 		// 終了時 INIファイルを保存する
-		SendMessage( GetDlgItem( hwnd, ID_CB12 ), BM_SETCHECK, ecfg.GetValue( CB_SaveQuit ), 0 );
+		SetCheckBox( hwnd, ID_CB12, CB_SaveQuit );
 		
 		break;
 	}
@@ -1096,178 +1158,136 @@ static bool OsdReadINI( HWND hwnd, int page )
 ///////////////////////////////////////////////////////////
 static bool OsdWriteINI( HWND hwnd, int page )
 {
-	int st;							// 状態取得用
-	char str[PATH_MAX+1];			// 文字列取得用
-	
 	switch( page ){
 	case PP_BASE:	// 基本
 		// 機種
-		if     ( IsDlgButtonChecked( hwnd, ID_RB02 ) ) st = 61;	// PC-6001A
-		else if( IsDlgButtonChecked( hwnd, ID_RB03 ) ) st = 62;	// PC-6001mk2
-		else if( IsDlgButtonChecked( hwnd, ID_RB04 ) ) st = 66;	// PC-6601
-		else if( IsDlgButtonChecked( hwnd, ID_RB05 ) ) st = 64;	// PC-6001mk2SR
-		else if( IsDlgButtonChecked( hwnd, ID_RB06 ) ) st = 68;	// PC-6601SR
-		else                                           st = 60;	// 上記以外ならPC-6001
-		ecfg.SetValue( CV_Model, st );
+		SaveDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
 		// FDD
-		if     ( IsDlgButtonChecked( hwnd, ID_RB32 ) ) st = 1;		// 2台
-		else if( IsDlgButtonChecked( hwnd, ID_RB33 ) ) st = 2;		// 1台
-		else                                           st = 0;		// 上記以外ならなし
-		ecfg.SetValue( CV_FDD, st );
+		SaveSpinControl( hwnd, ID_FDDRV, CV_FDD );
 		
 		// 拡張RAM使用
-		ecfg.SetValue( CB_ExtRam, IsDlgButtonChecked( hwnd, ID_CB1 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB1, CB_ExtRam );
 		
 		// 戦士のカートリッジ使用
-		ecfg.SetValue( CV_Soldier, IsDlgButtonChecked( hwnd, ID_CB13 ) ? 2 : 0 );	// とりあえずmkⅡ決め打ちで
+		SaveDropDownListIndex( hwnd, ID_LBSOLDIER, CV_Soldier );
 		
 		break;
 		
 	case PP_DISP:	// 画面
 		// MODE4カラー
-		st = SendMessage( GetDlgItem( hwnd, ID_LBMODE4 ), CB_GETCURSEL, 0 , 0 );
-		if( st == LB_ERR ){ st = DEFAULT_MODE4COLOR; }
-		ecfg.SetValue( CV_Mode4Color, st );
+		SaveDropDownListIndex( hwnd, ID_LBMODE4, CV_Mode4Color );
 		
 		// ウィンドウ表示倍率
-		GetDlgItemText( hwnd, ID_ZOOM, str, sizeof(str) );
-		ecfg.SetValue( CV_WindowZoom, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_ZOOM, CV_WindowZoom );
 		
 		// スキャンライン
-		ecfg.SetValue( CB_ScanLine, IsDlgButtonChecked( hwnd, ID_CB2 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB2, CB_ScanLine );
 		
 		// スキャンライン輝度
-		GetDlgItemText( hwnd, ID_SCANLINEBR, str, sizeof(str) );
-		ecfg.SetValue( CV_ScanLineBr, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_SCANLINEBR, CV_ScanLineBr );
 		
 		// フィルタリング
-		ecfg.SetValue( CB_Filtering, IsDlgButtonChecked( hwnd, ID_CB15 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB15, CB_Filtering );
 		
 		// 4:3表示
-		ecfg.SetValue( CB_DispNTSC, IsDlgButtonChecked( hwnd, ID_CB7 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB7, CB_DispNTSC );
 		
 		// フルスクリーン
-		ecfg.SetValue( CB_FullScreen, IsDlgButtonChecked( hwnd, ID_CB10 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB10, CB_FullScreen );
 		
 		// ステータスバー表示状態
-		ecfg.SetValue( CB_DispStatus, IsDlgButtonChecked( hwnd, ID_CB11 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB11, CB_DispStatus );
 		
 		// フレームスキップ
-		st = SendMessage( GetDlgItem( hwnd, ID_LBFSKIP ), CB_GETCURSEL, 0 , 0 );
-		if( st == LB_ERR ){ st = DEFAULT_FRAMESKIP; }
-		ecfg.SetValue( CV_FrameSkip, st );
+		SaveDropDownListIndex( hwnd, ID_LBFSKIP, CV_FrameSkip );
 		
 		// ビデオキャプチャ色深度
-		st = SendMessage( GetDlgItem( hwnd, ID_LBAVIBPP ), CB_GETCURSEL, 0 , 0 );
-		if( st == LB_ERR ){
-			st = DEFAULT_AVIBPP;
-		}else{
-			SendMessage( GetDlgItem( hwnd, ID_LBAVIBPP ), CB_GETLBTEXT, SendMessage( GetDlgItem( hwnd, ID_LBAVIBPP ), CB_GETCURSEL, 0, 0), (LPARAM)str );
-			st = std::strtol( str, nullptr, 0 );
-		}
-		ecfg.SetValue( CV_AviBpp, st );
+		SaveDropDownListIndex( hwnd, ID_LBAVIBPP, CV_AviBpp );
 		
 		// ビデオキャプチャ時ウィンドウ表示倍率
-		GetDlgItemText( hwnd, ID_AVIZOOM, str, sizeof(str) );
-		ecfg.SetValue( CV_AviZoom, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_AVIZOOM, CV_AviZoom );
 		
 		// ビデオキャプチャ時フレームスキップ
-		st = SendMessage( GetDlgItem( hwnd, ID_LBAVIFSKIP ), CB_GETCURSEL, 0 , 0 );
-		if( st == LB_ERR ){ st = DEFAULT_AVIFRMSKIP; }
-		ecfg.SetValue( CV_AviFrameSkip, st );
+		SaveDropDownListIndex( hwnd, ID_LBAVIFSKIP, CV_AviFrameSkip );
 		
 		// ビデオキャプチャ時スキャンライン
-		ecfg.SetValue( CB_AviScanLine, IsDlgButtonChecked( hwnd, ID_CBAVISLINE ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CBAVISLINE, CB_AviScanLine );
 		
 		break;
 		
 	case PP_SOUND:	// サウンド
 		// サンプリングレート
-		st = SendMessage( GetDlgItem( hwnd, ID_LBSAMPLE ), CB_GETCURSEL, 0 , 0 );
-		if( st == LB_ERR ){
-			st = DEFAULT_SAMPLERATE;
-		}else{
-			SendMessage( GetDlgItem( hwnd, ID_LBSAMPLE ), CB_GETLBTEXT, SendMessage( GetDlgItem( hwnd, ID_LBSAMPLE ), CB_GETCURSEL, 0, 0), (LPARAM)str );
-			st = std::strtol( str, nullptr, 0 );
-		}
-		ecfg.SetValue( CV_SampleRate, st );
+		SaveDropDownListIndex( hwnd, ID_LBSAMPLE, CV_SampleRate );
 		
 		// バッファサイズ
-		st = SendMessage( GetDlgItem( hwnd, ID_TBBUF ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CV_SoundBuffer, st );
+		SaveTrackbar( hwnd, ID_TBBUF, CV_SoundBuffer );
 		
 		// PSG LPFカットオフ周波数
-		GetDlgItemText( hwnd, ID_EDIT1, str, sizeof(str) );
-		ecfg.SetValue( CV_PsgLPF, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_PSGLPF, CV_PsgLPF );
 		
 		// マスター音量
-		st = SendMessage( GetDlgItem( hwnd, ID_TBMST ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CV_MasterVol, st );
+		SaveTrackbar( hwnd, ID_TBMST, CV_MasterVol );
 		
 		// PSG音量
-		st = SendMessage( GetDlgItem( hwnd, ID_TBPSG ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CV_PsgVolume, st );
+		SaveTrackbar( hwnd, ID_TBPSG, CV_PsgVolume );
 		
 		// 音声合成音量
-		st = SendMessage( GetDlgItem( hwnd, ID_TBVCE ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CV_VoiceVolume, st );
+		SaveTrackbar( hwnd, ID_TBVCE, CV_VoiceVolume );
 		
 		// TAPEモニタ音量
-		st = SendMessage( GetDlgItem( hwnd, ID_TBTAPE ), TBM_GETPOS, 0, 0 );
-		ecfg.SetValue( CV_TapeVolume, st );
+		SaveTrackbar( hwnd, ID_TBTAPE, CV_TapeVolume );
 		
 		break;
 		
 	case PP_INPUT:	// 入力関係
 		// キーリピート間隔
-		GetDlgItemText( hwnd, ID_KEYREP, str, sizeof(str) );
-		ecfg.SetValue( CV_KeyRepeat, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_KEYREP, CV_KeyRepeat );
 		
 		break;
 		
 	case PP_FOLDER:	// フォルダ
 		// ROMパス
-		ecfg.SetValue( CF_RomPath, GetTextBoxPath( hwnd, ID_PATH1 ) );
+		SaveTextBoxPath( hwnd, ID_PATH1, CF_RomPath );
 		
 		// TAPEパス
-		ecfg.SetValue( CF_TapePath, GetTextBoxPath( hwnd, ID_PATH2 ) );
+		SaveTextBoxPath( hwnd, ID_PATH2, CF_TapePath );
 		
 		// DISKパス
-		ecfg.SetValue( CF_DiskPath, GetTextBoxPath( hwnd, ID_PATH3 ) );
+		SaveTextBoxPath( hwnd, ID_PATH3, CF_DiskPath );
 		
 		// 拡張ROMパス
-		ecfg.SetValue( CF_ExtRomPath, GetTextBoxPath( hwnd, ID_PATH4 ) );
+		SaveTextBoxPath( hwnd, ID_PATH4, CF_ExtRomPath );
 		
 		// IMGパス
-		ecfg.SetValue( CF_ImgPath, GetTextBoxPath( hwnd, ID_PATH5 ) );
+		SaveTextBoxPath( hwnd, ID_PATH5, CF_ImgPath );
 		
 		// WAVEパス
-		ecfg.SetValue( CF_WavePath, GetTextBoxPath( hwnd, ID_PATH6 ) );
+		SaveTextBoxPath( hwnd, ID_PATH6, CF_WavePath );
 		
 		// どこでもSAVEパス
-		ecfg.SetValue( CF_DokoPath, GetTextBoxPath( hwnd, ID_PATH7 ) );
+		SaveTextBoxPath( hwnd, ID_PATH7, CF_DokoPath );
 		
 		break;
 		
 	case PP_FILE:	// ファイル
 		// 拡張ROMファイル
-		ecfg.SetValue( CF_ExtRom, GetTextBoxPath( hwnd, ID_FEXROM ) );
+		SaveTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
 		
 		// TAPE(LOAD)ファイル名
-		ecfg.SetValue( CF_tape, GetTextBoxPath( hwnd, ID_FTPLD ) );
+		SaveTextBoxPath( hwnd, ID_FTPLD, CF_tape );
 		
 		// TAPE(SAVE)ファイル名
-		ecfg.SetValue( CF_save, GetTextBoxPath( hwnd, ID_FTPSV ) );
+		SaveTextBoxPath( hwnd, ID_FTPSV, CF_save );
 		
 		// DISK1ファイル名
-		ecfg.SetValue( CF_disk1, GetTextBoxPath( hwnd, ID_FDISK1 ) );
+		SaveTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
 		
 		// DISK2ファイル名
-		ecfg.SetValue( CF_disk2, GetTextBoxPath( hwnd, ID_FDISK2 ) );
+		SaveTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
 		
 		// プリンタファイル名
-		ecfg.SetValue( CF_printer, GetTextBoxPath( hwnd, ID_FPRINT ) );
+		SaveTextBoxPath( hwnd, ID_FPRINT, CF_printer );
 		
 		break;
 		
@@ -1276,38 +1296,34 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 	case PP_ETC:	// その他
 		// オーバークロック率
-		GetDlgItemText( hwnd, ID_OVERCLK, str, sizeof(str) );
-		ecfg.SetValue( CV_OverClock, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_OVERCLK, CV_OverClock );
 		
 		// CRCチェック
-		ecfg.SetValue( CB_CheckCRC, IsDlgButtonChecked( hwnd, ID_CB4 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB4, CB_CheckCRC );
 		
 		// Turbo TAPE
-		ecfg.SetValue( CB_TurboTAPE, IsDlgButtonChecked( hwnd, ID_CB3 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
 		
 		// Boost Up
-		ecfg.SetValue( CB_BoostUp, IsDlgButtonChecked( hwnd, ID_CB5 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB5, CB_BoostUp );
 		
 		// BoostUp 最大倍率(N60モード)
-		GetDlgItemText( hwnd, ID_BOOST60, str, sizeof(str) );
-		ecfg.SetValue( CV_MaxBoost60, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_BOOST60, CV_MaxBoost60 );
 		
 		// BoostUp 最大倍率(N60m/N66モード)
-		GetDlgItemText( hwnd, ID_BOOST62, str, sizeof(str) );
-		ecfg.SetValue( CV_MaxBoost62, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_BOOST62, CV_MaxBoost62 );
 		
 		// TAPEストップビット数
-		GetDlgItemText( hwnd, ID_STOPBIT, str, sizeof(str) );
-		ecfg.SetValue( CV_StopBit, (int)std::strtol( str, nullptr, 0 ) );
+		SaveSpinControl( hwnd, ID_STOPBIT, CV_StopBit );
 		
 		// FDDウェイト
-		ecfg.SetValue( CB_FDDWait, IsDlgButtonChecked( hwnd, ID_CB14 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB14, CB_FDDWait );
 		
 		// 終了時 確認する
-		ecfg.SetValue( CB_CkQuit, IsDlgButtonChecked( hwnd, ID_CB8 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB8, CB_CkQuit );
 		
 		// 終了時 INIファイルを保存する
-		ecfg.SetValue( CB_SaveQuit, IsDlgButtonChecked( hwnd, ID_CB12 ) == BST_CHECKED ? true : false );
+		SaveCheckBox( hwnd, ID_CB12, CB_SaveQuit );
 		
 		break;
 	}
@@ -1338,6 +1354,11 @@ static INT_PTR CALLBACK OsdCnfgProc1( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 			if( !OsdWriteINI( hwnd, PP_BASE ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 			return true;
 		}
+		
+		// スピンコントロール
+		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
+			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
+		}
 	}
 	return false;
 }
@@ -1364,17 +1385,7 @@ static INT_PTR CALLBACK OsdCnfgProc2( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 		
 		// スピンコントロール
 		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
-			int st, spmin, spmax;
-			
-			SendMessage( GetDlgItem( hwnd, wp ), UDM_GETRANGE32, (WPARAM)&spmin, (LPARAM)&spmax );
-			st = ((LPNMUPDOWN)lp)->iPos + ((LPNMUPDOWN)lp)->iDelta;
-			if( st <= spmax && st >= spmin ){
-				switch( wp ){
-				case ID_SPZOOM:			SetDlgItemText( hwnd, ID_ZOOM,       std::to_string( st ).c_str() );	break;
-				case ID_SPSCANLINEBR:	SetDlgItemText( hwnd, ID_SCANLINEBR, std::to_string( st ).c_str() );	break;
-				case ID_SPAVIZOOM:		SetDlgItemText( hwnd, ID_AVIZOOM,    std::to_string( st ).c_str() );	break;
-				}
-			}
+			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
 		}
 	}
 	return false;
@@ -1396,6 +1407,11 @@ static INT_PTR CALLBACK OsdCnfgProc3( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 			if( !OsdWriteINI( hwnd, PP_SOUND ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 			return true;
 		}
+		
+		// スピンコントロール
+		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
+			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
+		}
 	}
 	return false;
 }
@@ -1415,6 +1431,11 @@ static INT_PTR CALLBACK OsdCnfgProc4( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 			// 設定を保存する
 			if( !OsdWriteINI( hwnd, PP_INPUT ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 			return true;
+		}
+		
+		// スピンコントロール
+		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
+			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
 		}
 	}
 	return false;
@@ -1627,18 +1648,7 @@ static INT_PTR CALLBACK OsdCnfgProcEtc( HWND hwnd, UINT msg, WPARAM wp, LPARAM l
 		
 		// スピンコントロール
 		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
-			int st, spmin, spmax;
-			
-			SendMessage( GetDlgItem( hwnd, wp ), UDM_GETRANGE32, (WPARAM)&spmin, (LPARAM)&spmax );
-			st = ((LPNMUPDOWN)lp)->iPos + ((LPNMUPDOWN)lp)->iDelta;
-			if( st <= spmax && st >= spmin ){
-				switch( wp ){
-				case ID_SPOVERCLK:	SetDlgItemText( hwnd, ID_OVERCLK, std::to_string( st ).c_str() );	break;
-				case ID_SPBOOST60:	SetDlgItemText( hwnd, ID_BOOST60, std::to_string( st ).c_str() );	break;
-				case ID_SPBOOST62:	SetDlgItemText( hwnd, ID_BOOST62, std::to_string( st ).c_str() );	break;
-				case ID_SPSTOPBIT:	SetDlgItemText( hwnd, ID_STOPBIT, std::to_string( st ).c_str() );	break;
-				}
-			}
+			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
 		}
 	}
 	return false;
