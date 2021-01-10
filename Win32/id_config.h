@@ -3,16 +3,6 @@
 #define ID_G8			2003
 #define ID_G13			2004
 
-#define ID_RB01			2101
-#define ID_RB02			2102
-#define ID_RB03			2103
-#define ID_RB04			2104
-#define ID_RB05			2105
-#define ID_RB06			2106
-#define ID_RB31			2107
-#define ID_RB32			2108
-#define ID_RB33			2109
-
 #define ID_CB1			2201
 #define ID_CB2			2202
 #define ID_CB3			2203
@@ -58,7 +48,7 @@
 #define ID_B16E			2446
 
 #define ID_SCANLINEBR	2501
-#define ID_EDIT1		2502
+#define ID_PSGLPF		2502
 #define ID_PATH1		2503
 #define ID_PATH2		2504
 #define ID_PATH3		2505
@@ -71,6 +61,7 @@
 #define ID_STOPBIT		2512
 #define ID_ZOOM			2513
 #define ID_AVIZOOM		2514
+#define ID_FDDRV		2515
 
 #define ID_FEXROM		2601
 #define ID_FTPLD		2602
@@ -148,11 +139,12 @@
 #define ID_COL80		2780
 
 #define ID_LBMODEL		2801
-#define ID_LBMODE4		2802
-#define ID_LBFSKIP		2803
-#define ID_LBAVIBPP		2804
-#define ID_LBAVIFSKIP	2805
-#define ID_LBSAMPLE		2806
+#define ID_LBSOLDIER	2802
+#define ID_LBMODE4		2803
+#define ID_LBFSKIP		2804
+#define ID_LBAVIBPP		2805
+#define ID_LBAVIFSKIP	2806
+#define ID_LBSAMPLE		2807
 
 #define ID_SPZOOM		2901
 #define ID_SPSCANLINEBR	2902
@@ -161,6 +153,9 @@
 #define ID_SPBOOST60	2905
 #define ID_SPBOOST62	2906
 #define ID_SPSTOPBIT	2907
+#define ID_SPPSGLPF		2908
+#define ID_SPKEYREP		2909
+#define ID_SPFDDRV		2910
 
 #define ID_CNFG1		3001
 #define ID_CNFG2		3002

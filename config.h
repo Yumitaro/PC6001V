@@ -142,6 +142,7 @@ public:
 	template <typename T1,typename T2> void SetValue( const T1&, const T2& );			// 値設定(数値,bool,path)
 	int GetMax( TCValue ) const;							// 最大値取得
 	int GetMin( TCValue ) const;							// 最小値取得
+	int GetDefault( TCValue ) const;						// 初期値取得
 	
 	// [KEY] -------------------------------------------------------
 	P6KEYsym GetVKey( PCKEYsym );							// キー定義取得
