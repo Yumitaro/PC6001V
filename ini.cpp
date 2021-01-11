@@ -3,9 +3,7 @@
 #include <cstdio>
 #include <fstream>
 
-#include "common.h"
 #include "ini.h"
-#include "osd.h"
 
 
 #define MAX_LINE	1024
@@ -375,29 +373,6 @@ bool cIni::SetEntry( const std::string& section, const std::string& entry, const
 ////////////////////////////////////////////////////////////////
 // エントリ読込み
 ////////////////////////////////////////////////////////////////
-// Value
-template <typename T> bool cIni::GetVal( const std::string& section, const std::string& entry, T& val )
-{
-	try{
-		std::string str;
-		
-		if( GetEntry( section, entry, str ) ){	// エントリを探す
-			val = std::stoul( str, nullptr, 0 );
-			return true;
-		}
-	}
-	catch( std::logic_error& ){}
-	
-	return false;
-}
-
-// おまじない
-template bool cIni::GetVal<int>        ( const std::string&, const std::string&, int&         );
-template bool cIni::GetVal<signed char>( const std::string&, const std::string&, signed char& );
-template bool cIni::GetVal<BYTE>       ( const std::string&, const std::string&, BYTE&        );
-template bool cIni::GetVal<WORD>       ( const std::string&, const std::string&, WORD&        );
-template bool cIni::GetVal<DWORD>      ( const std::string&, const std::string&, DWORD&       );
-
 // YesNo(テンプレート特殊化)
 template <> bool cIni::GetVal<bool>( const std::string& section, const std::string& entry, bool& yn )
 {
@@ -436,18 +411,6 @@ template <> bool cIni::GetVal<P6VPATH>( const std::string& section, const std::s
 ////////////////////////////////////////////////////////////////
 // エントリ書込み
 ////////////////////////////////////////////////////////////////
-// Value
-template <typename T> bool cIni::SetVal( const std::string& section, const std::string& entry, const std::string& comment, const T& val )
-{
-	return SetEntry( section, entry, comment, "%d", val );
-}
-// おまじない
-template bool cIni::SetVal<int>        ( const std::string&, const std::string&, const std::string&, const int& );
-template bool cIni::SetVal<signed char>( const std::string&, const std::string&, const std::string&, const signed char& );
-template bool cIni::SetVal<BYTE>       ( const std::string&, const std::string&, const std::string&, const BYTE& );
-template bool cIni::SetVal<WORD>       ( const std::string&, const std::string&, const std::string&, const WORD& );
-template bool cIni::SetVal<DWORD>      ( const std::string&, const std::string&, const std::string&, const DWORD& );
-
 // YesNo(テンプレート特殊化)
 template <> bool cIni::SetVal<bool>( const std::string& section, const std::string& entry, const std::string& comment, const bool& yn )
 {

@@ -14,11 +14,12 @@
 ////////////////////////////////////////////////////////////////
 // クラス定義
 ////////////////////////////////////////////////////////////////
+#ifdef USEFMGEN
+class cAY8910 : public cPSG, public PSG {
+protected:
+#else
 class cAY8910 : public cPSG {
 protected:
-	#ifdef USEFMGEN
-	PSG	psg;
-	#else
 	BYTE Regs[16];
 	int UpdateStep;
 	int PeriodA, PeriodB, PeriodC, PeriodN, PeriodE;
@@ -30,7 +31,7 @@ protected:
 	BYTE Hold,Alternate,Attack,Holding;
 	int RNG;
 	int VolTable[32];
-	#endif
+#endif
 	
 	void _WriteReg( BYTE, BYTE );			// レジスタ書込みサブ
 	void WriteReg( BYTE, BYTE ) override;	// レジスタ書込み
