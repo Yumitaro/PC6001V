@@ -5,6 +5,8 @@
 #include <list>
 
 #include "typedef.h"
+#include "common.h"
+#include "osd.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -45,9 +47,26 @@ public:
 	bool GetEntry( const std::string&, const std::string&, std::string& );									// エントリ読込み(文字列)
 	bool SetEntry( const std::string&, const std::string&, const std::string&, const std::string&, ... );	// エントリ書込み(文字列)
 	
-	template <typename T> bool GetVal( const std::string&, const std::string&, T& );						// エントリ読込み
-	template <typename T> bool SetVal( const std::string&, const std::string&, const std::string&, const T& );	// エントリ書込み
-																											// エントリ書込み(書式付き)
+	// エントリ読込み
+	template <typename T> bool GetVal( const std::string& section, const std::string& entry, T& val )
+	{
+		try{
+			std::string str;
+			if( GetEntry( section, entry, str ) ){	// エントリを探す
+				val = std::stoul( str, nullptr, 0 );
+				return true;
+			}
+		}
+		catch( std::logic_error& ){}
+		return false;
+	}
+	
+	// エントリ書込み
+	template <typename T> bool SetVal( const std::string& section, const std::string& entry, const std::string& comment, const T& val ){
+		return SetEntry( section, entry, comment, "%d", val );
+	}
+	
+	// エントリ書込み(書式付き)
 	template <typename T, typename ... A> bool SetVal( const std::string& section, const std::string& entry, const std::string& comment, const std::string& format, const T& val, A const & ... args )
 	{
 		return SetEntry( section, entry, comment, format, val, args ... );
@@ -57,6 +76,13 @@ public:
 	bool DeleteAfter( const std::string&, const std::string& );												// エントリ削除(後)
 	const P6VPATH& GetFilePath() const;																		// ファイルパス取得
 };
+
+// テンプレート特殊化
+template <> bool cIni::GetVal<bool>   ( const std::string&, const std::string&, bool&    );
+template <> bool cIni::GetVal<P6VPATH>( const std::string&, const std::string&, P6VPATH& );
+template <> bool cIni::SetVal<bool>   ( const std::string&, const std::string&, const std::string&, const bool&    );
+template <> bool cIni::SetVal<P6VPATH>( const std::string&, const std::string&, const std::string&, const P6VPATH& );
+
 
 
 

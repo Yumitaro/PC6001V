@@ -63,7 +63,7 @@ void cAY8910::SetClock( int clock, int rate )
 	PRINTD( PSG_LOG, "[PSG][SetClock] clock:%d SampleRate:%d\n", clock, rate );
 	
 #ifdef USEFMGEN
-	psg.SetClock( clock/2, rate );
+	PSG::SetClock( clock/2, rate );
 #else
 	// the step clock for the tone and noise generators is the chip clock
 	// divided by 8; for the envelope generator of the AY-3-8910, it is half
@@ -87,8 +87,8 @@ void cAY8910::SetVolumeTable( int vol )
 	
 #ifdef USEFMGEN
 	// とりあえず
-	psg.SetVolume( 0 );
-//	psg.SetVolume( vol );
+	PSG::SetVolume( 0 );
+//	PSG::SetVolume( vol );
 #else
 	double out = (MAX_OUTPUT * min( max( vol, 0 ), 100 ) ) / 100;
 	
@@ -124,7 +124,7 @@ void cAY8910::Reset( void )
 	RegisterLatch = 0;
 	LastEnable    = 0xff;
 #ifdef USEFMGEN
-	psg.Reset();
+	PSG::Reset();
 #else
 	RNG = 1;
 	OutputA = 0;
@@ -143,17 +143,17 @@ void cAY8910::Reset( void )
 void cAY8910::_WriteReg( BYTE r, BYTE v )
 {
 #ifdef USEFMGEN
-	psg.SetReg( r, v );
+	PSG::SetReg( r, v );
 	
 	switch( r ){
 	case AY_ENABLE:
 		if( (LastEnable == 0xff) || ((LastEnable & 0x40) != (v & 0x40)) ){
 			// write out 0xff if port set to input
-			PortAwrite( (v & 0x40) ? psg.GetReg(AY_PORTA) : 0xff );
+			PortAwrite( (v & 0x40) ? PSG::GetReg(AY_PORTA) : 0xff );
 		}
 		if( (LastEnable == 0xff) || ((LastEnable & 0x80) != (v & 0x80)) ){
 			// write out 0xff if port set to input
-			PortBwrite( (v & 0x80) ? psg.GetReg(AY_PORTB) : 0xff );
+			PortBwrite( (v & 0x80) ? PSG::GetReg(AY_PORTB) : 0xff );
 		}
 		LastEnable = v;
 		break;
@@ -161,14 +161,14 @@ void cAY8910::_WriteReg( BYTE r, BYTE v )
 	case AY_PORTA:
 		// 暫定措置
 		// 実機ではポートがinput設定でも書込みできるようだ??
-		if( psg.GetReg(AY_ENABLE) & 0x40 )
+		if( PSG::GetReg(AY_ENABLE) & 0x40 )
 			PortAwrite( v );
 		break;
 		
 	case AY_PORTB:
 		// 暫定措置
 		// 実機ではポートがinput設定でも書込みできるようだ??
-		if( psg.GetReg(AY_ENABLE) & 0x80 )
+		if( PSG::GetReg(AY_ENABLE) & 0x80 )
 			PortBwrite( v );
 		break;
 	}
@@ -290,7 +290,7 @@ void cAY8910::WriteReg( BYTE addr, BYTE v )
 		
 		if( RegisterLatch > 15 ) return;
 #ifdef USEFMGEN
-		if( RegisterLatch == AY_ESHAPE || psg.GetReg( RegisterLatch ) != v ){
+		if( RegisterLatch == AY_ESHAPE || PSG::GetReg( RegisterLatch ) != v ){
 #else
 		if( RegisterLatch == AY_ESHAPE || Regs[RegisterLatch]         != v ){
 #endif
@@ -321,17 +321,17 @@ BYTE cAY8910::ReadReg( void )
 #ifdef USEFMGEN
 	switch( RegisterLatch ){
 	case AY_PORTA:
-//		if( !(psg.GetReg(AY_ENABLE) & 0x40) )
-			psg.SetReg( AY_PORTA, PortAread() );
+//		if( !(PSG::GetReg(AY_ENABLE) & 0x40) )
+			PSG::SetReg( AY_PORTA, PortAread() );
 		break;
 		
 	case AY_PORTB:
-//		if( !(psg.GetReg(AY_ENABLE) & 0x80) )
-			psg.SetReg( AY_PORTB, PortBread() );
+//		if( !(PSG::GetReg(AY_ENABLE) & 0x80) )
+			PSG::SetReg( AY_PORTB, PortBread() );
 		break;
 	}
-	PRINTD( PSG_LOG, "%02X\n", psg.GetReg( RegisterLatch ) );
-	return psg.GetReg( RegisterLatch );
+	PRINTD( PSG_LOG, "%02X\n", PSG::GetReg( RegisterLatch ) );
+	return PSG::GetReg( RegisterLatch );
 #else
 	switch( RegisterLatch ){
 	case AY_PORTA:
@@ -363,7 +363,7 @@ int cAY8910::Update1Sample( void )
 #ifdef USEFMGEN
 	PSG::Sample sbuf[2] = { 0, 0 };
 	
-	psg.Mix( sbuf, 1 );
+	PSG::Mix( sbuf, 1 );
 	
 	return sbuf[0];
 #else
