@@ -57,26 +57,37 @@ bool CheckFont( const std::shared_ptr<CFG6>& cfg )
 ///////////////////////////////////////////////////////////
 bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 {
-	P6VPATH RomSearch;
+	P6VPATH rpath;
 	
 	int IniModel = cfg->GetValue( CV_Model );
 	
 	// 自動選定の時は飛ばす
 	if( IniModel ){
+		std::string files;
+		bool resf = false;
 		bool res = true;
+		
 		const auto& roms = GetRomSetList( IniModel );
 		for( auto &rom : roms ){
-			bool resf = false;
-			for( auto &file : rom ){
-				OSD_AddPath( RomSearch, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
-				if( OSD_FileExist( RomSearch ) ) resf = true;
-			}
-			if( !resf ) res = false;
 			resf = false;
+			for( auto &file : rom ){
+				OSD_AddPath( rpath, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
+				if( OSD_FileExist( rpath ) ) resf = true;
+			}
+			if( !resf ){
+				res = false;
+				files += rom[0].FileName + "\n";
+			}
 		}
 		if( res ){
-			Error::Reset();
+			Error::Clear();
 			return true;
+		}else{
+			Error::SetError( Error::NoRomChange, files );
+			if( OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDM_YESNO | OSDM_ICONERROR ) != OSDR_YES ){
+				Error::SetError( Error::NoRom );
+				return false;
+			}
 		}
 	}
 	
@@ -86,21 +97,21 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 		// 見つからなかった機種はスキップ
 		if( IniModel == models[i] ) continue;
 		
+		bool resf = false;
 		bool res = true;
 		const auto& roms = GetRomSetList( models[i] );
 		for( auto &rom : roms ){
-			bool resf = false;
-			for( auto &file : rom ){
-				OSD_AddPath( RomSearch, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
-				if( OSD_FileExist( RomSearch ) ) resf = true;
-			}
-			if( !resf ) res = false;
 			resf = false;
+			for( auto &file : rom ){
+				OSD_AddPath( rpath, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
+				if( OSD_FileExist( rpath ) ) resf = true;
+			}
+			if( !resf ){ res = false; }
 		}
 		if( res ){
 			cfg->SetValue( CV_Model, models[i] );
 			// 自動選定の時はメッセージを出さない
-			if( IniModel ) Error::SetError( Error::RomChange );
+			if( IniModel ){ Error::SetError( Error::RomChange ); }
 			return true;
 		}
 	}
@@ -148,7 +159,7 @@ int main( int argc, char* argv[] )
 		switch( Error::GetError() ){
 		case Error::IniDefault:
 			OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONWARNING );
-			Error::Reset();
+			Error::Clear();
 			break;
 			
 		default:
@@ -159,20 +170,16 @@ int main( int argc, char* argv[] )
 	}
 	
 	// 各種フォルダの存在チェック&作成
-	if( !OSD_FileExist( Cfg->GetValue( CF_RomPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_RomPath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_TapePath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_TapePath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_DiskPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_DiskPath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_ExtRomPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_ExtRomPath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_ImgPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_ImgPath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_WavePath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_WavePath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_FontPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_FontPath ) );
-	if( !OSD_FileExist( Cfg->GetValue( CF_DokoPath ) ) )	OSD_CreateFolder( Cfg->GetValue( CF_DokoPath ) );
+	std::vector<TCPath> paths = { CF_RomPath, CF_TapePath, CF_DiskPath, CF_ExtRomPath, CF_ImgPath, CF_WavePath, CF_FontPath, CF_DokoPath };
+	for( auto &cf : paths ){
+		if( !OSD_FileExist( Cfg->GetValue( cf ) ) ) OSD_CreateFolder( Cfg->GetValue( cf ) );
+	}
 	
 	
 	// フォントファイルチェック&作成
 	if( !CheckFont( Cfg ) ){
 		OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONWARNING );
-		Error::Reset();
+		Error::Clear();
 	}
 	
 	// コンソール用フォント読込み
@@ -182,7 +189,7 @@ int main( int argc, char* argv[] )
 	
 	if( !JFont::OpenFont( FontZ, FontH ) ){
 		OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-		Error::Reset();
+		Error::Clear();
 	}
 	
 	// P6VMオブジェクトを作成して実行
@@ -193,7 +200,7 @@ int main( int argc, char* argv[] )
 		if( Restart == EL6::Restart ){
 			if( !Cfg->Init() ){
 				OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONWARNING );
-				Error::Reset();
+				Error::Clear();
 			}
 			Restart = EL6::Quit;
 		}
@@ -201,12 +208,12 @@ int main( int argc, char* argv[] )
 		// ROMファイル存在チェック&機種変更
 		if( SearchRom( Cfg ) ){
 			if( Error::GetError() != Error::NoError ){
-				OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONWARNING );
-				Error::Reset();
+				OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDR_OK | OSDM_ICONWARNING );
+				Error::Clear();
 			}
 		}else{
 			OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-			Error::Reset();
+			Error::Clear();
 			break;	// do 抜ける
 		}
 		
@@ -223,8 +230,8 @@ int main( int argc, char* argv[] )
 			// 失敗した場合
 			if( Error::GetError() == Error::RomCrcNG ){
 				// CRCが合わない場合
-				int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDM_YESNO | OSDM_ICONWARNING );
-				Error::Reset();
+				int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDM_YESNO | OSDM_ICONWARNING );
+				Error::Clear();
 				if( ret != OSDR_YES ) break;
 				
 				Cfg->SetValue( CB_CheckCRC, false );
@@ -233,17 +240,25 @@ int main( int argc, char* argv[] )
 			}else{
 				// 初期化失敗
 				OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-				Error::Reset();
+				Error::Clear();
 				break;			// do 抜ける
 			}
 		}
 		
 		switch( Restart ){
 		case EL6::Dokoload:	// どこでもLOAD?
+			if( !P6Core->CheckDokoVer( Cfg->GetDokoFile() ) ){
+				int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDM_YESNO | OSDM_ICONWARNING );
+				Error::Clear();
+				if( ret != OSDR_YES ){
+					Cfg->SetDokoFile( "" );
+					break;
+				}
+			}
 			if( !P6Core->DokoDemoLoad( Cfg->GetDokoFile() ) ){
 				// 失敗した場合
 				OSD_Message( P6Core->GetWindowHandle(), Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-				Error::Reset();
+				Error::Clear();
 			}
 			Cfg->SetDokoFile( "" );
 			break;
@@ -252,7 +267,7 @@ int main( int argc, char* argv[] )
 			if( !P6Core->DokoDemoLoad( Cfg->GetDokoFile() ) ){
 				// 失敗した場合
 				OSD_Message( P6Core->GetWindowHandle(), Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-				Error::Reset();
+				Error::Clear();
 			}
 			P6Core->REPLAY::StartReplay( Cfg->GetDokoFile() );
 			Cfg->SetDokoFile( "" );

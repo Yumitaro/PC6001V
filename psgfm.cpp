@@ -625,7 +625,7 @@ bool OPN64::DokoSave( cIni* Ini )
 	for( int i=0; i<4; i++ ){
 		std::string strva;
 		for( int j=0; j<16; j++ ){
-			strva += Stringf( "%02X", opn.chip.multable_[i][j] );
+			strva += Stringf( "%08X", opn.chip.multable_[i][j] );
 		}
 		Ini->SetEntry( "FMGEN_Chip", Stringf( "multable_%02X", i ), "", strva.c_str() );
 	}
@@ -984,9 +984,9 @@ bool OPN64::DokoLoad( cIni* Ini )
 	for( int i=0; i<4; i++ ){
 		std::string strva;
 		if( Ini->GetEntry( "FMGEN_Chip", Stringf( "multable_%02X", i ), strva ) ){
-			strva += std::string( 16 * 2 - strva.length(), '0' );
+			strva.resize( 16 * sizeof(DWORD) * 2, '0' );
 			for( int j=0; j<16; j++ ){
-				opn.chip.multable_[i][j] = std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 );
+				opn.chip.multable_[i][j] = std::stoul( strva.substr( j * sizeof(DWORD) * 2, sizeof(DWORD) * 2 ), nullptr, 16 );
 			}
 		}
 	}

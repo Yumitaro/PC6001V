@@ -370,7 +370,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 	}
 	
 	// エラーなし
-	Error::Reset();
+	Error::Clear();
 	
 	return true;
 }
@@ -652,7 +652,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			
 		default:
 			OSD_Message( GetWindowHandle(), Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-			Error::Reset();
+			Error::Clear();
 		}
 	}
 	return Quit;
@@ -791,7 +791,6 @@ void EL6::DokoDemoLoad( int slot )
 		OSD_AddPath( tpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
 		
 		if( OSD_FileExist( tpath ) ){
-			cfg->SetValue( CV_Model, GetDokoModel( tpath ) );
 			cfg->SetDokoFile( tpath );
 			OSD_PushEvent( EV_DOKOLOAD );
 		}
@@ -1233,7 +1232,7 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 	cIni ini;
 	
 	// エラーをリセット
-	Error::Reset();
+	Error::Clear();
 	try{
 		std::fstream fs;
 		
@@ -1303,7 +1302,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 	cIni ini;
 	
 	// エラーをリセット
-	Error::Reset();
+	Error::Clear();
 	try{
 		// どこでもLOADファイルを開く
 		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
@@ -1360,29 +1359,30 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 
 
 ////////////////////////////////////////////////////////////////
-// どこでもLOADファイルから機種名読込
+// どこでもLOADファイルのバージョンチェック
 //
 // 引数:	path		ファイルパスへの参照
-// 返値:	int			機種名(60,61,62,66)
+// 返値:	bool		true:一致 false:不一致
 ////////////////////////////////////////////////////////////////
-int EL6::GetDokoModel( const P6VPATH& path )
+bool EL6::CheckDokoVer( const P6VPATH& path )
 {
 	cIni ini;
-	int st = 0;
+	std::string str;
 	
 	try{
 		// どこでもLOADファイルを開く
 		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
 		
-		// 機種取得
-		ini.GetVal( "GLOBAL", "Model", st );
+		// バージョン取得
+		ini.GetEntry( "GLOBAL", "Version", str );
+		if( str != VERSION ) throw Error::DokoDiffVersion;
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
-		return 0;
+		return false;
 	}
 	
-	return st;
+	return true;
 }
 
 
@@ -1551,7 +1551,6 @@ void EL6::ReplayRecStop( void )
 ////////////////////////////////////////////////////////////////
 void EL6::ReplayPlayStart( const P6VPATH& path )
 {
-	cfg->SetValue( CV_Model, GetDokoModel( path ) );
 	cfg->SetDokoFile( path );
 	OSD_PushEvent( EV_REPLAY );
 }
@@ -1593,7 +1592,7 @@ void EL6::UI_TapeInsert( const P6VPATH& path )
 		}
 	}
 	
-	if( !TapeMount( fpath ) ) Error::SetError( Error::TapeMountFailed );
+	if( !TapeMount( fpath ) ) Error::SetError( Error::TapeMountFailed, P6VPATH2STR( fpath ) );
 }
 
 
@@ -1617,7 +1616,7 @@ void EL6::UI_DiskInsert( int drv, const P6VPATH& path )
 		}
 	}
 	
-	if( !DiskMount( drv, fpath ) ) Error::SetError( Error::DiskMountFailed );
+	if( !DiskMount( drv, fpath ) ) Error::SetError( Error::DiskMountFailed, P6VPATH2STR( fpath ) );
 }
 
 
@@ -1643,7 +1642,7 @@ void EL6::UI_RomInsert( const P6VPATH& path )
 	// リセットを伴うのでメッセージ表示
 	OSD_Message( GetWindowHandle(), GetText( T_RESETI ), GetText( T_RESETC ), OSDM_OK | OSDM_ICONINFO );
 	if( !vm->mem->MountExtRom( fpath ) )
-		Error::SetError( Error::ExtRomMountFailed );
+		Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( fpath ) );
 	else
 		UI_Reset();
 }
@@ -1706,7 +1705,6 @@ void EL6::UI_DokoLoad( const P6VPATH& path )
 		}
 	}
 	
-	cfg->SetValue( CV_Model, GetDokoModel( fpath ) );
 	cfg->SetDokoFile( fpath );
 	OSD_PushEvent( EV_DOKOLOAD );
 }

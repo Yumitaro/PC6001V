@@ -1346,10 +1346,12 @@ P6KEYsym CFG6::GetP6KeyCode( const std::string& str )
 ////////////////////////////////////////////////////////////////
 bool CFG6::DokoSave( cIni* Ini )
 {
-	if( !Ini ) return false;
+	if( !Ini ){ return false; }
+	
+	// バージョン
+	Ini->SetEntry( "GLOBAL", "Version",	"", VERSION );
 	
 	// 共通
-	Ini->SetEntry( "GLOBAL", "Version",	"", VERSION );
 	Ini->SetVal( "GLOBAL", "Model",		"", GetValue( CV_Model ) );
 	Ini->SetVal( "GLOBAL", "FDD",		"", GetValue( CV_FDD ) );
 	Ini->SetVal( "GLOBAL", "ExtRam",	"", GetValue( CB_ExtRam ) );
@@ -1372,19 +1374,13 @@ bool CFG6::DokoLoad( cIni* Ini )
 	bool yn;
 	std::string strva;
 	
-	if( !Ini ) return false;
+	if( !Ini ){ return false; }
 	
 	// 共通
-	Ini->GetEntry( "GLOBAL", "Version", strva );
-	if( strva != VERSION ){
-		Error::SetError( Error::DokoDiffVersion );
-		return false;
-	}
-	
-	if( Ini->GetVal( "GLOBAL", "Model",   st ) )	SetValue( CV_Model,   st );
-	if( Ini->GetVal( "GLOBAL", "FDD",     st ) )	SetValue( CV_FDD,     st );
-	if( Ini->GetVal( "GLOBAL", "ExtRam",  yn ) )	SetValue( CB_ExtRam,  yn );
-	if( Ini->GetVal( "OPTION", "Soldier", st ) )	SetValue( CV_Soldier, st );
+	if( Ini->GetVal( "GLOBAL", "Model",   st ) ){ SetValue( CV_Model,   st ); }
+	if( Ini->GetVal( "GLOBAL", "FDD",     st ) ){ SetValue( CV_FDD,     st ); }
+	if( Ini->GetVal( "GLOBAL", "ExtRam",  yn ) ){ SetValue( CB_ExtRam,  yn ); }
+	if( Ini->GetVal( "OPTION", "Soldier", st ) ){ SetValue( CV_Soldier, st ); }
 	
 	return true;
 }
