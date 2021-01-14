@@ -2156,7 +2156,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 	for( int i=0; i<(int)MemTable.IntRam->Size; i+=64 ){
 		std::string strva;
 		if( Ini->GetEntry( "MEMORY", Stringf( "IntRam_%04X", i ), strva ) ){
-			strva += std::string( 64 * 2 - strva.length(), '0' );
+			strva.resize( 64 * 2, '0' );
 			for( int j=0; j<64; j++ ){
 				IntRam.Write( i+j, std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 ) );
 			}
@@ -2168,7 +2168,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 		for( int i=0; i<(int)MemTable.ExtRam->Size; i+=64 ){
 			std::string strva;
 			if( Ini->GetEntry( "MEMORY", Stringf( "ExtRam_%06X", i ), strva ) ){
-				strva += std::string( 64 * 2 - strva.length(), '0' );
+				strva.resize( 64 * 2, '0' );
 				for( int j=0; j<64; j++ ){
 					ExtRam.Write( i+j, std::stoul( strva.substr( j * 2, 2 ), nullptr, 16 ) );
 				}

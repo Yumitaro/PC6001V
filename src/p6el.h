@@ -188,7 +188,7 @@ public:
 	// ---------------------------------------------------------
 	bool DokoDemoSave( const P6VPATH& );		// どこでもSAVE
 	bool DokoDemoLoad( const P6VPATH& );		// どこでもLOAD
-	int GetDokoModel( const P6VPATH& );			// どこでもLOADファイルから機種名読込
+	bool CheckDokoVer( const P6VPATH& );		// どこでもLOADファイルのバージョンチェック
 	void DokoDemoSave( int );					// 簡易どこでもSAVE(スロット使用)
 	void DokoDemoLoad( int );					// 簡易どこでもLOAD(スロット使用)
 	// ---------------------------------------------------------

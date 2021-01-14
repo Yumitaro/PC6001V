@@ -19,6 +19,7 @@ public:
 		MemAllocFailed,
 		RomChange,
 		NoRom,
+		NoRomChange,
 		RomSizeNG,
 		RomCrcNG,
 		LibInitFailed,
@@ -37,21 +38,20 @@ public:
 		ReplayPlayError,
 		ReplayRecError,
 		NoReplayData,
-		CaptureFailed,
-		
-		EndofErrors
+		CaptureFailed
 	};
 	
 public:
-	static void SetError( Errno e );
+	static void SetError( Errno, std::string = "" );
 	static Errno GetError();
 	static const std::string& GetErrorText();
-	static void Reset();
+	static void Clear();
 	
 private:
 	Error();
 	
 	static Errno err;
+	static std::string arg;
 };
 
 #endif // ERROR_H_INCLUDED

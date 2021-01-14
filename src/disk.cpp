@@ -2080,7 +2080,7 @@ bool DSK60::DokoLoad( cIni* Ini )
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		if( Ini->GetEntry( "P60DISK", Stringf( "RBuf_%04X", i ), strva ) ){
-			strva += std::string( 64*2 - strva.length(), '0' );
+			strva.resize( 64 * 2, '0' );
 			for( int j=0; j<64; j++ )
 				RBuf[i+j] = std::stoul( strva.substr( j*2, 2 ), nullptr, 16 );
 		}
@@ -2088,7 +2088,7 @@ bool DSK60::DokoLoad( cIni* Ini )
 	for( int i=0; i<4096; i+=64 ){
 		std::string strva;
 		if( Ini->GetEntry( "P60DISK", Stringf( "WBuf_%04X", i ), strva ) ){
-			strva += std::string( 64*2 - strva.length(), '0' );
+			strva.resize( 64 * 2, '0' );
 			for( int j=0; j<64; j++ )
 				WBuf[i+j] = std::stoul( strva.substr( j*2, 2 ), nullptr, 16 );
 		}
@@ -2149,7 +2149,7 @@ bool DSK66::DokoLoad( cIni* Ini )
 		for( int j=0; j<256; j+=64 ){
 			std::string strva;
 			if( Ini->GetEntry( "P66DISK", Stringf( "FDDBuf_%d_%02X", i, j ), strva ) ){
-				strva += std::string( 64*2 - strva.length(), '0' );
+				strva.resize( 64 * 2, '0' );
 				for( int k=0; k<64; k++ )
 					FDDBuf[i*256+j+k] = std::stoul( strva.substr( k*2, 2 ), nullptr, 16 );
 			}

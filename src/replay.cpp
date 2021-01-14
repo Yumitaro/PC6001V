@@ -81,7 +81,7 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 	RepST  = ST_REPLAYREC;
 	
 	// 無事だったのでエラーなし
-	Error::Reset();
+	Error::Clear();
 	
 	return true;
 }
@@ -174,7 +174,7 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 	RepST  = ST_REPLAYPLAY;
 	
 	// 無事だったのでエラーなし
-	Error::Reset();
+	Error::Clear();
 	
 	return true;
 }

@@ -9,13 +9,14 @@
 #include "common.h"
 
 
-const TextID ErrorText[Error::EndofErrors] =
+const std::vector<TextID> ErrorText =
 {
 	TERR_NoError,			// NoError
 	TERR_Unknown,			// Unknown
 	TERR_MemAllocFailed,	// MemAllocFailed
 	TERR_RomChange,			// RomChange
 	TERR_NoRom,				// NoRom
+	TERR_NoRomChange,		// NoRomChange
 	TERR_RomSizeNG,			// RomSizeNG
 	TERR_RomCrcNG,			// RomCrcNG
 	TERR_LibInitFailed,		// LibInitFailed
@@ -39,10 +40,21 @@ const TextID ErrorText[Error::EndofErrors] =
 };
 
 Error::Errno Error::err = Error::NoError;
+std::string Error::arg = "";
 
-void Error::SetError( Errno e )
+void Error::SetError( Errno e, std::string ar )
 {
 	err = e;
+	
+	try{
+		arg = GetText( ErrorText.at( e ) );
+		if( ar.size() ){
+			arg += "\n\n" + ar;
+		}
+	}
+	catch( std::out_of_range& ){
+		arg = GetText( TERR_Unknown );
+	}
 }
 
 Error::Errno Error::GetError( void )
@@ -52,11 +64,12 @@ Error::Errno Error::GetError( void )
 
 const std::string& Error::GetErrorText()
 {
-	return GetText( ErrorText[err] );
+	return arg;
 }
 
-void Error::Reset( void )
+void Error::Clear( void )
 {
 	err = NoError;
+	arg.clear();
 }
 
