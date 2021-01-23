@@ -446,25 +446,16 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ T_RESTART0,				"再起動してよろしいですか?" },
 	{ T_RESTART,				"変更は再起動後に有効となります。\n今すぐ再起動しますか?" },
 	{ T_RESTARTC,				"再起動確認" },
-	{ T_RESETI,					"拡張ROMを挿入してリセットします。" },
-	{ T_RESETE,					"拡張ROMを排出してリセットします。" },
+	{ T_RESTARTI,				"拡張カートリッジを挿入して再起動します。" },
+	{ T_RESTARTE,				"拡張カートリッジを排出して再起動します。" },
 	{ T_RESETC,					"リセット確認" },
-	
-	// メニュー用メッセージ ------
-	// [システム]
-//	{ TMEN_AVI0,				"ビデオキャプチャ..." },
-//	{ TMEN_AVI1,				"ビデオキャプチャ停止" },
-//	{ TMEN_REP0,				"記録..." },	// (リプレイ)
-//	{ TMEN_REP1,				"記録停止" },	// (リプレイ)
-//	{ TMEN_REP2,				"再生..." },	// (リプレイ)
-//	{ TMEN_REP3,				"再生停止" },	// (リプレイ)
 	
 	// INIファイル用メッセージ ------
 	// [CONFIG]
 	{ TINI_TITLE,				"; === PC6001V 初期設定ファイル ===\n\n" },
 	{ TINI_Model,				"機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR" },
-	{ TINI_FDD,					"FDD接続台数 (0-2)" },
-	{ TINI_ExtRam,				"拡張RAM使用" },
+	{ TINI_FDDrive,				"FDドライブ数 (0-2)" },
+	{ TINI_UseExtRam,			"拡張RAM使用" },
 	{ TINI_TurboTAPE,			"Turbo TAPE Yes:有効 No:無効" },
 	{ TINI_BoostUp,				"BoostUp Yes:有効 No:無効" },
 	{ TINI_MaxBoost60,			"BoostUp 最大倍率(N60モード)" },
@@ -519,7 +510,7 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TINI_CkQuit,				"終了時確認 Yes:する No:しない" },
 	{ TINI_SaveQuit,			"終了時INIファイルを保存 Yes:する No:しない" },
 	// [OPTION]
-	{ TINI_Soldier,				"戦士のカートリッジ 0:なし 1:無印 2:mkⅡ 3:mkⅢ" },
+	{ TINI_ExCartridge,			"拡張カートリッジ 0:なし" },
 	// [KEY]
 	{ TINI_KeyRepeat,			"キーリピートの間隔(単位:ms 0で無効)" },
 	

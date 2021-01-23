@@ -58,11 +58,11 @@ protected:
 		const std::vector<IOBus::Connector>* Voice;		// 音声合成
 		const std::vector<IOBus::Connector>* Disk;		// DISK
 		const std::vector<IOBus::Connector>* CmtL;		// CMT(LOAD)
-		const std::vector<IOBus::Connector>* Soldier;	// 戦士のカートリッジ
+		const std::vector<IOBus::Connector>* ExCart;	// 戦士のカートリッジ
 		
 		DEVCONNTABLE() :
 			Intr( nullptr ), Memory( nullptr ), Vdg( nullptr ), Psg( nullptr ), M8255( nullptr ), S8255( nullptr ),
-			Voice( nullptr ), Disk( nullptr ), CmtL( nullptr ), Soldier( nullptr ) {}
+			Voice( nullptr ), Disk( nullptr ), CmtL( nullptr ), ExCart( nullptr ) {}
 	};
 	
 	int cclock;						// CPUクロック
@@ -100,7 +100,9 @@ public:
 	virtual ~VM6();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_soldier;	// 戦士のカートリッジ
+	const static std::vector<IOBus::Connector> c_exkanji;	// 拡張漢字ROMカートリッジ
+	const static std::vector<IOBus::Connector> c_soldier1;	// 戦士のカートリッジ
+	const static std::vector<IOBus::Connector> c_soldier2;	// 戦士のカートリッジmkⅡ
 	
 	bool Init( const std::shared_ptr<CFG6>& );			// 初期化
 	void Reset();										// リセット
@@ -229,7 +231,6 @@ public:
 	const static std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
 	const static std::vector<IOBus::Connector> c_disk;		// DISK
 	const static std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
-	const static std::vector<IOBus::Connector> c_soldier;	// 戦士のカートリッジ
 };
 
 

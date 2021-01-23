@@ -2,11 +2,12 @@
 #include <cctype>
 #include <fstream>
 
+#include "pc6001v.h"
+
 #include "breakpoint.h"
 #include "common.h"
 #include "debug.h"
 #include "osd.h"
-#include "pc6001v.h"
 #include "p6el.h"
 #include "p6vm.h"
 #include "schedule.h"

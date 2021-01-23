@@ -1,8 +1,9 @@
+#include "pc6001v.h"
+
 #include "common.h"
 #include "intr.h"
 #include "log.h"
 #include "osd.h"
-#include "pc6001v.h"
 #include "p6el.h"
 #include "p6vm.h"
 #include "schedule.h"

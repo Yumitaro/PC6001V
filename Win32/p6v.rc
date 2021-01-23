@@ -67,14 +67,25 @@ ID_MENU MENU
                 MENUITEM "取出", ID_DISKEJECT2
             }
         }
-        POPUP "拡張ROM"
+        POPUP "拡張カートリッジ"
         {
-            MENUITEM "挿入...", ID_ROMINSERT
-            MENUITEM "取出", ID_ROMEJECT
+			MENUITEM "PC-6005 ROMカートリッジ...", ID_C6005
+			MENUITEM "PC-6006 拡張ROM/RAMカートリッジ...", ID_C6006
+            MENUITEM SEPARATOR
+			MENUITEM "PCS-6001R 拡張BASIC", ID_C6001
+			MENUITEM "PC-6601-01 拡張漢字ROMカートリッジ", ID_C660101
+			MENUITEM "PC-6006SR 拡張64KRAMカートリッジ", ID_C6006SR
+			MENUITEM "PC-6007SR 拡張漢字ROM&RAMカートリッジ", ID_C6007SR
+            MENUITEM SEPARATOR
+			MENUITEM "戦士のカートリッジ...", ID_CSOL1
+			MENUITEM "戦士のカートリッジmkⅡ...", ID_CSOL2
+			MENUITEM "戦士のカートリッジmkⅢ...", ID_CSOL3
+            MENUITEM SEPARATOR
+			MENUITEM "取出", ID_CARTEJECT
         }
         POPUP "ジョイスティック"
         {
-            POPUP "1"
+            POPUP "Port1"
             {
                 MENUITEM "なし", ID_JOY100
                 MENUITEM "-----", ID_JOY101, GRAYED
@@ -83,7 +94,7 @@ ID_MENU MENU
                 MENUITEM "-----", ID_JOY104, GRAYED
                 MENUITEM "-----", ID_JOY105, GRAYED
             }
-            POPUP "2"
+            POPUP "Port2"
             {
                 MENUITEM "なし", ID_JOY200
                 MENUITEM "-----", ID_JOY201, GRAYED
@@ -164,14 +175,13 @@ FONT 9, "MS UI Gothic"
 	COMBOBOX        ID_LBMODEL, 90, 8, 80, 100, WS_TABSTOP | WS_VSCROLL | CBS_DROPDOWNLIST, WS_EX_LEFT
 	LTEXT           "機種", 0, 10, 11, 80, 10, SS_LEFT, WS_EX_LEFT
 
-	LTEXT			"FDD接続数", 0, 10, 26, 80, 10, SS_LEFT
-	LTEXT			"( 0 - 2 )", 0, 145, 26, 40, 10, SS_LEFT
-	EDITTEXT		ID_FDDRV, 90, 25, 50, 10, NOT WS_BORDER | ES_AUTOHSCROLL | ES_NUMBER, WS_EX_STATICEDGE
-	CONTROL			"", ID_SPFDDRV, UPDOWN_CLASS, UDS_ARROWKEYS | UDS_ALIGNRIGHT, 0, 0, 0, 0, WS_EX_LEFT
+	COMBOBOX        ID_LBEXCART, 90, 23, 140, 100, WS_TABSTOP | WS_VSCROLL | CBS_DROPDOWNLIST, WS_EX_LEFT
+	LTEXT           "拡張カートリッジ", 0, 10, 26, 80, 10, SS_LEFT, WS_EX_LEFT
 
-	AUTOCHECKBOX    "拡張RAMを使う", ID_CB1, 10, 100, 130, 10, WS_TABSTOP | BS_FLAT, WS_EX_LEFT
-	COMBOBOX        ID_LBSOLDIER, 90, 113, 80, 100, WS_TABSTOP | WS_VSCROLL | CBS_DROPDOWNLIST, WS_EX_LEFT
-	LTEXT           "戦士のカートリッジ", 0, 10, 116, 80, 10, SS_LEFT, WS_EX_LEFT
+	LTEXT			"FDドライブ数", 0, 10, 41, 80, 10, SS_LEFT
+	LTEXT			"( 0 - 2 )", 0, 145, 41, 40, 10, SS_LEFT
+	EDITTEXT		ID_FDDRV, 90, 40, 50, 10, NOT WS_BORDER | ES_AUTOHSCROLL | ES_NUMBER, WS_EX_STATICEDGE
+	CONTROL			"", ID_SPFDDRV, UPDOWN_CLASS, UDS_ARROWKEYS | UDS_ALIGNRIGHT, 0, 0, 0, 0, WS_EX_LEFT
 }
 
 

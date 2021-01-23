@@ -1,9 +1,10 @@
 #include <cstring>
 
+#include "pc6001v.h"
+
 #include "log.h"
 #include "osd.h"
 #include "p6t2.h"
-#include "pc6001v.h"
 
 
 // P6T形式フォーマットVer.2

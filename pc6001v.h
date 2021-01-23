@@ -27,7 +27,7 @@
 // オプション 初期値
 /////////////////////////////////////////////////////////////////////////////
 #define	DEFAULT_MODEL			(0)					// 機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR (0:自動選定)
-#define	DEFAULT_EXTRAM			(1)					// 拡張RAM 0:なし 1:あり
+#define	DEFAULT_USEEXTRAM		(1)					// 拡張RAM 0:なし 1:あり
 #define	DEFAULT_REPEAT			(70)				// キーリピートの間隔(単位:ms 0で無効)
 #define	DEFAULT_SAMPLERATE		(44100)				// サンプリングレート
 #define	DEFAULT_SOUNDBUF		(1)					// サウンドバッファ長倍率(基本長はVSYNC)
@@ -43,7 +43,7 @@
 #define DEFAULT_MAXBOOST62		(5)					// BoostUp最大倍率(N60m/N66モード)
 #define	DEFAULT_BAUD			(1200)				// CMTボーレート
 #define	DEFAULT_STOPBIT			(3)					// CMTストップビット数
-#define	DEFAULT_FDD				(0)					// FDD接続台数
+#define	DEFAULT_FDDrive			(0)					// FDドライブ数
 #define	DEFAULT_FDDWAIT			(true)				// FDDウェイト true:有効 false:無効
 #define	DEFAULT_MODE4COLOR		(1)					// モード４カラーモード 0:モノ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク
 #define	DEFAULT_SCANLINE		(true) 				// スキャンライン true:あり false:なし
@@ -62,12 +62,12 @@
 #define	DEFAULT_AVISCANLINE		(false)				// ビデオキャプチャ時スキャンライン true:あり false:なし
 #define	DEFAULT_CKQUIT			(false) 			// 終了時確認
 #define	DEFAULT_SAVEQUIT		(true) 				// 終了時INI保存
-#define	DEFAULT_SOLDIER			(0) 				// 戦士のカートリッジ使うフラグ
+#define	DEFAULT_EXCARTRIDGE		(0) 				// 拡張カートリッジ
 
 #define	MIN_MODEL				(60)				// 機種 最小値
 #define	MAX_MODEL				(68)				// 機種 最大値
-#define	MIN_FDD					(0)					// FDD接続台数 最小値
-#define	MAX_FDD					(2)					// FDD接続台数 最大値
+#define	MIN_FDDrive				(0)					// FDドライブ数 最小値
+#define	MAX_FDDrive				(2)					// FDドライブ数 最大値
 #define	MIN_BOOST				(1)					// BoostUp最大倍率 最小値
 #define	MAX_BOOST				(10)				// BoostUp最大倍率 最大値
 #define	MIN_STOPBIT				(2)					// TAPEストップビット数 最小値
@@ -153,12 +153,37 @@
 #define	FILE_FONTZ				"fontz12." EXT_IMG	// 半角フォントファイル
 #define	FILE_FONTH				"fonth12." EXT_IMG	// 全角フォントファイル
 
+#define	FILE_EXBASIC			"exbasic.rom"		// 拡張BASIC ROM
+#define	FILE_EXKANJI			"exkanji.rom"		// 拡張漢字 ROM
+
+
 #define	SUBCPU60				"subcpu.60"			// サブCPU ROM(PC-6001)
 #define	SUBCPU61				"subcpu.61"			// サブCPU ROM(PC-6001A)
 #define	SUBCPU62				"subcpu.62"			// サブCPU ROM(PC-6001mk2)
 #define	SUBCPU66				"subcpu.66"			// サブCPU ROM(PC-6601)
 #define	SUBCPU64				"subcpu.64"			// サブCPU ROM(PC-6001mk2SR)
 #define	SUBCPU68				"subcpu.68"			// サブCPU ROM(PC-6601SR)
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 拡張カートリッジ定義
+/////////////////////////////////////////////////////////////////////////////
+#define	EXCSOL					0b1000000000000000				// 戦士のカートリッジ
+#define	EXCFIX					0b0100000000000000				// ROM固定
+#define	EXCBUS					0b0010000000000000				// ROM バスアクセス
+#define	EXCROM					0b0001000000000000				// ROMあり
+#define	EXCRAM					0b0000100000000000				// RAMあり
+
+#define	EXC6001					(       EXCFIX|EXCBUS|       EXCROM|       1)	// PCS-6001R	拡張BASIC
+#define	EXC6005					(              EXCBUS|       EXCROM|       2)	// PC-6005		ROMカートリッジ
+#define	EXC6006					(              EXCBUS|EXCRAM|EXCROM|       3)	// PC-6006		拡張ROM/RAMカートリッジ
+#define	EXC660101				(       EXCFIX|              EXCROM|       4)	// PC-6601-01	拡張漢字ROMカートリッジ
+#define	EXC6006SR				(                     EXCRAM|              5)	// PC-6006SR	拡張64KRAMカートリッジ
+#define	EXC6007SR				(       EXCFIX|       EXCRAM|EXCROM|       6)	// PC-6007SR	拡張漢字ROM&RAMカートリッジ
+                                                      
+#define	EXCSOL1					(EXCSOL|       EXCBUS|EXCRAM|EXCROM|       1)	// 戦士のカートリッジ
+#define	EXCSOL2					(EXCSOL|       EXCBUS|EXCRAM|EXCROM|       2)	// 戦士のカートリッジmkⅡ
+#define	EXCSOL3					(EXCSOL|       EXCBUS|EXCRAM|EXCROM|       3)	// 戦士のカートリッジmkⅢ
 
 
 #endif	// PC6001V_H_INCLUDED

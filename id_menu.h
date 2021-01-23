@@ -5,8 +5,8 @@
 #define ID_DISKINSERT2		1004
 #define ID_DISKEJECT1		1005
 #define ID_DISKEJECT2		1006
-#define ID_ROMINSERT		1007
-#define ID_ROMEJECT			1008
+//#define ID_ROMINSERT		1007
+//#define ID_ROMEJECT			1008
 #define ID_JOY100			1009
 #define ID_JOY101			1010
 #define ID_JOY102			1011
@@ -59,3 +59,14 @@
 #define ID_SPR11			1058
 #define ID_MONITOR			1059
 #define ID_VERSION			1060
+
+#define ID_C6001			1061
+#define ID_C6005			1062
+#define ID_C6006			1063
+#define ID_C660101			1064
+#define ID_C6006SR			1065
+#define ID_C6007SR			1066
+#define ID_CSOL1			1067
+#define ID_CSOL2			1068
+#define ID_CSOL3			1069
+#define ID_CARTEJECT		1070

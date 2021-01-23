@@ -1,10 +1,11 @@
+#include "pc6001v.h"
+
 #include "disk.h"
 #include "intr.h"
 #include "log.h"
 #include "osd.h"
 #include "p6el.h"
 #include "p6vm.h"
-#include "pc6001v.h"
 #include "schedule.h"
 #include "tape.h"
 

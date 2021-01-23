@@ -3,7 +3,6 @@
 #define ID_G8			2003
 #define ID_G13			2004
 
-#define ID_CB1			2201
 #define ID_CB2			2202
 #define ID_CB3			2203
 #define ID_CB4			2204
@@ -139,7 +138,7 @@
 #define ID_COL80		2780
 
 #define ID_LBMODEL		2801
-#define ID_LBSOLDIER	2802
+#define ID_LBEXCART	2802
 #define ID_LBMODE4		2803
 #define ID_LBFSKIP		2804
 #define ID_LBAVIBPP		2805
