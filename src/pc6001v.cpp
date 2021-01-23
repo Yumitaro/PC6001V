@@ -4,6 +4,8 @@
 #include <string>
 
 
+#include "pc6001v.h"
+
 #include "common.h"
 #include "config.h"
 #include "console.h"
@@ -12,7 +14,6 @@
 #include "osd.h"
 #include "p6el.h"
 #include "p6vm.h"
-#include "pc6001v.h"
 #include "typedef.h"
 #include "vsurface.h"
 

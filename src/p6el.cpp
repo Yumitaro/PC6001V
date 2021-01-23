@@ -271,7 +271,9 @@ void EL6::Exec( int st )
 bool EL6::Init( const std::shared_ptr<CFG6>& config )
 {
 	// エラーメッセージ初期値
-	Error::SetError( Error::InitFailed );
+//	Error::SetError( Error::InitFailed );
+	// エラーなし
+	Error::Clear();
 	
 	// 念の為
 	StopFPSTimer();
@@ -325,7 +327,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		if( !joy->Init() ) throw Error::GetError();
 		
 		// ステータスバー -----
-		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDD ) ) ) throw Error::GetError();
+		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDDrive ) ) ) throw Error::GetError();
 		
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		// レジスタウィンドウ　-----
@@ -370,7 +372,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 	}
 	
 	// エラーなし
-	Error::Clear();
+//	Error::Clear();
 	
 	return true;
 }
@@ -629,7 +631,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			}else if( ext == EXT_DISK ){
 				UI_DiskInsert( 0, tpath );
 			}else if( ext == EXT_ROM1 || ext == EXT_ROM2 ){
-				UI_RomInsert( tpath );
+				UI_CartInsert( EXC6005, tpath );
 			}else if( ext == EXT_DOKO ){
 				UI_DokoLoad( tpath );
 			}else if( ext == EXT_REPLAY ){
@@ -1308,7 +1310,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
 		
 		// PC6001Vのバージョン確認と主要構成情報を読込み
-		// (機種,FDD台数,拡張RAM,戦士のカートリッジ)
+		// (機種,FDドライブ数,拡張カートリッジ)
 		if( !cfg->DokoLoad( &ini ) ) throw Error::GetError();
 		
 		// VM再初期化
@@ -1592,7 +1594,9 @@ void EL6::UI_TapeInsert( const P6VPATH& path )
 		}
 	}
 	
-	if( !TapeMount( fpath ) ) Error::SetError( Error::TapeMountFailed, P6VPATH2STR( fpath ) );
+	if( !TapeMount( fpath ) ){
+		Error::SetError( Error::TapeMountFailed, P6VPATH2STR( fpath ) );
+	}
 }
 
 
@@ -1616,50 +1620,61 @@ void EL6::UI_DiskInsert( int drv, const P6VPATH& path )
 		}
 	}
 	
-	if( !DiskMount( drv, fpath ) ) Error::SetError( Error::DiskMountFailed, P6VPATH2STR( fpath ) );
+	if( !DiskMount( drv, fpath ) ){
+		Error::SetError( Error::DiskMountFailed, P6VPATH2STR( fpath ) );
+	}
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:拡張ROM 挿入
+// UI:拡張カートリッジ 挿入
 //
-// 引数:	path		ファイルパスへの参照
+// 引数:	cart		カートリッジタイプ
+//			path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_RomInsert( const P6VPATH& path )
+void EL6::UI_CartInsert( WORD cart, const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
-	if( fpath.empty() ){
-		if( !OSD_FileExist( ExRomPathUI ) ){
-			ExRomPathUI = cfg->GetValue( CF_ExtRomPath );
-		}
-		if( !OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI ) ){
-			return;
+	if( (cart & EXCROM) && fpath.empty() ){
+		// ファイル固定でなければファイル選択
+		if( !(cart & EXCFIX) ){
+			if( !OSD_FileExist( ExRomPathUI ) ){
+				ExRomPathUI = cfg->GetValue( CF_ExtRomPath );
+			}
+			if( !OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI ) ){
+				// キャンセルしたらROMなしで起動する
+//				return;
+			}
 		}
 	}
 	
-	// リセットを伴うのでメッセージ表示
-	OSD_Message( GetWindowHandle(), GetText( T_RESETI ), GetText( T_RESETC ), OSDM_OK | OSDM_ICONINFO );
-	if( !vm->mem->MountExtRom( fpath ) )
-		Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( fpath ) );
-	else
-		UI_Reset();
+	cfg->SetValue( CV_ExCartridge, (int)cart );
+	cfg->SetValue( CF_ExtRom, fpath );
+	cfg->Write();
+	
+	// 再起動を伴うのでメッセージ表示
+	OSD_Message( GetWindowHandle(), GetText( T_RESTARTI ), GetText( T_RESTARTC ), OSDM_OK | OSDM_ICONINFO );
+	UI_Restart();
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:拡張ROM 排出
+// UI:拡張カートリッジ 排出
 //
 // 引数:	なし
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_RomEject( void )
+void EL6::UI_CartEject( void )
 {
-	// リセットを伴うのでメッセージ表示
-	OSD_Message( GetWindowHandle(), GetText( T_RESETE ), GetText( T_RESETC ), OSDM_OK | OSDM_ICONINFO );
-	vm->mem->UnmountExtRom();
-	UI_Reset();
+	cfg->SetValue( CV_ExCartridge, 0 );
+	cfg->SetValue( CF_ExtRom, STR2P6VPATH( "" ) );
+	cfg->Write();
+	
+	// 再起動を伴うのでメッセージ表示
+	OSD_Message( GetWindowHandle(), GetText( T_RESTARTE ), GetText( T_RESTARTC ), OSDM_OK | OSDM_ICONINFO );
+	UI_Restart();
 }
 
 
@@ -2172,15 +2187,14 @@ void EL6::UI_Config( void )
 		CFG6 ccfg;
 		
 		ccfg.Init();	// 変更したINIを読込み(比較用)
-		bool reb =  cfg->GetValue( CV_Model )     != ccfg.GetValue( CV_Model )     ||	// 機種取得
-					cfg->GetValue( CV_FDD )       != ccfg.GetValue( CV_FDD )       ||	// FDD接続台数取得
-					cfg->GetValue( CB_ExtRam )    != ccfg.GetValue( CB_ExtRam )    ||	// 拡張RAMを使う取得
-					cfg->GetValue( CV_OverClock ) != ccfg.GetValue( CV_OverClock ) ||	// オーバークロック率
-					cfg->GetValue( CV_Soldier )   != ccfg.GetValue( CV_Soldier )   ||	// 戦士のカートリッジ使うフラグ取得
-					cfg->GetValue( CF_ExtRom )    != ccfg.GetValue( CF_ExtRom )    ||	// 拡張ROMファイル名取得
-					cfg->GetValue( CF_tape )      != ccfg.GetValue( CF_tape )      ||	// TAPE(LOAD)ファイル名
-					cfg->GetValue( CF_disk1 )     != ccfg.GetValue( CF_disk1 )     ||	// DISK1ファイル名
-					cfg->GetValue( CF_disk2 )     != ccfg.GetValue( CF_disk2 );			// DISK2ファイル名
+		bool reb =  cfg->GetValue( CV_Model )       != ccfg.GetValue( CV_Model )       ||	// 機種取得
+					cfg->GetValue( CV_FDDrive )     != ccfg.GetValue( CV_FDDrive )     ||	// FDドライブ数取得
+					cfg->GetValue( CV_OverClock )   != ccfg.GetValue( CV_OverClock )   ||	// オーバークロック率
+					cfg->GetValue( CV_ExCartridge ) != ccfg.GetValue( CV_ExCartridge ) ||	// 拡張カートリッジ
+					cfg->GetValue( CF_ExtRom )      != ccfg.GetValue( CF_ExtRom )      ||	// 拡張ROMファイル名取得
+					cfg->GetValue( CF_tape )        != ccfg.GetValue( CF_tape )        ||	// TAPE(LOAD)ファイル名
+					cfg->GetValue( CF_disk1 )       != ccfg.GetValue( CF_disk1 )       ||	// DISK1ファイル名
+					cfg->GetValue( CF_disk2 )       != ccfg.GetValue( CF_disk2 );			// DISK2ファイル名
 		
 		cfg->Init();	// 変更したINIを読込み(オリジナル)
 		
@@ -2243,8 +2257,18 @@ void EL6::ExecMenu( int id )
 	case ID_DISKINSERT2:	UI_DiskInsert( id - ID_DISKINSERT1 );	break;
 	case ID_DISKEJECT1:														// DISK 排出
 	case ID_DISKEJECT2:		DiskUnmount( id - ID_DISKEJECT1 );		break;
-	case ID_ROMINSERT:		UI_RomInsert();							break;	// 拡張ROM 挿入
-	case ID_ROMEJECT:		UI_RomEject();							break;	// 拡張ROM 排出
+	
+	case ID_C6005:			UI_CartInsert( EXC6005 );				break;	// 拡張カートリッジ 挿入(PC-6005	ROMカートリッジ)
+	case ID_C6006:			UI_CartInsert( EXC6006 );				break;	// 拡張カートリッジ 挿入(PC-6006	拡張ROM/RAMカートリッジ)
+	case ID_C6001:			UI_CartInsert( EXC6001   );				break;	// 拡張カートリッジ 挿入(PCS-6001R	拡張BASIC)
+	case ID_C660101:		UI_CartInsert( EXC660101 );				break;	// 拡張カートリッジ 挿入(PC-6601-01	拡張漢字ROMカートリッジ)
+	case ID_C6006SR:		UI_CartInsert( EXC6006SR );				break;	// 拡張カートリッジ 挿入(PC-6006SR	拡張64KRAMカートリッジ)
+	case ID_C6007SR:		UI_CartInsert( EXC6007SR );				break;	// 拡張カートリッジ 挿入(PC-6007SR	拡張漢字ROM&RAMカートリッジ)
+	case ID_CSOL1:			UI_CartInsert( EXCSOL1   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジ)
+	case ID_CSOL2:			UI_CartInsert( EXCSOL2   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジmkⅡ)
+	case ID_CSOL3:			UI_CartInsert( EXCSOL3   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジmkⅢ)
+	case ID_CARTEJECT:		UI_CartEject();							break;	// 拡張カートリッジ 排出
+	
 	case ID_JOY100:															// ジョイスティック1
 	case ID_JOY101:
 	case ID_JOY102:

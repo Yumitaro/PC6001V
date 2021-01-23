@@ -1,5 +1,7 @@
 #include <vector>
 
+#include "pc6001v.h"
+
 #include "common.h"
 #include "config.h"
 #include "debug.h"
@@ -7,7 +9,6 @@
 #include "log.h"
 #include "osd.h"
 #include "p6el.h"
-#include "pc6001v.h"
 #include "status.h"
 #include "vdg.h"
 

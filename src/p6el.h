@@ -105,41 +105,41 @@ protected:
 	P6VPATH ExRomPathUI;	// 拡張ROMパス
 	P6VPATH DokoPathUI;		// どこでもSAVEパス
 	
-	void UI_TapeInsert( const P6VPATH& = "" );						// TAPE 挿入
-	void UI_DiskInsert( int, const P6VPATH& = "" );					// DISK 挿入
-	void UI_RomInsert( const P6VPATH& = "" );						// 拡張ROM 挿入
-	void UI_RomEject();												// 拡張ROM 排出
-	void UI_DokoSave( const P6VPATH& = "" );						// どこでもSAVE
-	void UI_DokoLoad( const P6VPATH& = "" );						// どこでもLOAD
-	void UI_ReplaySave( const P6VPATH& = "" );						// リプレイ保存
-	void UI_ReplayResumeSave( const P6VPATH& = "" );				// リプレイ保存再開
-	void UI_ReplayDokoLoad();										// リプレイ中どこでもLOAD
-	void UI_ReplayDokoSave();										// リプレイ中どこでもSAVE
-	void UI_ReplayLoad( const P6VPATH& = "" );						// リプレイ再生
-	void UI_AVISaveStart();											// ビデオキャプチャ開始
-	void UI_AVISaveStop();											// ビデオキャプチャ停止
-	void UI_SnapShot();												// スナップショット
-	void UI_AutoType( const P6VPATH& = "" );						// 打込み代行
-	void UI_Reset();												// リセット
-	void UI_Restart();												// 再起動
-	void UI_Quit();													// 終了
-	void UI_Pause();												// Pause変更
-	void UI_NoWait();												// Wait変更
-	void UI_TurboTape();											// Turbo TAPE変更
-	void UI_BoostUp();												// Boost Up変更
-	void UI_FullScreen();											// フルスクリーン変更
-	void UI_WindowZoom( int );										// ウィンドウ表示倍率変更
-	void UI_StatusBar();											// ステータスバー表示状態変更
-	void UI_Disp43();												// 4:3表示変更
-	void UI_ScanLine();												// スキャンラインモード変更
-	void UI_Filtering();											// フィルタリング変更
-	void UI_Mode4Color( int );										// MODE4カラー変更
-	void UI_FrameSkip( int );										// フレームスキップ変更
-	void UI_SampleRate( int );										// サンプリングレート変更
+	void UI_TapeInsert( const P6VPATH& = "" );						// UI:TAPE 挿入
+	void UI_DiskInsert( int, const P6VPATH& = "" );					// UI:DISK 挿入
+	void UI_CartInsert( WORD, const P6VPATH& = "" );				// UI:拡張カートリッジ 挿入
+	void UI_CartEject();											// UI:拡張カートリッジ 排出
+	void UI_DokoSave( const P6VPATH& = "" );						// UI:どこでもSAVE
+	void UI_DokoLoad( const P6VPATH& = "" );						// UI:どこでもLOAD
+	void UI_ReplaySave( const P6VPATH& = "" );						// UI:リプレイ保存
+	void UI_ReplayResumeSave( const P6VPATH& = "" );				// UI:リプレイ保存再開
+	void UI_ReplayDokoLoad();										// UI:リプレイ中どこでもLOAD
+	void UI_ReplayDokoSave();										// UI:リプレイ中どこでもSAVE
+	void UI_ReplayLoad( const P6VPATH& = "" );						// UI:リプレイ再生
+	void UI_AVISaveStart();											// UI:ビデオキャプチャ開始
+	void UI_AVISaveStop();											// UI:ビデオキャプチャ停止
+	void UI_SnapShot();												// UI:スナップショット
+	void UI_AutoType( const P6VPATH& = "" );						// UI:打込み代行
+	void UI_Reset();												// UI:リセット
+	void UI_Restart();												// UI:再起動
+	void UI_Quit();													// UI:終了
+	void UI_Pause();												// UI:Pause変更
+	void UI_NoWait();												// UI:Wait変更
+	void UI_TurboTape();											// UI:Turbo TAPE変更
+	void UI_BoostUp();												// UI:Boost Up変更
+	void UI_FullScreen();											// UI:フルスクリーン変更
+	void UI_WindowZoom( int );										// UI:ウィンドウ表示倍率変更
+	void UI_StatusBar();											// UI:ステータスバー表示状態変更
+	void UI_Disp43();												// UI:4:3表示変更
+	void UI_ScanLine();												// UI:スキャンラインモード変更
+	void UI_Filtering();											// UI:フィルタリング変更
+	void UI_Mode4Color( int );										// UI:MODE4カラー変更
+	void UI_FrameSkip( int );										// UI:フレームスキップ変更
+	void UI_SampleRate( int );										// UI:サンプリングレート変更
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	void UI_Monitor();												// モニタモード切替え
+	void UI_Monitor();												// UI:モニタモード切替え
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	void UI_Config();												// 環境設定
+	void UI_Config();												// UI:環境設定
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	void Exec( int );							// 指定ステート数実行

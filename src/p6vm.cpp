@@ -55,7 +55,6 @@ VM60::VM60( void )
 	DevTable.S8255   = &VM60::c_8255s;		// I/O(SUB CPU側)
 	DevTable.Disk    = &VM60::c_disk;		// DISK
 	DevTable.CmtL    = &VM60::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
 VM61::VM61( void )
@@ -72,7 +71,6 @@ VM61::VM61( void )
 	DevTable.S8255   = &VM60::c_8255s;		// I/O(SUB CPU側)
 	DevTable.Disk    = &VM60::c_disk;		// DISK
 	DevTable.CmtL    = &VM60::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM60::c_soldier;	// 戦士のカートリッジ
 }
 
 VM62::VM62( void )
@@ -91,7 +89,6 @@ VM62::VM62( void )
 	DevTable.Voice   = &VM62::c_voice;		// 音声合成
 	DevTable.Disk    = &VM62::c_disk;		// DISK
 	DevTable.CmtL    = &VM62::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
 VM66::VM66( void )
@@ -110,7 +107,6 @@ VM66::VM66( void )
 	DevTable.Voice   = &VM62::c_voice;		// 音声合成
 	DevTable.Disk    = &VM66::c_disk;		// DISK
 	DevTable.CmtL    = &VM62::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
 VM64::VM64( void )
@@ -129,7 +125,6 @@ VM64::VM64( void )
 	DevTable.Voice   = &VM64::c_voice;		// 音声合成
 	DevTable.Disk    = &VM64::c_disk;		// DISK
 	DevTable.CmtL    = &VM64::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
 VM68::VM68( void )
@@ -148,7 +143,6 @@ VM68::VM68( void )
 	DevTable.Voice   = &VM64::c_voice;		// 音声合成
 	DevTable.Disk    = &VM68::c_disk;		// DISK
 	DevTable.CmtL    = &VM64::c_cmtl;		// CMT(LOAD)
-	DevTable.Soldier = &VM6::c_soldier;		// 戦士のカートリッジ
 }
 
 
@@ -293,11 +287,7 @@ bool VM6::AllocObject( const std::shared_ptr<CFG6>& cnfg )
 		
 		
 		// 全メモリ確保とROMファイル読込み
-		BYTE flg = (cnfg->GetValue( CB_CheckCRC ) ? MCRCCHK   : 0)
-				 | (cnfg->GetValue( CB_ExtRam )   ? MUSEEXRAM : 0)
-				 | (cnfg->GetValue( CV_Soldier ) );
-		
-		if( !mem->AllocAllMemory( cnfg->GetValue( CF_RomPath ), flg ) ) throw Error::GetError();
+		if( !mem->AllocAllMemory( cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
 	}
 	catch( std::bad_alloc& ){	// new に失敗した場合
 		Error::SetError( Error::MemAllocFailed );
@@ -342,7 +332,10 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	// メモリ -----
 	if( !mem->Init() ) return false;
 	mem->Reset();
-	if( !cnfg->GetValue( CF_ExtRom ).empty() ) if( !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ) return false;
+	if( !cnfg->GetValue( CF_ExtRom ).empty() && !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
+		// ファイルがなければエラーメッセージセットして継続
+		Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( cnfg->GetValue( CF_ExtRom ) ) );
+	}
 	
 	// VDG -----
 	if( !vdg->Init() ) return false;
@@ -379,7 +372,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	if( !cmts->Init( cnfg->GetValue( CF_save ) ) ) return false;
 	
 	// DISK -----
-	if( !disk->Init( cnfg->GetValue( CV_FDD ) ) ) return false;
+	if( !disk->Init( cnfg->GetValue( CV_FDDrive ) ) ) return false;
 	disk->WaitEnable( cnfg->GetValue( CB_FDDWait ) );
 	
 	// 音声合成 -----
@@ -397,17 +390,43 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	if( !iom->Connect( intr, *DevTable.Intr  ) ) return false;	// 割込み
 	if( !iom->Connect( vdg,  *DevTable.Vdg   ) ) return false;	// VDG
 	if( !iom->Connect( psg,  *DevTable.Psg   ) ) return false;	// PSG/OPN
-	if( cnfg->GetValue( CV_FDD ) || (cnfg->GetValue( CV_Model ) == 66) || (cnfg->GetValue( CV_Model ) == 68) )	// DISK
-		if( !iom->Connect( disk,  *DevTable.Disk   ) ) return false;
-	if( DevTable.Memory )										// メモリ
-		if( !iom->Connect( mem,   *DevTable.Memory ) ) return false;
-	if( DevTable.Voice )										// 音声合成
-		if( !iom->Connect( voice, *DevTable.Voice  ) ) return false;
+	if( cnfg->GetValue( CV_FDDrive ) || (cnfg->GetValue( CV_Model ) == 66) || (cnfg->GetValue( CV_Model ) == 68) ){	// DISK
+		if( !iom->Connect( disk,  *DevTable.Disk   ) ){
+			return false;
+		}
+	}
+	if( DevTable.Memory ){										// メモリ
+		if( !iom->Connect( mem,   *DevTable.Memory ) ){
+			return false;
+		}
+	}
+	if( DevTable.Voice ){										// 音声合成
+		if( !iom->Connect( voice, *DevTable.Voice  ) ){
+			return false;
+		}
+	}
 	
-	// オプション機能 -----
-	if( cnfg->GetValue( CV_Soldier ) )							// 戦士のカートリッジ
-		if( !iom->Connect( mem, *DevTable.Soldier ) ) return false;
+	// 拡張カートリッジ -----
+	switch( cnfg->GetValue( CV_ExCartridge ) ){
+	case EXC660101:	// 拡張漢字ROMカートリッジ
+	case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
+		DevTable.ExCart = &VM6::c_exkanji;
+		break;
+		
+	case EXCSOL1:	// 戦士のカートリッジ
+		DevTable.ExCart = &VM6::c_soldier1;
+		break;
+		
+	case EXCSOL2:	// 戦士のカートリッジmkⅡ
+		DevTable.ExCart = &VM6::c_soldier2;
+		break;
+	}
 	
+	if( DevTable.ExCart  ){
+		if( !iom->Connect( mem, *DevTable.ExCart ) ){
+			return false;
+		}
+	}
 	
 	return true;
 }
@@ -1182,49 +1201,56 @@ void VM6::BpReset( void )
 // デバイスコネクタ
 ////////////////////////////////////////////////////////////////
 
-// 戦士のカートリッジ
-const std::vector<IOBus::Connector> VM6::c_soldier = {
-	{ 0x06, IOBus::portout, MEM6::out06H },
-	{ 0x7f, IOBus::portout, MEM6::out7FH },
-	{ 0x30, IOBus::portout, MEM6::out3xH },
-	{ 0x31, IOBus::portout, MEM6::out3xH },
-	{ 0x32, IOBus::portout, MEM6::out3xH },
-	{ 0x33, IOBus::portout, MEM6::out3xH },
-	{ 0x34, IOBus::portout, MEM6::out3xH },
-	{ 0x35, IOBus::portout, MEM6::out3xH },
-	{ 0x36, IOBus::portout, MEM6::out3xH },
-	{ 0x37, IOBus::portout, MEM6::out3xH },
-	{ 0x38, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x39, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3a, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3b, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3c, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3d, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3e, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3f, IOBus::portout, MEM6::out3xH }	// イメージ
+// 拡張漢字ROMカートリッジ -------------------------------------
+const std::vector<IOBus::Connector> VM6::c_exkanji = {
+	{ 0xfc, IOBus::portout, MEM6::outFCH },
+	{ 0xff, IOBus::portout, MEM6::outFFH },
+	{ 0xfd, IOBus::portin,  MEM6::inFDH },
+	{ 0xfe, IOBus::portin,  MEM6::inFEH }
 };
 
-const std::vector<IOBus::Connector> VM60::c_soldier = {
-	{ 0x06, IOBus::portout, MEM6::out06H },
-	{ 0x7f, IOBus::portout, MEM6::out7FH },
-	{ 0x30, IOBus::portout, MEM6::out3xH },
-	{ 0x31, IOBus::portout, MEM6::out3xH },
-	{ 0x32, IOBus::portout, MEM6::out3xH },
-	{ 0x33, IOBus::portout, MEM6::out3xH },
-	{ 0x34, IOBus::portout, MEM6::out3xH },
-	{ 0x35, IOBus::portout, MEM6::out3xH },
-	{ 0x36, IOBus::portout, MEM6::out3xH },
-	{ 0x37, IOBus::portout, MEM6::out3xH },
-	{ 0x38, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x39, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3a, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3b, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3c, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3d, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3e, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0x3f, IOBus::portout, MEM6::out3xH },	// イメージ
-	{ 0xf0, IOBus::portout, MEM60::outF0H },
-	{ 0xf2, IOBus::portout, MEM60::outF2H }
+// 戦士のカートリッジ ----------------------------------------------
+const std::vector<IOBus::Connector> VM6::c_soldier1 = {
+	{ 0x70, IOBus::portout, MEM6::out7FH  },
+	{ 0x71, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x72, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x73, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x74, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x75, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x76, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x77, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x78, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x79, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7a, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7b, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7c, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7d, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7e, IOBus::portout, MEM6::out7FH  },	// イメージ
+	{ 0x7f, IOBus::portout, MEM6::out7FH  }		// イメージ
+};
+
+// 戦士のカートリッジmkⅡ ------------------------------------------
+const std::vector<IOBus::Connector> VM6::c_soldier2 = {
+	{ 0x06, IOBus::portout, MEM6::out06H  },
+	{ 0x7f, IOBus::portout, MEM6::out7FH  },
+	{ 0x30, IOBus::portout, MEM6::out3xH  },
+	{ 0x31, IOBus::portout, MEM6::out3xH  },
+	{ 0x32, IOBus::portout, MEM6::out3xH  },
+	{ 0x33, IOBus::portout, MEM6::out3xH  },
+	{ 0x34, IOBus::portout, MEM6::out3xH  },
+	{ 0x35, IOBus::portout, MEM6::out3xH  },
+	{ 0x36, IOBus::portout, MEM6::out3xH  },
+	{ 0x37, IOBus::portout, MEM6::out3xH  },
+	{ 0x38, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x39, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3a, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3b, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3c, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3d, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3e, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0x3f, IOBus::portout, MEM6::out3xH  },	// イメージ
+	{ 0xf0, IOBus::portout, MEM6::outF0Hs },
+	{ 0xf2, IOBus::portout, MEM6::outF2Hs }
 };
 
 

@@ -12,8 +12,8 @@
 
 #include "id_config.h"
 #include "id_icon.h"
-#include "../id_menu.h"
 #include "../pc6001v.h"
+#include "../id_menu.h"
 
 #include "../breakpoint.h"
 #include "../common.h"
@@ -83,7 +83,7 @@ void EL6::ShowPopupMenu( int x, int y )
 			MSEP1,			// ----------
 			MTAPE,			// TAPE
 			MDISK,			// DISK
-			MEXTROM,		// 拡張ROM
+			MEXTCART,		// 拡張カートリッジ
 			MCONT,			// コントローラ
 			MCONFIG,		// 設定
 			MDEBUG,			// デバッグ
@@ -179,8 +179,19 @@ void EL6::ShowPopupMenu( int x, int y )
 		EnableMenuItem( hsm, ID_DISKEJECT2, MF_BYCOMMAND | vm->disk->GetFile(1).empty() ? MF_GRAYED : MF_ENABLED );
 	}
 	
-	// 拡張ROM
-	EnableMenuItem( hsm, ID_ROMEJECT, MF_BYCOMMAND | vm->mem->GetFile().empty() ? MF_GRAYED : MF_ENABLED );
+	// 拡張カートリッジ
+	switch( vm->mem->GetCartridge() ){
+	case EXC6001:	CheckMenuItem( hsm, ID_C6001,   MF_CHECKED );	break;
+	case EXC6005:	CheckMenuItem( hsm, ID_C6005,   MF_CHECKED );	break;
+	case EXC6006:	CheckMenuItem( hsm, ID_C6006,   MF_CHECKED );	break;
+	case EXC660101:	CheckMenuItem( hsm, ID_C660101, MF_CHECKED );	break;
+	case EXC6006SR:	CheckMenuItem( hsm, ID_C6006SR, MF_CHECKED );	break;
+	case EXC6007SR:	CheckMenuItem( hsm, ID_C6007SR, MF_CHECKED );	break;
+	case EXCSOL1:	CheckMenuItem( hsm, ID_CSOL1,   MF_CHECKED );	break;
+	case EXCSOL2:	CheckMenuItem( hsm, ID_CSOL2,   MF_CHECKED );	break;
+	case EXCSOL3:	CheckMenuItem( hsm, ID_CSOL3,   MF_CHECKED );	break;
+	}
+	EnableMenuItem( hsm, ID_CARTEJECT, MF_BYCOMMAND | vm->mem->GetCartridge() ? MF_ENABLED : MF_GRAYED );
 	
 	// コントローラ
 	for( int i=0; i < 5; i++ ){
@@ -214,9 +225,9 @@ void EL6::ShowPopupMenu( int x, int y )
 	// サンプリングレート
 	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CV_SampleRate )/11025)>>1), MF_BYCOMMAND );
 	
-	CheckMenuItem( hsm, ID_NOWAIT,    sche->GetWaitEnable()               ? MF_UNCHECKED : MF_CHECKED   );
+	CheckMenuItem( hsm, ID_NOWAIT,    sche->GetWaitEnable()          ? MF_UNCHECKED : MF_CHECKED   );
 	CheckMenuItem( hsm, ID_TURBO,     cfg->GetValue( CB_TurboTAPE )  ? MF_CHECKED   : MF_UNCHECKED );
-	CheckMenuItem( hsm, ID_BOOST,     vm->cmtl->IsBoostUp()               ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_BOOST,     vm->cmtl->IsBoostUp()          ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_FULLSCRN,  cfg->GetValue( CB_FullScreen ) ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_STATUS,    cfg->GetValue( CB_DispStatus ) ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_DISP43,    cfg->GetValue( CB_DispNTSC )   ? MF_CHECKED   : MF_UNCHECKED );
@@ -889,7 +900,17 @@ static void SaveTrackbar( const HWND hwnd, const int id, const TCValue cv )
 // リストボックス項目用
 static std::map<TCValue, std::map<int, std::string>> LBpairs = {
 	{ CV_Model,			{ { 60, "PC-6001" }, { 61, "PC-6001A" }, { 62, "PC-6001mk2" }, { 66, "PC-6601" }, { 64, "PC-6001mk2SR" }, { 68, "PC-6601SR" } } },
-	{ CV_Soldier,		{ { 0, "なし" }, { 2, "戦士のカートリッジmkⅡ" } } },
+	{ CV_ExCartridge,	{ 	{ 0,			"なし" },
+							{ EXC6005,		"PC-6005 ROMカートリッジ" },
+							{ EXC6006,		"PC-6006 拡張ROM/RAMカートリッジ" },
+							{ EXC6001,		"PCS-6001R 拡張BASIC" },
+							{ EXC660101,	"PC-6601-01 拡張漢字ROMカートリッジ" },
+							{ EXC6006SR,	"PC-6006SR 拡張64KRAMカートリッジ" },
+							{ EXC6007SR,	"PC-6007SR 拡張漢字ROM&RAMカートリッジ" },
+							{ EXCSOL1,		"戦士のカートリッジ" },
+							{ EXCSOL2,		"戦士のカートリッジmkⅡ" },
+							{ EXCSOL3,		"戦士のカートリッジmkⅢ" }
+						} },
 	{ CV_Mode4Color,	{ { 0, "モノクロ" }, { 1, "赤/青" }, { 2, "青/赤" }, { 3, "桃/緑" }, { 4, "緑/桃" } } },
 	{ CV_AviBpp,		{ { 16, "16 bit" }, { 24, "24 bit" }, { 32, "32 bit" } } },
 	{ CV_SampleRate,	{ { 11025, "11025 Hz" }, { 22050, "22050 Hz" }, { 44100, "44100 Hz" } } }
@@ -978,14 +999,11 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// 機種
 		SetDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
-		// FDD
-		SetSpinControl( hwnd, ID_SPFDDRV, ID_FDDRV, CV_FDD );
+		// FDドライブ数
+		SetSpinControl( hwnd, ID_SPFDDRV, ID_FDDRV, CV_FDDrive );
 		
-		// 拡張RAM使用
-		SetCheckBox( hwnd, ID_CB1, CB_ExtRam );
-		
-		// 戦士のカートリッジ使用
-		SetDropDownListIndex( hwnd, ID_LBSOLDIER, CV_Soldier );
+		// 拡張カートリッジ
+		SetDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
 		
 		break;
 		
@@ -1163,14 +1181,11 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		// 機種
 		SaveDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
-		// FDD
-		SaveSpinControl( hwnd, ID_FDDRV, CV_FDD );
+		// FDドライブ数
+		SaveSpinControl( hwnd, ID_FDDRV, CV_FDDrive );
 		
-		// 拡張RAM使用
-		SaveCheckBox( hwnd, ID_CB1, CB_ExtRam );
-		
-		// 戦士のカートリッジ使用
-		SaveDropDownListIndex( hwnd, ID_LBSOLDIER, CV_Soldier );
+		// 拡張カートリッジ
+		SaveDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
 		
 		break;
 		

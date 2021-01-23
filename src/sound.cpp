@@ -1,9 +1,10 @@
 #include <mutex>
 
+#include "pc6001v.h"
+
 #include "error.h"
 #include "log.h"
 #include "osd.h"
-#include "pc6001v.h"
 #include "sound.h"
 
 

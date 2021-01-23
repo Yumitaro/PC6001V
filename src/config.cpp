@@ -3,42 +3,44 @@
 #include <map>
 #include <tuple>
 
+#include "pc6001v.h"
+
 #include "config.h"
 #include "common.h"
 #include "error.h"
 #include "log.h"
 #include "osd.h"
-#include "pc6001v.h"
+
+
 
 
 static const std::map<TCValue, const CfgSet<TCValue>> ConfigValue = {
-	{ CV_Model,			{ "CONFIG",		"Model",		TINI_Model,			DEFAULT_MODEL,		MAX_MODEL,		MIN_MODEL		} },
-	{ CV_FDD,			{ "CONFIG",		"FDD",			TINI_FDD,			DEFAULT_FDD,		MAX_FDD,		MIN_FDD			} },
-	{ CV_OverClock,		{ "CONFIG",		"OverClock",	TINI_OverClock,		DEFAULT_OVERCLOCK,	MAX_OVERCLOCK,	MIN_OVERCLOCK	} },
-	{ CV_MaxBoost60,	{ "CMT",		"MaxBoost60",	TINI_MaxBoost60,	DEFAULT_MAXBOOST60,	MAX_BOOST,		MIN_BOOST		} },
-	{ CV_MaxBoost62,	{ "CMT",		"MaxBoost62",	TINI_MaxBoost62,	DEFAULT_MAXBOOST62,	MAX_BOOST,		MIN_BOOST		} },
-	{ CV_StopBit,		{ "CMT",		"StopBit",		TINI_StopBit,		DEFAULT_STOPBIT,	MAX_STOPBIT,	MIN_STOPBIT		} },
-	{ CV_Mode4Color,	{ "DISPLAY",	"Mode4Color",	TINI_Mode4Color,	DEFAULT_MODE4COLOR,	MAX_MODE4COLOR,	MIN_MODE4COLOR	} },
-	{ CV_ScanLineBr,	{ "DISPLAY",	"ScanLineBr",	TINI_ScanLineBr,	DEFAULT_SCANLINEBR,	MAX_SCANLINEBR,	MIN_SCANLINEBR	} },
-	{ CV_WindowZoom,	{ "DISPLAY",	"WindowZoom",	TINI_WindowZoom,	DEFAULT_WINDOWZOOM,	MAX_WINDOWZOOM,	MIN_WINDOWZOOM	} },
-	{ CV_FrameSkip,		{ "DISPLAY",	"FrameSkip",	TINI_FrameSkip,		DEFAULT_FRAMESKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
-	{ CV_SampleRate,	{ "SOUND",		"SampleRate",	TINI_SampleRate,	DEFAULT_SAMPLERATE,	MAX_SAMPLERATE,	MIN_SAMPLERATE	} },
-	{ CV_SoundBuffer,	{ "SOUND",		"SoundBuffer",	TINI_SoundBuffer,	DEFAULT_SOUNDBUF,	MAX_SOUNDBUF,	MIN_SOUNDBUF	} },
-	{ CV_MasterVol,		{ "SOUND",		"MasterVolume",	TINI_MasterVolume,	DEFAULT_MASTERVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CV_PsgVolume,		{ "SOUND",		"PsgVolume",	TINI_PsgVolume,		DEFAULT_PSGVOL,		MAX_VOLUME,		MIN_VOLUME		} },
-	{ CV_PsgLPF,		{ "SOUND",		"PsgLPF",		TINI_PsgLPF,		DEFAULT_PSGLPF,		MAX_LPF,		MIN_LPF			} },
-	{ CV_VoiceVolume,	{ "SOUND",		"VoiceVolume",	TINI_VoiceVolume,	DEFAULT_VOICEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CV_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,	MAX_VOLUME,		MIN_VOLUME		} },
-	{ CV_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,	MAX_LPF,		MIN_LPF			} },
-	{ CV_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,		MAX_AVIBPP,		MIN_AVIBPP		} },
-	{ CV_AviZoom,		{ "MOVIE",		"AviZoom",		TINI_AviZoom,		DEFAULT_AVIZOOM,	MAX_AVIZOOM,	MIN_AVIZOOM		} },
-	{ CV_AviFrameSkip,	{ "MOVIE",		"AviFrameSkip",	TINI_AviFrameSkip,	DEFAULT_AVIFRMSKIP,	MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
-	{ CV_Soldier,		{ "OPTION",		"Soldier",		TINI_Soldier,		DEFAULT_SOLDIER,	0x0f,			0				} },
-	{ CV_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,		MAX_REPEAT,		MIN_REPEAT		} }
+	{ CV_Model,			{ "CONFIG",		"Model",		TINI_Model,			DEFAULT_MODEL,			MAX_MODEL,		MIN_MODEL		} },
+	{ CV_FDDrive,		{ "CONFIG",		"FDDrive",		TINI_FDDrive,		DEFAULT_FDDrive,		MAX_FDDrive,	MIN_FDDrive		} },
+	{ CV_OverClock,		{ "CONFIG",		"OverClock",	TINI_OverClock,		DEFAULT_OVERCLOCK,		MAX_OVERCLOCK,	MIN_OVERCLOCK	} },
+	{ CV_MaxBoost60,	{ "CMT",		"MaxBoost60",	TINI_MaxBoost60,	DEFAULT_MAXBOOST60,		MAX_BOOST,		MIN_BOOST		} },
+	{ CV_MaxBoost62,	{ "CMT",		"MaxBoost62",	TINI_MaxBoost62,	DEFAULT_MAXBOOST62,		MAX_BOOST,		MIN_BOOST		} },
+	{ CV_StopBit,		{ "CMT",		"StopBit",		TINI_StopBit,		DEFAULT_STOPBIT,		MAX_STOPBIT,	MIN_STOPBIT		} },
+	{ CV_Mode4Color,	{ "DISPLAY",	"Mode4Color",	TINI_Mode4Color,	DEFAULT_MODE4COLOR,		MAX_MODE4COLOR,	MIN_MODE4COLOR	} },
+	{ CV_ScanLineBr,	{ "DISPLAY",	"ScanLineBr",	TINI_ScanLineBr,	DEFAULT_SCANLINEBR,		MAX_SCANLINEBR,	MIN_SCANLINEBR	} },
+	{ CV_WindowZoom,	{ "DISPLAY",	"WindowZoom",	TINI_WindowZoom,	DEFAULT_WINDOWZOOM,		MAX_WINDOWZOOM,	MIN_WINDOWZOOM	} },
+	{ CV_FrameSkip,		{ "DISPLAY",	"FrameSkip",	TINI_FrameSkip,		DEFAULT_FRAMESKIP,		MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
+	{ CV_SampleRate,	{ "SOUND",		"SampleRate",	TINI_SampleRate,	DEFAULT_SAMPLERATE,		MAX_SAMPLERATE,	MIN_SAMPLERATE	} },
+	{ CV_SoundBuffer,	{ "SOUND",		"SoundBuffer",	TINI_SoundBuffer,	DEFAULT_SOUNDBUF,		MAX_SOUNDBUF,	MIN_SOUNDBUF	} },
+	{ CV_MasterVol,		{ "SOUND",		"MasterVolume",	TINI_MasterVolume,	DEFAULT_MASTERVOL,		MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_PsgVolume,		{ "SOUND",		"PsgVolume",	TINI_PsgVolume,		DEFAULT_PSGVOL,			MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_PsgLPF,		{ "SOUND",		"PsgLPF",		TINI_PsgLPF,		DEFAULT_PSGLPF,			MAX_LPF,		MIN_LPF			} },
+	{ CV_VoiceVolume,	{ "SOUND",		"VoiceVolume",	TINI_VoiceVolume,	DEFAULT_VOICEVOL,		MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_TapeVolume,	{ "SOUND",		"TapeVolume",	TINI_TapeVolume,	DEFAULT_TAPEVOL,		MAX_VOLUME,		MIN_VOLUME		} },
+	{ CV_TapeLPF,		{ "SOUND",		"TapeLPF",		TINI_TapeLPF,		DEFAULT_TAPELPF,		MAX_LPF,		MIN_LPF			} },
+	{ CV_AviBpp,		{ "MOVIE",		"AviBpp",		TINI_AviBpp,		DEFAULT_AVIBPP,			MAX_AVIBPP,		MIN_AVIBPP		} },
+	{ CV_AviZoom,		{ "MOVIE",		"AviZoom",		TINI_AviZoom,		DEFAULT_AVIZOOM,		MAX_AVIZOOM,	MIN_AVIZOOM		} },
+	{ CV_AviFrameSkip,	{ "MOVIE",		"AviFrameSkip",	TINI_AviFrameSkip,	DEFAULT_AVIFRMSKIP,		MAX_FRAMESKIP,	MIN_FRAMESKIP	} },
+	{ CV_ExCartridge,	{ "OPTION",		"ExCartridge",	TINI_ExCartridge,	DEFAULT_EXCARTRIDGE,	0xffff,			0				} },
+	{ CV_KeyRepeat,		{ "KEY",		"KeyRepeat",	TINI_KeyRepeat,		DEFAULT_REPEAT,			MAX_REPEAT,		MIN_REPEAT		} }
 };
 
 static const std::map<TCBool, const CfgSet<TCBool>> ConfigBool = {
-	{ CB_ExtRam,		{ "CONFIG",		"ExtRam",		TINI_ExtRam,		DEFAULT_EXTRAM		} },
 	{ CB_CheckCRC,		{ "CONFIG",		"CheckCRC",		TINI_CheckCRC,		DEFAULT_CHECKCRC	} },
 	{ CB_FDDWait,		{ "CONFIG",		"FDDWait",		TINI_FDDWait,		DEFAULT_FDDWAIT		} },
 	{ CB_TurboTAPE,		{ "CMT",		"TurboTAPE",	TINI_TurboTAPE,		DEFAULT_TURBO		} },
@@ -943,8 +945,7 @@ void CFG6::InitIni( bool over )
 	std::vector<TConfig> allcf = {
 		// [CONFIG] ------------------------------------------------
 		CV_Model,			// 機種
-		CV_FDD,				// FDD
-		CB_ExtRam,			// 拡張RAM使用
+		CV_FDDrive,			// FDドライブ数
 		CV_OverClock,		// オーバークロック率
 		CB_CheckCRC,		// CRCチェック
 		CB_FDDWait,			// FDDウェイト有効フラグ
@@ -1006,7 +1007,7 @@ void CFG6::InitIni( bool over )
 		CB_SaveQuit,		// 終了時INI保存
 		
 		// [OPTION] ------------------------------------------------
-		CV_Soldier,			// 戦士のカートリッジ使うフラグ
+		CV_ExCartridge,		// 拡張カートリッジ
 		
 		// [KEY] ---------------------------------------------------
 		CV_KeyRepeat,		// キーリピート
@@ -1022,8 +1023,7 @@ void CFG6::InitIni( bool over )
 	auto allcf2 = std::tuple(
 		// [CONFIG] ------------------------------------------------
 		CV_Model,			// 機種
-		CV_FDD,				// FDD
-		CB_ExtRam,			// 拡張RAM使用
+		CV_FDDrive,			// FDドライブ数
 		CV_OverClock,		// オーバークロック率
 		CB_CheckCRC,		// CRCチェック
 		CB_FDDWait,			// FDDウェイト有効フラグ
@@ -1085,7 +1085,7 @@ void CFG6::InitIni( bool over )
 		CB_SaveQuit,		// 終了時INI保存
 		
 		// [OPTION] ------------------------------------------------
-		CV_Soldier,			// 戦士のカートリッジ使うフラグ
+		CV_ExCartridge,		// 拡張カートリッジ
 		
 		// [KEY] ---------------------------------------------------
 		CV_KeyRepeat		// キーリピート
@@ -1096,8 +1096,7 @@ void CFG6::InitIni( bool over )
 	
 	// [CONFIG] ------------------------------------------------
 	SetDefault( CV_Model,			over );	// 機種
-	SetDefault( CV_FDD,				over );	// FDD
-	SetDefault( CB_ExtRam,			over );	// 拡張RAM使用
+	SetDefault( CV_FDDrive,			over );	// FDドライブ数
 	SetDefault( CV_OverClock,		over );	// オーバークロック率
 	SetDefault( CB_CheckCRC,		over );	// CRCチェック
 	SetDefault( CB_FDDWait,			over );	// FDDウェイト有効フラグ
@@ -1159,7 +1158,7 @@ void CFG6::InitIni( bool over )
 	SetDefault( CB_SaveQuit,		over );	// 終了時INI保存
 	
 	// [OPTION] ------------------------------------------------
-	SetDefault( CV_Soldier,			over );	// 戦士のカートリッジ使うフラグ
+	SetDefault( CV_ExCartridge,		over );	// 拡張カートリッジ
 	
 	// [KEY] ---------------------------------------------------
 	SetDefault( CV_KeyRepeat,		over );	// キーリピート
@@ -1352,11 +1351,10 @@ bool CFG6::DokoSave( cIni* Ini )
 	Ini->SetEntry( "GLOBAL", "Version",	"", VERSION );
 	
 	// 共通
-	Ini->SetVal( "GLOBAL", "Model",		"", GetValue( CV_Model ) );
-	Ini->SetVal( "GLOBAL", "FDD",		"", GetValue( CV_FDD ) );
-	Ini->SetVal( "GLOBAL", "ExtRam",	"", GetValue( CB_ExtRam ) );
+	Ini->SetVal( "GLOBAL", "Model",			"", GetValue( CV_Model ) );
+	Ini->SetVal( "GLOBAL", "FDDrive",		"", GetValue( CV_FDDrive ) );
 	// OPTION
-	Ini->SetVal( "OPTION", "Soldier",	"", GetValue( CV_Soldier ) );
+	Ini->SetVal( "OPTION", "ExCartridge",	"", GetValue( CV_ExCartridge ) );
 	
 	return true;
 }
@@ -1371,16 +1369,15 @@ bool CFG6::DokoSave( cIni* Ini )
 bool CFG6::DokoLoad( cIni* Ini )
 {
 	int st;
-	bool yn;
 	std::string strva;
 	
 	if( !Ini ){ return false; }
 	
 	// 共通
-	if( Ini->GetVal( "GLOBAL", "Model",   st ) ){ SetValue( CV_Model,   st ); }
-	if( Ini->GetVal( "GLOBAL", "FDD",     st ) ){ SetValue( CV_FDD,     st ); }
-	if( Ini->GetVal( "GLOBAL", "ExtRam",  yn ) ){ SetValue( CB_ExtRam,  yn ); }
-	if( Ini->GetVal( "OPTION", "Soldier", st ) ){ SetValue( CV_Soldier, st ); }
+	if( Ini->GetVal( "GLOBAL", "Model",       st ) ){ SetValue( CV_Model,   st ); }
+	if( Ini->GetVal( "GLOBAL", "FDDrive",     st ) ){ SetValue( CV_FDDrive, st ); }
+	// OPTION
+	if( Ini->GetVal( "OPTION", "ExCartridge", st ) ){ SetValue( CV_ExCartridge, st ); }
 	
 	return true;
 }

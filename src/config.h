@@ -13,7 +13,7 @@
 // 設定項目(数値)
 typedef enum {
 	CV_Model = 0,
-	CV_FDD,
+	CV_FDDrive,
 	CV_OverClock,
 	CV_MaxBoost60,
 	CV_MaxBoost62,
@@ -33,14 +33,13 @@ typedef enum {
 	CV_AviBpp,
 	CV_AviZoom,
 	CV_AviFrameSkip,
-	CV_Soldier,
+	CV_ExCartridge,
 	CV_KeyRepeat
 } TCValue;
 
 // 設定項目(bool)
 typedef enum {
-	CB_ExtRam = 0,
-	CB_CheckCRC,
+	CB_CheckCRC = 0,
 	CB_FDDWait,
 	CB_TurboTAPE,
 	CB_BoostUp,
