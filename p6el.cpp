@@ -1668,8 +1668,10 @@ void EL6::UI_CartInsert( WORD cart, const P6VPATH& path )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_CartEject( void )
 {
+	P6VPATH fpath = "";
+	
 	cfg->SetValue( CV_ExCartridge, 0 );
-	cfg->SetValue( CF_ExtRom, STR2P6VPATH( "" ) );
+	cfg->SetValue( CF_ExtRom, fpath );
 	cfg->Write();
 	
 	// 再起動を伴うのでメッセージ表示

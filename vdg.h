@@ -79,6 +79,10 @@ public:
 	bool IsBusReqExec() const;					// バスリクエスト区間実行フラグ取得
 	WORD SRGVramAddr( WORD ) const;				// SRのG-VRAMアドレス取得(ビットマップモード)
 	
+	// デバイスID
+	enum IDOut{ out4xH=0, outB0H, outC0H, outC1H, outC8H, outC9H, outCAH, outCBH, outCCH, outCEH, outCFH };
+	enum IDIn {  inA2H=0 };
+	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
@@ -97,10 +101,6 @@ public:
 	
 	WORD GetVramAddr() const override;			// VRAMアドレス取得
 	WORD GerAttrAddr() const override;			// ATTRアドレス取得
-	
-	// デバイスID
-	enum IDOut{ outB0H=0 };
-	enum IDIn {};
 };
 
 
@@ -115,10 +115,6 @@ public:
 	
 	WORD GetVramAddr() const override;			// VRAMアドレス取得
 	WORD GerAttrAddr() const override;			// ATTRアドレス取得
-	
-	// デバイスID
-	enum IDOut{ outB0H=0, outC0H, outC1H };
-	enum IDIn {  inA2H=0 };
 };
 
 
@@ -148,11 +144,6 @@ public:
 	
 	WORD GetVramAddr() const override;			// VRAMアドレス取得
 	WORD GerAttrAddr() const override;			// ATTRアドレス取得
-	
-	// デバイスID
-	enum IDOut{ out4xH=0, outB0H, outC0H, outC1H, outC8H, outC9H,
-				outCAH,   outCBH, outCCH, outCEH, outCFH };
-	enum IDIn {  inA2H=0 };
 };
 
 

@@ -89,15 +89,18 @@ public:
 		PAGESIZE = 1 << PAGEBITS,
 		PAGEMASK = PAGESIZE - 1
 	};
-	
+
+protected:
 	using RFuncPtr = IDevice::RFuncPtr;
 	using WFuncPtr = IDevice::WFuncPtr;
 	using RFunc    = IDevice::RFunc;
 	using WFunc    = IDevice::WFunc;
-
-protected:
+	using NFuncPtr = IDevice::NFuncPtr;
+	using NFunc    = IDevice::NFunc;
+	
 	std::string Name;				// メモリブロック名
 	MemCell* PMem;					// メモリポインタ
+	NFunc FName;					// 関数ポインタ(メモリブロック名取得)
 	RFunc FRead;					// 関数ポインタ(読込み)
 	WFunc FWrite;					// 関数ポインタ(書込み)
 	int Wait;						// アクセスウェイト
@@ -108,12 +111,13 @@ public:
 	
 	void SetMemory( const std::string&, MemCell&, int = -1 );		// メモリ割当て
 	void SetFunc  ( const std::string&, RFunc, WFunc, int = -1 );	// 関数割当て
-	const std::string& GetName() const;						// メモリブロック名取得
-	void SetWait( int );									// アクセスウェイト設定
-	int GetWait() const;									// アクセスウェイト取得
+	void SetFunc  ( NFunc, RFunc, WFunc, int = -1 );				// 関数割当て
+	const std::string& GetName( WORD, bool = false ) const;			// メモリブロック名取得
+	void SetWait( int );											// アクセスウェイト設定
+	int GetWait() const;											// アクセスウェイト取得
 	
-	BYTE Read( WORD, int* = nullptr ) const;				// メモリリード
-	void Write( WORD, BYTE, int* = nullptr ) const;			// メモリライト
+	BYTE Read( WORD, int* = nullptr ) const;						// メモリリード
+	void Write( WORD, BYTE, int* = nullptr ) const;					// メモリライト
 };
 
 
@@ -127,9 +131,70 @@ protected:
 		const int Wait;						// アクセスウェイト
 	};
 	
+	// メモリ情報テーブル構造体
+	struct MEMINFOTABLE {
+		const MEMINFO* System1;
+		const MEMINFO* System2;
+		const MEMINFO* CGRom1;
+		const MEMINFO* CGRom2;
+		const MEMINFO* Kanji;
+		const MEMINFO* Voice;
+		const MEMINFO* IntRam;
+		
+		const MEMINFO* ExtRom;			// 拡張カートリッジ　切り分けたい
+		const MEMINFO* ExtRam;			// 拡張カートリッジ　切り分けたい
+		
+		MEMINFOTABLE() :
+			System1( &IEMPTROM ), System2( &IEMPTROM ), CGRom1( &IEMPTROM ), CGRom2( &IEMPTROM ),
+			Kanji( &IEMPTROM ), Voice( &IEMPTROM ), IntRam( &IEMPTRAM ),
+			ExtRom( &IEMPTROM ), ExtRam( &IEMPTROM ) {}
+	};
+	
+	
 	// メモリ情報
 	static const MEMINFO IEMPTROM;
 	static const MEMINFO IEMPTRAM;
+	
+	MEMINFOTABLE MemTable;				// 内部メモリ情報テーブル
+	
+	MemCells SysRom1;					// BASIC ROM	ALL (64,68の時はSystem ROM1)
+	MemCells SysRom2;					// System ROM2	64,68
+	MemCells CGRom1;					// CG ROM1		ALL
+	MemCells CGRom2;					// CG ROM2		62,66
+	MemCells KanjiRom;					// 漢字 ROM		62,66
+	MemCells VoiceRom;					// 音声合成 ROM	62,66
+	MemCells IntRam;					// 内部RAM		ALL
+	
+	std::vector<MemBlock> IRom;			// 内部ROMブロック
+	std::vector<MemBlock> IRam;			// 内部RAMブロック
+	
+	std::array<MemBlock*,8> RBLK;		// リード時メモリブロックポインタ(8KB*8) 1段目(CGRomアクセス用)
+	std::array<MemBlock*,8> RD_Blk;		// リード時メモリブロックポインタ(8KB*8) 2段目
+	std::array<MemBlock*,8> WR_Blk;		// ライト時メモリブロックポインタ(8KB*8)
+	
+	bool CGBank;						// CG ROM BANK	true:有効 false:無効
+	int M1Wait;							// M1ウェイト
+	
+	// for 62,66,64,68 -----------------------------------------------------------------------
+	std::array<BYTE,3> Rf;				// メモリコントローラ内部レジスタ
+	// ---------------------------------------------------------------------------------------
+	
+	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH&, bool );	// メモリ確保とROMファイル読込み
+	virtual bool AllocMemorySpec( const P6VPATH&, bool ) = 0;				// メモリ確保とROMファイル読込み(機種別)
+	virtual void SetRamValue() = 0;											// 内部RAMの初期値を設定
+	virtual bool InitIntSpec() = 0;											// 内部メモリ初期化(機種別)
+	virtual bool InitExtSpec() = 0;											// 外部メモリ初期化(機種別)
+	virtual void SetMemBlockR( BYTE, BYTE ) = 0;							// メモリリード時のメモリブロック指定(62,66)
+	virtual void SetMemBlockW( BYTE ) = 0;									// メモリライト時のメモリブロック指定(62,66)
+	
+	// メモリブロック用関数 ------------------------------------------------------------------
+	virtual const std::string& GetNameCGromRead( WORD, bool ) = 0;	// CGROM メモリブロック名取得
+	virtual BYTE CGromRead( MemCell*, WORD, int* = nullptr ) = 0;	// CGROM読込み
+	// ---------------------------------------------------------------------------------------
+	
+	// 拡張カートリッジ ======================================================================
+	// メモリ情報
+	static const MEMINFO IEXTROM8;
 	static const MEMINFO IEXTROM16;
 	static const MEMINFO IEXTROM128;
 	static const MEMINFO IEXTROM512;
@@ -140,181 +205,106 @@ protected:
 	static const MEMINFO IEXTRAM128;
 	static const MEMINFO IEXTRAM512;
 	
-	static const MEMINFO IEXBASIC;
-	static const MEMINFO IEXKANJI;
+	static const MEMINFO IEXBASIC;		// 拡張BASIC
+	static const MEMINFO IEXKANJI;		// 拡張漢字
+	static const MEMINFO IEXVOICE;		// ボイスシンセサイザー
 	
-	// メモリ情報テーブル構造体
-	struct MEMINFOTABLE {
-		const MEMINFO* ExtRom;
-		const MEMINFO* IntRam;
-		const MEMINFO* ExtRam;
-		
-		const MEMINFO* System1;
-		const MEMINFO* System2;
-		const MEMINFO* CGRom1;
-		const MEMINFO* CGRom2;
-		const MEMINFO* Kanji;
-		const MEMINFO* Voice;
-		
-		MEMINFOTABLE() :
-			ExtRom( &IEMPTROM ), IntRam( &IEMPTRAM ), ExtRam( &IEMPTROM ),
-			System1( &IEMPTROM ), System2( &IEMPTROM ), CGRom1( &IEMPTROM ), CGRom2( &IEMPTROM ),
-			Kanji( &IEMPTROM ), Voice( &IEMPTROM ) {}
-	};
+	MemCells ExtRom;					// 外部ROM		ALL
+	MemCells ExtRam;					// 外部RAM		ALL
 	
-	MEMINFOTABLE MemTable;			// メモリ情報テーブル
+	std::vector<MemBlock> ERom;			// 外部ROMブロック
+	std::vector<MemBlock> ERam;			// 外部RAMブロック
 	
-	bool CGBank;					// CG ROM BANK	true:有効 false:無効
-	bool ReadyExRom;				// 拡張ROM		true:マウント済み false:無効
-	
-	MemCells SysRom1;				// BASIC ROM	ALL (64,68の時はSystem ROM1)
-	MemCells SysRom2;				// System ROM2	64,68
-	MemCells CGRom1;				// CG ROM1		ALL
-	MemCells CGRom2;				// CG ROM2		62,66
-	MemCells KanjiRom;				// 漢字 ROM		62,66
-	MemCells VoiceRom;				// 音声合成 ROM	62,66
-	
-	MemCells ExtRom;				// 外部ROM		ALL
-	MemCells IntRam;				// 内部RAM		ALL
-	MemCells ExtRam;				// 外部RAM		ALL
-	
-	std::vector<MemBlock> InRomB;	// 内部ROMブロック
-	std::vector<MemBlock> ExRomB;	// 外部ROMブロック
-	std::vector<MemBlock> InRamB;	// 内部RAMブロック
-	std::vector<MemBlock> ExRamB;	// 外部RAMブロック
-	MemBlock InExRamB;				// RAMブロック(内部/外部RAM書込み)
-	
-	std::array<MemBlock*,8> RD_Blk;	// リード時メモリブロックポインタ(8KB*8)
-	std::array<MemBlock*,8> WR_Blk;	// ライト時メモリブロックポインタ(8KB*8)
-	
-	P6VPATH FilePath;				// 拡張ROMファイルフルパス
-	int M1Wait;						// M1ウェイト
-	bool EnableChkCRC;				// CRCチェック  true:有効 false:無効
-	
-	// for 62,66,64,68 -----------------------------------------------------------------------
-	bool cgrom;						// CG ROM 選択用 true:N60モード false:N60mモード
-	bool kj_rom;					// 漢字ROM,音声合成ROM 選択用 true:漢字ROM false:音声合成ROM
-	bool kj_LR;						// 漢字ROM 左右選択用 true:右 false:左
-	bool cgenable;					// CG ROMアクセスフラグ true:アクセス可 false:アクセス不可
-	BYTE cgaden;					// CG ROMアドレスイネーブル
-	BYTE cgaddr;					// CG ROMアドレス A13,14,15
-	std::array<BYTE,3> Rf;			// メモリコントローラ内部レジスタ
-	BYTE c2acc;						// PortC2Hアクセスフラグ
-	// ---------------------------------------------------------------------------------------
-	
-	// for 64,68 -----------------------------------------------------------------------------
-	std::array<MemBlock*,8> RD_BlkSR;	// リード時メモリブロックポインタ(8KB*8)	SRモード用
-	std::array<MemBlock*,8> WR_BlkSR;	// ライト時メモリブロックポインタ(8KB*8)	SRモード用
-	std::array<BYTE,16> RfSR;			// メモリコントローラ内部レジスタ			SRモード用
-	// ---------------------------------------------------------------------------------------
-	
-	DWORD CalcCrc32( MemCells&, int );		// CRC32計算
-	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH& );	// メモリ確保とROMファイル読込み
-	virtual bool AllocMemorySpecific( const P6VPATH& ) = 0;			// 全メモリ確保とROMファイル読込み(機種別)
-	virtual void SetRamValue() = 0;			// 内部RAMの初期値を設定
-	virtual bool InitSpecific() = 0;		// 初期化(機種別)
-	virtual void SetMemBlockR( BYTE, BYTE ) = 0;	// メモリリード時のメモリブロック指定(62,66)
-	virtual void SetMemBlockW( BYTE ) = 0;	// メモリライト時のメモリブロック指定(62,66)
-	
-	// for 62,66,64,68 -----------------------------------------------------------------------
-	void SetWait( BYTE );					// メモリアクセスウェイト設定
-	BYTE GetWait() const;					// メモリアクセスウェイト取得
-	void SetCGrom( BYTE );					// CG ROM アドレス等設定(62,66)
-	void SelectCGrom( int );				// CG ROM 選択(62,66)
-	void SetKanjiRom( BYTE );				// 漢字ROMおよび音声合成ROM設定(62,66)
-	BYTE GetKanjiRom() const;				// 漢字ROMおよび音声合成ROM取得(62,66)
-	void SetPortC2HAccess( BYTE );			// PortC2Hアクセス設定(62,66)
-	// ---------------------------------------------------------------------------------------
-	
-	// 拡張カートリッジ ----------------------------------------------------------------------
-	WORD ExCart;					// 0:なし
-	
-	// 戦士のカートリッジ --------------------------------------------------------------------
-	bool Sol60Mode;					// 初代機モード　true:有効 false:無効
-	bool CS01R;						// 初代機 0000-3FFFH 読込みフラグ
-	bool CS01W;						// 初代機 0000-3FFFH 書込みフラグ
-	std::array<BYTE,8> SolBank;		// メモリバンクレジスタ
-	int SolBankSet;					// ROMバンクセット
-	
-	void SetSolBank( BYTE, BYTE );				// メモリバンクレジスタ設定
-	BYTE SolReadEx( MemCell*, WORD );			// 戦士のカートリッジ読込み(外部ROM領域)
-	BYTE Sol60ReadA( MemCell*, WORD );			// 戦士のカートリッジAreaA,B読込み
-	void Sol60WriteA( MemCell*, WORD, BYTE );	// 戦士のカートリッジAreaA,B書込み
-	BYTE SolSccRead( MemCell*, WORD );			// 戦士のカートリッジSCC読込み
-	void SolSccWrite( MemCell*, WORD, BYTE );	// 戦士のカートリッジSCC書込み
+	WORD ExCart;						// 0:なし
+	P6VPATH FilePath;					// 拡張ROMファイルフルパス
 	
 	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	WORD Kaddr;						// 漢字ROMアドレス
-	bool Kenable;					// 漢字ROMチップイネーブル
-	// ---------------------------------------------------------------------------------------
+	WORD Kaddr;							// 漢字ROMアドレス
+	bool Kenable;						// 漢字ROMチップイネーブル
+	
+	// 戦士のカートリッジ --------------------------------------------------------------------
+	bool Sol60Mode;						// 初代機モード　true:有効 false:無効
+	bool CS01R;							// 初代機 0000-3FFFH 読込みフラグ
+	bool CS01W;							// 初代機 0000-3FFFH 書込みフラグ
+	std::array<BYTE,8> SolBank;			// メモリバンクレジスタ
+	int SolBankSet;						// ROMバンクセット
+	
+	void SetSolBank( BYTE, BYTE );								// メモリバンクレジスタ設定
+	const std::string& GetNameSolReadEx( WORD, bool );			// 戦士のカートリッジ メモリブロック名取得
+	BYTE SolReadEx( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジ読込み(外部ROM領域)
+	const std::string& GetNameSol60ReadA( WORD, bool = false );	// 戦士のカートリッジAreaA,B メモリブロック名取得
+	BYTE Sol60ReadA( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジAreaA,B読込み
+	void Sol60WriteA( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジAreaA,B書込み
+	BYTE SolSccRead( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジSCC読込み
+	void SolSccWrite( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジSCC書込み
 	
 	// I/Oアクセス関数 -----------------------------------------------------------------------
-	// 拡張カートリッジ ----------------------------------------------------------------------
-	// 戦士のカートリッジ --------------------------------------------------------------------
-	virtual void Out06H( int, BYTE );
-	void Out3xH( int, BYTE );
-	void Out7FH( int, BYTE );
-	void OutF0Hs( int, BYTE );
-	void OutF2Hs( int, BYTE );
 	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
 	void OutFCH( int, BYTE );
 	void OutFFH( int, BYTE );
 	BYTE InFDH( int );
 	BYTE InFEH( int );
-	
-	// for 62,66,64,68 -----------------------------------------------------------------------
-	void OutC1H( int, BYTE );
-	void OutC2H( int, BYTE );
-	void OutC3H( int, BYTE );
-	void OutF0H( int, BYTE );
-	void OutF1H( int, BYTE );
-	void OutF2H( int, BYTE );
-	void OutF3H( int, BYTE );
-	void OutF8H( int, BYTE );
-	BYTE InC2H( int );
-	BYTE InF0H( int );
-	BYTE InF1H( int );
-	BYTE InF2H( int );
-	BYTE InF3H( int );
-	// ---------------------------------------------------------------------------------------
+	// ボイスシンセサイザー ------------------------------------------------------------------
+	void Out70H( int, BYTE );
+	void Out72H( int, BYTE );
+	void Out73H( int, BYTE );
+	void Out74H( int, BYTE );
+	BYTE In70H( int );
+	BYTE In72H( int );
+	BYTE In73H( int );
+	// 戦士のカートリッジ --------------------------------------------------------------------
+	void Out06H( int, BYTE );
+	void Out3xH( int, BYTE );
+	void Out7FH( int, BYTE );
+	void OutF0Hs( int, BYTE );
+	void OutF2Hs( int, BYTE );
+	// =======================================================================================
 
 public:
 	MEM6( VM6*, const ID& );
 	virtual ~MEM6();
 	
-	bool AllocAllMemory( const P6VPATH&, WORD, bool );	// 全メモリ確保とROMファイル読込み
-	bool Init();										// 初期化
+	bool AllocMemoryInt( const P6VPATH&, bool );		// 内部メモリ確保とROMファイル読込み
+	bool InitInt();										// 内部メモリ初期化
 	virtual void Reset();								// リセット
 	
-	BYTE Fetch( WORD, int* = nullptr ) const;			// フェッチ(M1)
-	BYTE Read( WORD, int* = nullptr ) const;			// メモリリード
-	void Write( WORD, BYTE, int* = nullptr );			// メモリライト
+	virtual BYTE Fetch( WORD, int* = nullptr ) const;	// フェッチ(M1)
+	virtual BYTE Read( WORD, int* = nullptr ) const;	// メモリリード
+	virtual void Write( WORD, BYTE, int* = nullptr );	// メモリライト
+	
+	// 8255入出力関連関数
+	void SetCGBank( bool );								// CG ROM BANK を切り替える
+	
+	// 直接アクセス関数
+	BYTE ReadSysRom( WORD ) const;
+	BYTE ReadIntRam( WORD ) const;
+	virtual BYTE ReadCGrom1( WORD ) const;
+	virtual BYTE ReadCGrom2( WORD ) const;
+	virtual BYTE ReadCGrom3( WORD ) const;
+	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	virtual const std::string& GetReadMemBlk( int ) const;
+	virtual const std::string& GetWriteMemBlk( int ) const;
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	// 拡張カートリッジ ======================================================================
+	bool AllocMemoryExt( WORD, const P6VPATH&, bool );	// 外部メモリ確保とROMファイル読込み
+	bool InitExt();										// 外部メモリ初期化
+	void ResetExt();									// 外部メモリリセット
 	
 	bool MountExtRom( const P6VPATH& );					// 拡張ROM マウント
 	void UnmountExtRom();								// 拡張ROM アンマウント
 	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
 	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
 	
-	// 8255入出力関連関数
-	virtual void SetCGBank( bool );						// CG ROM BANK を切り替える
-	
 	// 直接アクセス関数
-	BYTE ReadMainRom( WORD ) const;
-	BYTE ReadIntRam ( WORD ) const;
 	BYTE ReadExtRom ( WORD ) const;
 	BYTE ReadExtRam ( WORD ) const;
-	virtual BYTE ReadCGrom1( WORD ) const;
-	virtual BYTE ReadCGrom2( WORD ) const;
-	virtual BYTE ReadCGrom3( WORD ) const;
-	
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	const std::string& GetReadMemBlk( int ) const ;
-	const std::string& GetWriteMemBlk( int ) const ;
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// =======================================================================================
 	
 	// デバイスID
-	enum IDOut{ out06H=0, out3xH, out7FH, outF0Hs, outF2Hs, outFCH, outFFH };
-	enum IDIn {  inFDH=0,  inFEH };
+	enum IDOut{ out06H=0, out3xH, out70H, out72H, out73H, out74H, out7FH, outF0Hs, outF2Hs, outFCH, outFFH, out6xH, outC1H, outC2H, outC3H, outF0H, outF1H, outF2H, outF3H, outF8H };
+	enum IDIn {  in70H=0,  in72H,  in73H,  inFDH,  inFEH,  in6xH,  inB2H,  inC2H,   inF0H,   inF1H,  inF2H,  inF3H };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
@@ -331,23 +321,21 @@ private:
 	static const MEMINFO ICGROM1;
 	static const MEMINFO IINTRAM;
 	
-	bool AllocMemorySpecific( const P6VPATH& ) override;	// 全メモリ確保とROMファイル読込み(機種別)
-	void SetRamValue() override;						// 内部RAMの初期値を設定
-	bool InitSpecific() override;						// 初期化(機種別)
-	void SetMemBlockR( BYTE, BYTE ) override;			// メモリリード時のメモリブロック指定
-	void SetMemBlockW( BYTE ) override;					// メモリライト時のメモリブロック指定
+	bool AllocMemorySpec( const P6VPATH&, bool ) override;	// メモリ確保とROMファイル読込み(機種別)
+	void SetRamValue() override;							// 内部RAMの初期値を設定
+	bool InitIntSpec() override;							// 内部メモリ初期化(機種別)
+	bool InitExtSpec() override;							// 外部メモリ初期化(機種別)
+	void SetMemBlockR( BYTE, BYTE ) override;				// メモリリード時のメモリブロック指定
+	void SetMemBlockW( BYTE ) override;						// メモリライト時のメモリブロック指定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	BYTE CGromRead( MemCell*, WORD );		// PC-6001 CGROM読込み
+	const std::string& GetNameCGromRead( WORD, bool ) override;	// CGROM メモリブロック名取得
+	BYTE CGromRead( MemCell*, WORD, int* = nullptr ) override;	// CGROM読込み
 	// ---------------------------------------------------------------------------------------
 
 public:
 	MEM60( VM6*, const ID& );
 	~MEM60();
-	
-	// デバイスID
-	enum IDOut{ out06H=0, out3xH, out7FH, outF0Hs, outF2Hs, outFCH, outFFH };
-	enum IDIn {  inFDH=0,  inFEH };
 };
 
 
@@ -375,31 +363,65 @@ protected:
 	static const MEMINFO IVOICE;
 	static const MEMINFO IINTRAM;
 	
-	virtual bool AllocMemorySpecific( const P6VPATH& ) override;	// 全メモリ確保とROMファイル読込み(機種別)
-	virtual void SetRamValue() override;					// 内部RAMの初期値を設定
-	virtual bool InitSpecific() override;					// 初期化(機種別)
-	virtual void SetMemBlockR( BYTE, BYTE ) override;		// メモリリード時のメモリブロック指定
-	void SetMemBlockW( BYTE );								// メモリライト時のメモリブロック指定
+	bool cgrom;							// CG ROM 選択用 true:N60モード false:N60mモード
+	bool kj_rom;						// 漢字ROM,音声合成ROM 選択用 true:漢字ROM false:音声合成ROM
+	bool kj_LR;							// 漢字ROM 左右選択用 true:右 false:左
+	bool cgenable;						// CG ROMアクセスフラグ true:アクセス可 false:アクセス不可
+	BYTE cgaden;						// CG ROMアドレスイネーブル
+	BYTE cgaddr;						// CG ROMアドレス A13,14,15
+	BYTE c2acc;							// PortC2Hアクセスフラグ
+	
+	virtual bool AllocMemorySpec( const P6VPATH&, bool ) override;	// メモリ確保とROMファイル読込み(機種別)
+	virtual void SetRamValue() override;							// 内部RAMの初期値を設定
+	virtual bool InitIntSpec() override;							// 内部メモリ初期化(機種別)
+	bool InitExtSpec() override;									// 外部メモリ初期化(機種別)
+	virtual void SetMemBlockR( BYTE, BYTE ) override;				// メモリリード時のメモリブロック指定
+	void SetMemBlockW( BYTE ) override;								// メモリライト時のメモリブロック指定
+	
+	void SetWait( BYTE );											// メモリアクセスウェイト設定
+	BYTE GetWait() const;											// メモリアクセスウェイト取得
+	virtual void SetCGrom( BYTE );									// CG ROM アドレス等設定
+	void SelectCGrom( int );										// CG ROM 選択
+	void SetKanjiRom( BYTE );										// 漢字ROMおよび音声合成ROM設定
+	BYTE GetKanjiRom() const;										// 漢字ROMおよび音声合成ROM取得
+	void SetPortC2HAccess( BYTE );									// PortC2Hアクセス設定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	void IERamWrite( MemCell*, WORD, BYTE );	// PC-6001mk2以降 内部/外部RAM書込み
+	const std::string& GetNameCGromRead( WORD, bool ) override;		// CGROM メモリブロック名取得
+	BYTE CGromRead( MemCell*, WORD, int* = nullptr ) override;		// CGROM読込み
+	void IERamWrite( MemCell*, WORD, BYTE, int* = nullptr );		// 内部/外部RAM書込み
+	virtual const std::string& KanjiGetName( WORD, bool = false );	// 漢字ROM メモリブロック名取得
+	virtual BYTE ReadKanji( MemCell*, WORD, int* = nullptr );		// 漢字ROM読込み
 	// ---------------------------------------------------------------------------------------
+	
+	// I/Oアクセス関数 -----------------------------------------------------------------------
+	void OutC1H( int, BYTE );
+	void OutC2H( int, BYTE );
+	void OutC3H( int, BYTE );
+	void OutF0H( int, BYTE );
+	void OutF1H( int, BYTE );
+	void OutF2H( int, BYTE );
+	void OutF3H( int, BYTE );
+	void OutF8H( int, BYTE );
+	BYTE InC2H( int );
+	BYTE InF0H( int );
+	BYTE InF1H( int );
+	BYTE InF2H( int );
+	BYTE InF3H( int );
 
 public:
 	MEM62( VM6*, const ID& );
 	virtual ~MEM62();
-	
-	// 8255入出力関連関数
-	void SetCGBank( bool ) override;		// CG ROM BANK を切り替える
 	
 	// 直接アクセス関数
 	virtual BYTE ReadCGrom2( WORD ) const override;
 	virtual BYTE ReadKanjiRom( WORD ) const;
 	virtual BYTE ReadVoiceRom( WORD ) const;
 	
-	// デバイスID
-	enum IDOut{ out06H=0, out3xH, out7FH, outF0Hs, outF2Hs, outFCH, outFFH, outC1H, outC2H, outC3H, outF0H,  outF1H, outF2H, outF3H, outF8H };
-	enum IDIn {  inFDH=0,  inFEH,  inC2H,  inF0H,  inF1H,  inF2H,  inF3H };
+	// ---------------------------------------------------------
+	bool DokoSave( cIni* ) override;	// どこでもSAVE
+	bool DokoLoad( cIni* ) override;	// どこでもLOAD
+	// ---------------------------------------------------------
 };
 
 
@@ -427,16 +449,26 @@ protected:
 	static const MEMINFO ICGROM1;
 	static const MEMINFO IINTRAM;
 	
-	bool AllocMemorySpecific( const P6VPATH& ) override;	// 全メモリ確保とROMファイル読込み(機種別)
-	virtual void SetRamValue() override;			// 内部RAMの初期値を設定
-	bool InitSpecific() override;					// 初期化(機種別)
-	void SetMemBlockR( BYTE, BYTE ) override;		// メモリリード時のメモリブロック指定
-	void SetMemBlockSR( BYTE, BYTE );				// メモリリード/ライト時のメモリブロック指定(64,68)
+	std::array<MemBlock*,8> RD_BlkSR;	// リード時メモリブロックポインタ(8KB*8) SRモード用
+	std::array<MemBlock*,8> WR_BlkSR;	// ライト時メモリブロックポインタ(8KB*8) SRモード用
+	std::array<BYTE,16> RfSR;			// メモリコントローラ内部レジスタ		 SRモード用
 	
-	// I/Oアクセス関数
+	bool AllocMemorySpec( const P6VPATH&, bool ) override;			// メモリ確保とROMファイル読込み(機種別)
+	virtual void SetRamValue() override;							// 内部RAMの初期値を設定
+	bool InitIntSpec() override;									// 内部メモリ初期化(機種別)
+	void SetMemBlockR( BYTE, BYTE ) override;						// メモリリード時のメモリブロック指定
+	void SetMemBlockSR( BYTE, BYTE );								// メモリリード/ライト時のメモリブロック指定(64,68)
+	
+	void SetCGrom( BYTE ) override;									// CG ROM アドレス等設定
+	
+	// メモリブロック用関数 ------------------------------------------------------------------
+	const std::string& KanjiGetName( WORD, bool = false ) override;	// 漢字ROM メモリブロック名取得
+	BYTE ReadKanji( MemCell*, WORD, int* = nullptr ) override;		// 漢字ROM読込み
+	// ---------------------------------------------------------------------------------------
+	
+	// I/Oアクセス関数 -----------------------------------------------------------------------
 	void Out6xH( int, BYTE );
 	void OutC8H( int, BYTE );
-	
 	BYTE In6xH( int );
 	virtual BYTE InB2H( int );
 
@@ -444,7 +476,11 @@ public:
 	MEM64( VM6*, const ID& );
 	virtual ~MEM64();
 	
-	void Reset() override;					// リセット
+	void Reset() override;								// リセット
+	
+	BYTE Fetch( WORD, int* = nullptr ) const override;	// フェッチ(M1)
+	BYTE Read( WORD, int* = nullptr ) const override;	// メモリリード
+	void Write( WORD, BYTE, int* = nullptr ) override;	// メモリライト
 	
 	// 直接アクセス関数
 	BYTE ReadCGrom1( WORD ) const override;
@@ -453,9 +489,10 @@ public:
 	BYTE ReadKanjiRom( WORD ) const override;
 	BYTE ReadVoiceRom( WORD ) const override;
 	
-	// デバイスID
-	enum IDOut{ out06H=0, out3xH, out7FH, outF0Hs, outF2Hs, outFCH, outFFH, out6xH, outC1H, outC2H, outC3H, outF0H, outF1H, outF2H, outF3H, outF8H };
-	enum IDIn {  inFDH=0,  inFEH,  in6xH,  inB2H,  inC2H,  inF0H,  inF1H,  inF2H,  inF3H };
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	const std::string& GetReadMemBlk( int ) const override;
+	const std::string& GetWriteMemBlk( int ) const override;
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
@@ -468,7 +505,7 @@ class MEM68 : public MEM64 {
 protected:
 	void SetRamValue() override;			// 内部RAMの初期値を設定
 	
-	// I/Oアクセス関数
+	// I/Oアクセス関数 -----------------------------------------------------------------------
 	BYTE InB2H( int ) override;
 
 public:

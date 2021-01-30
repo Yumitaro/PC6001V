@@ -28,6 +28,10 @@ public:
 	
 	virtual bool Init( int, int ) = 0;			// 初期化
 	virtual void Reset(){};						// リセット
+	
+	// デバイスID
+	enum IDOut{ outA0H=0, outA1H, outA3H };
+	enum IDIn {  inA2H=0,  inA3H };
 };
 
 
@@ -54,10 +58,6 @@ public:
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	bool SetSampleRate( int, int ) override;	// サンプリングレート設定
 	int SoundUpdate( int ) override;			// ストリーム更新
-	
-	// デバイスID
-	enum IDOut{ outA0H=0, outA1H, outA3H };
-	enum IDIn {  inA2H=0 };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
@@ -92,10 +92,6 @@ public:
 	void EventCallback( int, int ) override;	// イベントコールバック関数
 	bool SetSampleRate( int, int ) override;	// サンプリングレート設定
 	int SoundUpdate( int ) override;			// ストリーム更新
-	
-	// デバイスID
-	enum IDOut{ outA0H=0, outA1H, outA3H };
-	enum IDIn {  inA2H=0,  inA3H };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE

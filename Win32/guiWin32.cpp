@@ -181,17 +181,22 @@ void EL6::ShowPopupMenu( int x, int y )
 	
 	// 拡張カートリッジ
 	switch( vm->mem->GetCartridge() ){
-	case EXC6001:	CheckMenuItem( hsm, ID_C6001,   MF_CHECKED );	break;
-	case EXC6005:	CheckMenuItem( hsm, ID_C6005,   MF_CHECKED );	break;
-	case EXC6006:	CheckMenuItem( hsm, ID_C6006,   MF_CHECKED );	break;
-	case EXC660101:	CheckMenuItem( hsm, ID_C660101, MF_CHECKED );	break;
-	case EXC6006SR:	CheckMenuItem( hsm, ID_C6006SR, MF_CHECKED );	break;
-	case EXC6007SR:	CheckMenuItem( hsm, ID_C6007SR, MF_CHECKED );	break;
-	case EXCSOL1:	CheckMenuItem( hsm, ID_CSOL1,   MF_CHECKED );	break;
-	case EXCSOL2:	CheckMenuItem( hsm, ID_CSOL2,   MF_CHECKED );	break;
-	case EXCSOL3:	CheckMenuItem( hsm, ID_CSOL3,   MF_CHECKED );	break;
+	case EXC6001:	CheckMenuItem( hsm, ID_C6001,     MF_CHECKED );	break;
+	case EXC6005:	CheckMenuItem( hsm, ID_C6005,     MF_CHECKED );	break;
+	case EXC6006:	CheckMenuItem( hsm, ID_C6006,     MF_CHECKED );	break;
+	case EXC660101:	CheckMenuItem( hsm, ID_C660101,   MF_CHECKED );	break;
+	case EXC6006SR:	CheckMenuItem( hsm, ID_C6006SR,   MF_CHECKED );	break;
+	case EXC6007SR:	CheckMenuItem( hsm, ID_C6007SR,   MF_CHECKED );	break;
+	case EXC6053:	CheckMenuItem( hsm, ID_C6053,     MF_CHECKED );	break;
+	case EXC60M55:	CheckMenuItem( hsm, ID_C60M55,    MF_CHECKED );	break;
+	case EXCSOL1:	CheckMenuItem( hsm, ID_CSOL1,     MF_CHECKED );	break;
+	case EXCSOL2:	CheckMenuItem( hsm, ID_CSOL2,     MF_CHECKED );	break;
+	case EXCSOL3:	CheckMenuItem( hsm, ID_CSOL3,     MF_CHECKED );	break;
+	default:		CheckMenuItem( hsm, ID_CARTEJECT, MF_CHECKED );
 	}
-	EnableMenuItem( hsm, ID_CARTEJECT, MF_BYCOMMAND | vm->mem->GetCartridge() ? MF_ENABLED : MF_GRAYED );
+	// ボイスシンセサイザ,FM音源カートリッジは当面封印
+	EnableMenuItem( hsm, ID_C6053,  MF_BYCOMMAND | MF_GRAYED );
+	EnableMenuItem( hsm, ID_C60M55, MF_BYCOMMAND | MF_GRAYED );
 	
 	// コントローラ
 	for( int i=0; i < 5; i++ ){
@@ -897,23 +902,46 @@ static void SaveTrackbar( const HWND hwnd, const int id, const TCValue cv )
 }
 
 
-// リストボックス項目用
-static std::map<TCValue, std::map<int, std::string>> LBpairs = {
-	{ CV_Model,			{ { 60, "PC-6001" }, { 61, "PC-6001A" }, { 62, "PC-6001mk2" }, { 66, "PC-6601" }, { 64, "PC-6001mk2SR" }, { 68, "PC-6601SR" } } },
-	{ CV_ExCartridge,	{ 	{ 0,			"なし" },
+struct LBitem {
+	int Value;			// 値
+	std::string Name;	// 項目名
+};
+
+static std::map<TCValue, std::vector<LBitem>> LBpairs = {
+	{ CV_Model,			{	{ 60,			"PC-6001" },
+							{ 61,			"PC-6001A" },
+							{ 62,			"PC-6001mkⅡ" },
+							{ 66,			"PC-6601" },
+							{ 64,			"PC-6001mkⅡSR" },
+							{ 68,			"PC-6601SR" }
+						} },
+	{ CV_ExCartridge,	{	{ 0,			"なし" },
 							{ EXC6005,		"PC-6005 ROMカートリッジ" },
 							{ EXC6006,		"PC-6006 拡張ROM/RAMカートリッジ" },
 							{ EXC6001,		"PCS-6001R 拡張BASIC" },
 							{ EXC660101,	"PC-6601-01 拡張漢字ROMカートリッジ" },
 							{ EXC6006SR,	"PC-6006SR 拡張64KRAMカートリッジ" },
 							{ EXC6007SR,	"PC-6007SR 拡張漢字ROM&RAMカートリッジ" },
+//							{ EXC6053,		"PC-6053 ボイスシンセサイザー" },
+//							{ EXC60M55,		"PC-60m55 FM音源カートリッジ" },
 							{ EXCSOL1,		"戦士のカートリッジ" },
 							{ EXCSOL2,		"戦士のカートリッジmkⅡ" },
 							{ EXCSOL3,		"戦士のカートリッジmkⅢ" }
 						} },
-	{ CV_Mode4Color,	{ { 0, "モノクロ" }, { 1, "赤/青" }, { 2, "青/赤" }, { 3, "桃/緑" }, { 4, "緑/桃" } } },
-	{ CV_AviBpp,		{ { 16, "16 bit" }, { 24, "24 bit" }, { 32, "32 bit" } } },
-	{ CV_SampleRate,	{ { 11025, "11025 Hz" }, { 22050, "22050 Hz" }, { 44100, "44100 Hz" } } }
+	{ CV_Mode4Color,	{	{ 0,			"モノクロ" },
+							{ 1,			"赤/青" },
+							{ 2,			"青/赤" },
+							{ 3,			"桃/緑" },
+							{ 4,			"緑/桃" }
+						} },
+	{ CV_AviBpp,		{	{ 16,			"16 bit" },
+							{ 24,			"24 bit" },
+							{ 32,			"32 bit" }
+						} },
+	{ CV_SampleRate,	{	{ 11025,		"11025 Hz" },
+							{ 22050,		"22050 Hz" },
+							{ 44100,		"44100 Hz" }
+						} }
 };
 
 
@@ -923,15 +951,17 @@ static std::map<TCValue, std::map<int, std::string>> LBpairs = {
 static void SetDropDownListIndex( const HWND hwnd, const int id, const TCValue cv )
 {
 	try{
-		auto& item = LBpairs.at( cv );
+		auto& items = LBpairs.at( cv );
 		
-		for( std::pair str : item ){
-			std::string s = str.second;
+		for( LBitem& item : items ){
+			std::string s = item.Name;
 			OSD_UTF8toSJIS( s );
 			SendMessage( GetDlgItem( hwnd, id ), CB_ADDSTRING , 0, (LPARAM)s.c_str() );
 		}
-		size_t idx = std::distance( item.begin(), item.find( ecfg.GetValue( cv ) ) );
-		if( idx == item.size() ){ idx = 0; }
+		
+		auto item = std::find_if( items.begin(), items.end(), [&](LBitem &n){ return n.Value == ecfg.GetValue( cv ); } );
+		size_t idx = std::distance( items.begin(), item );
+		if( idx == items.size() ){ idx = 0; }
 		SendMessage( GetDlgItem( hwnd, id ), CB_SETCURSEL, idx, 0 );
 	}
 	catch( std::out_of_range& ){}
@@ -949,7 +979,7 @@ static void SaveDropDownListIndex( const HWND hwnd, const int id, const TCValue 
 		
 		auto it = LBpairs.at( cv ).begin();
 		advance( it, st );	// it += st;
-		st = it->first;
+		st = it->Value;
 	}
 	catch( std::out_of_range& ){
 		st = ecfg.GetDefault( cv );
@@ -1033,14 +1063,17 @@ static bool OsdReadINI( HWND hwnd, int page )
 		SetCheckBox( hwnd, ID_CB11, CB_DispStatus );
 		
 		// フレームスキップ / ビデオキャプチャ時フレームスキップ
+		// VSYNC_HZの値に応じてfpsを含む項目名を動的に生成 他にいい方法ないかな？
 		if( LBpairs.find( CV_FrameSkip ) == LBpairs.end() ){
-			std::map<int, std::string> item;
+			std::vector<LBitem> items;
 			for( int i = ecfg.GetMin( CV_FrameSkip ); i <= ecfg.GetMax( CV_FrameSkip ); i++ ){
-				item.emplace( i, Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i+1) ) );
+				LBitem item = { i, Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i+1) ) };
+				items.emplace_back( item );
 			}
-			LBpairs.emplace( CV_FrameSkip,    item );
-			LBpairs.emplace( CV_AviFrameSkip, item );
+			LBpairs.emplace( CV_FrameSkip,    items );
+			LBpairs.emplace( CV_AviFrameSkip, items );
 		}
+		
 		SetDropDownListIndex( hwnd, ID_LBFSKIP,    CV_FrameSkip );
 		SetDropDownListIndex( hwnd, ID_LBAVIFSKIP, CV_AviFrameSkip );
 		
