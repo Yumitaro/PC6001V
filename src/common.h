@@ -27,7 +27,7 @@ enum TextID{
 	// INIファイル用メッセージ ------
 	// [CONFIG]
 	TINI_TITLE,				// "; === PC6001V 初期設定ファイル ===\n\n"
-	TINI_Model,				// "機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR"
+	TINI_Model,				// "機種 60:PC-6001 61:PC-6001A 62:PC-6001mkⅡ 66:PC-6601 64:PC-6001mkⅡSR 68:PC-6601SR"
 	TINI_FDDrive,			// "FDドライブ数 (0-2)"
 	TINI_UseExtRam,			// "拡張RAM使用"
 	TINI_TurboTAPE,			// "Turbo TAPE Yes:有効 No:無効"

@@ -453,7 +453,7 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	// INIファイル用メッセージ ------
 	// [CONFIG]
 	{ TINI_TITLE,				"; === PC6001V 初期設定ファイル ===\n\n" },
-	{ TINI_Model,				"機種 60:PC-6001 61:PC-6001A 62:PC-6001mk2 66:PC-6601 64:PC-6001mk2SR 68:PC-6601SR" },
+	{ TINI_Model,				"機種 60:PC-6001 61:PC-6001A 62:PC-6001mkⅡ 66:PC-6601 64:PC-6001mkⅡSR 68:PC-6601SR" },
 	{ TINI_FDDrive,				"FDドライブ数 (0-2)" },
 	{ TINI_UseExtRam,			"拡張RAM使用" },
 	{ TINI_TurboTAPE,			"Turbo TAPE Yes:有効 No:無効" },
@@ -565,10 +565,10 @@ static const std::vector<std::string> JColorName = {
 	"MODE4 Set2 にじみ 赤",		"MODE4 Set2 にじみ 青",		"MODE4 Set2 にじみ 桃",		"MODE4 Set2 にじみ 緑",
 	"MODE4 Set2 にじみ 明赤",	"MODE4 Set2 にじみ 暗赤",	"MODE4 Set2 にじみ 明青",	"MODE4 Set2 にじみ 暗青",
 	"MODE4 Set2 にじみ 明桃",	"MODE4 Set2 にじみ 暗桃",	"MODE4 Set2 にじみ 明緑",	"MODE4 Set2 にじみ 暗緑",
-	"mk2～ 透明(黒)",			"mk2～ 橙",					"mk2～ 青緑",				"mk2～ 黄緑",
-	"mk2～ 青紫",				"mk2～ 赤紫",				"mk2～ 空色",				"mk2～ 灰色",
-	"mk2～ 黒",					"mk2～ 赤",					"mk2～ 緑",					"mk2～ 黄",
-	"mk2～ 青",					"mk2～ マゼンタ",			"mk2～ シアン",				"mk2～ 白"
+	"mkⅡ～ 透明(黒)",			"mkⅡ～ 橙",				"mkⅡ～ 青緑",				"mkⅡ～ 黄緑",
+	"mkⅡ～ 青紫",				"mkⅡ～ 赤紫",				"mkⅡ～ 空色",				"mkⅡ～ 灰色",
+	"mkⅡ～ 黒",				"mkⅡ～ 赤",				"mkⅡ～ 緑",				"mkⅡ～ 黄",
+	"mkⅡ～ 青",				"mkⅡ～ マゼンタ",			"mkⅡ～ シアン",			"mkⅡ～ 白"
 };
 
 

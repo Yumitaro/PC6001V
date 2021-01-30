@@ -58,7 +58,7 @@ protected:
 		const std::vector<IOBus::Connector>* Voice;		// 音声合成
 		const std::vector<IOBus::Connector>* Disk;		// DISK
 		const std::vector<IOBus::Connector>* CmtL;		// CMT(LOAD)
-		const std::vector<IOBus::Connector>* ExCart;	// 戦士のカートリッジ
+		const std::vector<IOBus::Connector>* ExCart;	// 拡張カートリッジ
 		
 		DEVCONNTABLE() :
 			Intr( nullptr ), Memory( nullptr ), Vdg( nullptr ), Psg( nullptr ), M8255( nullptr ), S8255( nullptr ),
@@ -92,7 +92,7 @@ protected:
 	
 	DEVCONNTABLE DevTable;			// デバイスコネクタテーブル
 	
-	virtual void AllocObjSpecific() = 0;				// 機種別オブジェクト確保
+	virtual void AllocObjSpec() = 0;					// 機種別オブジェクト確保
 	bool AllocObject( const std::shared_ptr<CFG6>& );	// 全オブジェクト確保
 	
 public:
@@ -101,6 +101,7 @@ public:
 	
 	// デバイスコネクタ
 	const static std::vector<IOBus::Connector> c_exkanji;	// 拡張漢字ROMカートリッジ
+	const static std::vector<IOBus::Connector> c_exvoice;	// ボイスシンセサイザー
 	const static std::vector<IOBus::Connector> c_soldier1;	// 戦士のカートリッジ
 	const static std::vector<IOBus::Connector> c_soldier2;	// 戦士のカートリッジmkⅡ
 	
@@ -151,13 +152,13 @@ public:
 	BYTE MemRead( WORD, int* = nullptr );				// メモリリード
 	void MemWrite( WORD, BYTE, int* = nullptr );		// メモリライト
 	void MemSetCGBank( bool );							// CG ROM BANK を切り替える
-	BYTE MemReadMainRom( WORD ) const;					// 直接読込み
-	BYTE MemReadIntRam ( WORD ) const;					// 直接読込み
-	BYTE MemReadExtRom ( WORD ) const;					// 直接読込み
-	BYTE MemReadExtRam ( WORD ) const;					// 直接読込み
-	BYTE MemReadCGrom1 ( WORD ) const;					// 直接読込み
-	BYTE MemReadCGrom2 ( WORD ) const;					// 直接読込み
-	BYTE MemReadCGrom3 ( WORD ) const;					// 直接読込み
+	BYTE MemReadSysRom( WORD ) const;					// 直接読込み
+	BYTE MemReadIntRam( WORD ) const;					// 直接読込み
+	BYTE MemReadExtRom( WORD ) const;					// 直接読込み
+	BYTE MemReadExtRam( WORD ) const;					// 直接読込み
+	BYTE MemReadCGrom1( WORD ) const;					// 直接読込み
+	BYTE MemReadCGrom2( WORD ) const;					// 直接読込み
+	BYTE MemReadCGrom3( WORD ) const;					// 直接読込み
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	const std::string& MemGetReadMemBlk( int ) const;	// メモリブロック取得(Read)
 	const std::string& MemGetWriteMemBlk( int ) const;	// メモリブロック取得(Write)
@@ -217,7 +218,7 @@ public:
 // PC-6001 仮想マシンクラス
 class VM60 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM60();
@@ -237,7 +238,7 @@ public:
 // PC-6001A 仮想マシンクラス
 class VM61 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM61();
@@ -248,7 +249,7 @@ public:
 // PC-6001mk2 仮想マシンクラス
 class VM62 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM62();
@@ -270,7 +271,7 @@ public:
 // PC-6601 仮想マシンクラス
 class VM66 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM66();
@@ -284,7 +285,7 @@ public:
 // PC-6001mk2SR 仮想マシンクラス
 class VM64 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM64();
@@ -306,7 +307,7 @@ public:
 // PC-6601SR 仮想マシンクラス
 class VM68 : public VM6 {
 private:
-	void AllocObjSpecific() override;			// 機種別オブジェクト確保
+	void AllocObjSpec() override;				// 機種別オブジェクト確保
 	
 public:
 	VM68();

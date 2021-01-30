@@ -188,7 +188,7 @@ VM68::~VM68( void )
 ////////////////////////////////////////////////////////////////
 // 機種別オブジェクト確保
 ////////////////////////////////////////////////////////////////
-void VM60::AllocObjSpecific( void )
+void VM60::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB60>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ60>( this, DEV_ID("INTR") );	// 割込み
@@ -200,7 +200,7 @@ void VM60::AllocObjSpecific( void )
 	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
 }
 
-void VM61::AllocObjSpecific( void )
+void VM61::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB60>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ60>( this, DEV_ID("INTR") );	// 割込み
@@ -212,7 +212,7 @@ void VM61::AllocObjSpecific( void )
 	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
 }
 
-void VM62::AllocObjSpecific( void )
+void VM62::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ62>( this, DEV_ID("INTR") );	// 割込み
@@ -224,7 +224,7 @@ void VM62::AllocObjSpecific( void )
 	disk  = std::make_shared<DSK60>( this, DEV_ID("DSK1") );	// DISK
 }
 
-void VM66::AllocObjSpecific( void )
+void VM66::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ62>( this, DEV_ID("INTR") );	// 割込み
@@ -236,7 +236,7 @@ void VM66::AllocObjSpecific( void )
 	disk  = std::make_shared<DSK66>( this, DEV_ID("DSK3") );	// DISK
 }
 
-void VM64::AllocObjSpecific( void )
+void VM64::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB62>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ64>( this, DEV_ID("INTR") );	// 割込み
@@ -248,7 +248,7 @@ void VM64::AllocObjSpecific( void )
 	disk  = std::make_shared<DSK64>( this, DEV_ID("DSK2") );	// DISK
 }
 
-void VM68::AllocObjSpecific( void )
+void VM68::AllocObjSpec( void )
 {
 	cpus  = std::make_shared<SUB68>( this, DEV_ID("8049") );	// SUB CPU
 	intr  = std::make_shared<IRQ64>( this, DEV_ID("INTR") );	// 割込み
@@ -283,11 +283,14 @@ bool VM6::AllocObject( const std::shared_ptr<CFG6>& cnfg )
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		
 		// 機種別オブジェクト確保
-		AllocObjSpecific();
+		AllocObjSpec();
 		
 		
-		// 全メモリ確保とROMファイル読込み
-		if( !mem->AllocAllMemory( cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
+		// 内部メモリ確保とROMファイル読込み
+		if( !mem->AllocMemoryInt( cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
+		
+		// 外部メモリ確保とROMファイル読込み
+		if( !mem->AllocMemoryExt( cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
 	}
 	catch( std::bad_alloc& ){	// new に失敗した場合
 		Error::SetError( Error::MemAllocFailed );
@@ -330,12 +333,9 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	cpus->Reset();
 	
 	// メモリ -----
-	if( !mem->Init() ) return false;
+	if( !mem->InitInt() ) return false;
+	if( !mem->InitExt() ) return false;
 	mem->Reset();
-	if( !cnfg->GetValue( CF_ExtRom ).empty() && !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
-		// ファイルがなければエラーメッセージセットして継続
-		Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( cnfg->GetValue( CF_ExtRom ) ) );
-	}
 	
 	// VDG -----
 	if( !vdg->Init() ) return false;
@@ -344,7 +344,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	// PSG/OPN -----
 	psg->SetVolume( cnfg->GetValue( CV_PsgVolume ) );	// 音量設定
 	psg->SetLPF( cnfg->GetValue( CV_PsgLPF ) );			// ローパスフィルタ カットオフ周波数設定
-	for( auto &i : *DevTable.Psg ){				// ウェイト設定
+	for( auto &i : *DevTable.Psg ){						// ウェイト設定
 		if( i.rule == IOBus::portout ) iom->SetOutWait( i.bank, 1 );
 		else						   iom->SetInWait ( i.bank, 1 );
 	}
@@ -406,11 +406,17 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 		}
 	}
 	
-	// 拡張カートリッジ -----
+	
+	// 拡張カートリッジ ========================================
+	// I/Oポートにデバイスを接続
 	switch( cnfg->GetValue( CV_ExCartridge ) ){
 	case EXC660101:	// 拡張漢字ROMカートリッジ
 	case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
 		DevTable.ExCart = &VM6::c_exkanji;
+		break;
+		
+	case EXC6053:	// ボイスシンセサイザー
+		DevTable.ExCart = &VM6::c_exvoice;
 		break;
 		
 	case EXCSOL1:	// 戦士のカートリッジ
@@ -427,6 +433,21 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 			return false;
 		}
 	}
+	
+	// ROMファイル読込み
+	switch( cnfg->GetValue( CV_ExCartridge ) ){
+	case EXC6005:	// ROMカートリッジ
+	case EXC6006:	// 拡張ROM/RAMカートリッジ
+	case EXCSOL1:	// 戦士のカートリッジ
+	case EXCSOL2:	// 戦士のカートリッジmkⅡ
+	case EXCSOL3:	// 戦士のカートリッジmkⅢ
+		if( !cnfg->GetValue( CF_ExtRom ).empty() && !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
+			// ファイルがなければエラーメッセージセットして継続
+			Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( cnfg->GetValue( CF_ExtRom ) ) );
+		}
+	}
+	// =========================================================
+	
 	
 	return true;
 }
@@ -803,13 +824,13 @@ void VM6::MemSetCGBank( bool data )
 ////////////////////////////////////////////////////////////////
 // 直接読込み
 ////////////////////////////////////////////////////////////////
-BYTE VM6::MemReadMainRom( WORD addr ) const { return mem->ReadMainRom( addr ); }
-BYTE VM6::MemReadIntRam ( WORD addr ) const { return mem->ReadIntRam( addr ); }
-BYTE VM6::MemReadExtRom ( WORD addr ) const { return mem->ReadExtRom( addr ); }
-BYTE VM6::MemReadExtRam ( WORD addr ) const { return mem->ReadExtRam( addr ); }
-BYTE VM6::MemReadCGrom1 ( WORD addr ) const { return mem->ReadCGrom1( addr ); }
-BYTE VM6::MemReadCGrom2 ( WORD addr ) const { return mem->ReadCGrom2( addr ); }
-BYTE VM6::MemReadCGrom3 ( WORD addr ) const { return mem->ReadCGrom3( addr ); }
+BYTE VM6::MemReadSysRom( WORD addr ) const { return mem->ReadSysRom( addr ); }
+BYTE VM6::MemReadIntRam( WORD addr ) const { return mem->ReadIntRam( addr ); }
+BYTE VM6::MemReadExtRom( WORD addr ) const { return mem->ReadExtRom( addr ); }
+BYTE VM6::MemReadExtRam( WORD addr ) const { return mem->ReadExtRam( addr ); }
+BYTE VM6::MemReadCGrom1( WORD addr ) const { return mem->ReadCGrom1( addr ); }
+BYTE VM6::MemReadCGrom2( WORD addr ) const { return mem->ReadCGrom2( addr ); }
+BYTE VM6::MemReadCGrom3( WORD addr ) const { return mem->ReadCGrom3( addr ); }
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 const std::string& VM6::MemGetReadMemBlk( int blk )  const { return mem->GetReadMemBlk( blk );  }
 const std::string& VM6::MemGetWriteMemBlk( int blk ) const { return mem->GetWriteMemBlk( blk ); }
@@ -1209,7 +1230,18 @@ const std::vector<IOBus::Connector> VM6::c_exkanji = {
 	{ 0xfe, IOBus::portin,  MEM6::inFEH }
 };
 
-// 戦士のカートリッジ ----------------------------------------------
+// ボイスシンセサイザー ----------------------------------------
+const std::vector<IOBus::Connector> VM6::c_exvoice = {
+	{ 0x70, IOBus::portout, MEM6::out70H },
+	{ 0x72, IOBus::portout, MEM6::out72H },
+	{ 0x73, IOBus::portout, MEM6::out73H },
+	{ 0x74, IOBus::portout, MEM6::out74H },
+	{ 0x70, IOBus::portin,  MEM6::in70H },
+	{ 0x72, IOBus::portin,  MEM6::in72H },
+	{ 0x73, IOBus::portin,  MEM6::in73H }
+};
+
+// 戦士のカートリッジ ------------------------------------------
 const std::vector<IOBus::Connector> VM6::c_soldier1 = {
 	{ 0x70, IOBus::portout, MEM6::out7FH  },
 	{ 0x71, IOBus::portout, MEM6::out7FH  },	// イメージ
@@ -1229,7 +1261,7 @@ const std::vector<IOBus::Connector> VM6::c_soldier1 = {
 	{ 0x7f, IOBus::portout, MEM6::out7FH  }		// イメージ
 };
 
-// 戦士のカートリッジmkⅡ ------------------------------------------
+// 戦士のカートリッジmkⅡ --------------------------------------
 const std::vector<IOBus::Connector> VM6::c_soldier2 = {
 	{ 0x06, IOBus::portout, MEM6::out06H  },
 	{ 0x7f, IOBus::portout, MEM6::out7FH  },
@@ -1258,62 +1290,62 @@ const std::vector<IOBus::Connector> VM6::c_soldier2 = {
 
 // 割込み -----
 const std::vector<IOBus::Connector> VM60::c_intr = {
-	{ 0xb0, IOBus::portout, IRQ60::outB0H },
-	{ 0xb1, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb2, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb3, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb4, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb5, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb6, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb7, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb8, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xb9, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xba, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xbb, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xbc, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xbd, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xbe, IOBus::portout, IRQ60::outB0H },	// イメージ
-	{ 0xbf, IOBus::portout, IRQ60::outB0H }		// イメージ
+	{ 0xb0, IOBus::portout, IRQ6::outB0H },
+	{ 0xb1, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb2, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb3, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb4, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb5, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb6, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb7, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb8, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xb9, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xba, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xbb, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xbc, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xbd, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xbe, IOBus::portout, IRQ6::outB0H },		// イメージ
+	{ 0xbf, IOBus::portout, IRQ6::outB0H }		// イメージ
 };
 
 // VDG -----
 const std::vector<IOBus::Connector> VM60::c_vdg = {
-	{ 0xb0, IOBus::portout, VDG60::outB0H },
-	{ 0xb1, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb2, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb3, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb4, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb5, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb6, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb7, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb8, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xb9, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xba, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xbb, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xbc, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xbd, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xbe, IOBus::portout, VDG60::outB0H },	// イメージ
-	{ 0xbf, IOBus::portout, VDG60::outB0H }		// イメージ
+	{ 0xb0, IOBus::portout, VDG6::outB0H },
+	{ 0xb1, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb2, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb3, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb4, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb5, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb6, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb7, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb8, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xb9, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xba, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xbb, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xbc, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xbd, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xbe, IOBus::portout, VDG6::outB0H },		// イメージ
+	{ 0xbf, IOBus::portout, VDG6::outB0H }		// イメージ
 };
 
 // PSG -----
 const std::vector<IOBus::Connector> VM60::c_psg = {
-	{ 0xa0, IOBus::portout, PSG60::outA0H },
-	{ 0xa1, IOBus::portout, PSG60::outA1H },
-	{ 0xa3, IOBus::portout, PSG60::outA3H },
-	{ 0xa4, IOBus::portout, PSG60::outA0H },	// イメージ
-	{ 0xa5, IOBus::portout, PSG60::outA1H },	// イメージ
-	{ 0xa7, IOBus::portout, PSG60::outA3H },	// イメージ
-	{ 0xa8, IOBus::portout, PSG60::outA0H },	// イメージ
-	{ 0xa9, IOBus::portout, PSG60::outA1H },	// イメージ
-	{ 0xab, IOBus::portout, PSG60::outA3H },	// イメージ
-	{ 0xac, IOBus::portout, PSG60::outA0H },	// イメージ
-	{ 0xad, IOBus::portout, PSG60::outA1H },	// イメージ
-	{ 0xaf, IOBus::portout, PSG60::outA3H },	// イメージ
-	{ 0xa2, IOBus::portin,  PSG60::inA2H },
-	{ 0xa6, IOBus::portin,  PSG60::inA2H },		// イメージ
-	{ 0xaa, IOBus::portin,  PSG60::inA2H },		// イメージ
-	{ 0xae, IOBus::portin,  PSG60::inA2H }		// イメージ
+	{ 0xa0, IOBus::portout, PSGb::outA0H },
+	{ 0xa1, IOBus::portout, PSGb::outA1H },
+	{ 0xa3, IOBus::portout, PSGb::outA3H },
+	{ 0xa4, IOBus::portout, PSGb::outA0H },		// イメージ
+	{ 0xa5, IOBus::portout, PSGb::outA1H },		// イメージ
+	{ 0xa7, IOBus::portout, PSGb::outA3H },		// イメージ
+	{ 0xa8, IOBus::portout, PSGb::outA0H },		// イメージ
+	{ 0xa9, IOBus::portout, PSGb::outA1H },		// イメージ
+	{ 0xab, IOBus::portout, PSGb::outA3H },		// イメージ
+	{ 0xac, IOBus::portout, PSGb::outA0H },		// イメージ
+	{ 0xad, IOBus::portout, PSGb::outA1H },		// イメージ
+	{ 0xaf, IOBus::portout, PSGb::outA3H },		// イメージ
+	{ 0xa2, IOBus::portin,  PSGb::inA2H },
+	{ 0xa6, IOBus::portin,  PSGb::inA2H },		// イメージ
+	{ 0xaa, IOBus::portin,  PSGb::inA2H },		// イメージ
+	{ 0xae, IOBus::portin,  PSGb::inA2H }		// イメージ
 };
 
 // 8255(SUB CPU側) -----
@@ -1330,82 +1362,82 @@ const std::vector<IOBus::Connector> VM60::c_8255m = {
 	{ 0x91, IOBus::portout, PIO6::out91H },
 	{ 0x92, IOBus::portout, PIO6::out92H },
 	{ 0x93, IOBus::portout, PIO6::out93H },
-	{ 0x94, IOBus::portout, PIO6::out90H },	// イメージ
-	{ 0x95, IOBus::portout, PIO6::out91H },	// イメージ
-	{ 0x96, IOBus::portout, PIO6::out92H },	// イメージ
-	{ 0x97, IOBus::portout, PIO6::out93H },	// イメージ
-	{ 0x98, IOBus::portout, PIO6::out90H },	// イメージ
-	{ 0x99, IOBus::portout, PIO6::out91H },	// イメージ
-	{ 0x9a, IOBus::portout, PIO6::out92H },	// イメージ
-	{ 0x9b, IOBus::portout, PIO6::out93H },	// イメージ
-	{ 0x9c, IOBus::portout, PIO6::out90H },	// イメージ
-	{ 0x9d, IOBus::portout, PIO6::out91H },	// イメージ
-	{ 0x9e, IOBus::portout, PIO6::out92H },	// イメージ
-	{ 0x9f, IOBus::portout, PIO6::out93H },	// イメージ
+	{ 0x94, IOBus::portout, PIO6::out90H },		// イメージ
+	{ 0x95, IOBus::portout, PIO6::out91H },		// イメージ
+	{ 0x96, IOBus::portout, PIO6::out92H },		// イメージ
+	{ 0x97, IOBus::portout, PIO6::out93H },		// イメージ
+	{ 0x98, IOBus::portout, PIO6::out90H },		// イメージ
+	{ 0x99, IOBus::portout, PIO6::out91H },		// イメージ
+	{ 0x9a, IOBus::portout, PIO6::out92H },		// イメージ
+	{ 0x9b, IOBus::portout, PIO6::out93H },		// イメージ
+	{ 0x9c, IOBus::portout, PIO6::out90H },		// イメージ
+	{ 0x9d, IOBus::portout, PIO6::out91H },		// イメージ
+	{ 0x9e, IOBus::portout, PIO6::out92H },		// イメージ
+	{ 0x9f, IOBus::portout, PIO6::out93H },		// イメージ
 	{ 0x90, IOBus::portin,  PIO6::in90H },
 	{ 0x92, IOBus::portin,  PIO6::in92H },
 	{ 0x93, IOBus::portin,  PIO6::in93H },
-	{ 0x94, IOBus::portin,  PIO6::in90H },	// イメージ
-	{ 0x96, IOBus::portin,  PIO6::in92H },	// イメージ
-	{ 0x97, IOBus::portin,  PIO6::in93H },	// イメージ
-	{ 0x98, IOBus::portin,  PIO6::in90H },	// イメージ
-	{ 0x9a, IOBus::portin,  PIO6::in92H },	// イメージ
-	{ 0x9b, IOBus::portin,  PIO6::in93H },	// イメージ
-	{ 0x9c, IOBus::portin,  PIO6::in90H },	// イメージ
-	{ 0x9e, IOBus::portin,  PIO6::in92H },	// イメージ
-	{ 0x9f, IOBus::portin,  PIO6::in93H }	// イメージ
+	{ 0x94, IOBus::portin,  PIO6::in90H },		// イメージ
+	{ 0x96, IOBus::portin,  PIO6::in92H },		// イメージ
+	{ 0x97, IOBus::portin,  PIO6::in93H },		// イメージ
+	{ 0x98, IOBus::portin,  PIO6::in90H },		// イメージ
+	{ 0x9a, IOBus::portin,  PIO6::in92H },		// イメージ
+	{ 0x9b, IOBus::portin,  PIO6::in93H },		// イメージ
+	{ 0x9c, IOBus::portin,  PIO6::in90H },		// イメージ
+	{ 0x9e, IOBus::portin,  PIO6::in92H },		// イメージ
+	{ 0x9f, IOBus::portin,  PIO6::in93H }		// イメージ
 };
 
 // DISK -----
 const std::vector<IOBus::Connector> VM60::c_disk = {
-	{ 0xd1, IOBus::portout, DSK60::outD1H },
-	{ 0xd2, IOBus::portout, DSK60::outD2H },
-	{ 0xd3, IOBus::portout, DSK60::outD3H },
-	{ 0xd5, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xd6, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xd7, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xd9, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xda, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xdb, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xdd, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xde, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xdf, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xd0, IOBus::portin,  DSK60::inD0H },
-	{ 0xd1, IOBus::portin,  DSK60::inD1H },
-	{ 0xd2, IOBus::portin,  DSK60::inD2H },
-	{ 0xd3, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xd4, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xd5, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xd6, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xd7, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xd8, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xd9, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xda, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xdb, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xdc, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xdd, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xde, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xdf, IOBus::portin,  DSK60::inD2H }		// イメージ?
+	{ 0xd1, IOBus::portout, DSK6::outD1H },
+	{ 0xd2, IOBus::portout, DSK6::outD2H },
+	{ 0xd3, IOBus::portout, DSK6::outD3H },
+	{ 0xd5, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xd6, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xd7, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xd9, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xda, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xdb, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xdd, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xde, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xdf, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xd0, IOBus::portin,  DSK6::inD0H },
+	{ 0xd1, IOBus::portin,  DSK6::inD1H },
+	{ 0xd2, IOBus::portin,  DSK6::inD2H },
+	{ 0xd3, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xd4, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xd5, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xd6, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xd7, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xd8, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xd9, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xda, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xdb, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xdc, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xdd, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xde, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xdf, IOBus::portin,  DSK6::inD2H }		// イメージ?
 };
 
 // CMT(LOAD) -----
 const std::vector<IOBus::Connector> VM60::c_cmtl = {
 	{ 0xb0, IOBus::portout, CMTL::outB0H },
-	{ 0xb1, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb2, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb3, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb4, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb5, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb6, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb7, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb8, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xb9, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xba, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xbb, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xbc, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xbd, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xbe, IOBus::portout, CMTL::outB0H },	// イメージ
-	{ 0xbf, IOBus::portout, CMTL::outB0H }	// イメージ
+	{ 0xb1, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb2, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb3, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb4, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb5, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb6, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb7, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb8, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xb9, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xba, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xbb, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xbc, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xbd, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xbe, IOBus::portout, CMTL::outB0H },		// イメージ
+	{ 0xbf, IOBus::portout, CMTL::outB0H }		// イメージ
 };
 
 
@@ -1415,50 +1447,50 @@ const std::vector<IOBus::Connector> VM60::c_cmtl = {
 
 // 割込み -----
 const std::vector<IOBus::Connector> VM62::c_intr = {
-	{ 0xb0, IOBus::portout, IRQ62::outB0H },
-	{ 0xf3, IOBus::portout, IRQ62::outF3H },
-	{ 0xf4, IOBus::portout, IRQ62::outF4H },
-	{ 0xf5, IOBus::portout, IRQ62::outF5H },
-	{ 0xf6, IOBus::portout, IRQ62::outF6H },
-	{ 0xf7, IOBus::portout, IRQ62::outF7H },
-	{ 0xf3, IOBus::portin,  IRQ62::inF3H },
-	{ 0xf4, IOBus::portin,  IRQ62::inF4H },
-	{ 0xf5, IOBus::portin,  IRQ62::inF5H },
-	{ 0xf6, IOBus::portin,  IRQ62::inF6H },
-	{ 0xf7, IOBus::portin,  IRQ62::inF7H }
+	{ 0xb0, IOBus::portout, IRQ6::outB0H },
+	{ 0xf3, IOBus::portout, IRQ6::outF3H },
+	{ 0xf4, IOBus::portout, IRQ6::outF4H },
+	{ 0xf5, IOBus::portout, IRQ6::outF5H },
+	{ 0xf6, IOBus::portout, IRQ6::outF6H },
+	{ 0xf7, IOBus::portout, IRQ6::outF7H },
+	{ 0xf3, IOBus::portin,  IRQ6::inF3H },
+	{ 0xf4, IOBus::portin,  IRQ6::inF4H },
+	{ 0xf5, IOBus::portin,  IRQ6::inF5H },
+	{ 0xf6, IOBus::portin,  IRQ6::inF6H },
+	{ 0xf7, IOBus::portin,  IRQ6::inF7H }
 };
 
 // メモリ -----
 const std::vector<IOBus::Connector> VM62::c_memory = {
-	{ 0xc1, IOBus::portout, MEM62::outC1H },
-	{ 0xc2, IOBus::portout, MEM62::outC2H },
-	{ 0xc3, IOBus::portout, MEM62::outC3H },
-	{ 0xf0, IOBus::portout, MEM62::outF0H },
-	{ 0xf1, IOBus::portout, MEM62::outF1H },
-	{ 0xf2, IOBus::portout, MEM62::outF2H },
-	{ 0xf3, IOBus::portout, MEM62::outF3H },
-	{ 0xf8, IOBus::portout, MEM62::outF8H },
-	{ 0xc2, IOBus::portin,  MEM62::inC2H },
-	{ 0xf0, IOBus::portin,  MEM62::inF0H },
-	{ 0xf1, IOBus::portin,  MEM62::inF1H },
-	{ 0xf2, IOBus::portin,  MEM62::inF2H },
-	{ 0xf3, IOBus::portin,  MEM62::inF3H }
+	{ 0xc1, IOBus::portout, MEM6::outC1H },
+	{ 0xc2, IOBus::portout, MEM6::outC2H },
+	{ 0xc3, IOBus::portout, MEM6::outC3H },
+	{ 0xf0, IOBus::portout, MEM6::outF0H },
+	{ 0xf1, IOBus::portout, MEM6::outF1H },
+	{ 0xf2, IOBus::portout, MEM6::outF2H },
+	{ 0xf3, IOBus::portout, MEM6::outF3H },
+	{ 0xf8, IOBus::portout, MEM6::outF8H },
+	{ 0xc2, IOBus::portin,  MEM6::inC2H },
+	{ 0xf0, IOBus::portin,  MEM6::inF0H },
+	{ 0xf1, IOBus::portin,  MEM6::inF1H },
+	{ 0xf2, IOBus::portin,  MEM6::inF2H },
+	{ 0xf3, IOBus::portin,  MEM6::inF3H }
 };
 
 // VDG -----
 const std::vector<IOBus::Connector> VM62::c_vdg = {
-	{ 0xb0, IOBus::portout, VDG62::outB0H },
-	{ 0xc0, IOBus::portout, VDG62::outC0H },
-	{ 0xc1, IOBus::portout, VDG62::outC1H },
-	{ 0xa2, IOBus::portin,  VDG62::inA2H }
+	{ 0xb0, IOBus::portout, VDG6::outB0H },
+	{ 0xc0, IOBus::portout, VDG6::outC0H },
+	{ 0xc1, IOBus::portout, VDG6::outC1H },
+	{ 0xa2, IOBus::portin,  VDG6::inA2H }
 };
 
 // PSG -----
 const std::vector<IOBus::Connector> VM62::c_psg = {
-	{ 0xa0, IOBus::portout, PSG60::outA0H },
-	{ 0xa1, IOBus::portout, PSG60::outA1H },
-	{ 0xa3, IOBus::portout, PSG60::outA3H },
-	{ 0xa2, IOBus::portin,  PSG60::inA2H }
+	{ 0xa0, IOBus::portout, PSGb::outA0H },
+	{ 0xa1, IOBus::portout, PSGb::outA1H },
+	{ 0xa3, IOBus::portout, PSGb::outA3H },
+	{ 0xa2, IOBus::portin,  PSGb::inA2H }
 };
 
 // 8255(Z80側) -----
@@ -1482,62 +1514,62 @@ const std::vector<IOBus::Connector> VM62::c_8255s = {
 
 // 音声合成 -----
 const std::vector<IOBus::Connector> VM62::c_voice = {
-	{ 0xe0, IOBus::portout, VCE62::outE0H },
-	{ 0xe2, IOBus::portout, VCE62::outE2H },
-	{ 0xe3, IOBus::portout, VCE62::outE3H },
-	{ 0xe4, IOBus::portout, VCE62::outE0H },	// イメージ
-	{ 0xe6, IOBus::portout, VCE62::outE2H },	// イメージ
-	{ 0xe7, IOBus::portout, VCE62::outE3H },	// イメージ
-	{ 0xe8, IOBus::portout, VCE62::outE0H },	// イメージ
-	{ 0xea, IOBus::portout, VCE62::outE2H },	// イメージ
-	{ 0xeb, IOBus::portout, VCE62::outE3H },	// イメージ
-	{ 0xec, IOBus::portout, VCE62::outE0H },	// イメージ
-	{ 0xee, IOBus::portout, VCE62::outE2H },	// イメージ
-	{ 0xef, IOBus::portout, VCE62::outE3H },	// イメージ
-	{ 0xe0, IOBus::portin,  VCE62::inE0H },
-	{ 0xe2, IOBus::portin,  VCE62::inE2H },
-	{ 0xe3, IOBus::portin,  VCE62::inE3H },
-	{ 0xe4, IOBus::portin,  VCE62::inE0H },		// イメージ
-	{ 0xe6, IOBus::portin,  VCE62::inE2H },		// イメージ
-	{ 0xe7, IOBus::portin,  VCE62::inE3H },		// イメージ
-	{ 0xe8, IOBus::portin,  VCE62::inE0H },		// イメージ
-	{ 0xea, IOBus::portin,  VCE62::inE2H },		// イメージ
-	{ 0xeb, IOBus::portin,  VCE62::inE3H },		// イメージ
-	{ 0xec, IOBus::portin,  VCE62::inE0H },		// イメージ
-	{ 0xee, IOBus::portin,  VCE62::inE2H },		// イメージ
-	{ 0xef, IOBus::portin,  VCE62::inE3H }		// イメージ
+	{ 0xe0, IOBus::portout, VCE6::outE0H },
+	{ 0xe2, IOBus::portout, VCE6::outE2H },
+	{ 0xe3, IOBus::portout, VCE6::outE3H },
+	{ 0xe4, IOBus::portout, VCE6::outE0H },		// イメージ
+	{ 0xe6, IOBus::portout, VCE6::outE2H },		// イメージ
+	{ 0xe7, IOBus::portout, VCE6::outE3H },		// イメージ
+	{ 0xe8, IOBus::portout, VCE6::outE0H },		// イメージ
+	{ 0xea, IOBus::portout, VCE6::outE2H },		// イメージ
+	{ 0xeb, IOBus::portout, VCE6::outE3H },		// イメージ
+	{ 0xec, IOBus::portout, VCE6::outE0H },		// イメージ
+	{ 0xee, IOBus::portout, VCE6::outE2H },		// イメージ
+	{ 0xef, IOBus::portout, VCE6::outE3H },		// イメージ
+	{ 0xe0, IOBus::portin,  VCE6::inE0H },
+	{ 0xe2, IOBus::portin,  VCE6::inE2H },
+	{ 0xe3, IOBus::portin,  VCE6::inE3H },
+	{ 0xe4, IOBus::portin,  VCE6::inE0H },		// イメージ
+	{ 0xe6, IOBus::portin,  VCE6::inE2H },		// イメージ
+	{ 0xe7, IOBus::portin,  VCE6::inE3H },		// イメージ
+	{ 0xe8, IOBus::portin,  VCE6::inE0H },		// イメージ
+	{ 0xea, IOBus::portin,  VCE6::inE2H },		// イメージ
+	{ 0xeb, IOBus::portin,  VCE6::inE3H },		// イメージ
+	{ 0xec, IOBus::portin,  VCE6::inE0H },		// イメージ
+	{ 0xee, IOBus::portin,  VCE6::inE2H },		// イメージ
+	{ 0xef, IOBus::portin,  VCE6::inE3H }		// イメージ
 };
 
 // DISK -----
 const std::vector<IOBus::Connector> VM62::c_disk = {
-	{ 0xd1, IOBus::portout, DSK60::outD1H },
-	{ 0xd2, IOBus::portout, DSK60::outD2H },
-	{ 0xd3, IOBus::portout, DSK60::outD3H },
-	{ 0xd5, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xd6, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xd7, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xd9, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xda, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xdb, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xdd, IOBus::portout, DSK60::outD1H },	// イメージ
-	{ 0xde, IOBus::portout, DSK60::outD2H },	// イメージ
-	{ 0xdf, IOBus::portout, DSK60::outD3H },	// イメージ
-	{ 0xd0, IOBus::portin,  DSK60::inD0H },
-	{ 0xd1, IOBus::portin,  DSK60::inD1H },
-	{ 0xd2, IOBus::portin,  DSK60::inD2H },
-	{ 0xd3, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xd4, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xd5, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xd6, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xd7, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xd8, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xd9, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xda, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xdb, IOBus::portin,  DSK60::inD2H },		// イメージ?
-	{ 0xdc, IOBus::portin,  DSK60::inD0H },		// イメージ
-	{ 0xdd, IOBus::portin,  DSK60::inD1H },		// イメージ
-	{ 0xde, IOBus::portin,  DSK60::inD2H },		// イメージ
-	{ 0xdf, IOBus::portin,  DSK60::inD2H }		// イメージ?
+	{ 0xd1, IOBus::portout, DSK6::outD1H },
+	{ 0xd2, IOBus::portout, DSK6::outD2H },
+	{ 0xd3, IOBus::portout, DSK6::outD3H },
+	{ 0xd5, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xd6, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xd7, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xd9, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xda, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xdb, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xdd, IOBus::portout, DSK6::outD1H },		// イメージ
+	{ 0xde, IOBus::portout, DSK6::outD2H },		// イメージ
+	{ 0xdf, IOBus::portout, DSK6::outD3H },		// イメージ
+	{ 0xd0, IOBus::portin,  DSK6::inD0H },
+	{ 0xd1, IOBus::portin,  DSK6::inD1H },
+	{ 0xd2, IOBus::portin,  DSK6::inD2H },
+	{ 0xd3, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xd4, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xd5, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xd6, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xd7, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xd8, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xd9, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xda, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xdb, IOBus::portin,  DSK6::inD2H },		// イメージ?
+	{ 0xdc, IOBus::portin,  DSK6::inD0H },		// イメージ
+	{ 0xdd, IOBus::portin,  DSK6::inD1H },		// イメージ
+	{ 0xde, IOBus::portin,  DSK6::inD2H },		// イメージ
+	{ 0xdf, IOBus::portin,  DSK6::inD2H }		// イメージ?
 };
 
 // CMT(LOAD) -----
@@ -1551,25 +1583,25 @@ const std::vector<IOBus::Connector> VM62::c_cmtl = {
 
 // DISK -----
 const std::vector<IOBus::Connector> VM66::c_disk = {
-	{ 0xb1, IOBus::portout, DSK66::outB1H },
-	{ 0xb3, IOBus::portout, DSK66::outB3H },
-	{ 0xd0, IOBus::portout, DSK66::outD0H },
-	{ 0xd1, IOBus::portout, DSK66::outD1H },
-	{ 0xd2, IOBus::portout, DSK66::outD2H },
-	{ 0xd3, IOBus::portout, DSK66::outD3H },
-	{ 0xd6, IOBus::portout, DSK66::outD6H },
-	{ 0xd8, IOBus::portout, DSK66::outD8H },
-	{ 0xda, IOBus::portout, DSK66::outDAH },
-	{ 0xdd, IOBus::portout, DSK66::outDDH },
-	{ 0xde, IOBus::portout, DSK66::outDEH },
-	{ 0xb2, IOBus::portin,  DSK66::inB2H },
-	{ 0xd0, IOBus::portin,  DSK66::inD0H },
-	{ 0xd1, IOBus::portin,  DSK66::inD1H },
-	{ 0xd2, IOBus::portin,  DSK66::inD2H },
-	{ 0xd3, IOBus::portin,  DSK66::inD3H },
-	{ 0xd4, IOBus::portin,  DSK66::inD4H },
-	{ 0xdc, IOBus::portin,  DSK66::inDCH },
-	{ 0xdd, IOBus::portin,  DSK66::inDDH }
+	{ 0xb1, IOBus::portout, DSK6::outB1H },
+	{ 0xb3, IOBus::portout, DSK6::outB3H },
+	{ 0xd0, IOBus::portout, DSK6::outD0H },
+	{ 0xd1, IOBus::portout, DSK6::outD1H },
+	{ 0xd2, IOBus::portout, DSK6::outD2H },
+	{ 0xd3, IOBus::portout, DSK6::outD3H },
+	{ 0xd6, IOBus::portout, DSK6::outD6H },
+	{ 0xd8, IOBus::portout, DSK6::outD8H },
+	{ 0xda, IOBus::portout, DSK6::outDAH },
+	{ 0xdd, IOBus::portout, DSK6::outDDH },
+	{ 0xde, IOBus::portout, DSK6::outDEH },
+	{ 0xb2, IOBus::portin,  DSK6::inB2H },
+	{ 0xd0, IOBus::portin,  DSK6::inD0H },
+	{ 0xd1, IOBus::portin,  DSK6::inD1H },
+	{ 0xd2, IOBus::portin,  DSK6::inD2H },
+	{ 0xd3, IOBus::portin,  DSK6::inD3H },
+	{ 0xd4, IOBus::portin,  DSK6::inD4H },
+	{ 0xdc, IOBus::portin,  DSK6::inDCH },
+	{ 0xdd, IOBus::portin,  DSK6::inDDH }
 };
 
 
@@ -1578,113 +1610,113 @@ const std::vector<IOBus::Connector> VM66::c_disk = {
 
 // 割込み -----
 const std::vector<IOBus::Connector> VM64::c_intr = {
-	{ 0xb0, IOBus::portout, IRQ64::outB0H },
-	{ 0xb8, IOBus::portout, IRQ64::outBxH },
-	{ 0xb9, IOBus::portout, IRQ64::outBxH },
-	{ 0xba, IOBus::portout, IRQ64::outBxH },
-	{ 0xbb, IOBus::portout, IRQ64::outBxH },
-	{ 0xbc, IOBus::portout, IRQ64::outBxH },
-	{ 0xbd, IOBus::portout, IRQ64::outBxH },
-	{ 0xbe, IOBus::portout, IRQ64::outBxH },
-	{ 0xbf, IOBus::portout, IRQ64::outBxH },
-	{ 0xf3, IOBus::portout, IRQ64::outF3H },
-	{ 0xf4, IOBus::portout, IRQ64::outF4H },
-	{ 0xf5, IOBus::portout, IRQ64::outF5H },
-	{ 0xf6, IOBus::portout, IRQ64::outF6H },
-	{ 0xf7, IOBus::portout, IRQ64::outF7H },
-	{ 0xfa, IOBus::portout, IRQ64::outFAH },
-	{ 0xfb, IOBus::portout, IRQ64::outFBH },
-	{ 0xf3, IOBus::portin,  IRQ64::inF3H },
-	{ 0xf4, IOBus::portin,  IRQ64::inF4H },
-	{ 0xf5, IOBus::portin,  IRQ64::inF5H },
-	{ 0xf6, IOBus::portin,  IRQ64::inF6H },
-	{ 0xf7, IOBus::portin,  IRQ64::inF7H },
-	{ 0xfa, IOBus::portin,  IRQ64::inFAH },
-	{ 0xfb, IOBus::portin,  IRQ64::inFBH }
+	{ 0xb0, IOBus::portout, IRQ6::outB0H },
+	{ 0xb8, IOBus::portout, IRQ6::outBxH },
+	{ 0xb9, IOBus::portout, IRQ6::outBxH },
+	{ 0xba, IOBus::portout, IRQ6::outBxH },
+	{ 0xbb, IOBus::portout, IRQ6::outBxH },
+	{ 0xbc, IOBus::portout, IRQ6::outBxH },
+	{ 0xbd, IOBus::portout, IRQ6::outBxH },
+	{ 0xbe, IOBus::portout, IRQ6::outBxH },
+	{ 0xbf, IOBus::portout, IRQ6::outBxH },
+	{ 0xf3, IOBus::portout, IRQ6::outF3H },
+	{ 0xf4, IOBus::portout, IRQ6::outF4H },
+	{ 0xf5, IOBus::portout, IRQ6::outF5H },
+	{ 0xf6, IOBus::portout, IRQ6::outF6H },
+	{ 0xf7, IOBus::portout, IRQ6::outF7H },
+	{ 0xfa, IOBus::portout, IRQ6::outFAH },
+	{ 0xfb, IOBus::portout, IRQ6::outFBH },
+	{ 0xf3, IOBus::portin,  IRQ6::inF3H },
+	{ 0xf4, IOBus::portin,  IRQ6::inF4H },
+	{ 0xf5, IOBus::portin,  IRQ6::inF5H },
+	{ 0xf6, IOBus::portin,  IRQ6::inF6H },
+	{ 0xf7, IOBus::portin,  IRQ6::inF7H },
+	{ 0xfa, IOBus::portin,  IRQ6::inFAH },
+	{ 0xfb, IOBus::portin,  IRQ6::inFBH }
 };
 
 // メモリ -----
 const std::vector<IOBus::Connector> VM64::c_memory = {
-	{ 0x60, IOBus::portout, MEM64::out6xH },
-	{ 0x61, IOBus::portout, MEM64::out6xH },
-	{ 0x62, IOBus::portout, MEM64::out6xH },
-	{ 0x63, IOBus::portout, MEM64::out6xH },
-	{ 0x64, IOBus::portout, MEM64::out6xH },
-	{ 0x65, IOBus::portout, MEM64::out6xH },
-	{ 0x66, IOBus::portout, MEM64::out6xH },
-	{ 0x67, IOBus::portout, MEM64::out6xH },
-	{ 0x68, IOBus::portout, MEM64::out6xH },
-	{ 0x69, IOBus::portout, MEM64::out6xH },
-	{ 0x6a, IOBus::portout, MEM64::out6xH },
-	{ 0x6b, IOBus::portout, MEM64::out6xH },
-	{ 0x6c, IOBus::portout, MEM64::out6xH },
-	{ 0x6d, IOBus::portout, MEM64::out6xH },
-	{ 0x6e, IOBus::portout, MEM64::out6xH },
-	{ 0x6f, IOBus::portout, MEM64::out6xH },
+	{ 0x60, IOBus::portout, MEM6::out6xH },
+	{ 0x61, IOBus::portout, MEM6::out6xH },
+	{ 0x62, IOBus::portout, MEM6::out6xH },
+	{ 0x63, IOBus::portout, MEM6::out6xH },
+	{ 0x64, IOBus::portout, MEM6::out6xH },
+	{ 0x65, IOBus::portout, MEM6::out6xH },
+	{ 0x66, IOBus::portout, MEM6::out6xH },
+	{ 0x67, IOBus::portout, MEM6::out6xH },
+	{ 0x68, IOBus::portout, MEM6::out6xH },
+	{ 0x69, IOBus::portout, MEM6::out6xH },
+	{ 0x6a, IOBus::portout, MEM6::out6xH },
+	{ 0x6b, IOBus::portout, MEM6::out6xH },
+	{ 0x6c, IOBus::portout, MEM6::out6xH },
+	{ 0x6d, IOBus::portout, MEM6::out6xH },
+	{ 0x6e, IOBus::portout, MEM6::out6xH },
+	{ 0x6f, IOBus::portout, MEM6::out6xH },
 	
-	{ 0xc1, IOBus::portout, MEM64::outC1H },
-	{ 0xc2, IOBus::portout, MEM64::outC2H },
-	{ 0xc3, IOBus::portout, MEM64::outC3H },
+	{ 0xc1, IOBus::portout, MEM6::outC1H },
+	{ 0xc2, IOBus::portout, MEM6::outC2H },
+	{ 0xc3, IOBus::portout, MEM6::outC3H },
 	
-	{ 0xf0, IOBus::portout, MEM64::outF0H },
-	{ 0xf1, IOBus::portout, MEM64::outF1H },
-	{ 0xf2, IOBus::portout, MEM64::outF2H },
-	{ 0xf3, IOBus::portout, MEM64::outF3H },
-	{ 0xf8, IOBus::portout, MEM64::outF8H },
+	{ 0xf0, IOBus::portout, MEM6::outF0H },
+	{ 0xf1, IOBus::portout, MEM6::outF1H },
+	{ 0xf2, IOBus::portout, MEM6::outF2H },
+	{ 0xf3, IOBus::portout, MEM6::outF3H },
+	{ 0xf8, IOBus::portout, MEM6::outF8H },
 	
-	{ 0x60, IOBus::portin,  MEM64::in6xH },
-	{ 0x61, IOBus::portin,  MEM64::in6xH },
-	{ 0x62, IOBus::portin,  MEM64::in6xH },
-	{ 0x63, IOBus::portin,  MEM64::in6xH },
-	{ 0x64, IOBus::portin,  MEM64::in6xH },
-	{ 0x65, IOBus::portin,  MEM64::in6xH },
-	{ 0x66, IOBus::portin,  MEM64::in6xH },
-	{ 0x67, IOBus::portin,  MEM64::in6xH },
-	{ 0x68, IOBus::portin,  MEM64::in6xH },
-	{ 0x69, IOBus::portin,  MEM64::in6xH },
-	{ 0x6a, IOBus::portin,  MEM64::in6xH },
-	{ 0x6b, IOBus::portin,  MEM64::in6xH },
-	{ 0x6c, IOBus::portin,  MEM64::in6xH },
-	{ 0x6d, IOBus::portin,  MEM64::in6xH },
-	{ 0x6e, IOBus::portin,  MEM64::in6xH },
-	{ 0x6f, IOBus::portin,  MEM64::in6xH },
+	{ 0x60, IOBus::portin,  MEM6::in6xH },
+	{ 0x61, IOBus::portin,  MEM6::in6xH },
+	{ 0x62, IOBus::portin,  MEM6::in6xH },
+	{ 0x63, IOBus::portin,  MEM6::in6xH },
+	{ 0x64, IOBus::portin,  MEM6::in6xH },
+	{ 0x65, IOBus::portin,  MEM6::in6xH },
+	{ 0x66, IOBus::portin,  MEM6::in6xH },
+	{ 0x67, IOBus::portin,  MEM6::in6xH },
+	{ 0x68, IOBus::portin,  MEM6::in6xH },
+	{ 0x69, IOBus::portin,  MEM6::in6xH },
+	{ 0x6a, IOBus::portin,  MEM6::in6xH },
+	{ 0x6b, IOBus::portin,  MEM6::in6xH },
+	{ 0x6c, IOBus::portin,  MEM6::in6xH },
+	{ 0x6d, IOBus::portin,  MEM6::in6xH },
+	{ 0x6e, IOBus::portin,  MEM6::in6xH },
+	{ 0x6f, IOBus::portin,  MEM6::in6xH },
 	
-	{ 0xc2, IOBus::portin,  MEM64::inC2H },
+	{ 0xc2, IOBus::portin,  MEM6::inC2H },
 	
-	{ 0xf0, IOBus::portin,  MEM64::inF0H },
-	{ 0xf1, IOBus::portin,  MEM64::inF1H },
-	{ 0xf2, IOBus::portin,  MEM64::inF2H },
-	{ 0xf3, IOBus::portin,  MEM64::inF3H },
+	{ 0xf0, IOBus::portin,  MEM6::inF0H },
+	{ 0xf1, IOBus::portin,  MEM6::inF1H },
+	{ 0xf2, IOBus::portin,  MEM6::inF2H },
+	{ 0xf3, IOBus::portin,  MEM6::inF3H },
 	
-	{ 0xb2, IOBus::portin,  MEM64::inB2H }
+	{ 0xb2, IOBus::portin,  MEM6::inB2H }
 };
 
 // VDG -----
 const std::vector<IOBus::Connector> VM64::c_vdg = {
-	{ 0x40, IOBus::portout, VDG64::out4xH },
-	{ 0x41, IOBus::portout, VDG64::out4xH },
-	{ 0x42, IOBus::portout, VDG64::out4xH },
-	{ 0x43, IOBus::portout, VDG64::out4xH },
-	{ 0xb0, IOBus::portout, VDG64::outB0H },
-	{ 0xc0, IOBus::portout, VDG64::outC0H },
-	{ 0xc1, IOBus::portout, VDG64::outC1H },
-	{ 0xc8, IOBus::portout, VDG64::outC8H },
-	{ 0xc9, IOBus::portout, VDG64::outC9H },
-	{ 0xca, IOBus::portout, VDG64::outCAH },
-	{ 0xcb, IOBus::portout, VDG64::outCBH },
-	{ 0xcc, IOBus::portout, VDG64::outCCH },
-	{ 0xce, IOBus::portout, VDG64::outCEH },
-	{ 0xcf, IOBus::portout, VDG64::outCFH },
-	{ 0xa2, IOBus::portin,  VDG64::inA2H }
+	{ 0x40, IOBus::portout, VDG6::out4xH },
+	{ 0x41, IOBus::portout, VDG6::out4xH },
+	{ 0x42, IOBus::portout, VDG6::out4xH },
+	{ 0x43, IOBus::portout, VDG6::out4xH },
+	{ 0xb0, IOBus::portout, VDG6::outB0H },
+	{ 0xc0, IOBus::portout, VDG6::outC0H },
+	{ 0xc1, IOBus::portout, VDG6::outC1H },
+	{ 0xc8, IOBus::portout, VDG6::outC8H },
+	{ 0xc9, IOBus::portout, VDG6::outC9H },
+	{ 0xca, IOBus::portout, VDG6::outCAH },
+	{ 0xcb, IOBus::portout, VDG6::outCBH },
+	{ 0xcc, IOBus::portout, VDG6::outCCH },
+	{ 0xce, IOBus::portout, VDG6::outCEH },
+	{ 0xcf, IOBus::portout, VDG6::outCFH },
+	{ 0xa2, IOBus::portin,  VDG6::inA2H }
 };
 
 // PSG -----
 const std::vector<IOBus::Connector> VM64::c_psg = {
-	{ 0xa0, IOBus::portout, OPN64::outA0H },
-	{ 0xa1, IOBus::portout, OPN64::outA1H },
-	{ 0xa3, IOBus::portout, OPN64::outA3H },
-	{ 0xa2, IOBus::portin,  OPN64::inA2H },
-	{ 0xa3, IOBus::portin,  OPN64::inA3H }
+	{ 0xa0, IOBus::portout, PSGb::outA0H },
+	{ 0xa1, IOBus::portout, PSGb::outA1H },
+	{ 0xa3, IOBus::portout, PSGb::outA3H },
+	{ 0xa2, IOBus::portin,  PSGb::inA2H },
+	{ 0xa3, IOBus::portin,  PSGb::inA3H }
 };
 
 // 8255(Z80側) -----
@@ -1708,22 +1740,22 @@ const std::vector<IOBus::Connector> VM64::c_8255s = {
 
 // 音声合成 -----
 const std::vector<IOBus::Connector> VM64::c_voice = {
-	{ 0xe0, IOBus::portout, VCE64::outE0H },
-	{ 0xe2, IOBus::portout, VCE64::outE2H },
-	{ 0xe3, IOBus::portout, VCE64::outE3H },
-	{ 0xe0, IOBus::portin,  VCE64::inE0H },
-	{ 0xe2, IOBus::portin,  VCE64::inE2H },
-	{ 0xe3, IOBus::portin,  VCE64::inE3H }
+	{ 0xe0, IOBus::portout, VCE6::outE0H },
+	{ 0xe2, IOBus::portout, VCE6::outE2H },
+	{ 0xe3, IOBus::portout, VCE6::outE3H },
+	{ 0xe0, IOBus::portin,  VCE6::inE0H },
+	{ 0xe2, IOBus::portin,  VCE6::inE2H },
+	{ 0xe3, IOBus::portin,  VCE6::inE3H }
 };
 
 // DISK -----
 const std::vector<IOBus::Connector> VM64::c_disk = {
-	{ 0xd1, IOBus::portout, DSK60::outD1H },
-	{ 0xd2, IOBus::portout, DSK60::outD2H },
-	{ 0xd3, IOBus::portout, DSK60::outD3H },
-	{ 0xd0, IOBus::portin,  DSK60::inD0H },
-	{ 0xd1, IOBus::portin,  DSK60::inD1H },
-	{ 0xd2, IOBus::portin,  DSK60::inD2H }
+	{ 0xd1, IOBus::portout, DSK6::outD1H },
+	{ 0xd2, IOBus::portout, DSK6::outD2H },
+	{ 0xd3, IOBus::portout, DSK6::outD3H },
+	{ 0xd0, IOBus::portin,  DSK6::inD0H },
+	{ 0xd1, IOBus::portin,  DSK6::inD1H },
+	{ 0xd2, IOBus::portin,  DSK6::inD2H }
 };
 
 // CMT(LOAD) -----
@@ -1737,23 +1769,23 @@ const std::vector<IOBus::Connector> VM64::c_cmtl = {
 
 // DISK -----
 const std::vector<IOBus::Connector> VM68::c_disk = {
-	{ 0xb1, IOBus::portout, DSK66::outB1H },
-	{ 0xb3, IOBus::portout, DSK66::outB3H },
-	{ 0xd0, IOBus::portout, DSK66::outD0H },
-	{ 0xd1, IOBus::portout, DSK66::outD1H },
-	{ 0xd2, IOBus::portout, DSK66::outD2H },
-	{ 0xd3, IOBus::portout, DSK66::outD3H },
-	{ 0xd6, IOBus::portout, DSK66::outD6H },
-	{ 0xd8, IOBus::portout, DSK66::outD8H },
-	{ 0xda, IOBus::portout, DSK66::outDAH },
-	{ 0xdd, IOBus::portout, DSK66::outDDH },
-	{ 0xde, IOBus::portout, DSK66::outDEH },
-	{ 0xb2, IOBus::portin,  DSK66::inB2H },
-	{ 0xd0, IOBus::portin,  DSK66::inD0H },
-	{ 0xd1, IOBus::portin,  DSK66::inD1H },
-	{ 0xd2, IOBus::portin,  DSK66::inD2H },
-	{ 0xd3, IOBus::portin,  DSK66::inD3H },
-	{ 0xd4, IOBus::portin,  DSK66::inD4H },
-	{ 0xdc, IOBus::portin,  DSK66::inDCH },
-	{ 0xdd, IOBus::portin,  DSK66::inDDH }
+	{ 0xb1, IOBus::portout, DSK6::outB1H },
+	{ 0xb3, IOBus::portout, DSK6::outB3H },
+	{ 0xd0, IOBus::portout, DSK6::outD0H },
+	{ 0xd1, IOBus::portout, DSK6::outD1H },
+	{ 0xd2, IOBus::portout, DSK6::outD2H },
+	{ 0xd3, IOBus::portout, DSK6::outD3H },
+	{ 0xd6, IOBus::portout, DSK6::outD6H },
+	{ 0xd8, IOBus::portout, DSK6::outD8H },
+	{ 0xda, IOBus::portout, DSK6::outDAH },
+	{ 0xdd, IOBus::portout, DSK6::outDDH },
+	{ 0xde, IOBus::portout, DSK6::outDEH },
+	{ 0xb2, IOBus::portin,  DSK6::inB2H },
+	{ 0xd0, IOBus::portin,  DSK6::inD0H },
+	{ 0xd1, IOBus::portin,  DSK6::inD1H },
+	{ 0xd2, IOBus::portin,  DSK6::inD2H },
+	{ 0xd3, IOBus::portin,  DSK6::inD3H },
+	{ 0xd4, IOBus::portin,  DSK6::inD4H },
+	{ 0xdc, IOBus::portin,  DSK6::inDCH },
+	{ 0xdd, IOBus::portin,  DSK6::inDDH }
 };

@@ -2,8 +2,8 @@
 #define DEVICE_H_INCLUDE
 
 #include <functional>
+#include <map>
 #include <memory>
-#include <unordered_map>
 
 #include "typedef.h"
 
@@ -22,19 +22,26 @@ class MemCell;
 struct IDevice {
 	using ID         = DWORD;
 	
+	// I/Oアクセス関数
 	using InFuncPtr  = BYTE (IDevice::*)( int );
 	using OutFuncPtr = void (IDevice::*)( int, BYTE );
 	
-	using RFuncPtr   = BYTE (IDevice::*)( MemCell*, WORD );
-	using WFuncPtr   = void (IDevice::*)( MemCell*, WORD, BYTE );
-	using RFunc      = std::function<BYTE( MemCell*, WORD )>;
-	using WFunc      = std::function<void( MemCell*, WORD, BYTE )>;
-	RFunc FR( RFuncPtr fn ){ return std::bind( fn, std::ref(*this), std::placeholders::_1, std::placeholders::_2 ); }
-	WFunc FW( WFuncPtr fn ){ return std::bind( fn, std::ref(*this), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3 ); }
+	// メモリアクセス関数
+	using RFuncPtr   = BYTE (IDevice::*)( MemCell*, WORD, int* );
+	using WFuncPtr   = void (IDevice::*)( MemCell*, WORD, BYTE, int* );
+	using RFunc      = std::function<BYTE( MemCell*, WORD, int* )>;
+	using WFunc      = std::function<void( MemCell*, WORD, BYTE, int* )>;
+	RFunc FR( RFuncPtr fn ){ return std::bind( fn, std::ref(*this), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3 ); }
+	WFunc FW( WFuncPtr fn ){ return std::bind( fn, std::ref(*this), std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4 ); }
+	
+	// メモリブロック名取得用
+	using NFuncPtr   = const std::string& (IDevice::*)( WORD, bool );
+	using NFunc      = std::function<const std::string&( WORD, bool )>;
+	NFunc FN( NFuncPtr fn ){ return std::bind( fn, std::ref(*this), std::placeholders::_1, std::placeholders::_2 ); }
 	
 	struct Descriptor{
-		std::unordered_map<int, InFuncPtr>  indef;
-		std::unordered_map<int, OutFuncPtr> outdef;
+		std::map<int, InFuncPtr>  indef;
+		std::map<int, OutFuncPtr> outdef;
 	};
 	
 	virtual const ID& GetID() const = 0;
@@ -80,7 +87,7 @@ private:
 		int count;
 	};
 	
-	std::unordered_map<int, Node> NodeMap;
+	std::map<int, Node> NodeMap;
 	std::shared_ptr<IDevice> dummydev;
 
 public:

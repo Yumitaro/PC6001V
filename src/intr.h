@@ -101,6 +101,10 @@ public:
 	
 	bool GetTimerIntr();						// タイマ割込みスイッチ取得
 	
+	// デバイスID
+	enum IDOut{ outB0H=0, outBxH, outF3H, outF4H, outF5H, outF6H, outF7H, outFAH, outFBH };
+	enum IDIn {  inF3H=0,  inF4H,  inF5H,  inF6H,  inF7H,  inFAH,  inFBH };
+	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
 	bool DokoLoad( cIni* ) override;	// どこでもLOAD
@@ -116,10 +120,6 @@ public:
 	~IRQ60();
 	
 	void Reset();							// リセット
-	
-	// デバイスID
-	enum IDOut{ outB0H=0 };
-	enum IDIn {};
 };
 
 
@@ -132,10 +132,6 @@ public:
 	~IRQ62();
 	
 	void Reset();							// リセット
-	
-	// デバイスID
-	enum IDOut{ outB0H=0, outF3H,  outF4H, outF5H, outF6H, outF7H };
-	enum IDIn {            inF3H=0, inF4H,  inF5H,  inF6H,  inF7H };
 };
 
 
@@ -157,11 +153,6 @@ public:
 	~IRQ64();
 	
 	void Reset();							// リセット
-	
-	// デバイスID
-	enum IDOut{ outB0H=0, outBxH,
-				outF3H,   outF4H, outF5H, outF6H, outF7H, outFAH, outFBH };
-	enum IDIn {  inF3H=0,  inF4H,  inF5H,  inF6H,  inF7H,  inFAH,  inFBH };
 };
 
 

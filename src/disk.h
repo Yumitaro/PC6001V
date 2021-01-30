@@ -208,6 +208,10 @@ public:
 	
 	void WaitEnable( bool );					// ウェイト有効フラグ設定
 	
+	// デバイスID
+	enum IDOut{ outB1H=0, outB3H, outD0H, outD1H, outD2H, outD3H, outD6H, outD8H, outDAH, outDDH, outDEH };
+	enum IDIn {  inB2H=0,  inD0H,  inD1H,  inD2H,  inD3H,  inD4H,  inDCH,  inDDH };
+	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
 	bool DokoLoad( cIni * );	// どこでもLOAD
@@ -246,10 +250,6 @@ public:
 	bool Init( int ) override;					// 初期化
 	void Reset() override;						// リセット
 	bool InAccess( int ) const override;		// アクセス中?
-	
-	// デバイスID
-	enum IDOut{           outD1H=0, outD2H, outD3H };
-	enum IDIn {  inD0H=0, inD1H,    inD2H          };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
@@ -337,11 +337,6 @@ public:
 	bool Init( int ) override;					// 初期化
 	void Reset() override;						// リセット
 	bool InAccess( int ) const override;		// アクセス中?
-	
-	// デバイスID
-	enum IDOut{ outB1H=0, outB3H, outD0H, outD1H, outD2H, outD3H, outD6H, outD8H,
-				outDAH,   outDDH, outDEH };
-	enum IDIn {  inB2H=0,  inD0H,  inD1H,  inD2H,  inD3H,  inD4H,  inDCH,  inDDH };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni * );	// どこでもSAVE
