@@ -181,15 +181,15 @@ void EL6::ShowPopupMenu( int x, int y )
 	switch( vm->mem->GetCartridge() ){
 	case EXC6001:	CheckMenuItem( hsm, ID_C6001,     MF_CHECKED );	break;
 	case EXC6005:	CheckMenuItem( hsm, ID_C6005,     MF_CHECKED );	break;
-	case EXC6006:	CheckMenuItem( hsm, ID_C6006,     MF_CHECKED );	break;
+	case EXC6006:	CheckMenuItem( hsm, cfg->GetValue( CF_ExtRom ).empty() ? ID_C6006NR : ID_C6006, MF_CHECKED );	break;
 	case EXC660101:	CheckMenuItem( hsm, ID_C660101,   MF_CHECKED );	break;
 	case EXC6006SR:	CheckMenuItem( hsm, ID_C6006SR,   MF_CHECKED );	break;
 	case EXC6007SR:	CheckMenuItem( hsm, ID_C6007SR,   MF_CHECKED );	break;
 	case EXC6053:	CheckMenuItem( hsm, ID_C6053,     MF_CHECKED );	break;
 	case EXC60M55:	CheckMenuItem( hsm, ID_C60M55,    MF_CHECKED );	break;
-	case EXCSOL1:	CheckMenuItem( hsm, ID_CSOL1,     MF_CHECKED );	break;
-	case EXCSOL2:	CheckMenuItem( hsm, ID_CSOL2,     MF_CHECKED );	break;
-	case EXCSOL3:	CheckMenuItem( hsm, ID_CSOL3,     MF_CHECKED );	break;
+	case EXCSOL1:	CheckMenuItem( hsm, cfg->GetValue( CF_ExtRom ).empty() ? ID_CSOL1NR : ID_CSOL1, MF_CHECKED );	break;
+	case EXCSOL2:	CheckMenuItem( hsm, cfg->GetValue( CF_ExtRom ).empty() ? ID_CSOL2NR : ID_CSOL2, MF_CHECKED );	break;
+	case EXCSOL3:	CheckMenuItem( hsm, cfg->GetValue( CF_ExtRom ).empty() ? ID_CSOL3NR : ID_CSOL3, MF_CHECKED );	break;
 	default:		CheckMenuItem( hsm, ID_CARTEJECT, MF_CHECKED );
 	}
 	// ボイスシンセサイザ,FM音源カートリッジは当面封印

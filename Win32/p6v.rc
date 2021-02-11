@@ -72,7 +72,11 @@ ID_MENU MENU
 			MENUITEM "なし", ID_CARTEJECT
             MENUITEM SEPARATOR
 			MENUITEM "PC-6005    ROMカートリッジ...", ID_C6005
-			MENUITEM "PC-6006    拡張ROM/RAMカートリッジ...", ID_C6006
+            POPUP "PC-6006    拡張ROM/RAMカートリッジ"
+            {
+				MENUITEM "ROM選択...", ID_C6006
+				MENUITEM "ROMなし", ID_C6006NR
+            }
             MENUITEM SEPARATOR
 			MENUITEM "PCS-6001R  拡張BASIC", ID_C6001
 			MENUITEM "PC-6601-01 拡張漢字ROMカートリッジ", ID_C660101
@@ -82,9 +86,21 @@ ID_MENU MENU
 			MENUITEM "PC-6053    ボイスシンセサイザー", ID_C6053
 			MENUITEM "PC-60m55   FM音源カートリッジ", ID_C60M55
             MENUITEM SEPARATOR
-			MENUITEM "戦士のカートリッジ...", ID_CSOL1
-			MENUITEM "戦士のカートリッジmkⅡ...", ID_CSOL2
-			MENUITEM "戦士のカートリッジmkⅢ...", ID_CSOL3
+            POPUP "戦士のカートリッジ"
+            {
+				MENUITEM "ROM選択...", ID_CSOL1
+				MENUITEM "ROMなし", ID_CSOL1NR
+			}
+            POPUP "戦士のカートリッジmkⅡ"
+            {
+				MENUITEM "ROM選択...", ID_CSOL2
+				MENUITEM "ROMなし", ID_CSOL2NR
+			}
+            POPUP "戦士のカートリッジmkⅢ"
+            {
+				MENUITEM "ROM選択...", ID_CSOL3
+				MENUITEM "ROMなし", ID_CSOL3NR
+			}
         }
         POPUP "ジョイスティック"
         {
