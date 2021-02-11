@@ -108,6 +108,7 @@ protected:
 	void UI_TapeInsert( const P6VPATH& = "" );						// UI:TAPE 挿入
 	void UI_DiskInsert( int, const P6VPATH& = "" );					// UI:DISK 挿入
 	void UI_CartInsert( WORD, const P6VPATH& = "" );				// UI:拡張カートリッジ 挿入
+	void UI_CartInsertNoRom( WORD );								// UI:拡張カートリッジ 挿入(ROMなし)
 	void UI_CartEject();											// UI:拡張カートリッジ 排出
 	void UI_DokoSave( const P6VPATH& = "" );						// UI:どこでもSAVE
 	void UI_DokoLoad( const P6VPATH& = "" );						// UI:どこでもLOAD

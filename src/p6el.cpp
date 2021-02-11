@@ -1645,10 +1645,30 @@ void EL6::UI_CartInsert( WORD cart, const P6VPATH& path )
 			}
 			if( !OSD_FileSelect( GetWindowHandle(), FD_ExtRom, fpath, ExRomPathUI ) ){
 				// キャンセルしたらROMなしで起動する
-//				return;
+				return;
 			}
 		}
 	}
+	
+	cfg->SetValue( CV_ExCartridge, (int)cart );
+	cfg->SetValue( CF_ExtRom, fpath );
+	cfg->Write();
+	
+	// 再起動を伴うのでメッセージ表示
+	OSD_Message( GetWindowHandle(), GetText( T_RESTARTI ), GetText( T_RESTARTC ), OSDM_OK | OSDM_ICONINFO );
+	UI_Restart();
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:拡張カートリッジ 挿入(ROMなし)
+//
+// 引数:	cart		カートリッジタイプ
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_CartInsertNoRom( WORD cart )
+{
+	P6VPATH fpath = "";
 	
 	cfg->SetValue( CV_ExCartridge, (int)cart );
 	cfg->SetValue( CF_ExtRom, fpath );
@@ -2273,15 +2293,21 @@ void EL6::ExecMenu( int id )
 	case ID_DISKEJECT1:														// DISK 排出
 	case ID_DISKEJECT2:		DiskUnmount( id - ID_DISKEJECT1 );		break;
 	
-	case ID_C6005:			UI_CartInsert( EXC6005 );				break;	// 拡張カートリッジ 挿入(PC-6005	ROMカートリッジ)
-	case ID_C6006:			UI_CartInsert( EXC6006 );				break;	// 拡張カートリッジ 挿入(PC-6006	拡張ROM/RAMカートリッジ)
-	case ID_C6001:			UI_CartInsert( EXC6001   );				break;	// 拡張カートリッジ 挿入(PCS-6001R	拡張BASIC)
-	case ID_C660101:		UI_CartInsert( EXC660101 );				break;	// 拡張カートリッジ 挿入(PC-6601-01	拡張漢字ROMカートリッジ)
-	case ID_C6006SR:		UI_CartInsert( EXC6006SR );				break;	// 拡張カートリッジ 挿入(PC-6006SR	拡張64KRAMカートリッジ)
-	case ID_C6007SR:		UI_CartInsert( EXC6007SR );				break;	// 拡張カートリッジ 挿入(PC-6007SR	拡張漢字ROM&RAMカートリッジ)
-	case ID_CSOL1:			UI_CartInsert( EXCSOL1   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジ)
-	case ID_CSOL2:			UI_CartInsert( EXCSOL2   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジmkⅡ)
-	case ID_CSOL3:			UI_CartInsert( EXCSOL3   );				break;	// 拡張カートリッジ 挿入(戦士のカートリッジmkⅢ)
+	case ID_C6005:			UI_CartInsert     ( EXC6005   );		break;	// 拡張カートリッジ 挿入			(PC-6005	ROMカートリッジ)
+	case ID_C6006:			UI_CartInsert     ( EXC6006   );		break;	// 拡張カートリッジ 挿入			(PC-6006	拡張ROM/RAMカートリッジ)
+	case ID_C6006NR:		UI_CartInsertNoRom( EXC6006   );		break;	// 拡張カートリッジ 挿入(ROMなし)	(PC-6006	拡張ROM/RAMカートリッジ)
+	case ID_C6001:			UI_CartInsert     ( EXC6001   );		break;	// 拡張カートリッジ 挿入			(PCS-6001R	拡張BASIC)
+	case ID_C660101:		UI_CartInsert     ( EXC660101 );		break;	// 拡張カートリッジ 挿入			(PC-6601-01	拡張漢字ROMカートリッジ)
+	case ID_C6006SR:		UI_CartInsert     ( EXC6006SR );		break;	// 拡張カートリッジ 挿入			(PC-6006SR	拡張64KRAMカートリッジ)
+	case ID_C6007SR:		UI_CartInsert     ( EXC6007SR );		break;	// 拡張カートリッジ 挿入			(PC-6007SR	拡張漢字ROM&RAMカートリッジ)
+	case ID_C6053:			UI_CartInsert     ( EXC6053   );		break;	// 拡張カートリッジ 挿入			(PC-6053    ボイスシンセサイザー)
+	case ID_C60M55:			UI_CartInsert     ( EXC60M55  );		break;	// 拡張カートリッジ 挿入			(PC-60m55   FM音源カートリッジ)
+	case ID_CSOL1:			UI_CartInsert     ( EXCSOL1   );		break;	// 拡張カートリッジ 挿入			(戦士のカートリッジ)
+	case ID_CSOL1NR:		UI_CartInsertNoRom( EXCSOL1   );		break;	// 拡張カートリッジ 挿入(ROMなし)	(戦士のカートリッジ)
+	case ID_CSOL2:			UI_CartInsert     ( EXCSOL2   );		break;	// 拡張カートリッジ 挿入			(戦士のカートリッジmkⅡ)
+	case ID_CSOL2NR:		UI_CartInsertNoRom( EXCSOL2   );		break;	// 拡張カートリッジ 挿入(ROMなし)	(戦士のカートリッジmkⅡ)
+	case ID_CSOL3:			UI_CartInsert     ( EXCSOL3   );		break;	// 拡張カートリッジ 挿入			(戦士のカートリッジmkⅢ)
+	case ID_CSOL3NR:		UI_CartInsertNoRom( EXCSOL3   );		break;	// 拡張カートリッジ 挿入(ROMなし)	(戦士のカートリッジmkⅢ)
 	case ID_CARTEJECT:		UI_CartEject();							break;	// 拡張カートリッジ 排出
 	
 	case ID_JOY100:															// ジョイスティック1
