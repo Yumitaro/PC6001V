@@ -36,10 +36,11 @@ enum {
 	KANJIROM2,		// KanjiRom+0x4000	SysRom2+0xc000
 	KANJIROM3,		// KanjiRom+0x6000	SysRom2+0xe000
 	
-	RDCGROM,		// CGRom読込み
+	RWCOMMON,		// 汎用読込み/書込み
+	RWAREAA60,		// AreaA,B読込み/書込み(60)
+	RWAREAC60,		// AreaC読込み/書込み(60)
+	RWAREAD60,		// AreaD読込み/書込み(60)
 	KNJROM,			// 漢字ROM選択用
-	SOL6MAIN,		// 戦士のカートリッジmkⅡ/Ⅲ PC-6001 SysRom1選択用
-	SOL6MAIN1,		// 戦士のカートリッジmkⅡ/Ⅲ PC-6001 SysRom1選択用
 	
 	EndofIROM
 };
@@ -172,11 +173,6 @@ const MEM6::MEMINFO MEM6::IEXTRAM64  = { NOROM,		0x010000,	0x00,	0 };
 const MEM6::MEMINFO MEM6::IEXTRAM128 = { NOROM,		0x020000,	0x00,	0 };
 const MEM6::MEMINFO MEM6::IEXTRAM512 = { NOROM,		0x080000,	0x00,	0 };
 
-// 拡張カートリッジ
-const MEM6::MEMINFO MEM6::IEXBASIC   = { EXBASIC00,	0x002000,	0xff,	1 };
-const MEM6::MEMINFO MEM6::IEXKANJI   = { EXKANJI00,	0x020000,	0xff,	0 };
-const MEM6::MEMINFO MEM6::IEXVOICE   = { EXVOICE00,	0x004000,	0xff,	1 };
-
 // PC-6001								 ROM情報	サイズ		初期値	Wait
 const MEM6::MEMINFO MEM60::ISYSROM1  = { SYSROM160,	0x004000,	0xff,	1 };
 const MEM6::MEMINFO MEM60::ICGROM1   = { CGROM160,	0x001000,	0xff,	1 };
@@ -208,6 +204,11 @@ const MEM6::MEMINFO MEM64::ISYSROM1  = { SYSROM164,	0x010000,	0xff,	1 };
 const MEM6::MEMINFO MEM64::ISYSROM2  = { SYSROM264,	0x010000,	0xff,	1 };
 const MEM6::MEMINFO MEM64::ICGROM1   = { CGROM164,	0x004000,	0xff,	1 };
 const MEM6::MEMINFO MEM64::IINTRAM   = { NOROM,		0x010000,	0x00,	0 };
+
+// 拡張カートリッジ
+const MEM6::MEMINFO MEM6::IEXBASIC   = { EXBASIC00,	0x002000,	0xff,	1 };
+const MEM6::MEMINFO MEM6::IEXKANJI   = { EXKANJI00,	0x020000,	0xff,	0 };
+const MEM6::MEMINFO MEM6::IEXVOICE   = { EXVOICE00,	0x004000,	0xff,	1 };
 
 
 
@@ -392,7 +393,7 @@ void MemCells::Resize( size_t size, BYTE idata )
 ////////////////////////////////////////////////////////////////
 // ROMデータをファイルから読込み
 //
-// 引数:	filepath	ファイル名へのパス
+// 引数:	filepath	ファイルパス名への参照
 // 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MemCells::SetData( const P6VPATH& filepath )
@@ -638,7 +639,41 @@ void MemBlock::Write( WORD addr, BYTE data, int* wcnt ) const
 
 
 
-
+////////////////////////////////////////////////////////////////
+// 拡張カートリッジ デバイスディスクリプタ追加
+////////////////////////////////////////////////////////////////
+void MEM6::AddDeviceDescriptorExt( void )
+{
+	switch( ExCart ){
+	case EXC660101:	// 拡張漢字ROMカートリッジ
+	case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
+		descs.outdef.emplace( outFCH,  STATIC_CAST( Device::OutFuncPtr, &MEM6::OutFCH  ) );
+		descs.outdef.emplace( outFFH,  STATIC_CAST( Device::OutFuncPtr, &MEM6::OutFFH  ) );
+		
+		descs.indef.emplace ( inFDH,   STATIC_CAST( Device::InFuncPtr,  &MEM6::InFDH   ) );
+		descs.indef.emplace ( inFEH,   STATIC_CAST( Device::InFuncPtr,  &MEM6::InFEH   ) );
+		break;
+		
+	case EXC6053:	// ボイスシンセサイザー
+		descs.outdef.emplace( out70H,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out70H  ) );
+		descs.outdef.emplace( out72H,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out72H  ) );
+		descs.outdef.emplace( out73H,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out73H  ) );
+		descs.outdef.emplace( out74H,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out74H  ) );
+		break;
+		
+	case EXCSOL2:	// 戦士のカートリッジmkⅡ
+	case EXCSOL3:	// 戦士のカートリッジmkⅢ
+		descs.outdef.emplace( out06H,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out06H  ) );
+		descs.outdef.emplace( out3xH,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out3xH  ) );
+		descs.outdef.emplace( outF0Hs, STATIC_CAST( Device::OutFuncPtr, &MEM6::OutF0Hs ) );	// 戦士のカートリッジ 60対応
+		descs.outdef.emplace( outF2Hs, STATIC_CAST( Device::OutFuncPtr, &MEM6::OutF2Hs ) );	// 戦士のカートリッジ 60対応
+		[[fallthrough]];
+		
+	case EXCSOL1:	// 戦士のカートリッジ
+		descs.outdef.emplace( out7FH,  STATIC_CAST( Device::OutFuncPtr, &MEM6::Out7FH  ) );
+		break;
+	}
+}
 
 
 ////////////////////////////////////////////////////////////////
@@ -646,24 +681,30 @@ void MemBlock::Write( WORD addr, BYTE data, int* wcnt ) const
 ////////////////////////////////////////////////////////////////
 MEM6::MEM6( VM6* vm, const ID& id ) : Device( vm, id ),
 	CGBank( false ), M1Wait( 1 ),
+	// 拡張カートリッジ ======================================================================
 	ExCart( 0 ), FilePath( "" ),
 	Kaddr( 0 ), Kenable( false ),
-	Sol60Mode( false ), CS01R( false ), CS01W( false ), SolBankSet( 0 )
+	Sol60Mode( false ), CS01R( false ), CS01W( false ), CS02W( false ), SolBankSet( 0 )
+	// =======================================================================================
 {
 	IRom.assign( EndofIROM, MemBlock() );
 	IRam.assign( EndofIRAM, MemBlock() );
 	
 	RBLK.fill  ( &IRom[EMPTYROM] );
+	WBLK.fill  ( &IRom[EMPTYROM] );
 	RD_Blk.fill( &IRom[EMPTYROM] );
 	WR_Blk.fill( &IRom[EMPTYROM] );
 	
 	Rf = { INIT_RF0, INIT_RF1, INIT_RF2 };
 	
-	// 拡張カートリッジ ========================================
+	descs.outdef.clear();
+	descs.indef.clear();
+	
+	
+	// 拡張カートリッジ ======================================================================
 	ERom.assign( EndofEROM, MemBlock() );
 	ERam.assign( EndofERAM, MemBlock() );
-	SolBank.fill( NONBANK );
-	// =========================================================
+	// =======================================================================================
 }
 
 MEM60::MEM60( VM6* vm, const ID& id ) : MEM6( vm, id )
@@ -671,33 +712,6 @@ MEM60::MEM60( VM6* vm, const ID& id ) : MEM6( vm, id )
 	MemTable.System1 = &MEM60::ISYSROM1;
 	MemTable.CGRom1  = &MEM60::ICGROM1;
 	MemTable.IntRam  = &MEM60::IINTRAM;
-	
-	// Dvice Description (Out)
-	descs.outdef.clear();
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.outdef.emplace( outFCH, STATIC_CAST( Device::OutFuncPtr, &MEM60::OutFCH ) );
-	descs.outdef.emplace( outFFH, STATIC_CAST( Device::OutFuncPtr, &MEM60::OutFFH ) );
-	// ボイスシンセサイザー ------------------------------------------------------------------
-	descs.outdef.emplace( out70H, STATIC_CAST( Device::OutFuncPtr, &MEM60::Out70H ) );
-	descs.outdef.emplace( out72H, STATIC_CAST( Device::OutFuncPtr, &MEM60::Out72H ) );
-	descs.outdef.emplace( out73H, STATIC_CAST( Device::OutFuncPtr, &MEM60::Out73H ) );
-	descs.outdef.emplace( out74H, STATIC_CAST( Device::OutFuncPtr, &MEM60::Out74H ) );
-	// 戦士のカートリッジ --------------------------------------------------------------------
-	descs.outdef.emplace( out06H,  STATIC_CAST( Device::OutFuncPtr, &MEM60::Out06H  ) );
-	descs.outdef.emplace( out3xH,  STATIC_CAST( Device::OutFuncPtr, &MEM60::Out3xH  ) );
-	descs.outdef.emplace( out7FH,  STATIC_CAST( Device::OutFuncPtr, &MEM60::Out7FH  ) );
-	descs.outdef.emplace( outF0Hs, STATIC_CAST( Device::OutFuncPtr, &MEM60::OutF0Hs ) );	// 戦士のカートリッジ対応
-	descs.outdef.emplace( outF2Hs, STATIC_CAST( Device::OutFuncPtr, &MEM60::OutF2Hs ) );	// 戦士のカートリッジ対応
-	// =======================================================================================
-	
-	// Dvice Description (In)
-	descs.indef.clear();
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.indef.emplace ( inFDH,  STATIC_CAST( Device::InFuncPtr,  &MEM60::InFDH  ) );
-	descs.indef.emplace ( inFEH,  STATIC_CAST( Device::InFuncPtr,  &MEM60::InFEH  ) );
-	// =======================================================================================
 }
 
 MEM61::MEM61( VM6* vm, const ID& id ) : MEM60( vm, id )
@@ -718,7 +732,6 @@ MEM62::MEM62( VM6* vm, const ID& id ) : MEM6( vm, id ),
 	MemTable.IntRam  = &MEM62::IINTRAM;
 	
 	// Dvice Description (Out)
-	descs.outdef.clear();
 	descs.outdef.emplace( outC1H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC1H ) );
 	descs.outdef.emplace( outC2H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC2H ) );
 	descs.outdef.emplace( outC3H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC3H ) );
@@ -727,35 +740,13 @@ MEM62::MEM62( VM6* vm, const ID& id ) : MEM6( vm, id ),
 	descs.outdef.emplace( outF2H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF2H ) );
 	descs.outdef.emplace( outF3H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF3H ) );
 	descs.outdef.emplace( outF8H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF8H ) );
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.outdef.emplace( outFCH, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutFCH ) );
-	descs.outdef.emplace( outFFH, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutFFH ) );
-	// ボイスシンセサイザー ------------------------------------------------------------------
-	descs.outdef.emplace( out70H, STATIC_CAST( Device::OutFuncPtr, &MEM62::Out70H ) );
-	descs.outdef.emplace( out72H, STATIC_CAST( Device::OutFuncPtr, &MEM62::Out72H ) );
-	descs.outdef.emplace( out73H, STATIC_CAST( Device::OutFuncPtr, &MEM62::Out73H ) );
-	descs.outdef.emplace( out74H, STATIC_CAST( Device::OutFuncPtr, &MEM62::Out74H ) );
-	// 戦士のカートリッジ --------------------------------------------------------------------
-	descs.outdef.emplace( out06H,  STATIC_CAST( Device::OutFuncPtr, &MEM62::Out06H  ) );
-	descs.outdef.emplace( out3xH,  STATIC_CAST( Device::OutFuncPtr, &MEM62::Out3xH  ) );
-	descs.outdef.emplace( out7FH,  STATIC_CAST( Device::OutFuncPtr, &MEM62::Out7FH  ) );
-	descs.outdef.emplace( outF0Hs, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF0Hs ) );	// 戦士のカートリッジ対応
-	descs.outdef.emplace( outF2Hs, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF2Hs ) );	// 戦士のカートリッジ対応
-	// =======================================================================================
 	
 	// Dvice Description (In)
-	descs.indef.clear();
 	descs.indef.emplace ( inC2H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InC2H  ) );
 	descs.indef.emplace ( inF0H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF0H  ) );
 	descs.indef.emplace ( inF1H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF1H  ) );
 	descs.indef.emplace ( inF2H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF2H  ) );
 	descs.indef.emplace ( inF3H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF3H  ) );
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.indef.emplace ( inFDH,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InFDH  ) );
-	descs.indef.emplace ( inFEH,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InFEH  ) );
-	// =======================================================================================
 }
 
 MEM66::MEM66( VM6* vm, const ID& id ) : MEM62( vm, id )
@@ -783,47 +774,11 @@ MEM64::MEM64( VM6* vm, const ID& id ) : MEM62( vm, id )
 	MemTable.IntRam  = &MEM64::IINTRAM;
 	
 	// Dvice Description (Out)
-	descs.outdef.clear();
 	descs.outdef.emplace( out6xH, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out6xH ) );
-	descs.outdef.emplace( outC1H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutC1H ) );
-	descs.outdef.emplace( outC2H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutC2H ) );
-	descs.outdef.emplace( outC3H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutC3H ) );
-	descs.outdef.emplace( outF0H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF0H ) );
-	descs.outdef.emplace( outF1H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF1H ) );
-	descs.outdef.emplace( outF2H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF2H ) );
-	descs.outdef.emplace( outF3H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF3H ) );
-	descs.outdef.emplace( outF8H, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF8H ) );
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.outdef.emplace( outFCH, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutFCH ) );
-	descs.outdef.emplace( outFFH, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutFFH ) );
-	// ボイスシンセサイザー ------------------------------------------------------------------
-	descs.outdef.emplace( out70H, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out70H ) );
-	descs.outdef.emplace( out72H, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out72H ) );
-	descs.outdef.emplace( out73H, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out73H ) );
-	descs.outdef.emplace( out74H, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out74H ) );
-	// 戦士のカートリッジ --------------------------------------------------------------------
-	descs.outdef.emplace( out06H,  STATIC_CAST( Device::OutFuncPtr, &MEM64::Out06H  ) );
-	descs.outdef.emplace( out3xH,  STATIC_CAST( Device::OutFuncPtr, &MEM64::Out3xH  ) );
-	descs.outdef.emplace( out7FH,  STATIC_CAST( Device::OutFuncPtr, &MEM64::Out7FH  ) );
-	descs.outdef.emplace( outF0Hs, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF0Hs ) );	// 戦士のカートリッジ対応
-	descs.outdef.emplace( outF2Hs, STATIC_CAST( Device::OutFuncPtr, &MEM64::OutF2Hs ) );	// 戦士のカートリッジ対応
-	// =======================================================================================
 	
 	// Dvice Description (In)
-	descs.indef.clear();
 	descs.indef.emplace ( in6xH,  STATIC_CAST( Device::InFuncPtr,  &MEM64::In6xH  ) );
 	descs.indef.emplace ( inB2H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InB2H  ) );
-	descs.indef.emplace ( inC2H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InC2H  ) );
-	descs.indef.emplace ( inF0H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InF0H  ) );
-	descs.indef.emplace ( inF1H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InF1H  ) );
-	descs.indef.emplace ( inF2H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InF2H  ) );
-	descs.indef.emplace ( inF3H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InF3H  ) );
-	// 拡張カートリッジ ======================================================================
-	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
-	descs.indef.emplace ( inFDH,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InFDH  ) );
-	descs.indef.emplace ( inFEH,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InFEH  ) );
-	// =======================================================================================
 }
 
 MEM68::MEM68( VM6* vm, const ID& id ) : MEM64( vm, id )
@@ -869,97 +824,17 @@ MEM68::~MEM68( void )
 ////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////
-// 戦士のカートリッジ メモリブロック名取得
+// 汎用 メモリブロック名取得
 ////////////////////////////////////////////////////////////////
-const std::string& MEM6::GetNameSolReadEx( WORD addr, bool rw )
-{
-	return ERam[addr>>MemBlock::PAGEBITS].GetName( addr );
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジ読込み(外部ROM領域)
-//   mkII以降の場合,外部ROMは4000-7FFFH以外に割当てることができるので
-//   どこに割当てられてもアクセスできるように一段階かませる
-////////////////////////////////////////////////////////////////
-BYTE MEM6::SolReadEx( MemCell* ptr, WORD addr, int* wcnt )
-{
-	return ERam[addr>>MemBlock::PAGEBITS].Read( addr, wcnt );
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジAreaA,B メモリブロック名取得
-////////////////////////////////////////////////////////////////
-const std::string& MEM6::GetNameSol60ReadA( WORD addr, bool rw )
-{
-	if( Sol60Mode && ((CS01R && !rw) || (CS01W && rw)) ){
-		return ERam[addr>>MemBlock::PAGEBITS].GetName( addr, rw );
-	}else{
-		return IRom[MAINROM+((addr>>MemBlock::PAGEBITS)&1)].GetName( addr );
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジAreaA,B読込み
-////////////////////////////////////////////////////////////////
-BYTE MEM6::Sol60ReadA( MemCell* ptr, WORD addr, int* wcnt )
-{
-	if( Sol60Mode && CS01R ){
-		return ERam[addr>>MemBlock::PAGEBITS].Read( addr, wcnt );
-	}else{
-		return IRom[MAINROM+((addr>>MemBlock::PAGEBITS)&1)].Read( addr, wcnt );
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジAreaA,B書込み
-////////////////////////////////////////////////////////////////
-void MEM6::Sol60WriteA( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
-{
-	if( Sol60Mode && CS01W ){
-		ERam[addr>>MemBlock::PAGEBITS].Write( addr, data, wcnt );
-	}else{
-		// 何もしない
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジSCC読込み
-////////////////////////////////////////////////////////////////
-BYTE MEM6::SolSccRead( MemCell* ptr, WORD addr, int* wcnt )
-{
-	// 後で書く
-	return 0xff;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 戦士のカートリッジSCC書込み
-////////////////////////////////////////////////////////////////
-void MEM6::SolSccWrite( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
-{
-	// 後で書く
-}
-
-
-////////////////////////////////////////////////////////////////
-// CGROM メモリブロック名取得
-////////////////////////////////////////////////////////////////
-const std::string& MEM60::GetNameCGromRead( WORD addr, bool rw )
+const std::string& MEM6::GetNameCommon( WORD addr, bool rw )
 {
 	int idx = addr>>MemBlock::PAGEBITS;
 	
-	if( CGBank && (!(addr & 0x1000) || (RD_Blk[idx] == &IRom[EMPTYROM])) ){
-		return IRom[CGROM1].GetName( addr, rw );
-	}
-	return RD_Blk[idx]->GetName( addr, rw );
+	return rw ? WR_Blk[idx]->GetName( addr, rw )
+			  : RD_Blk[idx]->GetName( addr, rw );
 }
 
-const std::string& MEM62::GetNameCGromRead( WORD addr, bool rw )
+const std::string& MEM62::GetNameCommon( WORD addr, bool rw )
 {
 	int idx = addr>>MemBlock::PAGEBITS;
 	
@@ -967,27 +842,22 @@ const std::string& MEM62::GetNameCGromRead( WORD addr, bool rw )
 	if( CGBank && cgenable && ((idx & cgaden) == cgaddr) ){
 		return IRom[cgrom ? CGROM1 : CGROM2].GetName( addr, rw );
 	}
-	return RD_Blk[idx]->GetName( addr, rw );
+	return rw ? WR_Blk[idx]->GetName( addr, rw )
+			  : RD_Blk[idx]->GetName( addr, rw );
 }
 
 
 ////////////////////////////////////////////////////////////////
-// CGROM読込み
+// 汎用 読込み
 ////////////////////////////////////////////////////////////////
-BYTE MEM60::CGromRead( MemCell* ptr, WORD addr, int* wcnt )
+BYTE MEM6::CommonRead( MemCell* ptr, WORD addr, int* wcnt )
 {
 	int idx = addr>>MemBlock::PAGEBITS;
 	
-	if( CGBank && (!(addr & 0x1000) || (RD_Blk[idx] == &IRom[EMPTYROM])) ){
-		// 前半4KBはそのままCGROMデータを返す
-		// 後半4KBは外部ROMがなければCGROMのイメージを返す ホント？
-		// 外部ROMがあったら外部ROMを読む ホント？
-		return IRom[CGROM1].Read( addr & 0x0fff, wcnt );
-	}
 	return RD_Blk[idx]->Read( addr, wcnt );
 }
 
-BYTE MEM62::CGromRead( MemCell* ptr, WORD addr, int* wcnt )
+BYTE MEM62::CommonRead( MemCell* ptr, WORD addr, int* wcnt )
 {
 	int idx = addr>>MemBlock::PAGEBITS;
 	
@@ -997,6 +867,157 @@ BYTE MEM62::CGromRead( MemCell* ptr, WORD addr, int* wcnt )
 	}
 	return RD_Blk[idx]->Read( addr, wcnt );
 }
+
+
+////////////////////////////////////////////////////////////////
+// 汎用 書込み
+////////////////////////////////////////////////////////////////
+void MEM6::CommonWrite( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	WR_Blk[idx]->Write( addr, data, wcnt );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaA,B メモリブロック名取得(60)
+////////////////////////////////////////////////////////////////
+const std::string& MEM60::GetNameAreaA60Read( WORD addr, bool rw )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	return rw ? GetWriteEnableExt( addr ) ? ERam[idx].GetName( addr, rw )
+										  : WR_Blk[idx]->GetName( addr, rw )
+			  : GetReadEnableExt ( addr ) ? ERam[idx].GetName( addr, rw )
+										  : RD_Blk[idx]->GetName( addr, rw );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaA,B 読込み(60)
+////////////////////////////////////////////////////////////////
+BYTE MEM60::AreaA60Read( MemCell* ptr, WORD addr, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	return GetReadEnableExt( addr ) ? ERam[idx].Read( addr )
+									: RD_Blk[idx]->Read( addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaA,B 書込み(60)
+////////////////////////////////////////////////////////////////
+void MEM60::AreaA60Write( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	return GetWriteEnableExt( addr ) ? ERam[idx].Write( addr, data )
+									 : WR_Blk[idx]->Write( addr, data );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaC メモリブロック名取得(60)
+////////////////////////////////////////////////////////////////
+const std::string& MEM60::GetNameAreaC60Read( WORD addr, bool rw )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// 結果的に汎用と同じ　後で統合する
+	return rw ? WR_Blk[idx]->GetName( addr, rw )
+			  : RD_Blk[idx]->GetName( addr, rw );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaC 読込み(60)
+////////////////////////////////////////////////////////////////
+BYTE MEM60::AreaC60Read( MemCell* ptr, WORD addr, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	return RD_Blk[idx]->Read( addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaC 書込み(60)
+////////////////////////////////////////////////////////////////
+void MEM60::AreaC60Write( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	// 結果的にAreaAと同じ　後で統合する
+	return GetWriteEnableExt( addr ) ? ERam[idx].Write( addr, data )
+									 : WR_Blk[idx]->Write( addr, data );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaD メモリブロック名取得(60)
+////////////////////////////////////////////////////////////////
+const std::string& MEM60::GetNameAreaD60Read( WORD addr, bool rw )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	if( CGBank && (!(addr & 0x1000) || (RD_Blk[idx] == &IRom[EMPTYROM])) ){
+		return IRom[CGROM1].GetName( addr, rw );
+	}
+	return rw ? WR_Blk[idx]->GetName( addr, rw )
+			  : RD_Blk[idx]->GetName( addr, rw );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaD 読込み(60)
+////////////////////////////////////////////////////////////////
+BYTE MEM60::AreaD60Read( MemCell* ptr, WORD addr, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	if( CGBank && (!(addr & 0x1000) || (RD_Blk[idx] == &IRom[EMPTYROM])) ){
+		// 前半4KBはそのままCGROMデータを返す
+		// 後半4KBは外部ROMがなければCGROMのイメージを返す ホント？
+		// 外部ROMがあったら外部ROMを読む ホント？
+		return IRom[CGROM1].Read( addr & 0x0fff );
+	}
+	return RD_Blk[idx]->Read( addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// AreaD 書込み(60)
+////////////////////////////////////////////////////////////////
+void MEM60::AreaD60Write( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	// ウェイトは常にSystem1相当
+	if( wcnt ){ *wcnt += MemTable.System1->Wait; }
+	
+	// 結果的にAreaAと同じ　後で統合する
+	return GetWriteEnableExt( addr ) ? ERam[idx].Write( addr, data )
+									 : WR_Blk[idx]->Write( addr, data );
+}
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -1052,6 +1073,44 @@ BYTE MEM64::ReadKanji( MemCell* ptr, WORD addr, int* wcnt )
 
 
 ////////////////////////////////////////////////////////////////
+// 戦士のカートリッジ メモリブロック名取得
+////////////////////////////////////////////////////////////////
+const std::string& MEM6::GetNameSolReadEx( WORD addr, bool rw )
+{
+	return ERam[addr>>MemBlock::PAGEBITS].GetName( addr );
+}
+
+
+////////////////////////////////////////////////////////////////
+// 戦士のカートリッジ読込み(外部ROM領域)
+//   mkII以降の場合,外部ROMは4000-7FFFH以外に割当てることができるので
+//   どこに割当てられてもアクセスできるように一段階かませる
+////////////////////////////////////////////////////////////////
+BYTE MEM6::SolReadEx( MemCell* ptr, WORD addr, int* wcnt )
+{
+	return ERam[addr>>MemBlock::PAGEBITS].Read( addr, wcnt );
+}
+
+
+////////////////////////////////////////////////////////////////
+// 戦士のカートリッジSCC読込み
+////////////////////////////////////////////////////////////////
+BYTE MEM6::SolSccRead( MemCell* ptr, WORD addr, int* wcnt )
+{
+	// 後で書く
+	return 0xff;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 戦士のカートリッジSCC書込み
+////////////////////////////////////////////////////////////////
+void MEM6::SolSccWrite( MemCell* ptr, WORD addr, BYTE data, int* wcnt )
+{
+	// 後で書く
+}
+
+////////////////////////////////////////////////////////////////
 // メモリブロック用関数 ここまで
 ////////////////////////////////////////////////////////////////
 
@@ -1059,17 +1118,55 @@ BYTE MEM64::ReadKanji( MemCell* ptr, WORD addr, int* wcnt )
 
 
 ////////////////////////////////////////////////////////////////
+// Read Enable取得 (ROM KILL)
+////////////////////////////////////////////////////////////////
+bool MEM6::GetReadEnableExt( WORD addr )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	switch( ExCart ){
+	case EXCSOL2:	// 戦士のカートリッジmkⅡ
+	case EXCSOL3:	// 戦士のカートリッジmkⅢ
+		return Sol60Mode && (CS01R && (idx == 0 || idx == 1));
+	}
+	return false;
+}
+
+
+////////////////////////////////////////////////////////////////
+// Write Enable取得
+////////////////////////////////////////////////////////////////
+bool MEM6::GetWriteEnableExt( WORD addr )
+{
+	int idx = addr>>MemBlock::PAGEBITS;
+	
+	switch( ExCart ){
+	case EXCSOL2:	// 戦士のカートリッジmkⅡ
+	case EXCSOL3:	// 戦士のカートリッジmkⅢ
+		return Sol60Mode && ((CS01W && (idx == 0 || idx == 1)) || (CS02W && (idx == 2 || idx == 3)));
+	}
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
 // 拡張ROM マウント
+//
+// 引数:	filepath	ファイルパス名への参照
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM6::MountExtRom( const P6VPATH& filepath )
 {
 	PRINTD( MEM_LOG, "[MEM][MountExtRom] -> %s -> ", P6VPATH2STR( filepath ).c_str() );
 	
+	// ファイル名が空またはROM固定カートリッジならエラー無しで戻る
+	if( P6VPATH2STR( filepath ).empty() || (ExCart & EXCFIX) ){ return true; }
+	
 	// マウント済みなら一旦開放
 	UnmountExtRom();
 	
 	try{
-		if( !ExtRom.SetData( filepath ) ) return false;
+		if( !ExtRom.SetData( filepath ) ){ return false; }
 		
 		// ファイルパス保存
 		FilePath = filepath;
@@ -1092,6 +1189,9 @@ bool MEM6::MountExtRom( const P6VPATH& filepath )
 
 ////////////////////////////////////////////////////////////////
 // 拡張ROM アンマウント
+//
+// 引数:	なし
+// 返値:	なし
 ////////////////////////////////////////////////////////////////
 void MEM6::UnmountExtRom( void )
 {
@@ -1104,6 +1204,9 @@ void MEM6::UnmountExtRom( void )
 
 ////////////////////////////////////////////////////////////////
 // 拡張ROMファイルパス取得
+//
+// 引数:	なし
+// 返値:	P6VPATH&	ファイルパス名への参照
 ////////////////////////////////////////////////////////////////
 const P6VPATH& MEM6::GetFile( void ) const
 {
@@ -1113,15 +1216,54 @@ const P6VPATH& MEM6::GetFile( void ) const
 
 ////////////////////////////////////////////////////////////////
 // 拡張カートリッジの種類取得
+//
+// 引数:	なし
+// 返値:	WORD		カートリッジの種類
 ////////////////////////////////////////////////////////////////
-WORD MEM6::GetCartridge() const
+WORD MEM6::GetCartridge( void ) const
 {
 	return ExCart;
 }
 
 
 ////////////////////////////////////////////////////////////////
+// 拡張カートリッジマウント
+//
+// 引数:	cart		カートリッジの種類
+//			filepath	ROMフォルダパス名への参照
+//			crc			CRCチェック true:する false:しない
+// 返値:	bool		true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool MEM6::MountExtCart( WORD cart, const P6VPATH& path, bool crc  )
+{
+	PRINTD( MEM_LOG, "[MEM][MountExtCart]\n" );
+	
+	ExCart = cart;			// 拡張カートリッジ
+	
+	// 外部メモリ確保とROMファイル読込み
+	if( !AllocMemoryExt( path, crc ) ){ return false; }
+	
+	// 外部メモリ初期化
+	if( !InitExt() ){ return false; }
+	
+	// 拡張カートリッジ デバイスディスクリプタ追加
+	AddDeviceDescriptorExt();
+	
+	// リセット
+	Reset();
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
 // メモリ確保とROMファイル読込み
+//
+// 引数:	buf			対象メモリセルへの参照
+//			info		メモリ情報ポインタ
+//			path		ROMフォルダパス名への参照
+//			crc			CRCチェック true:する false:しない
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM6::AllocMemory( MemCells& buf, const MEMINFO* info, const P6VPATH& path, bool crc )
 {
@@ -1191,6 +1333,10 @@ bool MEM6::AllocMemory( MemCells& buf, const MEMINFO* info, const P6VPATH& path,
 
 ////////////////////////////////////////////////////////////////
 // 内部メモリ確保とROMファイル読込み
+//
+// 引数:	path		ROMフォルダパス名への参照
+//			crc			CRCチェック true:する false:しない
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM6::AllocMemoryInt( const P6VPATH& path, bool crc )
 {
@@ -1201,7 +1347,7 @@ bool MEM6::AllocMemoryInt( const P6VPATH& path, bool crc )
 	if( !AllocMemory( CGRom1,  MemTable.CGRom1,  path, crc ) ) return false;
 	if( !AllocMemory( IntRam,  MemTable.IntRam,  "",   crc ) ) return false;
 	
-	 // メモリ確保とROMファイル読込み(機種別)
+	 // 内部メモリ確保とROMファイル読込み(機種別)
 	if( !AllocMemorySpec( path, crc ) ) return false;
 	
 	// 内部RAMの初期値を設定
@@ -1213,12 +1359,14 @@ bool MEM6::AllocMemoryInt( const P6VPATH& path, bool crc )
 
 ////////////////////////////////////////////////////////////////
 // 外部メモリ確保とROMファイル読込み
+//
+// 引数:	path		ROMフォルダパス名への参照
+//			crc			CRCチェック true:する false:しない
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool MEM6::AllocMemoryExt( WORD cart, const P6VPATH& path, bool crc )
+bool MEM6::AllocMemoryExt( const P6VPATH& path, bool crc )
 {
 	PRINTD( MEM_LOG, "[MEM][AllocMemoryExt]\n" );
-	
-	ExCart = cart;			// 拡張カートリッジ
 	
 	switch( ExCart ){
 	case EXC6001:	// 拡張BASIC
@@ -1282,6 +1430,7 @@ bool MEM6::AllocMemoryExt( WORD cart, const P6VPATH& path, bool crc )
 		break;
 	}
 	
+	
 	// ROM確保&ファイル読込み
 	switch( ExCart ){
 	case EXC6001:	// 拡張BASIC
@@ -1297,25 +1446,26 @@ bool MEM6::AllocMemoryExt( WORD cart, const P6VPATH& path, bool crc )
 		if( !AllocMemory( ExtRom, &IEXVOICE, path, crc ) ) return false;
 		break;
 		
-	default:
+	default:		// その他
 		if( !AllocMemory( ExtRom, MemTable.ExtRom, "", crc ) ) return false;
 	}
 	
 	// RAM確保
 	if( !AllocMemory( ExtRam, MemTable.ExtRam, "", crc ) ) return false;
-	// ---------------------------------------------------------
 	
 	return true;
 }
 
 
 ////////////////////////////////////////////////////////////////
-// 全メモリ確保とROMファイル読込み(機種別)
+// 内部メモリ確保とROMファイル読込み(機種別)
+//
+// 引数:	path		ROMフォルダパス名への参照
+//			crc			CRCチェック true:する false:しない
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM60::AllocMemorySpec( const P6VPATH& path, bool crc )
 {
-	PRINTD( MEM_LOG, "[MEM][AllocMemorySpec]\n" );
-	
 	return true;
 }
 
@@ -1342,6 +1492,9 @@ bool MEM64::AllocMemorySpec( const P6VPATH& path, bool crc )
 
 ////////////////////////////////////////////////////////////////
 // 内部RAMの初期値を設定
+//
+// 引数:	なし
+// 返値:	なし
 ////////////////////////////////////////////////////////////////
 void MEM60::SetRamValue( void )
 {
@@ -1379,6 +1532,9 @@ void MEM68::SetRamValue( void )
 
 ////////////////////////////////////////////////////////////////
 // 内部メモリ初期化
+//
+// 引数:	なし
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM6::InitInt( void )
 {
@@ -1388,7 +1544,21 @@ bool MEM6::InitInt( void )
 	for( auto &mb : IRom ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 1 ); }
 	for( auto &mb : IRam ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 0 ); }
 	
-	 // 内部メモリ初期化(機種別)
+	// 汎用アクセス用
+	IRom[RWCOMMON].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM6::GetNameCommon ) ), FR( STATIC_CAST( RFuncPtr, &MEM6::CommonRead ) ), FW( STATIC_CAST( WFuncPtr, &MEM6::CommonWrite ) ), 0 );
+	
+	// CGROMアクセス用に一段噛ませる
+	RBLK[0] = WBLK[0] = &IRom[RWCOMMON];
+	RBLK[1] = WBLK[1] = &IRom[RWCOMMON];
+	RBLK[2] = WBLK[2] = &IRom[RWCOMMON];
+	RBLK[3] = WBLK[3] = &IRom[RWCOMMON];
+	RBLK[4] = WBLK[4] = &IRom[RWCOMMON];
+	RBLK[5] = WBLK[5] = &IRom[RWCOMMON];
+	RBLK[6] = WBLK[6] = &IRom[RWCOMMON];
+	RBLK[7] = WBLK[7] = &IRom[RWCOMMON];
+	
+	
+	// 内部メモリ初期化(機種別)
 	if( !InitIntSpec() ) return false;
 	
 	return true;
@@ -1397,6 +1567,9 @@ bool MEM6::InitInt( void )
 
 ////////////////////////////////////////////////////////////////
 // 外部メモリ初期化
+//
+// 引数:	なし
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM6::InitExt( void )
 {
@@ -1424,7 +1597,13 @@ bool MEM6::InitExt( void )
 		
 	case EXCSOL1:	// 戦士のカートリッジ
 		ERom[EXTROM+0].SetFunc  ( FN( STATIC_CAST( NFuncPtr, &MEM6::GetNameSolReadEx ) ), FR( STATIC_CAST( RFuncPtr, &MEM6::SolReadEx ) ), nullptr, MemTable.ExtRom->Wait );
-		ERom[EXTROM+1].SetMemory( "ERAM03", ExtRam( 3 ), MemTable.ExtRom->Wait );
+		if( IntRam.Size() < 3 ){	// 60
+			ERom[EXTROM+1].SetMemory( "ERAM03", ExtRam( 3 ), MemTable.ExtRom->Wait );
+		}else{						// 62
+			// ※mk2以降用の設定はこれ↓で動くけど本当は正しくない
+			// 設定は「内部RAMに書込み」で，ハード的には外部RAMにも同時に書き込まれる
+			ERom[EXTROM+1].SetMemory( "IERAM3", IntRam( 3 ), MemTable.ExtRom->Wait );
+		}
 		break;
 		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
@@ -1450,14 +1629,9 @@ bool MEM6::InitExt( void )
 		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
-		SetSolBank( 3, RAMBANK | 3 );
-		SetSolBank( 4, RAMBANK | 4 );
-		SetSolBank( 5, RAMBANK | 5 );
+		SolBank.fill( NONBANK );
 		break;
 	}
-	
-	 // 外部メモリ初期化(機種別)
-	if( !InitExtSpec() ) return false;
 	
 	return true;
 }
@@ -1465,10 +1639,25 @@ bool MEM6::InitExt( void )
 
 ////////////////////////////////////////////////////////////////
 // 内部メモリ初期化(機種別)
+//
+// 引数:	なし
+// 返値:	bool		true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
 bool MEM60::InitIntSpec( void )
 {
 	PRINTD( MEM_LOG, "[MEM][InitIntSpec]\n" );
+	
+	// 60専用アクセス用
+	IRom[RWAREAA60].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameAreaA60Read ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::AreaA60Read ) ), FW( STATIC_CAST( WFuncPtr, &MEM60::AreaA60Write ) ), MemTable.System1->Wait );
+	IRom[RWAREAC60].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameAreaC60Read ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::AreaC60Read ) ), FW( STATIC_CAST( WFuncPtr, &MEM60::AreaC60Write ) ), MemTable.System1->Wait );
+	IRom[RWAREAD60].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameAreaD60Read ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::AreaD60Read ) ), FW( STATIC_CAST( WFuncPtr, &MEM60::AreaD60Write ) ), MemTable.CGRom1->Wait );
+	
+	// CGROMアクセス用に一段噛ませる
+	RBLK[0] = WBLK[0] = &IRom[RWAREAA60];
+	RBLK[1] = WBLK[1] = &IRom[RWAREAA60];
+	RBLK[2] = WBLK[2] = &IRom[RWAREAC60];
+	RBLK[3] = WBLK[3] = &IRom[RWAREAD60];
+	
 	
 	// BASIC ROM
 	IRom[MAINROM+0].SetMemory( "BASIC0", SysRom1( 0 ), MemTable.System1->Wait );
@@ -1476,7 +1665,6 @@ bool MEM60::InitIntSpec( void )
 	
 	// CG ROM
 	IRom[CGROM1].SetMemory   ( "CGROM1", CGRom1( 0 ),  MemTable.CGRom1->Wait );
-	IRom[RDCGROM].SetFunc    ( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameCGromRead ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::CGromRead ) ), nullptr, MemTable.CGRom1->Wait );
 	
 	// 内部RAM
 	IRam[INTRAM+0].SetMemory ( "IRAM00", IntRam( 0 ),  MemTable.IntRam->Wait );
@@ -1498,7 +1686,6 @@ bool MEM62::InitIntSpec( void )
 	// CG ROM
 	IRom[CGROM1].SetMemory    ( "CGROM1", CGRom1( 0 ),   MemTable.CGRom1->Wait );
 	IRom[CGROM2].SetMemory    ( "CGROM2", CGRom2( 0 ),   MemTable.CGRom2->Wait );
-	IRom[RDCGROM].SetFunc     ( FN( STATIC_CAST( NFuncPtr, &MEM62::GetNameCGromRead ) ), FR( STATIC_CAST( RFuncPtr, &MEM62::CGromRead ) ), nullptr, MemTable.CGRom1->Wait );
 	
 	// 漢字ROM
 	IRom[KANJIROM+0].SetMemory( "KJROM0", KanjiRom( 0 ), MemTable.Kanji->Wait );
@@ -1520,16 +1707,6 @@ bool MEM62::InitIntSpec( void )
 	
 	// 内部/外部RAM書込み
 	IRam[INEXRAM].SetFunc     ( "IERAM", nullptr, FW( STATIC_CAST( WFuncPtr, &MEM62::IERamWrite ) ), MemTable.IntRam->Wait );
-	
-	// CGROMアクセス用に一段噛ませる
-	RBLK[0] = &IRom[RDCGROM];
-	RBLK[1] = &IRom[RDCGROM];
-	RBLK[2] = &IRom[RDCGROM];
-	RBLK[3] = &IRom[RDCGROM];
-	RBLK[4] = &IRom[RDCGROM];
-	RBLK[5] = &IRom[RDCGROM];
-	RBLK[6] = &IRom[RDCGROM];
-	RBLK[7] = &IRom[RDCGROM];
 	
 	return true;
 }
@@ -1568,7 +1745,6 @@ bool MEM64::InitIntSpec( void )
 	// CG ROM
 	IRom[CGROM1].SetMemory    ( "CGROM1", CGRom1( 0 ),  MemTable.CGRom1->Wait );
 	IRom[CGROM2].SetMemory    ( "CGROM2", CGRom1( 1 ),  MemTable.CGRom1->Wait );
-	IRom[RDCGROM].SetFunc     ( FN( STATIC_CAST( NFuncPtr, &MEM64::GetNameCGromRead ) ), FR( STATIC_CAST( RFuncPtr, &MEM64::CGromRead ) ), nullptr, MemTable.CGRom1->Wait );
 	
 	// 内部RAM
 	int i = 0;
@@ -1577,59 +1753,15 @@ bool MEM64::InitIntSpec( void )
 		i++;
 	}
 	
-	// CGROMアクセス用に一段噛ませる
-	RBLK[0] = &IRom[RDCGROM];
-	RBLK[1] = &IRom[RDCGROM];
-	RBLK[2] = &IRom[RDCGROM];
-	RBLK[3] = &IRom[RDCGROM];
-	RBLK[4] = &IRom[RDCGROM];
-	RBLK[5] = &IRom[RDCGROM];
-	RBLK[6] = &IRom[RDCGROM];
-	RBLK[7] = &IRom[RDCGROM];
-	
-	return true;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 外部メモリ初期化(機種別)
-////////////////////////////////////////////////////////////////
-bool MEM60::InitExtSpec( void )
-{
-	PRINTD( MEM_LOG, "[MEM][InitExtSpec]\n" );
-	
-	switch( ExCart ){
-	case EXCSOL2:		// 戦士のカートリッジmkⅡ
-	case EXCSOL3:		// 戦士のカートリッジmkⅢ
-		IRom[SOL6MAIN+0].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameSol60ReadA ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::Sol60ReadA ) ), FW( STATIC_CAST( WFuncPtr, &MEM60::Sol60WriteA ) ), MemTable.System1->Wait );
-		IRom[SOL6MAIN+1].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM60::GetNameSol60ReadA ) ), FR( STATIC_CAST( RFuncPtr, &MEM60::Sol60ReadA ) ), FW( STATIC_CAST( WFuncPtr, &MEM60::Sol60WriteA ) ), MemTable.System1->Wait );
-		
-		ERam[EXTRAM+0].SetWait( MemTable.ExtRom->Wait );
-		ERam[EXTRAM+1].SetWait( MemTable.ExtRom->Wait );
-		ERam[EXTRAM+2].SetWait( MemTable.ExtRom->Wait );
-		ERam[EXTRAM+3].SetWait( MemTable.ExtRom->Wait );
-	}
-	
-	return true;
-}
-
-bool MEM62::InitExtSpec( void )
-{
-	PRINTD( MEM_LOG, "[MEM][InitExtSpec]\n" );
-	
-	switch( ExCart ){
-	case EXCSOL1:		// 戦士のカートリッジ
-		// ※mk2以降用の設定はこれ↓だけど多分正しくない
-		// 設定は「内部RAMに書込み」だけどハード的に同時に外部RAMにも書き込まれる
-		ERom[EXTROM+1].SetMemory( "IERAM3", IntRam( 3 ), MemTable.ExtRom->Wait );
-	}
-	
 	return true;
 }
 
 
 ////////////////////////////////////////////////////////////////
 // リセット
+//
+// 引数:	なし
+// 返値:	なし
 ////////////////////////////////////////////////////////////////
 void MEM6::Reset()
 {
@@ -1662,6 +1794,9 @@ void MEM64::Reset( void )
 
 ////////////////////////////////////////////////////////////////
 // 外部メモリリセット
+//
+// 引数:	なし
+// 返値:	なし
 ////////////////////////////////////////////////////////////////
 void MEM6::ResetExt()
 {
@@ -1683,12 +1818,16 @@ void MEM6::ResetExt()
 		Sol60Mode = false;
 		CS01R     = false;
 		CS01W     = false;
+		CS02W     = false;
 		
 		// メモリバンク初期化
-		for( int i=0; i<8; i++ ){
-			const BYTE bk2[] = { NONBANK,     NONBANK,     ROMBANK | 0, RAMBANK | 3,
-								 RAMBANK | 4, RAMBANK | 5, NONBANK,     NONBANK      };
-			SetSolBank( i, bk2[i] );
+		{	int i = 0;
+			const std::vector<BYTE> bk2 = { NONBANK,     NONBANK,     ROMBANK | 0, RAMBANK | 3,
+											RAMBANK | 4, RAMBANK | 5, NONBANK,     NONBANK      };
+			for( auto bk : bk2 ){
+				SetSolBank( i, bk );
+				i++;
+			}
 		}
 		break;
 	}
@@ -1774,9 +1913,9 @@ BYTE MEM64::Read( WORD addr, int* wcnt ) const
 ////////////////////////////////////////////////////////////////
 void MEM6::Write( WORD addr, BYTE data, int* wcnt )
 {
-	PRINTD( MEM_LOG, "[MEM][Write] %04X:%02X -> %s[%04X]'%c'\n", addr, data, WR_Blk[addr>>MemBlock::PAGEBITS]->GetName( addr, true ).c_str(), addr&0x1fff, data );
+	PRINTD( MEM_LOG, "[MEM][Write] %04X:%02X -> %s[%04X]'%c'\n", addr, data, WBLK[addr>>MemBlock::PAGEBITS]->GetName( addr, true ).c_str(), addr&0x1fff, data );
 	
-	WR_Blk[addr>>MemBlock::PAGEBITS]->Write( addr, data, wcnt );
+	WBLK[addr>>MemBlock::PAGEBITS]->Write( addr, data, wcnt );
 	
 	// バスリクエスト区間実行時ウェイト追加
 	if( wcnt && vm->VdgIsBusReqExec() ){ (*wcnt)++; }
@@ -1796,7 +1935,7 @@ void MEM64::Write( WORD addr, BYTE data, int* wcnt )
 			WR_BlkSR[addr>>MemBlock::PAGEBITS]->Write( addr, data, wcnt );
 		}
 	}else{
-		WR_Blk[addr>>MemBlock::PAGEBITS]->Write( addr, data, wcnt );
+		WBLK[addr>>MemBlock::PAGEBITS]->Write( addr, data, wcnt );
 	}
 	
 	// バスリクエスト区間実行時ウェイト追加
@@ -1886,27 +2025,16 @@ void MEM60::SetMemBlockR( BYTE mem1, BYTE mem2 )
 		
 	case EXCSOL1:	// 戦士のカートリッジ
 		RD_Blk[2] = &ERom[EXTROM+0];	RD_Blk[3] = &ERom[EXTROM+1];
-		RD_Blk[4] = &ERam[EXTRAM+4];	RD_Blk[5] = &ERam[EXTRAM+5];
+		RD_Blk[4] = &ERam[EXTRAM+0];	RD_Blk[5] = &ERam[EXTRAM+1];
 		break;
 		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
-		RD_Blk[0] = &IRom[SOL6MAIN+0];	RD_Blk[1] = &IRom[SOL6MAIN+1];
 		RD_Blk[2] = &ERam[EXTRAM+2];	RD_Blk[3] = &ERam[EXTRAM+3];
 		RD_Blk[4] = &ERam[EXTRAM+4];	RD_Blk[5] = &ERam[EXTRAM+5];
 		break;
 	}
 	// =========================================================
-	
-	// CGROMアクセス用に一段噛ませる
-	RBLK[0] = RD_Blk[0];
-	RBLK[1] = RD_Blk[1];
-	RBLK[2] = RD_Blk[2];
-	RBLK[3] = &IRom[RDCGROM];
-	RBLK[4] = RD_Blk[4];
-	RBLK[5] = RD_Blk[5];
-	RBLK[6] = RD_Blk[6];
-	RBLK[7] = RD_Blk[7];
 	
 	#if (MEM_LOG)
 	for( int i=0; i<8; i+=2 ){
@@ -2126,9 +2254,13 @@ void MEM60::SetMemBlockW( BYTE data )
 		break;
 		
 	case EXCSOL1:	// 戦士のカートリッジ
+										WR_Blk[3] = &ERam[EXTRAM+3];
+		WR_Blk[4] = &ERam[EXTRAM+0];	WR_Blk[5] = &ERam[EXTRAM+1];
+		break;
+		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
-		WR_Blk[0] = &IRom[SOL6MAIN+0];	WR_Blk[1] = &IRom[SOL6MAIN+1];
+		WR_Blk[0] = &ERam[EXTRAM+0];	WR_Blk[1] = &ERam[EXTRAM+1];
 		WR_Blk[2] = &ERam[EXTRAM+2];	WR_Blk[3] = &ERam[EXTRAM+3];
 		WR_Blk[4] = &ERam[EXTRAM+4];	WR_Blk[5] = &ERam[EXTRAM+5];
 		break;
@@ -2271,15 +2403,18 @@ void MEM64::SetMemBlockSR( BYTE port, BYTE data )
 	
 	#if (MEM_LOG)
 	PRINTD( MEM_LOG, "              [Read]\t\t[Write]\n" );
-	for( int i=0; i<8; i++ ){
-		PRINTD( MEM_LOG, "               %d:%8s\t%8s\n", i, RD_BlkSR[i]->GetName( i<<MemBlock::PAGEBITS, true ).c_str(), RD_BlkSR[i]->GetName( (i+1)<<MemBlock::PAGEBITS, true ).c_str() );
+	{	int i = 0;
+		for( auto &rb : RD_BlkSR ){
+			PRINTD( MEM_LOG, "               %d:%8s\t%8s\n", i, rb->GetName( i<<MemBlock::PAGEBITS, true ).c_str(), rb->GetName( (i+1)<<MemBlock::PAGEBITS, true ).c_str() );
+			i++;
+		}
 	}
 	#endif
 }
 
 
 ////////////////////////////////////////////////////////////////
-// CG ROM アドレス等設定
+// CG ROM アドレス設定
 ////////////////////////////////////////////////////////////////
 void MEM62::SetCGrom( BYTE data )
 {
@@ -2301,47 +2436,25 @@ void MEM62::SetCGrom( BYTE data )
 	cgaddr   = data & cgaden;
 }
 
-void MEM64::SetCGrom( BYTE data )
-{
-	PRINTD( MEM_LOG, "[MEM][SetCGrom] -> %02x\n", data );
-	
-	// bit 7
-	int	cgwait = data & 0x80 ? 0 : 1;
-	IRom[CGROM1].SetWait( cgwait );
-	IRom[CGROM2].SetWait( cgwait );
-	
-	// bit 6 CG ROMアクセスフラグ true:アクセス可 false:アクセス不可
-	cgenable = data & 0x40 ? true : false;
-	
-	// bit 5,4,3 CG ROMアドレスイネーブル
-	// (推定)SRはA13を無視して16KB単位でCG ROMが現れるようだ
-//	cgaden   = (~data >> 3) & 7;
-	cgaden   = (~data >> 3) & 6;
-	
-	// bit 2,1,0 CG ROMアドレス A13,14,15
-	// 予めcgadenでマスクしておく
-	cgaddr   = data & cgaden;
-}
-
 
 ////////////////////////////////////////////////////////////////
 // CG ROM 選択
 ////////////////////////////////////////////////////////////////
-void MEM62::SelectCGrom( int mode )
+void MEM62::SelectCGrom( bool mode )
 {
-	PRINTD( MEM_LOG, "[MEM][SelectCGrom] -> %d\n", mode );
+	PRINTD( MEM_LOG, "[MEM][SelectCGrom] -> %s\n", mode ? "1:32*16(N60)" : "0:40*20(N60m)" );
 	
 	// mode 1:32*16(N60モード) 0:40*20(N60mモード)
-	cgrom = mode ? true : false;
+	cgrom = mode;
 }
 
 
 ////////////////////////////////////////////////////////////////
-// CG ROM BANK を切り替える
+// CG ROM BANK 選択
 ////////////////////////////////////////////////////////////////
 void MEM6::SetCGBank( bool data )
 {
-	PRINTD( MEM_LOG, "[MEM][SetCGBank] -> %d\n", data );
+	PRINTD( MEM_LOG, "[MEM][SetCGBank] -> %s\n", data ? "Enable" : "Disable" );
 	
 	CGBank = data;
 }
@@ -2383,7 +2496,7 @@ void MEM62::SetPortC2HAccess( BYTE data )
 
 
 ////////////////////////////////////////////////////////////////
-// 戦士のカートリッジ メモリバンクレジスタ設定
+// 戦士のカートリッジmkⅡ メモリバンクレジスタ設定
 //
 //  [ROMの場合]
 //    bit7   : 0
@@ -2419,10 +2532,13 @@ void MEM6::SetSolBank( BYTE port, BYTE data )
 		ERam[area].SetMemory( Stringf( "EROM%02d", data ), ExtRom( data ) );
 		
 		// Bank Setが変わった場合の修正
-		for( int i=0; i<8; i++ ){
-			if( ((SolBank[i] & 0xc0) == ROMBANK) && ((SolBank[i] & 0x30) != SolBankSet) ){
-				SolBank[i] = (SolBank[i] & 0x0f) | SolBankSet | ROMBANK;
-				ERam[i].SetMemory( nullptr, ExtRom( SolBank[i] & 0x3f ) );
+		{	int i = 0;
+			for( auto &sb : SolBank ){
+				if( ((sb & 0xc0) == ROMBANK) && ((sb & 0x30) != SolBankSet) ){
+					sb = (sb & 0x0f) | SolBankSet | ROMBANK;
+					ERam[i].SetMemory( nullptr, ExtRom( sb & 0x3f ) );
+				}
+				i++;
 			}
 		}
 		break;
@@ -2471,6 +2587,28 @@ BYTE MEM64::ReadVoiceRom( WORD addr ) const { return SysRom2.Read ( (addr & 0x3f
 ////////////////////////////////////////////////////////////////
 // I/Oアクセス関数
 ////////////////////////////////////////////////////////////////
+void MEM62::OutC1H( int, BYTE data ){ SelectCGrom( (data & 2) ); }
+void MEM62::OutC2H( int, BYTE data ){ SetKanjiRom( data ); }
+void MEM62::OutC3H( int, BYTE data ){ SetPortC2HAccess( data ); }
+void MEM62::OutF0H( int, BYTE data ){ SetMemBlockR( data, Rf[1] ); }
+void MEM62::OutF1H( int, BYTE data ){ SetMemBlockR( Rf[0], data ); }
+void MEM62::OutF2H( int, BYTE data ){ SetMemBlockW( data ); }
+void MEM62::OutF3H( int, BYTE data ){ SetWait( data ); }
+void MEM62::OutF8H( int, BYTE data ){ SetCGrom( data ); }
+
+void MEM64::Out6xH( int port, BYTE data ){ SetMemBlockSR( port, data ); }
+
+BYTE MEM62::InC2H( int ){ return GetKanjiRom(); }
+BYTE MEM62::InF0H( int ){ return Rf[0]; }
+BYTE MEM62::InF1H( int ){ return Rf[1]; }
+BYTE MEM62::InF2H( int ){ return Rf[2]; }
+BYTE MEM62::InF3H( int ){ return GetWait() | 0x1f; }
+
+BYTE MEM64::In6xH( int port ){ return RfSR[port & 0x0f]; }
+BYTE MEM64::InB2H( int port ){ return 0xfd; }	// bit1 0:mk2SR 1:66SR
+BYTE MEM68::InB2H( int port ){ return 0xff; }	// bit1 0:mk2SR 1:66SR
+
+
 // 拡張カートリッジ ============================================
 // 拡張漢字ROMカートリッジ -------------------------------------
 void MEM6::OutFCH( int port, BYTE data )
@@ -2492,14 +2630,17 @@ BYTE MEM6::In70H( int ){ return 0xff; }
 BYTE MEM6::In72H( int ){ return 0xff; }
 BYTE MEM6::In73H( int ){ return 0xff; }
 
-// 戦士のカートリッジ ------------------------------------------
+// 戦士のカートリッジ(共通) ------------------------------------
+void MEM6::Out7FH( int, BYTE data ){ SetSolBank( 2, ROMBANK | (data & 0xf) ); }
+
+// 戦士のカートリッジ mkⅡ ------------------------------------
+// 戦士のカートリッジ mkⅢ -------------------------------------
 void MEM6::Out06H( int, BYTE data ){ Sol60Mode = (data == 0x66) ? true : false; }
 void MEM6::Out3xH( int port, BYTE data ){ SetSolBank( port, data ); }
-void MEM6::Out7FH( int, BYTE data ){ SetSolBank( 2, ROMBANK | (data & 0xf) ); }
 
 void MEM6::OutF0Hs( int, BYTE data )
 {
-	switch( data & 0x0f ){	// RF0下位 (0000 - 3FFF)
+	switch( data & 0x0f ){			// RF0下位 (0000 - 3FFF)
 	case 0x01:
 	case 0x02:
 	case 0x05:
@@ -2514,7 +2655,7 @@ void MEM6::OutF0Hs( int, BYTE data )
 
 void MEM6::OutF2Hs( int, BYTE data )
 {
-	switch( data & 3 ){	// 0000 - 3FFF
+	switch( data & 0x03 ){			// 0000 - 3FFF
 	case 0:
 		CS01W = false;
 		break;
@@ -2522,29 +2663,17 @@ void MEM6::OutF2Hs( int, BYTE data )
 	default:
 		CS01W = true;
 	}
+	
+	switch( (data >> 2) & 0x03 ){	// 4000 - 7FFF
+	case 0:
+		CS02W = false;
+		break;
+		
+	default:
+		CS02W = true;
+	}
 }
 // =============================================================
-
-void MEM62::OutC1H( int, BYTE data ){ SelectCGrom( (data >> 1) & 1 ); }
-void MEM62::OutC2H( int, BYTE data ){ SetKanjiRom( data ); }
-void MEM62::OutC3H( int, BYTE data ){ SetPortC2HAccess( data ); }
-void MEM62::OutF0H( int, BYTE data ){ SetMemBlockR( data, Rf[1] ); }
-void MEM62::OutF1H( int, BYTE data ){ SetMemBlockR( Rf[0], data ); }
-void MEM62::OutF2H( int, BYTE data ){ SetMemBlockW( data ); }
-void MEM62::OutF3H( int, BYTE data ){ SetWait( data ); }
-void MEM62::OutF8H( int, BYTE data ){ SetCGrom( data ); }
-
-void MEM64::Out6xH( int port, BYTE data ){ SetMemBlockSR( port, data ); }
-
-BYTE MEM62::InC2H( int ){ return GetKanjiRom(); }
-BYTE MEM62::InF0H( int ){ return Rf[0]; }
-BYTE MEM62::InF1H( int ){ return Rf[1]; }
-BYTE MEM62::InF2H( int ){ return Rf[2]; }
-BYTE MEM62::InF3H( int ){ return GetWait() | 0x1f; }
-
-BYTE MEM64::In6xH( int port ){ return RfSR[port & 0x0f]; }
-BYTE MEM64::InB2H( int port ){ return 0xfd; }	// bit1 0:mk2SR 1:66SR
-BYTE MEM68::InB2H( int port ){ return 0xff; }	// bit1 0:mk2SR 1:66SR
 
 
 ////////////////////////////////////////////////////////////////
@@ -2609,15 +2738,22 @@ bool MEM6::DokoSave( cIni* Ini )
 		break;
 		
 	case EXCSOL1:	// 戦士のカートリッジ
+		Ini->SetVal( "MEMORY", "SolBank2",		"", "0x%02X", SolBank[2] );
+		break;
+		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
 		Ini->SetVal( "MEMORY", "Soldier60",		"", Sol60Mode  );
 		Ini->SetVal( "MEMORY", "CS01R",			"", CS01R      );
 		Ini->SetVal( "MEMORY", "CS01W",			"", CS01W      );
+		Ini->SetVal( "MEMORY", "CS02W",			"", CS02W      );
 		Ini->SetVal( "MEMORY", "SoldierBank",	"", SolBankSet );
 		// メモリバンクレジスタ
-		for( int i=0; i<8; i++ ){
-			Ini->SetVal( "MEMORY", Stringf( "SolBank%d", i ), "", "0x%02X", SolBank[i] );
+		{	int i = 0;
+			for( auto &sb : SolBank ){
+				Ini->SetVal( "MEMORY", Stringf( "SolBank%d", i ), "", "0x%02X", sb );
+				i++;
+			}
 		}
 		break;
 	}
@@ -2706,7 +2842,7 @@ bool MEM6::DokoLoad( cIni* Ini )
 	// 拡張カートリッジ ========================================
 	Ini->GetVal( "MEMORY", "ExCart",	ExCart   );
 	
-	// メモリブロック設定
+	// 外部メモリ初期化
 	InitExt();
 	
 	// 拡張ROM
@@ -2734,16 +2870,23 @@ bool MEM6::DokoLoad( cIni* Ini )
 		break;
 		
 	case EXCSOL1:	// 戦士のカートリッジ
+		Ini->GetVal( "MEMORY", "SolBank2",		SolBank[2] );
+		break;
+		
 	case EXCSOL2:	// 戦士のカートリッジmkⅡ
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
 		Ini->GetVal( "MEMORY", "Soldier60",		Sol60Mode  );
 		Ini->GetVal( "MEMORY", "CS01R",			CS01R      );
 		Ini->GetVal( "MEMORY", "CS01W",			CS01W      );
+		Ini->GetVal( "MEMORY", "CS02W",			CS02W      );
 		Ini->GetVal( "MEMORY", "SoldierBank",	SolBankSet );
 		// メモリバンクレジスタ
-		for( int i=0; i<8; i++ ){
-			Ini->GetVal( "MEMORY", Stringf( "SolBank%d", i ), SolBank[i] );
-			SetSolBank( i, SolBank[i] );	// メモリバンク設定
+		{	int i = 0;
+			for( auto &sb : SolBank ){
+				Ini->GetVal( "MEMORY", Stringf( "SolBank%d", i ), sb );
+				SetSolBank( i, sb );	// メモリバンク設定
+				i++;
+			}
 		}
 		break;
 	}
@@ -2805,13 +2948,13 @@ const std::string& MEM64::GetReadMemBlk( int blk ) const
 
 const std::string& MEM6::GetWriteMemBlk( int blk ) const
 {
-	return WR_Blk[blk]->GetName( blk<<MemBlock::PAGEBITS, true );
+	return WBLK[blk]->GetName( blk<<MemBlock::PAGEBITS, true );
 }
 
 const std::string& MEM64::GetWriteMemBlk( int blk ) const
 {
 	return vm->VdgIsSRmode() ? WR_BlkSR[blk]->GetName( blk<<MemBlock::PAGEBITS, true )
-							 : WR_Blk  [blk]->GetName( blk<<MemBlock::PAGEBITS, true );
+							 : WBLK    [blk]->GetName( blk<<MemBlock::PAGEBITS, true );
 }
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

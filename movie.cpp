@@ -34,7 +34,7 @@ extern "C"{
 AVPixelFormat GetPixelFormat( const PixelFMT pf )
 {
 	return pf == PX16RGB ? AV_PIX_FMT_RGB555LE :
-		   pf == PX24BGR ? AV_PIX_FMT_RGB24 :
+		   pf == PX24RGB ? AV_PIX_FMT_RGB24 :
 						   AV_PIX_FMT_0RGB;
 }
 
@@ -416,7 +416,7 @@ bool AVI6::StartAVI( const P6VPATH& filepath, int sw, int sh, double vrate, int 
 	
 	// ピクセルフォーマット設定
 	pixfmt = bpp == 16 ? PX16RGB :
-			 bpp == 24 ? PX24BGR :
+			 bpp == 24 ? PX24RGB :
 						 PX32ARGB;
 	
 	// フレーム出力リクエスト初期化

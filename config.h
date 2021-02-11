@@ -33,8 +33,8 @@ typedef enum {
 	CV_AviBpp,
 	CV_AviZoom,
 	CV_AviFrameSkip,
-	CV_ExCartridge,
-	CV_KeyRepeat
+	CV_AviScanLineBr,
+	CV_ExCartridge
 } TCValue;
 
 // 設定項目(bool)
@@ -49,6 +49,8 @@ typedef enum {
 	CB_FullScreen,
 	CB_DispStatus,
 	CB_AviScanLine,
+	CB_AviDispNTSC,
+	CB_AviFiltering,
 	CB_CkQuit,
 	CB_SaveQuit
 } TCBool;
@@ -118,6 +120,9 @@ protected:
 	int tmp_AviZoom;
 	int tmp_AviFrameSkip;
 	bool tmp_AviScanLine;
+	int tmp_AviScanLineBr;
+	bool tmp_AviDispNTSC;
+	bool tmp_AviFiltering;
 	
 	
 	void InitIni( bool );									// INIオブジェクト初期値設定

@@ -338,8 +338,11 @@ bool MC6847core::IsSRmode( void ) const
 ////////////////////////////////////////////////////////////////
 bool MC6847core::IsSRBitmap( WORD addr ) const
 {
-//	return SRmode && SRBitmap;
-	return SRBitmap && !(SRBMPage ^ (addr & 0x8000));
+	return SRmode && SRBitmap;
+//	return SRBitmap && !(SRBMPage ^ (addr & 0x8000));
+//	変更したら画像崩れたのでもとに戻す
+//	そもそもなんで変更しようとしたんだっけ？？？
+//	VRAMアドレス以外のアクセスを制限しようとしてた？？？
 }
 
 
@@ -1138,12 +1141,13 @@ void PCZ80_12::Draw1line3( int line )
 					attr = GetVram(); HAddr += 2;
 				}
 				
-				for( int i=0; i<8; i++ )
+				for( int i=0; i<8; i++ ){
 					#if INBPP == 8	// 8bit
 					*doff++ =                     COL_CG2[Css3][((Css2&1)<<3)|((Css1&1)<<2)|(((attr>>(7-i))<<1)&2)|((data>>(7-i))&1)];
 					#else			// 32bit
 					*doff++ = VSurface::GetColor( COL_CG2[Css3][((Css2&1)<<3)|((Css1&1)<<2)|(((attr>>(7-i))<<1)&2)|((data>>(7-i))&1)] );
 					#endif
+				}
 			}
 		}
 	}

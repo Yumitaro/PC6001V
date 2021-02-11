@@ -224,7 +224,7 @@ void PIO6::JobWriteC1( BYTE data )
 	// CRT表示状態設定
 	vm->VdgSetCrtDisp( data&2 ? true : false );
 	
-	// CG ROM BANK 切替
+	// CG ROM BANK 選択
 	vm->MemSetCGBank( data&4 ? false : true );
 }
 
@@ -247,7 +247,7 @@ void PIO6::JobWriteD( BYTE data )
 		vm->VdgSetCrtDisp( data&1 ? true : false );
 		break;
 		
-	case 2: // CG ROM BANK 切替
+	case 2: // CG ROM BANK 選択
 		vm->MemSetCGBank( data&1 ? false : true );
 		break;
 	}

@@ -46,8 +46,8 @@
 
 // --- FDC ---
 #define WAIT_SEEK			(1000*2)			// クロック4MHzなので2倍する
-#define WAIT_BYTE			(WAIT_TRACK/6250)	// 6250bytes/track
 #define WAIT_TRACK			(60000000/360)		// 360rpm
+#define WAIT_BYTE			(WAIT_TRACK/6250)	// 6250bytes/track
 
 static const int Gap3size[] = {  26,  54,  84, 116,  150,  186,  224,  264 };
 static const int Gap4size[] = { 488, 152, 182,  94, 1584, 1760, 2242, 4144 };

@@ -288,9 +288,6 @@ bool VM6::AllocObject( const std::shared_ptr<CFG6>& cnfg )
 		
 		// 内部メモリ確保とROMファイル読込み
 		if( !mem->AllocMemoryInt( cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
-		
-		// 外部メモリ確保とROMファイル読込み
-		if( !mem->AllocMemoryExt( cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) throw Error::GetError();
 	}
 	catch( std::bad_alloc& ){	// new に失敗した場合
 		Error::SetError( Error::MemAllocFailed );
@@ -334,7 +331,6 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	
 	// メモリ -----
 	if( !mem->InitInt() ) return false;
-	if( !mem->InitExt() ) return false;
 	mem->Reset();
 	
 	// VDG -----
@@ -355,7 +351,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	pio->cPRT::SetFile( cnfg->GetValue( CF_printer ) );
 	
 	// キー -----
-	if( !key->Init( cnfg->GetValue( CV_KeyRepeat ) ) ) return false;
+	if( !key->Init() ) return false;
 	std::vector<VKeyConv> vk;
 	if( cnfg->GetVKeyDef( vk ) )				// キー定義配列取得
 		key->SetVKeySymbols( vk );				// 仮想キーコード -> P6キーコード 設定
@@ -408,42 +404,40 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	
 	
 	// 拡張カートリッジ ========================================
-	// I/Oポートにデバイスを接続
-	switch( cnfg->GetValue( CV_ExCartridge ) ){
-	case EXC660101:	// 拡張漢字ROMカートリッジ
-	case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
-		DevTable.ExCart = &VM6::c_exkanji;
-		break;
+	// 拡張カートリッジマウント
+	if( cnfg->GetValue( CV_ExCartridge ) ){
+		if( !mem->MountExtCart( cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) return false;
 		
-	case EXC6053:	// ボイスシンセサイザー
-		DevTable.ExCart = &VM6::c_exvoice;
-		break;
-		
-	case EXCSOL1:	// 戦士のカートリッジ
-		DevTable.ExCart = &VM6::c_soldier1;
-		break;
-		
-	case EXCSOL2:	// 戦士のカートリッジmkⅡ
-		DevTable.ExCart = &VM6::c_soldier2;
-		break;
-	}
-	
-	if( DevTable.ExCart  ){
-		if( !iom->Connect( mem, *DevTable.ExCart ) ){
-			return false;
-		}
-	}
-	
-	// ROMファイル読込み
-	switch( cnfg->GetValue( CV_ExCartridge ) ){
-	case EXC6005:	// ROMカートリッジ
-	case EXC6006:	// 拡張ROM/RAMカートリッジ
-	case EXCSOL1:	// 戦士のカートリッジ
-	case EXCSOL2:	// 戦士のカートリッジmkⅡ
-	case EXCSOL3:	// 戦士のカートリッジmkⅢ
-		if( !cnfg->GetValue( CF_ExtRom ).empty() && !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
+		// ROMファイル読込み
+		if( !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
 			// ファイルがなければエラーメッセージセットして継続
 			Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( cnfg->GetValue( CF_ExtRom ) ) );
+		}
+		
+		// I/Oポートにデバイスを接続
+		switch( mem->GetCartridge() ){
+		case EXC660101:	// 拡張漢字ROMカートリッジ
+		case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
+			DevTable.ExCart = &VM6::c_exkanji;
+			break;
+			
+		case EXC6053:	// ボイスシンセサイザー
+			DevTable.ExCart = &VM6::c_exvoice;
+			break;
+			
+		case EXCSOL1:	// 戦士のカートリッジ
+			DevTable.ExCart = &VM6::c_soldier1;
+			break;
+			
+		case EXCSOL2:	// 戦士のカートリッジmkⅡ
+			DevTable.ExCart = &VM6::c_soldier2;
+			break;
+		}
+		
+		if( DevTable.ExCart  ){
+			if( !iom->Connect( mem, *DevTable.ExCart ) ){
+				return false;
+			}
 		}
 	}
 	// =========================================================
@@ -813,7 +807,7 @@ void VM6::MemWrite( WORD addr, BYTE data, int* wcnt )
 
 
 ////////////////////////////////////////////////////////////////
-// CG ROM BANK を切り替える
+// CG ROM BANK 選択
 ////////////////////////////////////////////////////////////////
 void VM6::MemSetCGBank( bool data )
 {

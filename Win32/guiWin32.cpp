@@ -41,8 +41,6 @@ static INT_PTR CALLBACK OsdCnfgProc1(   HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK OsdCnfgProc2(   HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK OsdCnfgProc3(   HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK OsdCnfgProc4(   HWND, UINT, WPARAM, LPARAM );
-static INT_PTR CALLBACK OsdCnfgProc5(   HWND, UINT, WPARAM, LPARAM );
-static INT_PTR CALLBACK OsdCnfgProc6(   HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK OsdCnfgProcCol( HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK OsdCnfgProcEtc( HWND, UINT, WPARAM, LPARAM );
 static INT_PTR CALLBACK VerInfoProc(    HWND, UINT, WPARAM, LPARAM );
@@ -668,7 +666,7 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 	HINSTANCE hinst = (HINSTANCE)GetWindowLongPtr( hhwnd, GWLP_HINSTANCE);
 	
 	// ページ毎の設定を行なう
-	PROPSHEETPAGE psp[9];
+	PROPSHEETPAGE psp[6];
 	PROPSHEETHEADER psh;
 	
 	// 基本
@@ -701,65 +699,35 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 	psp[2].pszTitle    = nullptr;
 	psp[2].lParam      = 0;
 	
-	// 入力関係
+	// ファイル
 	psp[3].dwSize      = sizeof(PROPSHEETPAGE);
 	psp[3].dwFlags     = PSP_DEFAULT;
 	psp[3].hInstance   = hinst;
-	psp[3].pszTemplate = MAKEINTRESOURCE(ID_CNFGIN);
+	psp[3].pszTemplate = MAKEINTRESOURCE(ID_CNFG4);
 	psp[3].pszIcon     = nullptr;
 	psp[3].pfnDlgProc  = (DLGPROC)OsdCnfgProc4;
 	psp[3].pszTitle    = nullptr;
 	psp[3].lParam      = 0;
 	
-	// ファイル
+	// 色
 	psp[4].dwSize      = sizeof(PROPSHEETPAGE);
 	psp[4].dwFlags     = PSP_DEFAULT;
 	psp[4].hInstance   = hinst;
-	psp[4].pszTemplate = MAKEINTRESOURCE(ID_CNFG4);
+	psp[4].pszTemplate = MAKEINTRESOURCE(ID_CNFGCL);
 	psp[4].pszIcon     = nullptr;
-	psp[4].pfnDlgProc  = (DLGPROC)OsdCnfgProc5;
+	psp[4].pfnDlgProc  = (DLGPROC)OsdCnfgProcCol;
 	psp[4].pszTitle    = nullptr;
 	psp[4].lParam      = 0;
 	
-	// フォルダ
+	// その他
 	psp[5].dwSize      = sizeof(PROPSHEETPAGE);
 	psp[5].dwFlags     = PSP_DEFAULT;
 	psp[5].hInstance   = hinst;
-	psp[5].pszTemplate = MAKEINTRESOURCE(ID_CNFG5);
+	psp[5].pszTemplate = MAKEINTRESOURCE(ID_CNFGETC);
 	psp[5].pszIcon     = nullptr;
-	psp[5].pfnDlgProc  = (DLGPROC)OsdCnfgProc6;
+	psp[5].pfnDlgProc  = (DLGPROC)OsdCnfgProcEtc;
 	psp[5].pszTitle    = nullptr;
 	psp[5].lParam      = 0;
-	
-	// 色1
-	psp[6].dwSize      = sizeof(PROPSHEETPAGE);
-	psp[6].dwFlags     = PSP_DEFAULT;
-	psp[6].hInstance   = hinst;
-	psp[6].pszTemplate = MAKEINTRESOURCE(ID_CNFGCL1);
-	psp[6].pszIcon     = nullptr;
-	psp[6].pfnDlgProc  = (DLGPROC)OsdCnfgProcCol;
-	psp[6].pszTitle    = nullptr;
-	psp[6].lParam      = 0;
-	
-	// 色2
-	psp[7].dwSize      = sizeof(PROPSHEETPAGE);
-	psp[7].dwFlags     = PSP_DEFAULT;
-	psp[7].hInstance   = hinst;
-	psp[7].pszTemplate = MAKEINTRESOURCE(ID_CNFGCL2);
-	psp[7].pszIcon     = nullptr;
-	psp[7].pfnDlgProc  = (DLGPROC)OsdCnfgProcCol;
-	psp[7].pszTitle    = nullptr;
-	psp[7].lParam      = 0;
-	
-	// その他
-	psp[8].dwSize      = sizeof(PROPSHEETPAGE);
-	psp[8].dwFlags     = PSP_DEFAULT;
-	psp[8].hInstance   = hinst;
-	psp[8].pszTemplate = MAKEINTRESOURCE(ID_CNFGETC);
-	psp[8].pszIcon     = nullptr;
-	psp[8].pfnDlgProc  = (DLGPROC)OsdCnfgProcEtc;
-	psp[8].pszTitle    = nullptr;
-	psp[8].lParam      = 0;
 	
 	
 	psh.dwSize     = sizeof(PROPSHEETHEADER);
@@ -1017,7 +985,7 @@ static void SaveTextBoxPath( const HWND hwnd, const int id, const TCPath path )
 
 
 
-enum { PP_BASE, PP_DISP, PP_SOUND, PP_FILE, PP_FOLDER, PP_COL, PP_ETC, PP_INPUT };
+enum { PP_BASE, PP_DISP, PP_SOUND, PP_FILE, PP_COL, PP_ETC };
 
 ///////////////////////////////////////////////////////////
 // 設定を読込む
@@ -1029,11 +997,29 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// 機種
 		SetDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
+		// 拡張カートリッジ
+		SetDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
+		
 		// FDドライブ数
 		SetSpinControl( hwnd, ID_SPFDDRV, ID_FDDRV, CV_FDDrive );
 		
-		// 拡張カートリッジ
-		SetDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
+		// FDDウェイト
+		SetCheckBox( hwnd, ID_CB14, CB_FDDWait );
+		
+		// Turbo TAPE
+		SetCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
+		
+		// Boost Up
+		SetCheckBox( hwnd, ID_CB5, CB_BoostUp );
+		
+		// BoostUp 最大倍率(N60モード)
+		SetSpinControl( hwnd, ID_SPBOOST60, ID_BOOST60, CV_MaxBoost60 );
+		
+		// BoostUp 最大倍率(N60m/N66モード)
+		SetSpinControl( hwnd, ID_SPBOOST62, ID_BOOST62, CV_MaxBoost62 );
+		
+		// TAPEストップビット数
+		SetSpinControl( hwnd, ID_SPSTOPBIT, ID_STOPBIT, CV_StopBit );
 		
 		break;
 		
@@ -1050,11 +1036,11 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// スキャンライン輝度
 		SetSpinControl( hwnd, ID_SPSCANLINEBR, ID_SCANLINEBR, CV_ScanLineBr );
 		
-		// フィルタリング
-		SetCheckBox( hwnd, ID_CB15, CB_Filtering );
-		
 		// 4:3表示
 		SetCheckBox( hwnd, ID_CB7, CB_DispNTSC );
+		
+		// フィルタリング
+		SetCheckBox( hwnd, ID_CB15, CB_Filtering );
 		
 		// フルスクリーン
 		SetCheckBox( hwnd, ID_CB10, CB_FullScreen );
@@ -1086,6 +1072,15 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// ビデオキャプチャ時スキャンライン
 		SetCheckBox( hwnd, ID_CBAVISLINE, CB_AviScanLine );
 		
+		// ビデオキャプチャ時スキャンライン輝度
+		SetSpinControl( hwnd, ID_SPAVISLNBR, ID_AVISLNBR, CV_AviScanLineBr );
+		
+		// ビデオキャプチャ時4:3表示
+		SetCheckBox( hwnd, ID_AVINTSC, CB_AviDispNTSC );
+		
+		// ビデオキャプチャ時フィルタリング
+		SetCheckBox( hwnd, ID_AVIFILT, CB_AviFiltering );
+		
 		break;
 		
 	case PP_SOUND:	// サウンド
@@ -1112,13 +1107,26 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 		break;
 		
-	case PP_INPUT:	// 入力関係
-		// キーリピート間隔
-		SetSpinControl( hwnd, ID_SPKEYREP, ID_KEYREP, CV_KeyRepeat );
+	case PP_FILE:	// ファイル
+		// 拡張ROMファイル
+		SetTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
 		
-		break;
+		// TAPE(LOAD)ファイル名
+		SetTextBoxPath( hwnd, ID_FTPLD, CF_tape );
 		
-	case PP_FOLDER:	// フォルダ
+		// TAPE(SAVE)ファイル名
+		SetTextBoxPath( hwnd, ID_FTPSV, CF_save );
+		
+		// DISK1ファイル名
+		SetTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
+		
+		// DISK2ファイル名
+		SetTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
+		
+		// プリンタファイル名
+		SetTextBoxPath( hwnd, ID_FPRINT, CF_printer );
+		
+		
 		// ROMパス
 		SetTextBoxPath( hwnd, ID_PATH1, CF_RomPath );
 		
@@ -1142,27 +1150,6 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 		break;
 		
-	case PP_FILE:	// ファイル
-		// 拡張ROMファイル
-		SetTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
-		
-		// TAPE(LOAD)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPLD, CF_tape );
-		
-		// TAPE(SAVE)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPSV, CF_save );
-		
-		// DISK1ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
-		
-		// DISK2ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
-		
-		// プリンタファイル名
-		SetTextBoxPath( hwnd, ID_FPRINT, CF_printer );
-		
-		break;
-		
 	case PP_COL:	// 色1
 		break;
 		
@@ -1172,24 +1159,6 @@ static bool OsdReadINI( HWND hwnd, int page )
 		
 		// CRCチェック
 		SetCheckBox( hwnd, ID_CB4, CB_CheckCRC );
-		
-		// Turbo TAPE
-		SetCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
-		
-		// Boost Up
-		SetCheckBox( hwnd, ID_CB5, CB_BoostUp );
-		
-		// BoostUp 最大倍率(N60モード)
-		SetSpinControl( hwnd, ID_SPBOOST60, ID_BOOST60, CV_MaxBoost60 );
-		
-		// BoostUp 最大倍率(N60m/N66モード)
-		SetSpinControl( hwnd, ID_SPBOOST62, ID_BOOST62, CV_MaxBoost62 );
-		
-		// TAPEストップビット数
-		SetSpinControl( hwnd, ID_SPSTOPBIT, ID_STOPBIT, CV_StopBit );
-		
-		// FDDウェイト
-		SetCheckBox( hwnd, ID_CB14, CB_FDDWait );
 		
 		// 終了時 確認する
 		SetCheckBox( hwnd, ID_CB8, CB_CkQuit );
@@ -1214,11 +1183,29 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		// 機種
 		SaveDropDownListIndex( hwnd, ID_LBMODEL, CV_Model );
 		
+		// 拡張カートリッジ
+		SaveDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
+		
 		// FDドライブ数
 		SaveSpinControl( hwnd, ID_FDDRV, CV_FDDrive );
 		
-		// 拡張カートリッジ
-		SaveDropDownListIndex( hwnd, ID_LBEXCART, CV_ExCartridge );
+		// FDDウェイト
+		SaveCheckBox( hwnd, ID_CB14, CB_FDDWait );
+		
+		// Turbo TAPE
+		SaveCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
+		
+		// Boost Up
+		SaveCheckBox( hwnd, ID_CB5, CB_BoostUp );
+		
+		// BoostUp 最大倍率(N60モード)
+		SaveSpinControl( hwnd, ID_BOOST60, CV_MaxBoost60 );
+		
+		// BoostUp 最大倍率(N60m/N66モード)
+		SaveSpinControl( hwnd, ID_BOOST62, CV_MaxBoost62 );
+		
+		// TAPEストップビット数
+		SaveSpinControl( hwnd, ID_STOPBIT, CV_StopBit );
 		
 		break;
 		
@@ -1235,11 +1222,11 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		// スキャンライン輝度
 		SaveSpinControl( hwnd, ID_SCANLINEBR, CV_ScanLineBr );
 		
-		// フィルタリング
-		SaveCheckBox( hwnd, ID_CB15, CB_Filtering );
-		
 		// 4:3表示
 		SaveCheckBox( hwnd, ID_CB7, CB_DispNTSC );
+		
+		// フィルタリング
+		SaveCheckBox( hwnd, ID_CB15, CB_Filtering );
 		
 		// フルスクリーン
 		SaveCheckBox( hwnd, ID_CB10, CB_FullScreen );
@@ -1261,6 +1248,15 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// ビデオキャプチャ時スキャンライン
 		SaveCheckBox( hwnd, ID_CBAVISLINE, CB_AviScanLine );
+		
+		// ビデオキャプチャ時スキャンライン輝度
+		SaveSpinControl( hwnd, ID_AVISLNBR, CV_AviScanLineBr );
+		
+		// ビデオキャプチャ時4:3表示
+		SaveCheckBox( hwnd, ID_AVINTSC, CB_AviDispNTSC );
+		
+		// ビデオキャプチャ時フィルタリング
+		SaveCheckBox( hwnd, ID_AVIFILT, CB_AviFiltering );
 		
 		break;
 		
@@ -1288,13 +1284,26 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		break;
 		
-	case PP_INPUT:	// 入力関係
-		// キーリピート間隔
-		SaveSpinControl( hwnd, ID_KEYREP, CV_KeyRepeat );
+	case PP_FILE:	// ファイル
+		// 拡張ROMファイル
+		SaveTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
 		
-		break;
+		// TAPE(LOAD)ファイル名
+		SaveTextBoxPath( hwnd, ID_FTPLD, CF_tape );
 		
-	case PP_FOLDER:	// フォルダ
+		// TAPE(SAVE)ファイル名
+		SaveTextBoxPath( hwnd, ID_FTPSV, CF_save );
+		
+		// DISK1ファイル名
+		SaveTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
+		
+		// DISK2ファイル名
+		SaveTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
+		
+		// プリンタファイル名
+		SaveTextBoxPath( hwnd, ID_FPRINT, CF_printer );
+		
+		
 		// ROMパス
 		SaveTextBoxPath( hwnd, ID_PATH1, CF_RomPath );
 		
@@ -1318,27 +1327,6 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		break;
 		
-	case PP_FILE:	// ファイル
-		// 拡張ROMファイル
-		SaveTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
-		
-		// TAPE(LOAD)ファイル名
-		SaveTextBoxPath( hwnd, ID_FTPLD, CF_tape );
-		
-		// TAPE(SAVE)ファイル名
-		SaveTextBoxPath( hwnd, ID_FTPSV, CF_save );
-		
-		// DISK1ファイル名
-		SaveTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
-		
-		// DISK2ファイル名
-		SaveTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
-		
-		// プリンタファイル名
-		SaveTextBoxPath( hwnd, ID_FPRINT, CF_printer );
-		
-		break;
-		
 	case PP_COL:	// 色1
 		break;
 		
@@ -1348,24 +1336,6 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// CRCチェック
 		SaveCheckBox( hwnd, ID_CB4, CB_CheckCRC );
-		
-		// Turbo TAPE
-		SaveCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
-		
-		// Boost Up
-		SaveCheckBox( hwnd, ID_CB5, CB_BoostUp );
-		
-		// BoostUp 最大倍率(N60モード)
-		SaveSpinControl( hwnd, ID_BOOST60, CV_MaxBoost60 );
-		
-		// BoostUp 最大倍率(N60m/N66モード)
-		SaveSpinControl( hwnd, ID_BOOST62, CV_MaxBoost62 );
-		
-		// TAPEストップビット数
-		SaveSpinControl( hwnd, ID_STOPBIT, CV_StopBit );
-		
-		// FDDウェイト
-		SaveCheckBox( hwnd, ID_CB14, CB_FDDWait );
 		
 		// 終了時 確認する
 		SaveCheckBox( hwnd, ID_CB8, CB_CkQuit );
@@ -1464,33 +1434,8 @@ static INT_PTR CALLBACK OsdCnfgProc3( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 	return false;
 }
 
-// 入力関係
-static INT_PTR CALLBACK OsdCnfgProc4( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
-{
-	switch( msg ){
-	case WM_INITDIALOG:
-		// 設定を読込む
-		if( !OsdReadINI( hwnd, PP_INPUT ) ) Message_Win32( hwnd, GetText( TERR_IniReadFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-		break;
-		
-	case WM_NOTIFY:
-		switch( ((NMHDR*)lp)->code ){
-		case PSN_APPLY:
-			// 設定を保存する
-			if( !OsdWriteINI( hwnd, PP_INPUT ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-			return true;
-		}
-		
-		// スピンコントロール
-		if( ((LPNMUPDOWN)lp)->hdr.code == UDN_DELTAPOS ){
-			CallbackSpinControl( hwnd, wp, ((LPNMUPDOWN)lp)->iDelta );
-		}
-	}
-	return false;
-}
-
 // ファイル
-static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
+static INT_PTR CALLBACK OsdCnfgProc4( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 {
 	switch( msg ){
 	case WM_INITDIALOG:
@@ -1500,6 +1445,7 @@ static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 		
 	case WM_COMMAND:
 		switch( wp ){
+		// ファイル
 		case ID_B11:	// ファイル参照ボタン(拡張ROMイメージ)
 			FileSelCom( hwnd, ID_FEXROM, FD_ExtRom, ecfg.GetValue( CF_ExtRomPath ) );
 			break;
@@ -1547,31 +1493,8 @@ static INT_PTR CALLBACK OsdCnfgProc5( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 		case ID_B16E:	// EJECTボタン(プリンタ出力ファイル)
 			SetDlgItemText( hwnd, ID_FPRINT, "" );
 			break;
-		}
-		break;
-		
-	case WM_NOTIFY:
-		switch( ((NMHDR*)lp)->code ){
-		case PSN_APPLY:
-			// 設定を保存する
-			if( !OsdWriteINI( hwnd, PP_FILE ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-			return true;
-		}
-	}
-	return false;
-}
-
-// フォルダ
-static INT_PTR CALLBACK OsdCnfgProc6( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
-{
-	switch( msg ){
-	case WM_INITDIALOG:
-		// 設定を読込む
-		if( !OsdReadINI( hwnd, PP_FOLDER ) ) Message_Win32( hwnd, GetText( TERR_IniReadFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
-		break;
-		
-	case WM_COMMAND:
-		switch( wp ){
+			
+		// フォルダ
 		case ID_B01:	// フォルダ参照ボタン(ROM)
 			FolderSelCom( hwnd, ID_PATH1 );
 			break;
@@ -1606,7 +1529,7 @@ static INT_PTR CALLBACK OsdCnfgProc6( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp 
 		switch( ((NMHDR*)lp)->code ){
 		case PSN_APPLY:
 			// 設定を保存する
-			if( !OsdWriteINI( hwnd, PP_FOLDER ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
+			if( !OsdWriteINI( hwnd, PP_FILE ) ) Message_Win32( hwnd, GetText( TERR_IniWriteFailed ), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 			return true;
 		}
 	}

@@ -168,9 +168,10 @@ protected:
 	std::vector<MemBlock> IRom;			// 内部ROMブロック
 	std::vector<MemBlock> IRam;			// 内部RAMブロック
 	
-	std::array<MemBlock*,8> RBLK;		// リード時メモリブロックポインタ(8KB*8) 1段目(CGRomアクセス用)
+	std::array<MemBlock*,8> RBLK;		// リード時メモリブロックポインタ(8KB*8) 1段目
+	std::array<MemBlock*,8> WBLK;		// ライト時メモリブロックポインタ(8KB*8) 1段目
 	std::array<MemBlock*,8> RD_Blk;		// リード時メモリブロックポインタ(8KB*8) 2段目
-	std::array<MemBlock*,8> WR_Blk;		// ライト時メモリブロックポインタ(8KB*8)
+	std::array<MemBlock*,8> WR_Blk;		// ライト時メモリブロックポインタ(8KB*8) 2段目
 	
 	bool CGBank;						// CG ROM BANK	true:有効 false:無効
 	int M1Wait;							// M1ウェイト
@@ -180,16 +181,16 @@ protected:
 	// ---------------------------------------------------------------------------------------
 	
 	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH&, bool );	// メモリ確保とROMファイル読込み
-	virtual bool AllocMemorySpec( const P6VPATH&, bool ) = 0;				// メモリ確保とROMファイル読込み(機種別)
+	virtual bool AllocMemorySpec( const P6VPATH&, bool ) = 0;				// 内部メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() = 0;											// 内部RAMの初期値を設定
 	virtual bool InitIntSpec() = 0;											// 内部メモリ初期化(機種別)
-	virtual bool InitExtSpec() = 0;											// 外部メモリ初期化(機種別)
 	virtual void SetMemBlockR( BYTE, BYTE ) = 0;							// メモリリード時のメモリブロック指定(62,66)
 	virtual void SetMemBlockW( BYTE ) = 0;									// メモリライト時のメモリブロック指定(62,66)
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	virtual const std::string& GetNameCGromRead( WORD, bool ) = 0;	// CGROM メモリブロック名取得
-	virtual BYTE CGromRead( MemCell*, WORD, int* = nullptr ) = 0;	// CGROM読込み
+	virtual const std::string& GetNameCommon( WORD, bool );		// 汎用 メモリブロック名取得
+	virtual BYTE CommonRead( MemCell*, WORD, int* );			// 汎用 読込み
+	virtual void CommonWrite( MemCell*, WORD, BYTE, int* );		// 汎用 書込み
 	// ---------------------------------------------------------------------------------------
 	
 	// 拡張カートリッジ ======================================================================
@@ -218,6 +219,12 @@ protected:
 	WORD ExCart;						// 0:なし
 	P6VPATH FilePath;					// 拡張ROMファイルフルパス
 	
+	bool AllocMemoryExt( const P6VPATH&, bool );	// 外部メモリ確保とROMファイル読込み
+	void AddDeviceDescriptorExt();		// 拡張カートリッジ デバイスディスクリプタ追加
+	
+	bool GetReadEnableExt( WORD );		// Read Enable取得 (ROM KILL)
+	bool GetWriteEnableExt( WORD );		// Write Enable取得
+	
 	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
 	WORD Kaddr;							// 漢字ROMアドレス
 	bool Kenable;						// 漢字ROMチップイネーブル
@@ -226,15 +233,13 @@ protected:
 	bool Sol60Mode;						// 初代機モード　true:有効 false:無効
 	bool CS01R;							// 初代機 0000-3FFFH 読込みフラグ
 	bool CS01W;							// 初代機 0000-3FFFH 書込みフラグ
+	bool CS02W;							// 初代機 4000-7FFFH 書込みフラグ
 	std::array<BYTE,8> SolBank;			// メモリバンクレジスタ
 	int SolBankSet;						// ROMバンクセット
 	
-	void SetSolBank( BYTE, BYTE );								// メモリバンクレジスタ設定
+	void SetSolBank( BYTE, BYTE );								// 戦士のカートリッジmkⅡ メモリバンクレジスタ設定
 	const std::string& GetNameSolReadEx( WORD, bool );			// 戦士のカートリッジ メモリブロック名取得
 	BYTE SolReadEx( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジ読込み(外部ROM領域)
-	const std::string& GetNameSol60ReadA( WORD, bool = false );	// 戦士のカートリッジAreaA,B メモリブロック名取得
-	BYTE Sol60ReadA( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジAreaA,B読込み
-	void Sol60WriteA( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジAreaA,B書込み
 	BYTE SolSccRead( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジSCC読込み
 	void SolSccWrite( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジSCC書込み
 	
@@ -273,7 +278,7 @@ public:
 	virtual void Write( WORD, BYTE, int* = nullptr );	// メモリライト
 	
 	// 8255入出力関連関数
-	void SetCGBank( bool );								// CG ROM BANK を切り替える
+	void SetCGBank( bool );								// CG ROM BANK 選択
 	
 	// 直接アクセス関数
 	BYTE ReadSysRom( WORD ) const;
@@ -288,7 +293,6 @@ public:
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 	// 拡張カートリッジ ======================================================================
-	bool AllocMemoryExt( WORD, const P6VPATH&, bool );	// 外部メモリ確保とROMファイル読込み
 	bool InitExt();										// 外部メモリ初期化
 	void ResetExt();									// 外部メモリリセット
 	
@@ -296,6 +300,7 @@ public:
 	void UnmountExtRom();								// 拡張ROM アンマウント
 	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
 	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
+	bool MountExtCart( WORD, const P6VPATH&, bool );	// 拡張カートリッジマウント
 	
 	// 直接アクセス関数
 	BYTE ReadExtRom ( WORD ) const;
@@ -321,16 +326,22 @@ private:
 	static const MEMINFO ICGROM1;
 	static const MEMINFO IINTRAM;
 	
-	bool AllocMemorySpec( const P6VPATH&, bool ) override;	// メモリ確保とROMファイル読込み(機種別)
-	void SetRamValue() override;							// 内部RAMの初期値を設定
-	bool InitIntSpec() override;							// 内部メモリ初期化(機種別)
-	bool InitExtSpec() override;							// 外部メモリ初期化(機種別)
-	void SetMemBlockR( BYTE, BYTE ) override;				// メモリリード時のメモリブロック指定
-	void SetMemBlockW( BYTE ) override;						// メモリライト時のメモリブロック指定
+	bool AllocMemorySpec( const P6VPATH&, bool ) override;		// 内部メモリ確保とROMファイル読込み(機種別)
+	void SetRamValue() override;								// 内部RAMの初期値を設定
+	bool InitIntSpec() override;								// 内部メモリ初期化(機種別)
+	void SetMemBlockR( BYTE, BYTE ) override;					// メモリリード時のメモリブロック指定
+	void SetMemBlockW( BYTE ) override;							// メモリライト時のメモリブロック指定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	const std::string& GetNameCGromRead( WORD, bool ) override;	// CGROM メモリブロック名取得
-	BYTE CGromRead( MemCell*, WORD, int* = nullptr ) override;	// CGROM読込み
+	const std::string& GetNameAreaA60Read( WORD, bool );		// AreaA,B メモリブロック名取得(60)
+	BYTE AreaA60Read( MemCell*, WORD, int* );					// AreaA,B 読込み(60)
+	void AreaA60Write( MemCell*, WORD, BYTE, int* );			// AreaA,B 書込み(60)
+	const std::string& GetNameAreaC60Read( WORD, bool );		// AreaC メモリブロック名取得(60)
+	BYTE AreaC60Read( MemCell*, WORD, int* );					// AreaC 読込み(60)
+	void AreaC60Write( MemCell*, WORD, BYTE, int* );			// AreaC 書込み(60)
+	const std::string& GetNameAreaD60Read( WORD, bool );		// AreaD メモリブロック名取得(60)
+	BYTE AreaD60Read( MemCell*, WORD, int* );					// AreaD 読込み(60)
+	void AreaD60Write( MemCell*, WORD, BYTE, int* );			// AreaD 書込み(60)
 	// ---------------------------------------------------------------------------------------
 
 public:
@@ -371,24 +382,23 @@ protected:
 	BYTE cgaddr;						// CG ROMアドレス A13,14,15
 	BYTE c2acc;							// PortC2Hアクセスフラグ
 	
-	virtual bool AllocMemorySpec( const P6VPATH&, bool ) override;	// メモリ確保とROMファイル読込み(機種別)
+	virtual bool AllocMemorySpec( const P6VPATH&, bool ) override;	// 内部メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() override;							// 内部RAMの初期値を設定
 	virtual bool InitIntSpec() override;							// 内部メモリ初期化(機種別)
-	bool InitExtSpec() override;									// 外部メモリ初期化(機種別)
 	virtual void SetMemBlockR( BYTE, BYTE ) override;				// メモリリード時のメモリブロック指定
 	void SetMemBlockW( BYTE ) override;								// メモリライト時のメモリブロック指定
 	
 	void SetWait( BYTE );											// メモリアクセスウェイト設定
 	BYTE GetWait() const;											// メモリアクセスウェイト取得
-	virtual void SetCGrom( BYTE );									// CG ROM アドレス等設定
-	void SelectCGrom( int );										// CG ROM 選択
+	void SetCGrom( BYTE );											// CG ROM アドレス設定
+	void SelectCGrom( bool );										// CG ROM 選択
 	void SetKanjiRom( BYTE );										// 漢字ROMおよび音声合成ROM設定
 	BYTE GetKanjiRom() const;										// 漢字ROMおよび音声合成ROM取得
 	void SetPortC2HAccess( BYTE );									// PortC2Hアクセス設定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
-	const std::string& GetNameCGromRead( WORD, bool ) override;		// CGROM メモリブロック名取得
-	BYTE CGromRead( MemCell*, WORD, int* = nullptr ) override;		// CGROM読込み
+	const std::string& GetNameCommon( WORD, bool ) override;		// 汎用 メモリブロック名取得
+	BYTE CommonRead( MemCell*, WORD, int* ) override;				// 汎用 読込み
 	void IERamWrite( MemCell*, WORD, BYTE, int* = nullptr );		// 内部/外部RAM書込み
 	virtual const std::string& KanjiGetName( WORD, bool = false );	// 漢字ROM メモリブロック名取得
 	virtual BYTE ReadKanji( MemCell*, WORD, int* = nullptr );		// 漢字ROM読込み
@@ -453,13 +463,11 @@ protected:
 	std::array<MemBlock*,8> WR_BlkSR;	// ライト時メモリブロックポインタ(8KB*8) SRモード用
 	std::array<BYTE,16> RfSR;			// メモリコントローラ内部レジスタ		 SRモード用
 	
-	bool AllocMemorySpec( const P6VPATH&, bool ) override;			// メモリ確保とROMファイル読込み(機種別)
+	bool AllocMemorySpec( const P6VPATH&, bool ) override;			// 内部メモリ確保とROMファイル読込み(機種別)
 	virtual void SetRamValue() override;							// 内部RAMの初期値を設定
 	bool InitIntSpec() override;									// 内部メモリ初期化(機種別)
 	void SetMemBlockR( BYTE, BYTE ) override;						// メモリリード時のメモリブロック指定
 	void SetMemBlockSR( BYTE, BYTE );								// メモリリード/ライト時のメモリブロック指定(64,68)
-	
-	void SetCGrom( BYTE ) override;									// CG ROM アドレス等設定
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
 	const std::string& KanjiGetName( WORD, bool = false ) override;	// 漢字ROM メモリブロック名取得
