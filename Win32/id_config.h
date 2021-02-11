@@ -129,14 +129,6 @@
 #define ID_COL70		2770
 #define ID_COL71		2771
 #define ID_COL72		2772
-#define ID_COL73		2773
-#define ID_COL74		2774
-#define ID_COL75		2775
-#define ID_COL76		2776
-#define ID_COL77		2777
-#define ID_COL78		2778
-#define ID_COL79		2779
-#define ID_COL80		2780
 
 #define ID_LBMODEL		2801
 #define ID_LBEXCART		2802

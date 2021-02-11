@@ -1562,7 +1562,7 @@ static INT_PTR CALLBACK OsdCnfgProcCol( HWND hwnd, UINT msg, WPARAM wp, LPARAM l
 		break;
 		
 	case WM_DRAWITEM:	// オーナードロー
-		if( wp >= ID_COL16 && wp <= ID_COL80 ){
+		if( wp >= ID_COL16 && wp <= ID_COL72 ){
 			col = ecfg.GetColor( wp-ID_COL16+16 );
 			// オーナードローボタン 描画
 			OsdOwnerDrawBtn( ((LPDRAWITEMSTRUCT)lp)->hDC,
@@ -1573,7 +1573,7 @@ static INT_PTR CALLBACK OsdCnfgProcCol( HWND hwnd, UINT msg, WPARAM wp, LPARAM l
 		return false;
 		
 	case WM_COMMAND:
-		if( wp >= ID_COL16 && wp <= ID_COL80 ){
+		if( wp >= ID_COL16 && wp <= ID_COL72 ){
 			col = ecfg.GetColor( wp-ID_COL16+16 );
 			Color = RGB( col.r, col.g, col.b );
 			// 色の選択 コモンダイアログ表示
