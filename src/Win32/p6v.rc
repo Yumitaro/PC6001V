@@ -353,41 +353,42 @@ STYLE DS_MODALFRAME | DS_SETFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSME
 CAPTION "色"
 FONT 9, "MS UI Gothic"
 {
-    LTEXT           "変更したい色を\nクリックしてください", 0, 145, 130, 80, 20, SS_LEFT
-    
-    GROUPBOX        "MODE1", 0, 5, 5, 40, 95
-    CONTROL         "", ID_COL16, WC_BUTTON, BS_OWNERDRAW, 9, 15, 6, 8
-    LTEXT           "Set1", 0, 9, 30, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL17, WC_BUTTON, BS_OWNERDRAW, 9, 40, 6, 8
-    CONTROL         "", ID_COL18, WC_BUTTON, BS_OWNERDRAW, 9, 50, 6, 8
-    LTEXT           "Set2", 0, 9, 65, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL19, WC_BUTTON, BS_OWNERDRAW, 9, 75, 6, 8
-    CONTROL         "", ID_COL20, WC_BUTTON, BS_OWNERDRAW, 9, 85, 6, 8
-    LTEXT           "黒",   0, 18, 15, 25, 10, SS_LEFT
-    LTEXT           "緑",   0, 18, 40, 25, 10, SS_LEFT
-    LTEXT           "深緑", 0, 18, 50, 25, 10, SS_LEFT
-    LTEXT           "橙",   0, 18, 75, 25, 10, SS_LEFT
-    LTEXT           "深橙", 0, 18, 85, 25, 10, SS_LEFT
-    
-    GROUPBOX        "MODE2", 0, 50, 5, 40, 95
-    CONTROL         "", ID_COL21, WC_BUTTON, BS_OWNERDRAW, 54, 15, 6, 8
-    CONTROL         "", ID_COL22, WC_BUTTON, BS_OWNERDRAW, 54, 25, 6, 8
-    CONTROL         "", ID_COL23, WC_BUTTON, BS_OWNERDRAW, 54, 35, 6, 8
-    CONTROL         "", ID_COL24, WC_BUTTON, BS_OWNERDRAW, 54, 45, 6, 8
-    CONTROL         "", ID_COL25, WC_BUTTON, BS_OWNERDRAW, 54, 55, 6, 8
-    CONTROL         "", ID_COL26, WC_BUTTON, BS_OWNERDRAW, 54, 65, 6, 8
-    CONTROL         "", ID_COL27, WC_BUTTON, BS_OWNERDRAW, 54, 75, 6, 8
-    CONTROL         "", ID_COL28, WC_BUTTON, BS_OWNERDRAW, 54, 85, 6, 8
-    LTEXT           "緑",       0, 63, 15, 25, 10, SS_LEFT
-    LTEXT           "黄",       0, 63, 25, 25, 10, SS_LEFT
-    LTEXT           "青",       0, 63, 35, 25, 10, SS_LEFT
-    LTEXT           "赤",       0, 63, 45, 25, 10, SS_LEFT
-    LTEXT           "白",       0, 63, 55, 25, 10, SS_LEFT
-    LTEXT           "シアン",   0, 63, 65, 25, 10, SS_LEFT
-    LTEXT           "マゼンタ", 0, 63, 75, 25, 10, SS_LEFT
-    LTEXT           "橙",       0, 63, 85, 25, 10, SS_LEFT
-    
-    GROUPBOX        "MODE3", 0, 95, 5, 40, 120
+	LTEXT           "変更したい色を\nクリックしてください", 0, 145, 130, 80, 20, SS_LEFT
+
+	GROUPBOX        "MODE1", 0, 5, 5, 45, 100
+	CONTROL         "", ID_COL16, WC_BUTTON, BS_OWNERDRAW, 10, 20, 6, 8
+	LTEXT           "Set1", 0, 10, 35, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL17, WC_BUTTON, BS_OWNERDRAW, 10, 45, 6, 8
+	CONTROL         "", ID_COL18, WC_BUTTON, BS_OWNERDRAW, 10, 55, 6, 8
+	LTEXT           "Set2", 0, 10, 70, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL19, WC_BUTTON, BS_OWNERDRAW, 10, 80, 6, 8
+	CONTROL         "", ID_COL20, WC_BUTTON, BS_OWNERDRAW, 10, 90, 6, 8
+	LTEXT           "黒",   0, 20, 20, 25, 10, SS_LEFT
+	LTEXT           "緑",   0, 20, 45, 25, 10, SS_LEFT
+	LTEXT           "深緑", 0, 20, 55, 25, 10, SS_LEFT
+	LTEXT           "橙",   0, 20, 80, 25, 10, SS_LEFT
+	LTEXT           "深橙", 0, 20, 90, 25, 10, SS_LEFT
+	
+	GROUPBOX        "MODE2/3", 0, 55, 5, 45, 100
+	CONTROL         "", ID_COL21, WC_BUTTON, BS_OWNERDRAW, 60, 20, 6, 8
+	CONTROL         "", ID_COL22, WC_BUTTON, BS_OWNERDRAW, 60, 30, 6, 8
+	CONTROL         "", ID_COL23, WC_BUTTON, BS_OWNERDRAW, 60, 40, 6, 8
+	CONTROL         "", ID_COL24, WC_BUTTON, BS_OWNERDRAW, 60, 50, 6, 8
+	CONTROL         "", ID_COL25, WC_BUTTON, BS_OWNERDRAW, 60, 60, 6, 8
+	CONTROL         "", ID_COL26, WC_BUTTON, BS_OWNERDRAW, 60, 70, 6, 8
+	CONTROL         "", ID_COL27, WC_BUTTON, BS_OWNERDRAW, 60, 80, 6, 8
+	CONTROL         "", ID_COL28, WC_BUTTON, BS_OWNERDRAW, 60, 90, 6, 8
+	LTEXT           "緑",       0, 70, 20, 25, 10, SS_LEFT
+	LTEXT           "黄",       0, 70, 30, 25, 10, SS_LEFT
+	LTEXT           "青",       0, 70, 40, 25, 10, SS_LEFT
+	LTEXT           "赤",       0, 70, 50, 25, 10, SS_LEFT
+	LTEXT           "白",       0, 70, 60, 25, 10, SS_LEFT
+	LTEXT           "シアン",   0, 70, 70, 25, 10, SS_LEFT
+	LTEXT           "マゼンタ", 0, 70, 80, 25, 10, SS_LEFT
+	LTEXT           "橙",       0, 70, 90, 25, 10, SS_LEFT
+
+/*
+	GROUPBOX        "MODE3", 0, 95, 5, 40, 120
     LTEXT           "Set1", 0, 99, 15, 30, 10, SS_LEFT
     CONTROL         "", ID_COL29, WC_BUTTON, BS_OWNERDRAW, 99, 25, 6, 8
     CONTROL         "", ID_COL30, WC_BUTTON, BS_OWNERDRAW, 99, 35, 6, 8
@@ -406,93 +407,94 @@ FONT 9, "MS UI Gothic"
     LTEXT           "シアン",   0, 108,  90, 25, 10, SS_LEFT
     LTEXT           "マゼンタ", 0, 108, 100, 25, 10, SS_LEFT
     LTEXT           "橙",       0, 108, 110, 25, 10, SS_LEFT
-    
-    GROUPBOX        "MODE4", 0, 140, 5, 85, 120
-    LTEXT           "Set1", 0, 144, 15, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL37, WC_BUTTON, BS_OWNERDRAW, 144, 25, 6, 8
-    CONTROL         "", ID_COL38, WC_BUTTON, BS_OWNERDRAW, 144, 35, 6, 8
-    
-    LTEXT           "にじみ1", 0, 144, 50, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL45, WC_BUTTON, BS_OWNERDRAW, 144, 60, 6, 8
-    CONTROL         "", ID_COL47, WC_BUTTON, BS_OWNERDRAW, 144, 70, 6, 8
-    CONTROL         "", ID_COL41, WC_BUTTON, BS_OWNERDRAW, 154, 60, 6, 8
-    CONTROL         "", ID_COL42, WC_BUTTON, BS_OWNERDRAW, 154, 70, 6, 8
-    CONTROL         "", ID_COL46, WC_BUTTON, BS_OWNERDRAW, 164, 60, 6, 8
-    CONTROL         "", ID_COL48, WC_BUTTON, BS_OWNERDRAW, 164, 70, 6, 8
-    
-    LTEXT           "にじみ2", 0, 144, 85, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL49, WC_BUTTON, BS_OWNERDRAW, 144, 95, 6, 8
-    CONTROL         "", ID_COL51, WC_BUTTON, BS_OWNERDRAW, 144, 105, 6, 8
-    CONTROL         "", ID_COL43, WC_BUTTON, BS_OWNERDRAW, 154, 95, 6, 8
-    CONTROL         "", ID_COL44, WC_BUTTON, BS_OWNERDRAW, 154, 105, 6, 8
-    CONTROL         "", ID_COL50, WC_BUTTON, BS_OWNERDRAW, 164, 95, 6, 8
-    CONTROL         "", ID_COL52, WC_BUTTON, BS_OWNERDRAW, 164, 105, 6, 8
-    
-    LTEXT           "Set2", 0, 184, 15, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL39, WC_BUTTON, BS_OWNERDRAW, 184, 25, 6, 8
-    CONTROL         "", ID_COL40, WC_BUTTON, BS_OWNERDRAW, 184, 35, 6, 8
-    
-    LTEXT           "にじみ1", 0, 184, 50, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL57, WC_BUTTON, BS_OWNERDRAW, 184, 60, 6, 8
-    CONTROL         "", ID_COL59, WC_BUTTON, BS_OWNERDRAW, 184, 70, 6, 8
-    CONTROL         "", ID_COL53, WC_BUTTON, BS_OWNERDRAW, 194, 60, 6, 8
-    CONTROL         "", ID_COL54, WC_BUTTON, BS_OWNERDRAW, 194, 70, 6, 8
-    CONTROL         "", ID_COL58, WC_BUTTON, BS_OWNERDRAW, 204, 60, 6, 8
-    CONTROL         "", ID_COL60, WC_BUTTON, BS_OWNERDRAW, 204, 70, 6, 8
-    LTEXT           "にじみ2", 0, 184, 85, 30, 10, SS_LEFT
-    CONTROL         "", ID_COL61, WC_BUTTON, BS_OWNERDRAW, 184, 95, 6, 8
-    CONTROL         "", ID_COL63, WC_BUTTON, BS_OWNERDRAW, 184, 105, 6, 8
-    CONTROL         "", ID_COL55, WC_BUTTON, BS_OWNERDRAW, 194, 95, 6, 8
-    CONTROL         "", ID_COL56, WC_BUTTON, BS_OWNERDRAW, 194, 105, 6, 8
-    CONTROL         "", ID_COL62, WC_BUTTON, BS_OWNERDRAW, 204, 95, 6, 8
-    CONTROL         "", ID_COL64, WC_BUTTON, BS_OWNERDRAW, 204, 105, 6, 8
-    
-    LTEXT           "深緑", 0, 153,  25, 25, 10, SS_LEFT
-    LTEXT           "緑",   0, 153,  35, 25, 10, SS_LEFT
-    LTEXT           "黒",   0, 193,  25, 25, 10, SS_LEFT
-    LTEXT           "白",   0, 193,  35, 25, 10, SS_LEFT
-    LTEXT           "赤",   0, 173,  60, 10, 10, SS_LEFT
-    LTEXT           "青",   0, 173,  70, 10, 10, SS_LEFT
-    LTEXT           "桃",   0, 173,  95, 10, 10, SS_LEFT
-    LTEXT           "緑",   0, 173, 105, 10, 10, SS_LEFT
-    LTEXT           "赤",   0, 213,  60, 10, 10, SS_LEFT
-    LTEXT           "青",   0, 213,  70, 10, 10, SS_LEFT
-    LTEXT           "桃",   0, 213,  95, 10, 10, SS_LEFT
-    LTEXT           "緑",   0, 213, 105, 10, 10, SS_LEFT
+*/
+
+	GROUPBOX        "MODE4", 0, 105, 5, 130, 100
+	LTEXT           "Set1", 0, 110, 20, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL29, WC_BUTTON, BS_OWNERDRAW, 110, 30, 6, 8
+	CONTROL         "", ID_COL30, WC_BUTTON, BS_OWNERDRAW, 110, 40, 6, 8
 	
-    GROUPBOX        "mkⅡ以降(RGB出力)", 0, 5, 105, 85, 95
-    CONTROL         "", ID_COL65, WC_BUTTON, BS_OWNERDRAW, 9, 115, 6, 8
-    CONTROL         "", ID_COL66, WC_BUTTON, BS_OWNERDRAW, 9, 125, 6, 8
-    CONTROL         "", ID_COL67, WC_BUTTON, BS_OWNERDRAW, 9, 135, 6, 8
-    CONTROL         "", ID_COL68, WC_BUTTON, BS_OWNERDRAW, 9, 145, 6, 8
-    CONTROL         "", ID_COL69, WC_BUTTON, BS_OWNERDRAW, 9, 155, 6, 8
-    CONTROL         "", ID_COL70, WC_BUTTON, BS_OWNERDRAW, 9, 165, 6, 8
-    CONTROL         "", ID_COL71, WC_BUTTON, BS_OWNERDRAW, 9, 175, 6, 8
-    CONTROL         "", ID_COL72, WC_BUTTON, BS_OWNERDRAW, 9, 185, 6, 8
-    CONTROL         "", ID_COL73, WC_BUTTON, BS_OWNERDRAW, 54, 115, 6, 8
-    CONTROL         "", ID_COL74, WC_BUTTON, BS_OWNERDRAW, 54, 125, 6, 8
-    CONTROL         "", ID_COL75, WC_BUTTON, BS_OWNERDRAW, 54, 135, 6, 8
-    CONTROL         "", ID_COL76, WC_BUTTON, BS_OWNERDRAW, 54, 145, 6, 8
-    CONTROL         "", ID_COL77, WC_BUTTON, BS_OWNERDRAW, 54, 155, 6, 8
-    CONTROL         "", ID_COL78, WC_BUTTON, BS_OWNERDRAW, 54, 165, 6, 8
-    CONTROL         "", ID_COL79, WC_BUTTON, BS_OWNERDRAW, 54, 175, 6, 8
-    CONTROL         "", ID_COL80, WC_BUTTON, BS_OWNERDRAW, 54, 185, 6, 8
-    LTEXT           "透明(黒)", 0, 18, 115, 25, 10, SS_LEFT
-    LTEXT           "橙",       0, 18, 125, 25, 10, SS_LEFT
-    LTEXT           "青緑",     0, 18, 135, 25, 10, SS_LEFT
-    LTEXT           "黄緑",     0, 18, 145, 25, 10, SS_LEFT
-    LTEXT           "青紫",     0, 18, 155, 25, 10, SS_LEFT
-    LTEXT           "赤紫",     0, 18, 165, 25, 10, SS_LEFT
-    LTEXT           "空色",     0, 18, 175, 25, 10, SS_LEFT
-    LTEXT           "灰色",     0, 18, 185, 25, 10, SS_LEFT
-    LTEXT           "黒",       0, 63, 115, 25, 10, SS_LEFT
-    LTEXT           "赤",       0, 63, 125, 25, 10, SS_LEFT
-    LTEXT           "緑",       0, 63, 135, 25, 10, SS_LEFT
-    LTEXT           "黄",       0, 63, 145, 25, 10, SS_LEFT
-    LTEXT           "青",       0, 63, 155, 25, 10, SS_LEFT
-    LTEXT           "マゼンタ", 0, 63, 165, 25, 10, SS_LEFT
-    LTEXT           "シアン",   0, 63, 175, 25, 10, SS_LEFT
-    LTEXT           "白",       0, 63, 185, 25, 10, SS_LEFT
+	LTEXT           "にじみ1", 0, 145, 20, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL37, WC_BUTTON, BS_OWNERDRAW, 145, 30, 6, 8
+	CONTROL         "", ID_COL39, WC_BUTTON, BS_OWNERDRAW, 145, 40, 6, 8
+	CONTROL         "", ID_COL33, WC_BUTTON, BS_OWNERDRAW, 155, 30, 6, 8
+	CONTROL         "", ID_COL34, WC_BUTTON, BS_OWNERDRAW, 155, 40, 6, 8
+	CONTROL         "", ID_COL38, WC_BUTTON, BS_OWNERDRAW, 165, 30, 6, 8
+	CONTROL         "", ID_COL40, WC_BUTTON, BS_OWNERDRAW, 165, 40, 6, 8
+	
+	LTEXT           "にじみ2", 0, 190, 20, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL41, WC_BUTTON, BS_OWNERDRAW, 190, 30, 6, 8
+	CONTROL         "", ID_COL43, WC_BUTTON, BS_OWNERDRAW, 190, 40, 6, 8
+	CONTROL         "", ID_COL35, WC_BUTTON, BS_OWNERDRAW, 200, 30, 6, 8
+	CONTROL         "", ID_COL36, WC_BUTTON, BS_OWNERDRAW, 200, 40, 6, 8
+	CONTROL         "", ID_COL42, WC_BUTTON, BS_OWNERDRAW, 210, 30, 6, 8
+	CONTROL         "", ID_COL44, WC_BUTTON, BS_OWNERDRAW, 210, 40, 6, 8
+	
+	LTEXT           "Set2", 0, 110, 55, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL31, WC_BUTTON, BS_OWNERDRAW, 110, 65, 6, 8
+	CONTROL         "", ID_COL32, WC_BUTTON, BS_OWNERDRAW, 110, 75, 6, 8
+	
+	LTEXT           "にじみ1", 0, 145, 55, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL49, WC_BUTTON, BS_OWNERDRAW, 145, 65, 6, 8
+	CONTROL         "", ID_COL51, WC_BUTTON, BS_OWNERDRAW, 145, 75, 6, 8
+	CONTROL         "", ID_COL45, WC_BUTTON, BS_OWNERDRAW, 155, 65, 6, 8
+	CONTROL         "", ID_COL46, WC_BUTTON, BS_OWNERDRAW, 155, 75, 6, 8
+	CONTROL         "", ID_COL50, WC_BUTTON, BS_OWNERDRAW, 165, 65, 6, 8
+	CONTROL         "", ID_COL52, WC_BUTTON, BS_OWNERDRAW, 165, 75, 6, 8
+	LTEXT           "にじみ2", 0, 190, 55, 30, 10, SS_LEFT
+	CONTROL         "", ID_COL53, WC_BUTTON, BS_OWNERDRAW, 190, 65, 6, 8
+	CONTROL         "", ID_COL55, WC_BUTTON, BS_OWNERDRAW, 190, 75, 6, 8
+	CONTROL         "", ID_COL47, WC_BUTTON, BS_OWNERDRAW, 200, 65, 6, 8
+	CONTROL         "", ID_COL48, WC_BUTTON, BS_OWNERDRAW, 200, 75, 6, 8
+	CONTROL         "", ID_COL54, WC_BUTTON, BS_OWNERDRAW, 210, 65, 6, 8
+	CONTROL         "", ID_COL56, WC_BUTTON, BS_OWNERDRAW, 210, 75, 6, 8
+	
+	LTEXT           "深緑", 0, 120, 30, 25, 10, SS_LEFT
+	LTEXT           "緑",   0, 120, 40, 25, 10, SS_LEFT
+	LTEXT           "黒",   0, 120, 65, 25, 10, SS_LEFT
+	LTEXT           "白",   0, 120, 75, 25, 10, SS_LEFT
+	LTEXT           "赤",   0, 175, 30, 10, 10, SS_LEFT
+	LTEXT           "青",   0, 175, 40, 10, 10, SS_LEFT
+	LTEXT           "赤",   0, 175, 65, 10, 10, SS_LEFT
+	LTEXT           "青",   0, 175, 75, 10, 10, SS_LEFT
+	LTEXT           "桃",   0, 220, 30, 10, 10, SS_LEFT
+	LTEXT           "緑",   0, 220, 40, 10, 10, SS_LEFT
+	LTEXT           "桃",   0, 220, 65, 10, 10, SS_LEFT
+	LTEXT           "緑",   0, 220, 75, 10, 10, SS_LEFT
+	
+	GROUPBOX        "mkⅡ以降 (RGB出力)", 0, 5, 110, 95, 100
+	CONTROL         "", ID_COL57, WC_BUTTON, BS_OWNERDRAW, 10, 125, 6, 8
+	CONTROL         "", ID_COL58, WC_BUTTON, BS_OWNERDRAW, 10, 135, 6, 8
+	CONTROL         "", ID_COL59, WC_BUTTON, BS_OWNERDRAW, 10, 145, 6, 8
+	CONTROL         "", ID_COL60, WC_BUTTON, BS_OWNERDRAW, 10, 155, 6, 8
+	CONTROL         "", ID_COL61, WC_BUTTON, BS_OWNERDRAW, 10, 165, 6, 8
+	CONTROL         "", ID_COL62, WC_BUTTON, BS_OWNERDRAW, 10, 175, 6, 8
+	CONTROL         "", ID_COL63, WC_BUTTON, BS_OWNERDRAW, 10, 185, 6, 8
+	CONTROL         "", ID_COL64, WC_BUTTON, BS_OWNERDRAW, 10, 195, 6, 8
+	CONTROL         "", ID_COL65, WC_BUTTON, BS_OWNERDRAW, 60, 125, 6, 8
+	CONTROL         "", ID_COL66, WC_BUTTON, BS_OWNERDRAW, 60, 135, 6, 8
+	CONTROL         "", ID_COL67, WC_BUTTON, BS_OWNERDRAW, 60, 145, 6, 8
+	CONTROL         "", ID_COL68, WC_BUTTON, BS_OWNERDRAW, 60, 155, 6, 8
+	CONTROL         "", ID_COL69, WC_BUTTON, BS_OWNERDRAW, 60, 165, 6, 8
+	CONTROL         "", ID_COL70, WC_BUTTON, BS_OWNERDRAW, 60, 175, 6, 8
+	CONTROL         "", ID_COL71, WC_BUTTON, BS_OWNERDRAW, 60, 185, 6, 8
+	CONTROL         "", ID_COL72, WC_BUTTON, BS_OWNERDRAW, 60, 195, 6, 8
+	LTEXT           "透明(黒)", 0, 20, 125, 25, 10, SS_LEFT
+	LTEXT           "橙",       0, 20, 135, 25, 10, SS_LEFT
+	LTEXT           "青緑",     0, 20, 145, 25, 10, SS_LEFT
+	LTEXT           "黄緑",     0, 20, 155, 25, 10, SS_LEFT
+	LTEXT           "青紫",     0, 20, 165, 25, 10, SS_LEFT
+	LTEXT           "赤紫",     0, 20, 175, 25, 10, SS_LEFT
+	LTEXT           "空色",     0, 20, 185, 25, 10, SS_LEFT
+	LTEXT           "灰色",     0, 20, 195, 25, 10, SS_LEFT
+	LTEXT           "黒",       0, 70, 125, 25, 10, SS_LEFT
+	LTEXT           "赤",       0, 70, 135, 25, 10, SS_LEFT
+	LTEXT           "緑",       0, 70, 145, 25, 10, SS_LEFT
+	LTEXT           "黄",       0, 70, 155, 25, 10, SS_LEFT
+	LTEXT           "青",       0, 70, 165, 25, 10, SS_LEFT
+	LTEXT           "マゼンタ", 0, 70, 175, 25, 10, SS_LEFT
+	LTEXT           "シアン",   0, 70, 185, 25, 10, SS_LEFT
+	LTEXT           "白",       0, 70, 195, 25, 10, SS_LEFT
 }
 
 

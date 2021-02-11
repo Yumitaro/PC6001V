@@ -557,10 +557,8 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 static const std::vector<std::string> JColorName = {
 	"MODE1,2 黒(ボーダー)",
 	"MODE1 Set1 緑",			"MODE1 Set1 深緑",			"MODE1 Set2 橙",			"MODE1 Set2 深橙",
-	"MODE2 緑",					"MODE2 黄",					"MODE2 青",					"MODE2 赤",
-	"MODE2 白",					"MODE2 シアン",				"MODE2 マゼンタ",			"MODE2 橙",
-	"MODE3 Set1 緑",			"MODE3 Set1 黄",			"MODE3 Set1 青",			"MODE3 Set1 赤",
-	"MODE3 Set2 白",			"MODE3 Set2 シアン",		"MODE3 Set2 マゼンタ",		"MODE3 Set2 橙",
+	"MODE2/3 緑",				"MODE2/3 黄",				"MODE2/3 青",				"MODE2/3 赤",
+	"MODE2/3 白",				"MODE2/3 シアン",			"MODE2/3 マゼンタ",			"MODE2/3 橙",
 	"MODE4 Set1 深緑",			"MODE4 Set1 緑",			"MODE4 Set2 黒",			"MODE4 Set2 白",
 	"MODE4 Set1 にじみ 赤",		"MODE4 Set1 にじみ 青",		"MODE4 Set1 にじみ 桃",		"MODE4 Set1 にじみ 緑",
 	"MODE4 Set1 にじみ 明赤",	"MODE4 Set1 にじみ 暗赤",	"MODE4 Set1 にじみ 明青",	"MODE4 Set1 にじみ 暗青",
@@ -568,10 +566,10 @@ static const std::vector<std::string> JColorName = {
 	"MODE4 Set2 にじみ 赤",		"MODE4 Set2 にじみ 青",		"MODE4 Set2 にじみ 桃",		"MODE4 Set2 にじみ 緑",
 	"MODE4 Set2 にじみ 明赤",	"MODE4 Set2 にじみ 暗赤",	"MODE4 Set2 にじみ 明青",	"MODE4 Set2 にじみ 暗青",
 	"MODE4 Set2 にじみ 明桃",	"MODE4 Set2 にじみ 暗桃",	"MODE4 Set2 にじみ 明緑",	"MODE4 Set2 にじみ 暗緑",
-	"mkⅡ～ 透明(黒)",			"mkⅡ～ 橙",				"mkⅡ～ 青緑",				"mkⅡ～ 黄緑",
-	"mkⅡ～ 青紫",				"mkⅡ～ 赤紫",				"mkⅡ～ 空色",				"mkⅡ～ 灰色",
-	"mkⅡ～ 黒",				"mkⅡ～ 赤",				"mkⅡ～ 緑",				"mkⅡ～ 黄",
-	"mkⅡ～ 青",				"mkⅡ～ マゼンタ",			"mkⅡ～ シアン",			"mkⅡ～ 白"
+	"RGB 透明(黒)",				"RGB 橙",					"RGB 青緑",					"RGB 黄緑",
+	"RGB 青紫",					"RGB 赤紫",					"RGB 空色",					"RGB 灰色",
+	"RGB 黒",					"RGB 赤",					"RGB 緑",					"RGB 黄",
+	"RGB 青",					"RGB マゼンタ",				"RGB シアン",				"RGB 白"
 };
 
 
