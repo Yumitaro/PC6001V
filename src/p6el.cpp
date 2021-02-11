@@ -738,15 +738,15 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		Start();
 		break;
 		
-	case KVC_MUHENKAN:		// どこでもSAVE
+	case KVC_MUHENKAN:		// どこでもSAVE(スロット使用)
 		Stop();
-		DokoDemoSave( 1 );
+		DokoDemoSaveSlot( 1 );
 		Start();
 		break;
 		
-	case KVC_HENKAN:		// どこでもLOAD
+	case KVC_HENKAN:		// どこでもLOAD(スロット使用)
 		Stop();
-		DokoDemoLoad( 1 );
+		UI_DokoLoadSlot( 1 );
 		Start();
 		break;
 		
@@ -760,7 +760,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 ////////////////////////////////////////////////////////////////
 // 簡易どこでもSAVE(スロット使用)
 ////////////////////////////////////////////////////////////////
-void EL6::DokoDemoSave( int slot )
+void EL6::DokoDemoSaveSlot( int slot )
 {
 	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		UI_ReplayDokoSave();
@@ -784,7 +784,7 @@ void EL6::DokoDemoSave( int slot )
 ////////////////////////////////////////////////////////////////
 // 簡易どこでもLOAD(スロット使用)
 ////////////////////////////////////////////////////////////////
-void EL6::DokoDemoLoad( int slot )
+void EL6::DokoDemoLoadSlot( int slot )
 {
 	if( REPLAY::GetStatus() == ST_REPLAYREC ){
 		UI_ReplayDokoLoad();
@@ -1728,6 +1728,20 @@ void EL6::UI_DokoLoad( const P6VPATH& path )
 
 
 ////////////////////////////////////////////////////////////////
+// UI:どこでもLOAD(スロット使用)
+//
+// 引数:	int			スロット番号
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_DokoLoadSlot( int slot )
+{
+	if( OSD_Message( GetWindowHandle(), GetText( T_DOKOSLOT ), GetText( T_DOKOC ), OSDM_YESNO | OSDM_ICONQUESTION ) == OSDR_YES ){
+		DokoDemoLoadSlot( slot );
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
 // UI:リプレイ保存
 //
 // 引数:	path		ファイルパスへの参照
@@ -1874,6 +1888,8 @@ void EL6::UI_AVISaveStart( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_AVISaveStop( void )
 {
+if( !AVI6::IsAVI() ){ return; }
+	
 	AVI6::StopAVI();
 	
 	// 通常画面設定に戻す
@@ -2231,9 +2247,6 @@ void EL6::UI_Config( void )
 		
 		// [PATH] ------------------------------------------------------
 		vm->voice->SetPath( cfg->GetValue( CF_WavePath ) );			// WAVEパス取得
-		
-		// [KEY] -------------------------------------------------------
-		OSD_SetKeyRepeat( cfg->GetValue( CV_KeyRepeat ) );			// キーリピート
 		
 		// [COLOR] -----------------------------------------------------
 		SetPalette();												// パレット設定

@@ -45,7 +45,7 @@ public:
 	KEY6( VM6*, const ID& );
 	virtual ~KEY6();
 	
-	bool Init( int );									// 初期化
+	bool Init();										// 初期化
 	void Reset();										// リセット
 	
 	void UpdateMatrixKey( const PCKEYsym, const bool );	// キーマトリクス更新(キー)

@@ -151,7 +151,7 @@ public:
 	BYTE MemFetch( WORD, int* = nullptr );				// フェッチ(M1)
 	BYTE MemRead( WORD, int* = nullptr );				// メモリリード
 	void MemWrite( WORD, BYTE, int* = nullptr );		// メモリライト
-	void MemSetCGBank( bool );							// CG ROM BANK を切り替える
+	void MemSetCGBank( bool );							// CG ROM BANK 選択
 	BYTE MemReadSysRom( WORD ) const;					// 直接読込み
 	BYTE MemReadIntRam( WORD ) const;					// 直接読込み
 	BYTE MemReadExtRom( WORD ) const;					// 直接読込み

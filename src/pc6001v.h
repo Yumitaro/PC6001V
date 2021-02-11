@@ -28,7 +28,6 @@
 /////////////////////////////////////////////////////////////////////////////
 #define	DEFAULT_MODEL			(0)					// 機種 60:PC-6001 61:PC-6001A 62:PC-6001mkⅡ 66:PC-6601 64:PC-6001mkⅡSR 68:PC-6601SR (0:自動選定)
 #define	DEFAULT_USEEXTRAM		(1)					// 拡張RAM 0:なし 1:あり
-#define	DEFAULT_REPEAT			(70)				// キーリピートの間隔(単位:ms 0で無効)
 #define	DEFAULT_SAMPLERATE		(44100)				// サンプリングレート
 #define	DEFAULT_SOUNDBUF		(1)					// サウンドバッファ長倍率(基本長はVSYNC)
 #define	DEFAULT_MASTERVOL		(70)				// マスター音量
@@ -48,8 +47,8 @@
 #define	DEFAULT_MODE4COLOR		(1)					// モード４カラーモード 0:モノ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク
 #define	DEFAULT_SCANLINE		(true) 				// スキャンライン true:あり false:なし
 #define	DEFAULT_SCANLINEBR		(75)				// スキャンライン輝度 (0-100)%
-#define	DEFAULT_FILTERING		(true) 				// フィルタリング true:アンチエイリアシング false:ニアレストネイバー
 #define	DEFAULT_DISPNTSC		(true) 				// 4:3表示 true:有効 false:無効
+#define	DEFAULT_FILTERING		(true) 				// フィルタリング true:アンチエイリアシング false:ニアレストネイバー
 #define	DEFAULT_FRAMESKIP		(0)					// フレームスキップ
 #define	DEFAULT_WINDOWZOOM		(200)				// ウィンドウ表示倍率
 #define	DEFAULT_OVERCLOCK		(100)				// オーバークロック率
@@ -60,6 +59,9 @@
 #define	DEFAULT_AVIZOOM			(100) 				// ビデオキャプチャ時ウィンドウ表示倍率
 #define	DEFAULT_AVIFRMSKIP		(1)					// ビデオキャプチャ時フレームスキップ
 #define	DEFAULT_AVISCANLINE		(false)				// ビデオキャプチャ時スキャンライン true:あり false:なし
+#define	DEFAULT_AVISCANLINEBR	(75)				// ビデオキャプチャ時スキャンライン輝度 (0-100)%
+#define	DEFAULT_AVIDISPNTSC		(true) 				// ビデオキャプチャ時4:3表示 true:有効 false:無効
+#define	DEFAULT_AVIFILTERING	(true) 				// ビデオキャプチャ時フィルタリング true:アンチエイリアシング false:ニアレストネイバー
 #define	DEFAULT_CKQUIT			(false) 			// 終了時確認
 #define	DEFAULT_SAVEQUIT		(true) 				// 終了時INI保存
 #define	DEFAULT_EXCARTRIDGE		(0) 				// 拡張カートリッジ
@@ -72,8 +74,6 @@
 #define	MAX_BOOST				(10)				// BoostUp最大倍率 最大値
 #define	MIN_STOPBIT				(2)					// TAPEストップビット数 最小値
 #define	MAX_STOPBIT				(10)				// TAPEストップビット数 最大値
-#define	MIN_REPEAT				(10)				// キーリピートの間隔 最小値
-#define	MAX_REPEAT				(100)				// キーリピートの間隔 最大値
 #define	MIN_SAMPLERATE			(11025)				// サンプリングレート 最小値
 #define	MAX_SAMPLERATE			(44100)				// サンプリングレート 最大値
 #define	MIN_SOUNDBUF			(1)					// サウンドバッファ長倍率 最小値
@@ -164,12 +164,12 @@
 /////////////////////////////////////////////////////////////////////////////
 // 拡張カートリッジ定義
 /////////////////////////////////////////////////////////////////////////////
-#define	EXCSOL					0b1000000000000000				// 戦士のカートリッジ
-#define	EXCSND					0b0100000000000000				// サウンド出力あり
-#define	EXCFIX					0b0010000000000000				// ROM固定
-#define	EXCBUS					0b0001000000000000				// ROM バスアクセス
-#define	EXCROM					0b0000100000000000				// ROMあり
-#define	EXCRAM					0b0000010000000000				// RAMあり
+#define	EXCSOL					0b1000000000000000	// 戦士のカートリッジ
+#define	EXCSND					0b0100000000000000	// サウンド出力あり
+#define	EXCFIX					0b0010000000000000	// ROM固定
+#define	EXCBUS					0b0001000000000000	// ROM バスアクセス
+#define	EXCROM					0b0000100000000000	// ROMあり
+#define	EXCRAM					0b0000010000000000	// RAMあり
 
 #define	EXC6001					(              EXCFIX|EXCBUS|       EXCROM|1)	// PCS-6001R	拡張BASIC
 #define	EXC6005					(                     EXCBUS|       EXCROM|2)	// PC-6005		ROMカートリッジ

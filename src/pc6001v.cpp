@@ -289,7 +289,9 @@ int main( int argc, char* argv[] )
 	}while( Restart != EL6::Quit );
 	
 	// INIファイル書込み
-	if( Cfg->GetValue( CB_SaveQuit ) ) Cfg->Write();
+	if( Cfg->GetValue( CB_SaveQuit ) ){
+		Cfg->Write();
+	}
 	
 	// 終了処理
 	OSD_Quit();

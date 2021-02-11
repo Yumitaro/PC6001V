@@ -111,6 +111,7 @@ protected:
 	void UI_CartEject();											// UI:拡張カートリッジ 排出
 	void UI_DokoSave( const P6VPATH& = "" );						// UI:どこでもSAVE
 	void UI_DokoLoad( const P6VPATH& = "" );						// UI:どこでもLOAD
+	void UI_DokoLoadSlot( int );									// UI:どこでもLOAD(スロット使用)
 	void UI_ReplaySave( const P6VPATH& = "" );						// UI:リプレイ保存
 	void UI_ReplayResumeSave( const P6VPATH& = "" );				// UI:リプレイ保存再開
 	void UI_ReplayDokoLoad();										// UI:リプレイ中どこでもLOAD
@@ -189,8 +190,8 @@ public:
 	bool DokoDemoSave( const P6VPATH& );		// どこでもSAVE
 	bool DokoDemoLoad( const P6VPATH& );		// どこでもLOAD
 	bool CheckDokoVer( const P6VPATH& );		// どこでもLOADファイルのバージョンチェック
-	void DokoDemoSave( int );					// 簡易どこでもSAVE(スロット使用)
-	void DokoDemoLoad( int );					// 簡易どこでもLOAD(スロット使用)
+	void DokoDemoSaveSlot( int );				// 簡易どこでもSAVE(スロット使用)
+	void DokoDemoLoadSlot( int );				// 簡易どこでもLOAD(スロット使用)
 	// ---------------------------------------------------------
 };
 

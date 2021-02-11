@@ -23,6 +23,8 @@ enum TextID{
 	T_RESTARTI,				// "拡張カートリッジを挿入して再起動します。"
 	T_RESTARTE,				// "拡張カートリッジを排出して再起動します。"
 	T_RESETC,				// "リセット確認"
+	T_DOKOC,				// "どこでもLOAD確認"
+	T_DOKOSLOT,				// "どこでもLOADを実行してよろしいですか？"
 	
 	// INIファイル用メッセージ ------
 	// [CONFIG]
@@ -42,8 +44,8 @@ enum TextID{
 	TINI_Mode4Color,		// "MODE4カラーモード 0:モノクロ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク"
 	TINI_ScanLine,			// "スキャンライン Yes:あり No:なし"
 	TINI_ScanLineBr,		// "スキャンライン輝度 (0-100)%"
-	TINI_Filtering,			// "フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	TINI_DispNTSC,			// "4:3表示 Yes:有効 No:無効"
+	TINI_Filtering,			// "フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	TINI_FullScreen,		// "フルスクリーンモード Yes:有効 No:無効"
 	TINI_WindowZoom,		// "ウィンドウ表示倍率(%)"
 	TINI_DispStatus,		// "ステータスバー Yes:表示 No:非表示"
@@ -59,9 +61,12 @@ enum TextID{
 	TINI_TapeLPF,			// "TAPE LPFカットオフ周波数(0で無効)"
 	// [MOVIE]
 	TINI_AviBpp,			// "ビデオキャプチャ色深度 (16,24,32)"
-	TINI_AviZoom,			// "ビデオキャプチャ時ウィンドウ表示倍率 (100-400%)"
+	TINI_AviZoom,			// "ビデオキャプチャ時ウィンドウ表示倍率(%)"
 	TINI_AviFrameSkip,		// "ビデオキャプチャ時フレームスキップ"
 	TINI_AviScanLine,		// "ビデオキャプチャ時スキャンライン Yes:あり No:なし"
+	TINI_AviScanLineBr,		// "ビデオキャプチャ時スキャンライン輝度 (0-100)%"
+	TINI_AviDispNTSC,		// "ビデオキャプチャ時4:3表示 Yes:有効 No:無効"
+	TINI_AviFiltering,		// "ビデオキャプチャ時フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	// [FILES]
 	TINI_ExtRom,			// "拡張ROMファイル名"
 	TINI_tape,				// "TAPE(LODE)ファイル名(起動時に自動マウント)"
@@ -85,8 +90,6 @@ enum TextID{
 	TINI_SaveQuit,			// "終了時INIファイルを保存 Yes:する No:しない"
 	// [OPTION]
 	TINI_ExCartridge,		// "拡張カートリッジ 0:なし"
-	// [KEY]
-	TINI_KeyRepeat,			// "キーリピートの間隔(単位:ms 0で無効)"
 	
 	// どこでもSAVE用メッセージ ------
 	TDOK_TITLE,				// "; === PC6001V どこでもSAVEファイル ===\n\n"

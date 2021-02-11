@@ -1,5 +1,4 @@
 #define ID_G1			2001
-#define ID_G7			2002
 #define ID_G8			2003
 #define ID_G13			2004
 
@@ -17,6 +16,8 @@
 #define ID_CB14			2214
 #define ID_CB15			2215
 #define ID_CBAVISLINE	2216
+#define ID_AVINTSC		2217
+#define ID_AVIFILT		2218
 
 #define ID_TBPSG		2301
 #define ID_TBTAPE		2302
@@ -61,6 +62,7 @@
 #define ID_ZOOM			2513
 #define ID_AVIZOOM		2514
 #define ID_FDDRV		2515
+#define ID_AVISLNBR		2516
 
 #define ID_FEXROM		2601
 #define ID_FTPLD		2602
@@ -68,8 +70,7 @@
 #define ID_FDISK1		2604
 #define ID_FDISK2		2605
 #define ID_FPRINT		2606
-#define ID_KEYREP		2607
-#define ID_OVERCLK		2608
+#define ID_OVERCLK		2607
 
 #define ID_COL16		2716
 #define ID_COL17		2717
@@ -138,7 +139,7 @@
 #define ID_COL80		2780
 
 #define ID_LBMODEL		2801
-#define ID_LBEXCART	2802
+#define ID_LBEXCART		2802
 #define ID_LBMODE4		2803
 #define ID_LBFSKIP		2804
 #define ID_LBAVIBPP		2805
@@ -153,18 +154,15 @@
 #define ID_SPBOOST62	2906
 #define ID_SPSTOPBIT	2907
 #define ID_SPPSGLPF		2908
-#define ID_SPKEYREP		2909
-#define ID_SPFDDRV		2910
+#define ID_SPFDDRV		2909
+#define ID_SPAVISLNBR	2910
 
 #define ID_CNFG1		3001
 #define ID_CNFG2		3002
 #define ID_CNFG3		3003
 #define ID_CNFG4		3004
-#define ID_CNFG5		3005
-#define ID_CNFGCL1		3006
-#define ID_CNFGCL2		3007
-#define ID_CNFGETC		3008
-#define ID_CNFGIN		3009
+#define ID_CNFGCL		3005
+#define ID_CNFGETC		3006
 
 #define ID_VER			4001
 #define ID_URL			4002

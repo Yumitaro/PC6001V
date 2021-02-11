@@ -427,18 +427,15 @@ KEY62::~KEY62( void )
 ////////////////////////////////////////////////////////////////
 // 初期化
 //
-// 引数:	repeat	キーリピートの間隔(ms) 0で無効
+// 引数:	なし
 // 返値:	bool	true:成功 false:失敗
 ////////////////////////////////////////////////////////////////
-bool KEY6::Init( int repeat )
+bool KEY6::Init( void )
 {
 	PRINTD( KEY_LOG, "[KEY][Init]\n" );
 	
 	// 特殊キー フラグ初期化
 	Reset();
-	
-	// キーリピート設定
-	if( repeat ) OSD_SetKeyRepeat( repeat );
 	
 	return true;
 }
