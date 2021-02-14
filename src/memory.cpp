@@ -105,8 +105,10 @@ enum {
 const std::vector<ROMINFO> NOROM     = {};
 
 // PC-6001                                 ROMファイル名	サイズ		CRC32
-const std::vector<ROMINFO> SYSROM160 = { { "BASICROM.60",	0x04000,	0x54c03109 } };
-const std::vector<ROMINFO> CGROM160  = { { "CGROM60.60",	0x01000,	0xb0142d32 } };
+const std::vector<ROMINFO> SYSROM160 = { { "BASICROM.60",	0x04000,	0x54c03109 },
+										 { "BASICROM.60",	0x04000,	0          } };	// 互換BASIC
+const std::vector<ROMINFO> CGROM160  = { { "CGROM60.60",	0x01000,	0xb0142d32 },
+										 { "CGROM60.60",	0x01000,	0          } };	// 互換BASIC
 
 // PC-6001A                                ROMファイル名	サイズ		CRC32
 const std::vector<ROMINFO> SYSROM161 = { { "BASICROM.61",	0x04000,	0xfa8e88d9 } };
@@ -114,18 +116,26 @@ const std::vector<ROMINFO> CGROM161  = { { "CGROM60.61",	0x01000,	0x49c21d08 } }
 
 // PC-6001mk2                              ROMファイル名	サイズ		CRC32
 const std::vector<ROMINFO> SYSROM162 = { { "BASICROM.62",	0x08000,	0x950ac401 },	// 前期
-										 { "BASICROM.62",	0x08000,	0xd7e61957 } };	// 後期
-const std::vector<ROMINFO> CGROM162  = { { "CGROM60.62",	0x02000,	0x81eb5d95 } };
-const std::vector<ROMINFO> CGROM262  = { { "CGROM60m.62",	0x02000,	0x3ce48c33 } };
+										 { "BASICROM.62",	0x08000,	0xd7e61957 },	// 後期
+										 { "BASICROM.62",	0x08000,	0          } };	// 互換BASIC
+const std::vector<ROMINFO> CGROM162  = { { "CGROM60.62",	0x02000,	0x81eb5d95 },
+										 { "CGROM60.62",	0x02000,	0          } };	// 互換BASIC
+const std::vector<ROMINFO> CGROM262  = { { "CGROM60m.62",	0x02000,	0x3ce48c33 },
+										 { "CGROM60m.62",	0x02000,	0          } };	// 互換BASIC
 const std::vector<ROMINFO> KANJI62   = { { "KANJIROM.62",	0x08000,	0x20c8f3eb } };
-const std::vector<ROMINFO> VOICE62   = { { "VOICEROM.62",	0x04000,	0x49b4f917 } };
+const std::vector<ROMINFO> VOICE62   = { { "VOICEROM.62",	0x04000,	0x49b4f917 },
+										 { "VOICEROM.62",	0x04000,	0          } };	// 互換BASIC
 
 // PC-6601                                 ROMファイル名	サイズ		CRC32
-const std::vector<ROMINFO> SYSROM166 = { { "BASICROM.66",	0x08000,	0xc0b01772 } };
-const std::vector<ROMINFO> CGROM166  = { { "CGROM60.66",	0x02000,	0xd2434f29 } };
-const std::vector<ROMINFO> CGROM266  = { { "CGROM66.66",	0x02000,	0x3ce48c33 } };
+const std::vector<ROMINFO> SYSROM166 = { { "BASICROM.66",	0x08000,	0xc0b01772 },
+										 { "BASICROM.66",	0x08000,	0          } };	// 互換BASIC
+const std::vector<ROMINFO> CGROM166  = { { "CGROM60.66",	0x02000,	0xd2434f29 },
+										 { "CGROM60.66",	0x02000,	0          } };	// 互換BASIC
+const std::vector<ROMINFO> CGROM266  = { { "CGROM66.66",	0x02000,	0x3ce48c33 },
+										 { "CGROM66.66",	0x02000,	0          } };	// 互換BASIC
 const std::vector<ROMINFO> KANJI66   = { { "KANJIROM.66",	0x08000,	0x20c8f3eb } };
-const std::vector<ROMINFO> VOICE66   = { { "VOICEROM.66",	0x04000,	0x91d078c1 } };
+const std::vector<ROMINFO> VOICE66   = { { "VOICEROM.66",	0x04000,	0x91d078c1 },
+										 { "VOICEROM.66",	0x04000,	0          } };	// 互換BASIC
 
 // PC-6001mk2SR / PC-6601SR                ROMファイル名	サイズ		CRC32
 const std::vector<ROMINFO> SYSROM164 = { { "SYSTEMROM1.64",	0x10000,	0xb6fc2db2 },

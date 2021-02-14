@@ -101,8 +101,10 @@ const P6VPATH& OSD_GetConfigPath( void )
 		if( GetModuleFileName( nullptr, str, sizeof(str) ) ){
 			PathRemoveFileSpec( str );	// ファイル名とデリミタを削除
 			PathAddBackslash( str );
-			ConfigPath = str;
 		}
+		std::string sstr = str;
+		OSD_SJIStoUTF8( sstr );
+		ConfigPath = STR2P6VPATH( sstr );
 	}
 	PRINTD( OSD_LOG, "%s\n", P6VPATH2STR( ConfigPath ).c_str() );
 	
