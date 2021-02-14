@@ -58,22 +58,27 @@ bool CheckFont( const std::shared_ptr<CFG6>& cfg )
 ///////////////////////////////////////////////////////////
 bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 {
-	P6VPATH rpath;
-	
 	int IniModel = cfg->GetValue( CV_Model );
 	
 	// 自動選定の時は飛ばす
 	if( IniModel ){
 		std::string files;
 		bool resf = false;
-		bool res = true;
+		bool res  = true;
 		
 		const auto& roms = GetRomSetList( IniModel );
-		for( auto &rom : roms ){
+		for( auto& rom : roms ){
 			resf = false;
-			for( auto &file : rom ){
-				OSD_AddPath( rpath, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
-				if( OSD_FileExist( rpath ) ) resf = true;
+			for( auto& file : rom ){
+				std::vector<P6VPATH> ffiles;
+				ffiles.clear();
+				OSD_FindFile( cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ), ffiles );
+				for( auto& ff : ffiles ){
+					if( OSD_GetFileSize( ff ) == file.Size ){
+						resf = true;
+						break;
+					}
+				}
 			}
 			if( !resf ){
 				res = false;
@@ -101,11 +106,17 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 		bool resf = false;
 		bool res = true;
 		const auto& roms = GetRomSetList( models[i] );
-		for( auto &rom : roms ){
+		for( auto& rom : roms ){
 			resf = false;
-			for( auto &file : rom ){
-				OSD_AddPath( rpath, cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ) );
-				if( OSD_FileExist( rpath ) ) resf = true;
+			for( auto& file : rom ){
+				std::vector<P6VPATH> ffiles;
+				OSD_FindFile( cfg->GetValue( CF_RomPath ), STR2P6VPATH( file.FileName ), ffiles );
+				for( auto& ff : ffiles ){
+					if( file.Size == OSD_GetFileSize( ff ) ){
+						resf = true;
+						break;
+					}
+				}
 			}
 			if( !resf ){ res = false; }
 		}
@@ -172,7 +183,7 @@ int main( int argc, char* argv[] )
 	
 	// 各種フォルダの存在チェック&作成
 	std::vector<TCPath> paths = { CF_RomPath, CF_TapePath, CF_DiskPath, CF_ExtRomPath, CF_ImgPath, CF_WavePath, CF_FontPath, CF_DokoPath };
-	for( auto &cf : paths ){
+	for( auto& cf : paths ){
 		if( !OSD_FileExist( Cfg->GetValue( cf ) ) ) OSD_CreateFolder( Cfg->GetValue( cf ) );
 	}
 	
@@ -247,15 +258,7 @@ int main( int argc, char* argv[] )
 		}
 		
 		switch( Restart ){
-		case EL6::Dokoload:	// どこでもLOAD?
-			if( !P6Core->CheckDokoVer( Cfg->GetDokoFile() ) ){
-				int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDM_YESNO | OSDM_ICONWARNING );
-				Error::Clear();
-				if( ret != OSDR_YES ){
-					Cfg->SetDokoFile( "" );
-					break;
-				}
-			}
+		case EL6::Dokoload:	// どこでもLOAD
 			if( !P6Core->DokoDemoLoad( Cfg->GetDokoFile() ) ){
 				// 失敗した場合
 				OSD_Message( P6Core->GetWindowHandle(), Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
@@ -264,14 +267,15 @@ int main( int argc, char* argv[] )
 			Cfg->SetDokoFile( "" );
 			break;
 			
-		case EL6::Replay:	// リプレイ再生?
+		case EL6::ReplayPlay:	// リプレイ再生
+		case EL6::ReplayResume:	// リプレイ保存再開
+		case EL6::ReplayMovie:	// リプレイを動画に変換
 			if( !P6Core->DokoDemoLoad( Cfg->GetDokoFile() ) ){
 				// 失敗した場合
 				OSD_Message( P6Core->GetWindowHandle(), Error::GetErrorText(), GetText( TERR_ERROR ), OSDR_OK | OSDM_ICONERROR );
 				Error::Clear();
+				Cfg->SetDokoFile( "" );
 			}
-			P6Core->REPLAY::StartReplay( Cfg->GetDokoFile() );
-			Cfg->SetDokoFile( "" );
 			break;
 			
 		default:
@@ -281,9 +285,7 @@ int main( int argc, char* argv[] )
 		
 		// 再起動でなければP6VM実行
 		if( Restart != EL6::Restart ){
-			P6Core->Start();
-			Restart = P6Core->EventLoop();
-			P6Core->Stop();
+			Restart = P6Core->EventLoop( Restart );
 		}
 		
 	}while( Restart != EL6::Quit );

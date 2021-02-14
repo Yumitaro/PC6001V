@@ -117,51 +117,61 @@ void EL6::ShowPopupMenu( int x, int y )
 		EnableMenuItem( hsm, ID_AVISAVE, MF_BYCOMMAND | MF_GRAYED );
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
-	// リプレイ記録
+	
+	// リプレイ保存/停止
 	minfo.fMask      = MIIM_TYPE;
 	minfo.dwTypeData = nullptr;
 	GetMenuItemInfo( hsm, ID_REPLAYSAVE, MF_BYCOMMAND, &minfo );
 	minfo.dwTypeData = (char*)(( REPLAY::GetStatus() == ST_REPLAYREC ) ? GetTextConv( hinst, IDS_REP1 ) : GetTextConv( hinst, IDS_REP0 ));
 	SetMenuItemInfo( hsm, ID_REPLAYSAVE, MF_BYCOMMAND, &minfo );
-	// モニタモード or ブレークポインタが設定されている
-	// またはリプレイ再生中だったらリプレイ記録無効
-	if( 
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		vm->IsMonitor() || vm->bp->GetNum() ||
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		( REPLAY::GetStatus() == ST_REPLAYPLAY ) ){
-		EnableMenuItem( hsm, ID_REPLAYSAVE,   MF_BYCOMMAND | MF_GRAYED );
-		EnableMenuItem( hsm, ID_REPLAYRESUME, MF_BYCOMMAND | MF_GRAYED );
-	}
-	// 途中保存、やり直しはリプレイ記録中のみ
-	if(
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		vm->IsMonitor() || vm->bp->GetNum() ||
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		( REPLAY::GetStatus() != ST_REPLAYREC ) ){
-		EnableMenuItem( hsm, ID_REPLAYDOKOSAVE, MF_BYCOMMAND | MF_GRAYED );
-		EnableMenuItem( hsm, ID_REPLAYDOKOLOAD, MF_BYCOMMAND | MF_GRAYED );
-	}
 	
-	// リプレイ再生
+	// リプレイ再生/停止
 	minfo.fMask      = MIIM_TYPE;
 	minfo.dwTypeData = nullptr;
-	GetMenuItemInfo( hsm, ID_REPLAYLOAD, MF_BYCOMMAND, &minfo );
+	GetMenuItemInfo( hsm, ID_REPLAYPLAY, MF_BYCOMMAND, &minfo );
 	minfo.dwTypeData = (char*)(( REPLAY::GetStatus() == ST_REPLAYPLAY ) ? GetTextConv( hinst, IDS_REP3 ): GetTextConv( hinst, IDS_REP2 ));
-	SetMenuItemInfo( hsm, ID_REPLAYLOAD, MF_BYCOMMAND, &minfo );
-	// モニタモード or ブレークポインタが設定されている
-	// またはリプレイ記録中だったらリプレイ再生無効
-	if(
+	SetMenuItemInfo( hsm, ID_REPLAYPLAY, MF_BYCOMMAND, &minfo );
+	
+	// モニタモード or ブレークポインタが設定されていたらリプレイ無効
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		vm->IsMonitor() || vm->bp->GetNum() ||
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		( REPLAY::GetStatus() == ST_REPLAYREC ) ){
-		EnableMenuItem( hsm, ID_REPLAYLOAD,   MF_BYCOMMAND | MF_GRAYED );
-		EnableMenuItem( hsm, ID_REPLAYRESUME, MF_BYCOMMAND | MF_GRAYED );
+	if( vm->IsMonitor() || vm->bp->GetNum() ){
+		EnableMenuItem( hsm, ID_REPLAYPLAY,     MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYSAVE,     MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYRESUME,   MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYDOKOSAVE, MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYDOKOLOAD, MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYROLLBACK, MF_BYCOMMAND | MF_GRAYED );
+		EnableMenuItem( hsm, ID_REPLAYMOVIE,    MF_BYCOMMAND | MF_GRAYED );
 	}
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
+	// リプレイ 不要項目削除
+	switch( REPLAY::GetStatus() ){
+	case ST_REPLAYPLAY:	// リプレイ再生中
+		RemoveMenu( hsm, ID_REPLAYSAVE,     MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYRESUME,   MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYDOKOSAVE, MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYDOKOLOAD, MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYROLLBACK, MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYMOVIE,    MF_BYCOMMAND );
+		break;
+		
+	case ST_REPLAYREC:	// リプレイ記録中
+		RemoveMenu( hsm, ID_REPLAYPLAY,     MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYRESUME,   MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYMOVIE,    MF_BYCOMMAND );
+		break;
+		
+	default:
+		RemoveMenu( hsm, ID_REPLAYDOKOSAVE, MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYDOKOLOAD, MF_BYCOMMAND );
+		RemoveMenu( hsm, ID_REPLAYROLLBACK, MF_BYCOMMAND );
+	}
+	
 	
 	// TAPE
 	EnableMenuItem( hsm, ID_TAPEEJECT, MF_BYCOMMAND | vm->cmtl->GetFile().empty() ? MF_GRAYED : MF_ENABLED );
+	
 	
 	// DISK
 	switch( vm->disk->GetDrives() ){
@@ -176,6 +186,7 @@ void EL6::ShowPopupMenu( int x, int y )
 		EnableMenuItem( hsm, ID_DISKEJECT1, MF_BYCOMMAND | vm->disk->GetFile(0).empty() ? MF_GRAYED : MF_ENABLED );
 		EnableMenuItem( hsm, ID_DISKEJECT2, MF_BYCOMMAND | vm->disk->GetFile(1).empty() ? MF_GRAYED : MF_ENABLED );
 	}
+	
 	
 	// 拡張カートリッジ
 	switch( vm->mem->GetCartridge() ){
@@ -214,16 +225,20 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuRadioItem( hsm, ID_JOY100, ID_JOY105, (joy->GetID(0) < 0) ? ID_JOY100 : ID_JOY101 + joy->GetID(0), MF_BYCOMMAND );
 	CheckMenuRadioItem( hsm, ID_JOY200, ID_JOY205, (joy->GetID(1) < 0) ? ID_JOY200 : ID_JOY201 + joy->GetID(1), MF_BYCOMMAND );
 	
+	
 	// MODE4カラー
 	CheckMenuRadioItem( hsm, ID_M4MONO, ID_M4GRPK, ID_M4MONO + vm->vdg->GetMode4Color(), MF_BYCOMMAND );
 	
+	
 	// フレームスキップ
 	CheckMenuRadioItem( hsm, ID_FSKP0, ID_FSKP5, ID_FSKP0 + cfg->GetValue( CV_FrameSkip ), MF_BYCOMMAND );
+	
 	
 	// ウィンドウ表示倍率
 	if( !(cfg->GetValue( CV_WindowZoom ) % 100) ){
 		CheckMenuRadioItem( hsm, ID_ZOOM100, ID_ZOOM300, ID_ZOOM100 + cfg->GetValue( CV_WindowZoom ) / 100 - 1, MF_BYCOMMAND );
 	}
+	
 	
 	// サンプリングレート
 	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CV_SampleRate )/11025)>>1), MF_BYCOMMAND );
@@ -237,11 +252,13 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuItem( hsm, ID_SCANLINE,  cfg->GetValue( CB_ScanLine )   ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_FILTERING, cfg->GetValue( CB_Filtering )  ? MF_CHECKED   : MF_UNCHECKED );
 	
+	// モニタモード
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	CheckMenuItem( hsm, ID_MONITOR,   vm->IsMonitor()		? MF_CHECKED   : MF_UNCHECKED );
 	#else
 	DeleteMenu( hsm, MDEBUG, MF_BYPOSITION );
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
 	
 	// フルスクリーン時はダイアログを表示するコマンドを封印
 	

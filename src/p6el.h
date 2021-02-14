@@ -40,7 +40,9 @@ public:
 		Quit = 0,
 		Restart,
 		Dokoload,
-		Replay,
+		ReplayResume,
+		ReplayPlay,
+		ReplayMovie,
 		Error
 	};
 	
@@ -110,14 +112,18 @@ protected:
 	void UI_CartInsert( WORD, const P6VPATH& = "" );				// UI:拡張カートリッジ 挿入
 	void UI_CartInsertNoRom( WORD );								// UI:拡張カートリッジ 挿入(ROMなし)
 	void UI_CartEject();											// UI:拡張カートリッジ 排出
+	bool UI_CheckDokoVer( const P6VPATH& );							// UI:どこでもSAVEファイルのバージョンチェック
 	void UI_DokoSave( const P6VPATH& = "" );						// UI:どこでもSAVE
 	void UI_DokoLoad( const P6VPATH& = "" );						// UI:どこでもLOAD
-	void UI_DokoLoadSlot( int );									// UI:どこでもLOAD(スロット使用)
-	void UI_ReplaySave( const P6VPATH& = "" );						// UI:リプレイ保存
+	void UI_DokoSave( int );										// UI:どこでもSAVE(スロット使用)
+	void UI_DokoLoad( int, bool = false );							// UI:どこでもLOAD(スロット使用)
+	void UI_ReplaySave( const P6VPATH& = "" );						// UI:リプレイ保存/停止
 	void UI_ReplayResumeSave( const P6VPATH& = "" );				// UI:リプレイ保存再開
-	void UI_ReplayDokoLoad();										// UI:リプレイ中どこでもLOAD
 	void UI_ReplayDokoSave();										// UI:リプレイ中どこでもSAVE
-	void UI_ReplayLoad( const P6VPATH& = "" );						// UI:リプレイ再生
+	void UI_ReplayDokoLoad();										// UI:リプレイ中どこでもLOAD
+	void UI_ReplayRollback();										// UI:リプレイ中どこでもLOADを巻き戻す
+	void UI_ReplayPlay( const P6VPATH& = "" );						// UI:リプレイ再生/停止
+	void UI_ReplayMovie();											// UI:リプレイを動画に変換
 	void UI_AVISaveStart();											// UI:ビデオキャプチャ開始
 	void UI_AVISaveStop();											// UI:ビデオキャプチャ停止
 	void UI_SnapShot();												// UI:スナップショット
@@ -158,11 +164,6 @@ protected:
 	
 	bool ReplayRecStart( const P6VPATH& );					// リプレイ保存開始
 	bool ReplayRecResume( const P6VPATH& );					// リプレイ保存再開
-	bool ReplayRecDokoLoad();								// リプレイ中どこでもLOAD
-	bool ReplayRecDokoSave();								// リプレイ中どこでもSAVE
-	void ReplayRecStop();									// リプレイ保存停止
-	void ReplayPlayStart( const P6VPATH& );					// リプレイ再生開始
-	void ReplayPlayStop();									// リプレイ再生停止
 	
 	bool IsAutoKey();										// 自動キー入力実行中?
 	bool SetAutoKeyFile( const P6VPATH& );					// 自動キー入力文字列設定(ファイルから)
@@ -183,16 +184,14 @@ public:
 	bool Start();								// 動作開始
 	void Stop();								// 動作停止
 	
-	ReturnCode EventLoop();						// イベントループ
+	ReturnCode EventLoop( ReturnCode );			// イベントループ
 	
 	HWINDOW GetWindowHandle();					// ウィンドウハンドル取得
 	
 	// ---------------------------------------------------------
 	bool DokoDemoSave( const P6VPATH& );		// どこでもSAVE
 	bool DokoDemoLoad( const P6VPATH& );		// どこでもLOAD
-	bool CheckDokoVer( const P6VPATH& );		// どこでもLOADファイルのバージョンチェック
-	void DokoDemoSaveSlot( int );				// 簡易どこでもSAVE(スロット使用)
-	void DokoDemoLoadSlot( int );				// 簡易どこでもLOAD(スロット使用)
+	bool CheckDokoVer( const P6VPATH& );		// どこでもSAVEファイルのバージョンチェック
 	// ---------------------------------------------------------
 };
 

@@ -27,19 +27,30 @@ ID_MENU MENU
             MENUITEM "リセット", ID_RESET
             MENUITEM "再起動", ID_RESTART
             MENUITEM SEPARATOR
-            POPUP "どこでも"
+            POPUP "どこでもLOAD"
             {
-                MENUITEM "LOAD...", ID_DOKOLOAD
-                MENUITEM "SAVE...", ID_DOKOSAVE
+                MENUITEM "ファイル...", ID_DOKOLOAD
+                MENUITEM "Slot1", ID_DOKOLOAD1
+                MENUITEM "Slot2", ID_DOKOLOAD2
+                MENUITEM "Slot3", ID_DOKOLOAD3
+	        }
+            POPUP "どこでもSAVE"
+            {
+                MENUITEM "ファイル...", ID_DOKOSAVE
+                MENUITEM "Slot1", ID_DOKOSAVE1
+                MENUITEM "Slot2", ID_DOKOSAVE2
+                MENUITEM "Slot3", ID_DOKOSAVE3
             }
             MENUITEM SEPARATOR
             POPUP "リプレイ"
             {
-                MENUITEM "再生...", ID_REPLAYLOAD
+                MENUITEM "再生...", ID_REPLAYPLAY
                 MENUITEM "記録...", ID_REPLAYSAVE
                 MENUITEM "記録再開...", ID_REPLAYRESUME
                 MENUITEM "途中保存", ID_REPLAYDOKOSAVE
                 MENUITEM "途中保存から再開", ID_REPLAYDOKOLOAD
+                MENUITEM "ひとつ前の途中保存から再開", ID_REPLAYROLLBACK
+                MENUITEM "リプレイを動画に変換...", ID_REPLAYMOVIE
             }
             MENUITEM SEPARATOR
             MENUITEM "ビデオキャプチャ...", ID_AVISAVE

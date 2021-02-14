@@ -25,6 +25,7 @@ enum TextID{
 	T_RESETC,				// "リセット確認"
 	T_DOKOC,				// "どこでもLOAD確認"
 	T_DOKOSLOT,				// "どこでもLOADを実行してよろしいですか？"
+	T_REPLAYRES,			// "リプレイを途中保存地点まで巻き戻します\nよろしいですか？"
 	
 	// INIファイル用メッセージ ------
 	// [CONFIG]

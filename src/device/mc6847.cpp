@@ -1255,7 +1255,7 @@ void PCZ80_12::SetPalette( int col, BYTE dat )
 	PRINTD( VDG_LOG, "[VDG][SetPalette] %d ->%d\n", col, dat );
 	
 	int tpal  =   (col&8) | ((col&4)>>1) | ((col&2)>>1) | ((col&1)<<2);
-	BYTE pdat = ( (dat&8) | ((dat&4)>>1) | ((dat&2)>>1) | ((dat&1)<<2) ) + 65;
+	BYTE pdat = ( (dat&8) | ((dat&4)>>1) | ((dat&2)>>1) | ((dat&1)<<2) ) + 57;
 	
 	COL_AN2[tpal]   = pdat;
 	COL_CG2[0][col] = pdat;

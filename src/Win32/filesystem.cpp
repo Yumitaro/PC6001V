@@ -390,3 +390,91 @@ bool OSD_FileReadOnly( const P6VPATH& fullpath )
 	if( fa & FILE_ATTRIBUTE_READONLY ) return true;
 	else                               return false;
 }
+
+
+////////////////////////////////////////////////////////////////
+// ファイル名を変更
+//
+// 引数:	fullpath1		変更元のパス
+//			fullpath2		変更するパス
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FileRename( const P6VPATH& fullpath1, const P6VPATH& fullpath2 )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str() P6VPATH2STR( fullpath2 ).c_str() );
+	
+	return MoveFile( P6VPATH2STR( fullpath1 ).c_str(), P6VPATH2STR( fullpath2 ).c_str() );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ファイルを削除
+//
+// 引数:	fullpath		パス
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FileDelete( const P6VPATH& fullpath )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_FileDelete] %s\n", P6VPATH2STR( fullpath ).c_str() );
+	
+	return DeleteFile( P6VPATH2STR( fullpath ).c_str() );
+}
+
+
+////////////////////////////////////////////////////////////////
+// ファイルを探す
+//
+// 引数:	path			パス
+//			file			探すファイル名
+//			folders			見つかったパスを格納するvectorへの参照
+//			size			ファイルサイズ (0:チェックしない)
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FindFile( const P6VPATH& path, const P6VPATH& file, std::vector<P6VPATH>& files, size_t size )
+{
+	HANDLE hFind;
+	WIN32_FIND_DATA fdata;
+	
+	std::string sfile = OSD_GetFileNamePart( file );
+	std::transform( sfile.begin(), sfile.end(), sfile.begin(), ::tolower );	// 小文字
+	
+	P6VPATH dpath = path;
+	OSD_AddDelimiter( dpath );
+	OSD_AddPath( dpath, dpath, "*" );
+	
+	hFind = FindFirstFile( P6VPATH2STR( dpath ).c_str(), &fdata );
+	
+	if( hFind == INVALID_HANDLE_VALUE ){
+		FindClose( hFind );
+		return false;
+	}
+	
+	do{
+		std::string ff = fdata.cFileName;
+		
+		if( ff != "." && ff != ".." ){
+			if( fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){	// ディレクトリの場合
+				P6VPATH npath = path;
+				OSD_AddPath( npath, npath, STR2P6VPATH( ff ) );
+				OSD_AddDelimiter( npath );
+				
+				OSD_FindFile( npath, file, files );	// 再帰
+			}else{														// ファイルの場合
+				P6VPATH fpath;
+				OSD_AddPath( fpath, path, STR2P6VPATH( ff ) );
+				
+				std::string tfile = OSD_GetFileNamePart( fpath );
+				std::transform( tfile.begin(), tfile.end(), tfile.begin(), ::tolower );	// 小文字
+				
+				if( tfile == sfile && (!size || OSD_GetFileSize( fpath ) == size) ){
+					files.emplace_back( fpath );
+				}
+			}
+		}
+	}while( FindNextFile( hFind, &fdata ) );
+	
+	FindClose( hFind );
+	
+	return true;
+}
+
