@@ -286,3 +286,71 @@ bool OSD_FileReadOnly( const P6VPATH& fullpath )
 	}
 }
 
+
+////////////////////////////////////////////////////////////////
+// ファイルを削除
+//
+// 引数:	fullpath		パス
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FileDelete( const P6VPATH& fullpath )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_FileDelete] %s\n", P6VPATH2STR( fullpath ).c_str() );
+	
+	try{
+		return std::filesystem::remove( fullpath );
+	}
+	catch( std::filesystem::filesystem_error& ){
+		return false;
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// ファイルを探す
+//
+// 引数:	path			パス
+//			file			探すファイル名
+//			folders			見つかったパスを格納するvectorへの参照
+//			size			ファイルサイズ (0:チェックしない)
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FindFile( const P6VPATH& path, const P6VPATH& file, std::vector<P6VPATH>& files, size_t size )
+{
+	std::string sfile = OSD_GetFileNamePart( file );
+	std::transform( sfile.begin(), sfile.end(), sfile.begin(), ::tolower );	// 小文字
+	
+	for( const std::filesystem::directory_entry& ent : std::filesystem::recursive_directory_iterator( path ) ){
+		if( is_regular_file( ent.path() ) ){
+			std::string tfile = OSD_GetFileNamePart( ent.path() );
+			std::transform( tfile.begin(), tfile.end(), tfile.begin(), ::tolower );	// 小文字
+			if( tfile == sfile && (!size || OSD_GetFileSize( ent.path() ) == size) ){
+				files.emplace_back( ent.path() );
+			}
+		}
+	}
+	
+	return true;
+}
+
+
+////////////////////////////////////////////////////////////////
+// ファイル名を変更
+//
+// 引数:	fullpath1		変更元のパス
+//			fullpath2		変更するパス
+// 返値:	bool			true:成功 false:失敗
+////////////////////////////////////////////////////////////////
+bool OSD_FileRename( const P6VPATH& fullpath1, const P6VPATH& fullpath2 )
+{
+	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str() P6VPATH2STR( fullpath2 ).c_str() );
+	
+	try{
+		std::filesystem::rename( fullpath1, fullpath2 );
+		return true;
+	}
+	catch( std::filesystem::filesystem_error& ){
+		return false;
+	}
+}
+

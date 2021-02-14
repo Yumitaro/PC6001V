@@ -15,7 +15,9 @@
 typedef enum {
 	EV_RESTART = 0,				// (SDL User event)
 	EV_DOKOLOAD,				// (SDL User event)
-	EV_REPLAY,					// (SDL User event)
+	EV_REPLAYPLAY,				// (SDL User event)
+	EV_REPLAYRESUME,			// (SDL User event)
+	EV_REPLAYMOVIE,				// (SDL User event)
 	EV_FPSUPDATE,				// (SDL User event)
 	EV_DEBUGMODEBP,				// (SDL User event)
 	EV_DEBUGMODETOGGLE,			// (SDL User event)
@@ -99,10 +101,20 @@ typedef struct {
 	EventType type;		// EV_DOKOLOAD
 } Event_DOKOLoad;
 
-// リプレイ
+// リプレイ再生
 typedef struct {
-	EventType type;		// EV_REPLAY
-} Event_Replay;
+	EventType type;		// EV_REPLAYPLAY
+} Event_ReplayPlay;
+
+// リプレイ保存再開
+typedef struct {
+	EventType type;		// EV_REPLAYRESUME
+} Event_ReplayResume;
+
+// リプレイを動画に変換
+typedef struct {
+	EventType type;		// EV_REPLAYMOVIE
+} Event_ReplayMovie;
 
 // FPS表示
 typedef struct {
@@ -154,7 +166,8 @@ typedef union Event {
 	Event_Quit quit;
 	Event_Restart restart;
 	Event_DOKOLoad doko;
-	Event_Replay replay;
+	Event_ReplayPlay replay;
+	Event_ReplayResume resume;
 	Event_FPSUpdate fps;
 	Event_BreakPoint bp;
 	Event_MonitorMode mon;

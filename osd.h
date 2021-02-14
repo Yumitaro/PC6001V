@@ -82,6 +82,12 @@ bool OSD_FileExist( const P6VPATH& );
 DWORD OSD_GetFileSize( const P6VPATH& );
 // ファイルの読取り専用チェック
 bool OSD_FileReadOnly( const P6VPATH& );
+// ファイル名を変更
+bool OSD_FileRename( const P6VPATH&, const P6VPATH& );
+// ファイルを削除
+bool OSD_FileDelete( const P6VPATH& );
+// ファイルを探す
+bool OSD_FindFile( const P6VPATH&, const P6VPATH&, std::vector<P6VPATH>&, size_t = 0 );
 // フォルダの参照
 bool OSD_FolderDiaog( HWINDOW, P6VPATH& );
 // 各種ファイル選択

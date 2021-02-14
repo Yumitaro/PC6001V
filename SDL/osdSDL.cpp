@@ -214,7 +214,9 @@ static DWORD ConvEventOSD2SDL( EventType ev )
 	switch( ev ){
 	case EV_RESTART:
 	case EV_DOKOLOAD:
-	case EV_REPLAY:
+	case EV_REPLAYPLAY:
+	case EV_REPLAYRESUME:
+	case EV_REPLAYMOVIE:
 	case EV_FPSUPDATE:
 	case EV_RENDER:
 	case EV_CAPTURE:
@@ -1351,7 +1353,9 @@ bool OSD_GetEvent( Event* ev )
 			switch( ev->type ){
 			case EV_RESTART:
 			case EV_DOKOLOAD:
-			case EV_REPLAY:
+			case EV_REPLAYPLAY:
+			case EV_REPLAYRESUME:
+			case EV_REPLAYMOVIE:
 			case EV_FPSUPDATE:
 				break;
 				

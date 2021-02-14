@@ -34,7 +34,11 @@
 #include "vsurface.h"
 
 
-#define	FRAMERATE	((double)VSYNC_HZ/(double)(cfg->GetValue( CV_FrameSkip )+1.0))
+#define	FRAMERATE					((double)VSYNC_HZ/(double)(cfg->GetValue( CV_FrameSkip )+1.0))
+
+// リプレイ中どこでもSAVEの履歴数
+#define	REPLAY_DOKOSAVE_HISTORY		5
+
 
 int EL6::Speed = 100;
 
@@ -51,7 +55,6 @@ EL6::EL6( void ) : cfg( nullptr ), vm( nullptr ), sche( nullptr ), snd( nullptr 
 	UpDateFPSID( 0 ), FSkipCount( 0 ), MMotion( true ),
 	TapePathUI( "" ), DiskPathUI( "" ), ExRomPathUI( "" ), DokoPathUI( "" )
 {
-	PRINTD( CONST_LOG, "[[EL6]]\n" );
 }
 
 
@@ -60,7 +63,6 @@ EL6::EL6( void ) : cfg( nullptr ), vm( nullptr ), sche( nullptr ), snd( nullptr 
 ////////////////////////////////////////////////////////////////
 EL6::~EL6( void )
 {
-	PRINTD( CONST_LOG, "[[~EL6]]\n" );
 }
 
 
@@ -157,6 +159,10 @@ void EL6::OnThread( void* inst )
 				// リプレイ再生中
 				if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
 					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix() );
+					// リプレイ終了時にビデオキャプチャ中だったらキャプチャを停止する
+					if( REPLAY::GetStatus() == ST_IDLE && AVI6::IsAVI() ){
+						UI_AVISaveStop();
+					}
 				}
 				
 				p6->EmuVSYNC();			// 1画面分実行
@@ -270,8 +276,6 @@ void EL6::Exec( int st )
 ////////////////////////////////////////////////////////////////
 bool EL6::Init( const std::shared_ptr<CFG6>& config )
 {
-	// エラーメッセージ初期値
-//	Error::SetError( Error::InitFailed );
 	// エラーなし
 	Error::Clear();
 	
@@ -426,14 +430,44 @@ void EL6::Stop( void )
 ////////////////////////////////////////////////////////////////
 // イベントループ
 ////////////////////////////////////////////////////////////////
-EL6::ReturnCode EL6::EventLoop( void )
+EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 {
 	Event event;
 	std::string str;
 	
 //	Event lastkey;
-//	lastkey.key.sym = KVC_UNKNOWN;
+//	lastkey.key.sym   = KVC_UNKNOWN;
 //	lastkey.key.state = false;
+	
+	
+	switch( rc ){
+	case ReplayPlay:	// リプレイ再生
+		REPLAY::StartReplay( cfg->GetDokoFile() );
+		break;
+		
+	case ReplayResume:	// リプレイ保存再開
+		{
+			P6VPATH fpath = cfg->GetDokoFile();
+			cIni save;
+			int frame = 0;
+			
+			save.Read( fpath );
+			save.GetVal( "REPLAY", "frame", frame );
+			OSD_ChangeFileNameExt( fpath, EXT_REPLAY );	// 拡張子を差替え
+			REPLAY::ResumeRecord( fpath, frame );
+		}
+		break;
+		
+	case ReplayMovie:	// リプレイを動画に変換
+		UI_AVISaveStart();
+		REPLAY::StartReplay( cfg->GetDokoFile() );
+		break;
+		
+	default:
+		;
+	}
+	cfg->SetDokoFile( "" );
+	
 	
 	// イベントキュークリア
 	OSD_FlushEvents();
@@ -443,6 +477,8 @@ EL6::ReturnCode EL6::EventLoop( void )
 	
 	// ResizeScreen()でリサイズしたかチェック 空読みしてリセット
 	graph->CheckResize();
+	
+	Start();	// VM開始
 	
 	while( OSD_GetEvent( &event ) ){
 		switch( event.type ){
@@ -548,7 +584,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			}
 			break;
 			
-		case EV_MOUSEWHEEL:	// マウスホイール
+		case EV_MOUSEWHEEL:		// マウスホイール
 			if( event.mousewh.y > 0 ){	// スピードアップ
 				sche->SetSpeedRatio( 1 );
 			}
@@ -566,29 +602,56 @@ EL6::ReturnCode EL6::EventLoop( void )
 			AVI6::AVIWriteFrame( GetWindowHandle() );
 			break;
 			
-//		case EV_WINDOWRESIZED:{		// ウィンドウサイズ変更
-		case EV_WINDOWSIZECHANGED:{	// ウィンドウサイズ変更
-			// ResizeScreen()でリサイズしたなら何もしないで戻る
-			if( graph->CheckResize() ) break;
-			
-			// 変化率が大きい方の軸のサイズを優先
-			double rx = (double) event.window.w                   / (double)graph->ScreenX();
-			double ry = (double)(event.window.h - staw->Height()) / (double)graph->ScreenY();
-			
-			// 倍率を逆算
-			int zoom = cfg->GetValue( CV_WindowZoom ) * (((rx < 1 ? 1/rx : rx) > (ry < 1 ? 1/ry : ry)) ? rx : ry);
-			
-			Stop();
-			cfg->SetValue( CV_WindowZoom, zoom );	// ウィンドウサイズに合わせて倍率再設定
-			graph->ResizeScreen();		// スクリーンサイズ変更
-			Start();
+//		case EV_WINDOWRESIZED:		// ウィンドウサイズ変更
+		case EV_WINDOWSIZECHANGED:	// ウィンドウサイズ変更
+			{
+				// ResizeScreen()でリサイズしたなら何もしないで戻る
+				if( graph->CheckResize() ) break;
+				
+				// 変化率が大きい方の軸のサイズを優先
+				double rx = (double) event.window.w                   / (double)graph->ScreenX();
+				double ry = (double)(event.window.h - staw->Height()) / (double)graph->ScreenY();
+				
+				// 倍率を逆算
+				int zoom = cfg->GetValue( CV_WindowZoom ) * (((rx < 1 ? 1/rx : rx) > (ry < 1 ? 1/ry : ry)) ? rx : ry);
+				
+				Stop();
+				cfg->SetValue( CV_WindowZoom, zoom );	// ウィンドウサイズに合わせて倍率再設定
+				graph->ResizeScreen();		// スクリーンサイズ変更
+				Start();
+			}
 			break;
-		}
-		
+			
 		case EV_WINDOWEVENT_RESTORED:
 			Stop();
 			graph->ResizeScreen();		// スクリーンサイズ変更
 			Start();
+			break;
+			
+		case EV_DROPFILE:		// Drag & Drop
+			{
+				P6VPATH fpath = STR2P6VPATH( event.drop.file );
+				// ファイル名を開放
+				delete [] event.drop.file;
+				
+				// 拡張子取得(小文字)
+				std::string ext = OSD_GetFileNameExt( fpath );
+				std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower );
+				
+				if( ext == EXT_P6RAW || ext == EXT_CAS || ext == EXT_P6T ){
+					UI_TapeInsert( fpath );
+				}else if( ext == EXT_DISK ){
+					UI_DiskInsert( 0, fpath );
+				}else if( ext == EXT_ROM1 || ext == EXT_ROM2 ){
+					UI_CartInsert( EXC6005, fpath );
+				}else if( ext == EXT_DOKO ){
+					UI_DokoLoad( fpath );
+				}else if( ext == EXT_REPLAY ){
+					UI_ReplayPlay( fpath );
+				}else if( ext == EXT_BASIC || ext == EXT_TEXT ){
+					UI_AutoType( fpath );
+				}
+			}
 			break;
 			
 		case EV_QUIT:			// 終了
@@ -606,43 +669,29 @@ EL6::ReturnCode EL6::EventLoop( void )
 			// ビデオキャプチャ中なら停止
 			UI_AVISaveStop();
 			
+			Stop();	// VMを停止してから抜ける
 			return Quit;
 			
 		case EV_RESTART:		// 再起動
+			Stop();	// VMを停止してから抜ける
 			return Restart;
 			
 		case EV_DOKOLOAD:		// どこでもLOAD
+			Stop();	// VMを停止してから抜ける
 			return Dokoload;
 			
-		case EV_REPLAY:			// リプレイ再生
-			return Replay;
+		case EV_REPLAYPLAY:		// リプレイ再生
+			Stop();	// VMを停止してから抜ける
+			return ReplayPlay;
 			
-		case EV_DROPFILE:{		// Drag & Drop
-			P6VPATH tpath = STR2P6VPATH( event.drop.file );
-			// ファイル名を開放
-			delete [] event.drop.file;
+		case EV_REPLAYRESUME:	// リプレイ保存再開
+			Stop();	// VMを停止してから抜ける
+			return ReplayResume;
 			
-			// 拡張子取得(小文字)
-			std::string ext = OSD_GetFileNameExt( tpath );
-			std::transform( ext.begin(), ext.end(), ext.begin(), ::tolower );
+		case EV_REPLAYMOVIE:	// リプレイを動画に変換
+			Stop();	// VMを停止してから抜ける
+			return ReplayMovie;
 			
-			if( ext == EXT_P6RAW || ext == EXT_CAS || ext == EXT_P6T ){
-				UI_TapeInsert( tpath );
-			}else if( ext == EXT_DISK ){
-				UI_DiskInsert( 0, tpath );
-			}else if( ext == EXT_ROM1 || ext == EXT_ROM2 ){
-				UI_CartInsert( EXC6005, tpath );
-			}else if( ext == EXT_DOKO ){
-				UI_DokoLoad( tpath );
-			}else if( ext == EXT_REPLAY ){
-				UI_ReplayLoad( tpath );
-			}else if( ext == EXT_BASIC || ext == EXT_TEXT ){
-				UI_AutoType( tpath );
-			}
-			
-			break;
-		}
-		
 		default:
 			break;
 		}
@@ -657,6 +706,7 @@ EL6::ReturnCode EL6::EventLoop( void )
 			Error::Clear();
 		}
 	}
+	Stop();	// VMを停止してから抜ける
 	return Quit;
 }
 
@@ -701,15 +751,21 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		}
 		break;
 		
-	case KVC_F9:			// ポーズ変更
+	case KVC_F9:			// ポーズ変更 or どこでもSAVE(スロット使用)
 		if( OnALT ){
+			Stop();
+			UI_DokoSave( 1 );
+			Start();
 		}else{
 			UI_Pause();
 		}
 		break;
 		
-	case KVC_F10:			// Wait変更
+	case KVC_F10:			// Wait変更 or どこでもLOAD(スロット使用)
 		if( OnALT ){
+			Stop();
+			UI_DokoLoad( 1, true );
+			Start();
 		}else{
 			UI_NoWait();
 		}
@@ -740,13 +796,13 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		
 	case KVC_MUHENKAN:		// どこでもSAVE(スロット使用)
 		Stop();
-		DokoDemoSaveSlot( 1 );
+		UI_DokoSave( 1 );
 		Start();
 		break;
 		
 	case KVC_HENKAN:		// どこでもLOAD(スロット使用)
 		Stop();
-		UI_DokoLoadSlot( 1 );
+		UI_DokoLoad( 1, true );
 		Start();
 		break;
 		
@@ -754,49 +810,6 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		return false;
 	}
 	return true;
-}
-
-
-////////////////////////////////////////////////////////////////
-// 簡易どこでもSAVE(スロット使用)
-////////////////////////////////////////////////////////////////
-void EL6::DokoDemoSaveSlot( int slot )
-{
-	if( REPLAY::GetStatus() == ST_REPLAYREC ){
-		UI_ReplayDokoSave();
-	}else{
-		P6VPATH tpath;
-		OSD_AddPath( tpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
-		DokoDemoSave( tpath );
-		
-		cIni save;
-		if( save.Read( tpath ) ){
-			// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-			save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-			save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-			
-			save.Write();
-		}
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// 簡易どこでもLOAD(スロット使用)
-////////////////////////////////////////////////////////////////
-void EL6::DokoDemoLoadSlot( int slot )
-{
-	if( REPLAY::GetStatus() == ST_REPLAYREC ){
-		UI_ReplayDokoLoad();
-	}else{
-		P6VPATH tpath;
-		OSD_AddPath( tpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
-		
-		if( OSD_FileExist( tpath ) ){
-			cfg->SetDokoFile( tpath );
-			OSD_PushEvent( EV_DOKOLOAD );
-		}
-	}
 }
 
 
@@ -1361,7 +1374,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 
 
 ////////////////////////////////////////////////////////////////
-// どこでもLOADファイルのバージョンチェック
+// どこでもSAVEファイルのバージョンチェック
 //
 // 引数:	path		ファイルパスへの参照
 // 返値:	bool		true:一致 false:不一致
@@ -1453,6 +1466,14 @@ void EL6::DiskUnmount( int drv )
 ////////////////////////////////////////////////////////////////
 bool EL6::ReplayRecStart( const P6VPATH& path )
 {
+	// 途中セーブファイルを探して削除
+	P6VPATH fpath = path;
+	for( int i = 0; i < REPLAY_DOKOSAVE_HISTORY; i++ ){
+		OSD_ChangeFileNameExt( fpath, EXT_RES + ( i == 0 ? "" : std::to_string( i ) ) );	// 拡張子を差替え
+		// ファイルがあれば削除
+		if( OSD_FileExist( fpath ) ){ OSD_FileDelete( fpath ); }
+	}
+	
 	return REPLAY::StartRecord( path );
 }
 
@@ -1466,111 +1487,24 @@ bool EL6::ReplayRecStart( const P6VPATH& path )
 bool EL6::ReplayRecResume( const P6VPATH& path )
 {
 	// 途中セーブファイルを探す
-	P6VPATH tpath = path;
-	OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
+	P6VPATH fpath = path;
+	OSD_ChangeFileNameExt( fpath, EXT_RES );	// 拡張子を差替え
 	
-	if( OSD_FileExist( tpath ) ){
-		cIni save;
-		save.Read( tpath );
-		int frame = 0;
-		save.GetVal( "REPLAY", "frame", frame );
-		if( frame == 0 ) return false;
-		
-		DokoDemoLoad( tpath );
-		return REPLAY::ResumeRecord( path, frame );
-	}
-	return false;
+	if( !OSD_FileExist( fpath ) ){ return false; }
+	
+	cIni save;
+	int frame = 0;
+	
+	save.Read( fpath );
+	save.GetVal( "REPLAY", "frame", frame );
+	if( frame == 0 ){ return false; }
+	
+	if( !UI_CheckDokoVer( fpath ) ){ return false; }
+	
+	cfg->SetDokoFile( fpath );
+	OSD_PushEvent( EV_REPLAYRESUME );
+	return true;
 }
-
-
-////////////////////////////////////////////////////////////////
-// リプレイ中どこでもLOAD
-//
-// 引数:	なし
-// 返値:	bool		true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool EL6::ReplayRecDokoLoad( void )
-{
-	if( REPLAY::GetStatus() == ST_REPLAYREC ){
-		P6VPATH tpath = REPLAY::cIni::GetFilePath();
-		REPLAY::StopRecord();
-		return ReplayRecResume( tpath );
-	}else{
-		return false;
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// リプレイ中どこでもSAVE
-//
-// 引数:	なし
-// 返値:	bool		true:成功 false:失敗
-////////////////////////////////////////////////////////////////
-bool EL6::ReplayRecDokoSave( void )
-{
-	if( REPLAY::GetStatus() == ST_REPLAYREC ){
-		// 途中セーブファイルを保存
-		P6VPATH tpath = REPLAY::cIni::GetFilePath();
-		OSD_ChangeFileNameExt( tpath, EXT_RES );	// 拡張子を差替え
-		if( !DokoDemoSave( tpath ) ) return false;
-		
-		// 途中セーブ情報を追記
-		cIni save;
-		if( !save.Read( tpath ) ) return false;
-		save.SetVal( "REPLAY", "frame", "", REPLAY::RepFrm );
-		// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-		save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-		save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-		
-		save.Write();
-		
-		return true;
-	}else{
-		return false;
-	}
-}
-
-
-////////////////////////////////////////////////////////////////
-// リプレイ保存停止
-//
-// 引数:	なし
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void EL6::ReplayRecStop( void )
-{
-	ReplayRecDokoSave();
-	REPLAY::StopRecord();
-}
-
-
-////////////////////////////////////////////////////////////////
-// リプレイ再生開始
-//
-// 引数:	path		ファイルパスへの参照
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void EL6::ReplayPlayStart( const P6VPATH& path )
-{
-	cfg->SetDokoFile( path );
-	OSD_PushEvent( EV_REPLAY );
-}
-
-
-////////////////////////////////////////////////////////////////
-// リプレイ再生停止
-//
-// 引数:	なし
-// 返値:	なし
-////////////////////////////////////////////////////////////////
-void EL6::ReplayPlayStop( void )
-{
-	REPLAY::StopReplay();
-}
-
-
-
 
 
 
@@ -1701,6 +1635,26 @@ void EL6::UI_CartEject( void )
 
 
 ////////////////////////////////////////////////////////////////
+// UI:どこでもSAVEファイルのバージョンチェック
+//
+// 引数:	path		ファイルパスへの参照
+// 返値:	bool		true:一致 false:不一致
+////////////////////////////////////////////////////////////////
+bool EL6::UI_CheckDokoVer( const P6VPATH& path )
+{
+	if( CheckDokoVer( path ) ){ return true; }
+	
+	if( Error::GetError() == Error::DokoDiffVersion ){
+		int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDM_YESNO | OSDM_ICONWARNING );
+		Error::Clear();
+		if( ret == OSDR_YES ){ return true; }
+	}
+	
+	return false;
+}
+
+
+////////////////////////////////////////////////////////////////
 // UI:どこでもSAVE
 //
 // 引数:	path		ファイルパスへの参照
@@ -1719,7 +1673,9 @@ void EL6::UI_DokoSave( const P6VPATH& path )
 		}
 	}
 	
-	if( !DokoDemoSave( fpath ) ) Error::SetError( Error::DokoWriteFailed );
+	if( !DokoDemoSave( fpath ) ){
+		Error::SetError( Error::DokoWriteFailed );
+	}
 }
 
 
@@ -1742,27 +1698,70 @@ void EL6::UI_DokoLoad( const P6VPATH& path )
 		}
 	}
 	
+	if( !UI_CheckDokoVer( fpath ) ){ return; }
+	
 	cfg->SetDokoFile( fpath );
 	OSD_PushEvent( EV_DOKOLOAD );
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:どこでもLOAD(スロット使用)
-//
-// 引数:	int			スロット番号
-// 返値:	なし
+// UI:どこでもSAVE(スロット使用)
 ////////////////////////////////////////////////////////////////
-void EL6::UI_DokoLoadSlot( int slot )
+void EL6::UI_DokoSave( int slot )
 {
-	if( OSD_Message( GetWindowHandle(), GetText( T_DOKOSLOT ), GetText( T_DOKOC ), OSDM_YESNO | OSDM_ICONQUESTION ) == OSDR_YES ){
-		DokoDemoLoadSlot( slot );
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
+		UI_ReplayDokoSave();
+	}else{
+		P6VPATH fpath;
+		OSD_AddPath( fpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
+		DokoDemoSave( fpath );
+		
+		cIni save;
+		if( save.Read( fpath ) ){
+			// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
+			save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+			save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+			
+			save.Write();
+		}
 	}
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:リプレイ保存
+// UI:どこでもLOAD(スロット使用)
+//
+// 引数:	slot		スロット番号
+//			ask			true:確認する false:確認しない
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_DokoLoad( int slot, bool ask )
+{
+	if( REPLAY::GetStatus() == ST_REPLAYREC ){
+		P6VPATH fpath = REPLAY::cIni::GetFilePath();
+		OSD_ChangeFileNameExt( fpath, EXT_RES );	// 拡張子を差替え
+		if( OSD_FileExist( fpath ) ){
+			if( !ask || OSD_Message( GetWindowHandle(), GetText( T_REPLAYRES ), GetText( T_DOKOC ), OSDM_YESNO | OSDM_ICONQUESTION ) == OSDR_YES ){
+				UI_ReplayDokoLoad();
+			}
+		}
+	}else{
+		P6VPATH fpath;
+		OSD_AddPath( fpath, cfg->GetValue( CF_DokoPath ), Stringf( ".%d." EXT_DOKO, slot ) );
+		
+		if( OSD_FileExist( fpath ) ){
+			if( !ask || OSD_Message( GetWindowHandle(), GetText( T_DOKOSLOT ), GetText( T_DOKOC ), OSDM_YESNO | OSDM_ICONQUESTION ) == OSDR_YES ){
+				cfg->SetDokoFile( fpath );
+				OSD_PushEvent( EV_DOKOLOAD );
+			}
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:リプレイ保存/停止
 //
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
@@ -1786,7 +1785,8 @@ void EL6::UI_ReplaySave( const P6VPATH& path )
 		}
 		
 	}else if( REPLAY::GetStatus() == ST_REPLAYREC ){
-		ReplayRecStop();
+		UI_ReplayDokoSave();
+		REPLAY::StopRecord();
 	}
 }
 
@@ -1801,17 +1801,65 @@ void EL6::UI_ReplayResumeSave( const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
-	if( REPLAY::GetStatus() == ST_IDLE ){
-		if( fpath.empty() ){
-			if( !OSD_FileExist( DokoPathUI ) ){
-				DokoPathUI = cfg->GetValue( CF_DokoPath );
-			}
-			if( !OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI ) ){
-				return;
-			}
+	if( REPLAY::GetStatus() != ST_IDLE ){ return; }
+	
+	if( fpath.empty() ){
+		if( !OSD_FileExist( DokoPathUI ) ){
+			DokoPathUI = cfg->GetValue( CF_DokoPath );
 		}
+		if( !OSD_FileSelect( GetWindowHandle(), FD_RepSave, fpath, DokoPathUI ) ){
+			return;
+		}
+	}
+	
+	if( !ReplayRecResume( fpath ) ){
+		Error::SetError( Error::ReplayRecError );
+	}
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:リプレイ中どこでもSAVE
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_ReplayDokoSave( void )
+{
+	if( REPLAY::GetStatus() != ST_REPLAYREC ){ return; }
+	
+	// 途中セーブファイルを保存
+	P6VPATH fpath = REPLAY::cIni::GetFilePath();
+	P6VPATH bpath = fpath;
+	P6VPATH apath = fpath;
+	OSD_ChangeFileNameExt( fpath, EXT_RES );	// 拡張子を差替え
+	
+	// リプレイの途中保存ファイルの履歴を1つ進める
+	for( int i = REPLAY_DOKOSAVE_HISTORY - 2; i >= 0; i-- ){
+		OSD_ChangeFileNameExt( bpath, EXT_RES + ( i == 0 ? "" : std::to_string( i ) ) );
+		OSD_ChangeFileNameExt( apath, EXT_RES + std::to_string( i + 1 ) );
 		
-		if( !ReplayRecResume( fpath ) ) Error::SetError( Error::ReplayRecError );
+		if( !OSD_FileExist( bpath ) ){ continue; }
+		
+		OSD_FileDelete( apath );
+		OSD_FileRename( bpath, apath );
+	}
+	
+	// 途中セーブ情報を追記
+	cIni save;
+	
+	if( !DokoDemoSave( fpath ) || !save.Read( fpath ) ){
+		Error::SetError( Error::ReplayRecError );
+		return;
+	}
+	
+	save.SetVal( "REPLAY", "frame", "", REPLAY::RepFrm );
+	// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
+	save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+	save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+	
+	if( !save.Write() ){
+		Error::SetError( Error::ReplayRecError );
 	}
 }
 
@@ -1822,31 +1870,56 @@ void EL6::UI_ReplayResumeSave( const P6VPATH& path )
 // 引数:	なし
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplayDokoLoad()
+void EL6::UI_ReplayDokoLoad( void )
 {
-	ReplayRecDokoLoad();
+	if( REPLAY::GetStatus() != ST_REPLAYREC ){ return; }
+	
+	P6VPATH fpath = REPLAY::cIni::GetFilePath();
+	
+	REPLAY::StopRecord();
+	ReplayRecResume( fpath );
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:リプレイ中どこでもSAVE
+// UI:リプレイ中どこでもLOADを巻き戻す
 //
 // 引数:	なし
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplayDokoSave()
+void EL6::UI_ReplayRollback( void )
 {
-	ReplayRecDokoSave();
+	if( REPLAY::GetStatus() != ST_REPLAYREC ){ return; }
+	
+	P6VPATH fpath = REPLAY::cIni::GetFilePath();
+	P6VPATH bpath = fpath;
+	P6VPATH apath = fpath;
+	OSD_ChangeFileNameExt( fpath, EXT_RES );	// 拡張子を差替え
+	
+	// リプレイの途中保存ファイルの履歴を1つ戻す
+	for( int i = 0; i < REPLAY_DOKOSAVE_HISTORY; i++ ){
+		OSD_ChangeFileNameExt( bpath, EXT_RES + std::to_string( i + 1 ) );
+		OSD_ChangeFileNameExt( apath, EXT_RES + ( i == 0 ? "" : std::to_string( i ) ) );
+		
+		// これ以上履歴がなければ抜ける
+		if( !OSD_FileExist( bpath ) ){ break; }
+		
+		OSD_FileDelete( apath );
+		OSD_FileRename( bpath, apath );
+	}
+	
+	REPLAY::StopRecord();
+	ReplayRecResume( fpath );
 }
 
 
 ////////////////////////////////////////////////////////////////
-// UI:リプレイ再生
+// UI:リプレイ再生/停止
 //
 // 引数:	path		ファイルパスへの参照
 // 返値:	なし
 ////////////////////////////////////////////////////////////////
-void EL6::UI_ReplayLoad( const P6VPATH& path )
+void EL6::UI_ReplayPlay( const P6VPATH& path )
 {
 	P6VPATH fpath = path;
 	
@@ -1860,11 +1933,40 @@ void EL6::UI_ReplayLoad( const P6VPATH& path )
 			}
 		}
 	}else if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
-		ReplayPlayStop();
-		if( fpath.empty() ) return;
+		REPLAY::StopReplay();
+		if( fpath.empty() ){ return; }
 	}
 	
-	ReplayPlayStart( fpath );
+	if( !UI_CheckDokoVer( fpath ) ){ return; }
+	
+	cfg->SetDokoFile( fpath );
+	OSD_PushEvent( EV_REPLAYPLAY );
+}
+
+
+////////////////////////////////////////////////////////////////
+// UI:リプレイを動画に変換
+//
+// 引数:	なし
+// 返値:	なし
+////////////////////////////////////////////////////////////////
+void EL6::UI_ReplayMovie( void )
+{
+	P6VPATH fpath;
+	
+	if( REPLAY::GetStatus() != ST_IDLE ){ return; }
+	
+	if( !OSD_FileExist( DokoPathUI ) ){
+		DokoPathUI = cfg->GetValue( CF_DokoPath );
+	}
+	if( !OSD_FileSelect( GetWindowHandle(), FD_RepLoad, fpath, DokoPathUI ) ){
+		return;
+	}
+	
+	if( !UI_CheckDokoVer( fpath ) ){ return; }
+	
+	cfg->SetDokoFile( fpath );
+	OSD_PushEvent( EV_REPLAYMOVIE );
 }
 
 
@@ -1908,7 +2010,7 @@ void EL6::UI_AVISaveStart( void )
 ////////////////////////////////////////////////////////////////
 void EL6::UI_AVISaveStop( void )
 {
-if( !AVI6::IsAVI() ){ return; }
+	if( !AVI6::IsAVI() ){ return; }
 	
 	AVI6::StopAVI();
 	
@@ -2326,13 +2428,22 @@ void EL6::ExecMenu( int id )
 	case ID_RESET:			UI_Reset();								break;	// リセット
 	case ID_RESTART:		UI_Restart();							break;	// 再起動
 	case ID_DOKOSAVE:		UI_DokoSave();							break;	// どこでもSAVE
+	case ID_DOKOSAVE1:														// どこでもSAVE1
+	case ID_DOKOSAVE2:														// どこでもSAVE2
+	case ID_DOKOSAVE3:		UI_DokoSave( id - ID_DOKOSAVE );		break;	// どこでもSAVE3
 	case ID_DOKOLOAD:		UI_DokoLoad();							break;	// どこでもLOAD
-	case ID_REPLAYSAVE:		UI_ReplaySave();						break;	// リプレイ保存
+	case ID_DOKOLOAD1:														// どこでもLOAD1
+	case ID_DOKOLOAD2:														// どこでもLOAD2
+	case ID_DOKOLOAD3:		UI_DokoLoad( id - ID_DOKOLOAD );		break;	// どこでもLOAD3
+	case ID_REPLAYSAVE:		UI_ReplaySave();						break;	// リプレイ保存/停止
 	case ID_REPLAYRESUME:	UI_ReplayResumeSave();					break;	// リプレイ保存再開
-	case ID_REPLAYDOKOLOAD:	UI_ReplayDokoLoad();					break;	// リプレイ中どこでもLOAD
 	case ID_REPLAYDOKOSAVE:	UI_ReplayDokoSave();					break;	// リプレイ中どこでもSAVE
-	case ID_REPLAYLOAD:		UI_ReplayLoad();						break;	// リプレイ再生
-	case ID_AVISAVE:		AVI6::IsAVI() ? UI_AVISaveStop() : UI_AVISaveStart();	break;	// ビデオキャプチャ
+	case ID_REPLAYDOKOLOAD:	UI_ReplayDokoLoad();					break;	// リプレイ中どこでもLOAD
+	case ID_REPLAYROLLBACK:	UI_ReplayRollback();					break;	// リプレイ中どこでもLOADを巻き戻す
+	case ID_REPLAYPLAY:		UI_ReplayPlay();						break;	// リプレイ再生/停止
+	case ID_REPLAYMOVIE:	UI_ReplayMovie();						break;	// リプレイを動画に変換
+	case ID_AVISAVE:		AVI6::IsAVI() ? UI_AVISaveStop()
+										  : UI_AVISaveStart();		break;	// ビデオキャプチャ
 	case ID_AUTOTYPE:		UI_AutoType();							break;	// 打込み代行
 	case ID_QUIT:			UI_Quit();								break;	// 終了
 	case ID_NOWAIT:			UI_NoWait();							break;	// Wait変更

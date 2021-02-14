@@ -1284,28 +1284,29 @@ bool MEM6::AllocMemory( MemCells& buf, const MEMINFO* info, const P6VPATH& path,
 		do{
 			PRINTD( MEM_LOG, "-> %s ", info->Rinfo[i].FileName.c_str() );
 			
-			// ファイルから読込み
-			P6VPATH fpath = path;
-			OSD_AddPath( fpath, fpath, STR2P6VPATH( info->Rinfo[i].FileName ) );
-			
 			// ファイルの存在チェック
-			if( !OSD_FileExist( fpath ) ) continue;
+			std::vector<P6VPATH> ffiles;
+			ffiles.clear();
+			OSD_FindFile( path, STR2P6VPATH( info->Rinfo[i].FileName ), ffiles, info->Size );
 			
-			// ファイルサイズチェック
-			if( OSD_GetFileSize( fpath ) != info->Size ) ErrSize = true;
+			// 見つからなければ次の候補を探す
+			if( ffiles.empty() ) continue;
 			
 			// ROMデータをファイルから読込み
-			if( buf.SetData( fpath ) ){
-				// CRCチェック
-				// crc=false または CRC=0の時はチェックしない
-				if( crc && (info->Rinfo[i].Crc != 0) &&
-					( CalcCrc32( buf, info->Size ) != info->Rinfo[i].Crc ) ){
-					ErrCrc = true;
-				}else{
-					PRINTD( MEM_LOG, "-> OK\n" );
-					return true;
+			for( auto& ff : ffiles ){
+				if( buf.SetData( ff ) ){
+					// CRC32が一致するものを探す
+					// crc=false または CRC=0の時はチェックしない
+					if( !crc || (info->Rinfo[i].Crc == 0) || (CalcCrc32( buf, info->Size ) == info->Rinfo[i].Crc) ){
+						PRINTD( MEM_LOG, "-> OK\n" );
+						return true;
+					}
 				}
 			}
+			
+			// どれも一致しなければCRCエラー
+			ErrCrc = true;
+			
 		}while( ++i < (int)info->Rinfo.size() );
 		
 		if     ( ErrCrc )  throw Error::RomCrcNG;
@@ -1318,7 +1319,7 @@ bool MEM6::AllocMemory( MemCells& buf, const MEMINFO* info, const P6VPATH& path,
 		Error::SetError( i );
 		
 		switch( i ){
-		case Error::NoRom:		// ファイルのオープンに失敗した場合
+		case Error::NoRom:		// ファイルが見つからない場合
 		case Error::RomSizeNG:	// サイズが合わない場合
 		case Error::RomCrcNG:	// CRCが合わない場合
 		default:				// メモリを開放
