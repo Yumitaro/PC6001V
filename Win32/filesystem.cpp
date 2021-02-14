@@ -403,7 +403,13 @@ bool OSD_FileRename( const P6VPATH& fullpath1, const P6VPATH& fullpath2 )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str() P6VPATH2STR( fullpath2 ).c_str() );
 	
-	return MoveFile( P6VPATH2STR( fullpath1 ).c_str(), P6VPATH2STR( fullpath2 ).c_str() );
+	std::string tpath1 = fullpath1;
+	std::string tpath2 = fullpath2;
+	
+	OSD_UTF8toSJIS( tpath1 );
+	OSD_UTF8toSJIS( tpath2 );
+	
+	return MoveFile( tpath1.c_str(), tpath2.c_str() );
 }
 
 
@@ -417,7 +423,10 @@ bool OSD_FileDelete( const P6VPATH& fullpath )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_FileDelete] %s\n", P6VPATH2STR( fullpath ).c_str() );
 	
-	return DeleteFile( P6VPATH2STR( fullpath ).c_str() );
+	std::string tpath = fullpath;
+	OSD_UTF8toSJIS( tpath );
+	
+	return DeleteFile( tpath.c_str() );
 }
 
 
@@ -439,10 +448,12 @@ bool OSD_FindFile( const P6VPATH& path, const P6VPATH& file, std::vector<P6VPATH
 	std::transform( sfile.begin(), sfile.end(), sfile.begin(), ::tolower );	// 小文字
 	
 	P6VPATH dpath = path;
-	OSD_AddDelimiter( dpath );
 	OSD_AddPath( dpath, dpath, "*" );
 	
-	hFind = FindFirstFile( P6VPATH2STR( dpath ).c_str(), &fdata );
+	std::string tpath = dpath;
+	OSD_UTF8toSJIS( tpath );
+	
+	hFind = FindFirstFile( tpath.c_str(), &fdata );
 	
 	if( hFind == INVALID_HANDLE_VALUE ){
 		FindClose( hFind );
@@ -451,6 +462,7 @@ bool OSD_FindFile( const P6VPATH& path, const P6VPATH& file, std::vector<P6VPATH
 	
 	do{
 		std::string ff = fdata.cFileName;
+		OSD_SJIStoUTF8( ff );
 		
 		if( ff != "." && ff != ".." ){
 			if( fdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ){	// ディレクトリの場合
