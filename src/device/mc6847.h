@@ -40,6 +40,14 @@ protected:
 	int RowCntA;			// 表示ラインカウンタ(アルファニューメリック,セミグラ)
 	int RowCntG;			// 表示ラインカウンタ(グラフィック)
 	
+	// アトリビュートデータ
+	BYTE AT_AG;
+	BYTE AT_AS;
+	BYTE AT_IE;
+	BYTE AT_GM;
+	BYTE AT_CSS;
+	BYTE AT_INV;
+	
 	// for 62,66,64,68 -----------------------------------------------------------------------
 	bool CharMode;			// テキスト表示モード	true:キャラクタ				false:グラフィック
 	bool GraphMode;			// グラフィック解像度	true:160*200(SR:320*200)	false:320*200(SR:640*200)
@@ -62,14 +70,6 @@ protected:
 	WORD SRRollY;			// ドットスクロール Y座標
 	WORD SRVramAddrY;		// グラフィックVRAM Y座標
 	// ---------------------------------------------------------------------------------------
-	
-	// アトリビュートデータ
-	BYTE AT_AG;
-	BYTE AT_AS;
-	BYTE AT_IE;
-	BYTE AT_GM;
-	BYTE AT_CSS;
-	BYTE AT_INV;
 	
 	// for 62,66,64,68 -----------------------------------------------------------------------
 	void SetCss( BYTE );						// 色の組合せ指定

@@ -54,7 +54,6 @@
 ////////////////////////////////////////////////////////////////
 DSP6::DSP6( EL6* el ) : el( el ), Wh( nullptr ), rsize( false )
 {
-	PRINTD( CONST_LOG, "[[DSP6]]\n" );
 }
 
 
@@ -63,8 +62,6 @@ DSP6::DSP6( EL6* el ) : el( el ), Wh( nullptr ), rsize( false )
 ////////////////////////////////////////////////////////////////
 DSP6::~DSP6( void )
 {
-	PRINTD( CONST_LOG, "[[~DSP6]]\n" );
-	
 	if( Wh ) OSD_DestroyWindow( Wh );
 }
 
