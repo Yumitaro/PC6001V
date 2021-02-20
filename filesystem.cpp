@@ -343,7 +343,7 @@ bool OSD_FindFile( const P6VPATH& path, const P6VPATH& file, std::vector<P6VPATH
 ////////////////////////////////////////////////////////////////
 bool OSD_FileRename( const P6VPATH& fullpath1, const P6VPATH& fullpath2 )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str() P6VPATH2STR( fullpath2 ).c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str(), P6VPATH2STR( fullpath2 ).c_str() );
 	
 	try{
 		std::filesystem::rename( fullpath1, fullpath2 );

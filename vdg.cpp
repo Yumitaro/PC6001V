@@ -664,6 +664,7 @@ bool VDG6::DokoSave( cIni* Ini )
 	
 	// 64,68
 	Ini->SetVal( "VDG", "SRmode",		"",	SRmode      );
+	Ini->SetVal( "VDG", "SRBusReq",		"",	SRBusReq    );
 	Ini->SetVal( "VDG", "SRBitmap",		"",	SRBitmap    );
 	Ini->SetVal( "VDG", "SRBMPage",		"",	SRBMPage    );
 	Ini->SetVal( "VDG", "SRLine204",	"",	SRLine204   );
@@ -685,6 +686,15 @@ bool VDG6::DokoSave( cIni* Ini )
 		Ini->SetVal( "VDG", Stringf( "COL_CG2_0_%02d", i ),	"",	COL_CG2[0][i] );
 		Ini->SetVal( "VDG", Stringf( "COL_CG2_1_%02d", i ),	"",	COL_CG2[1][i] );
 	}
+	
+	// VSurface
+	Ini->SetVal( "VDG", "VSurface_w",		"",	VSurface::w      );
+	Ini->SetVal( "VDG", "VSurface_h",		"",	VSurface::h      );
+	Ini->SetVal( "VDG", "VSurface_pitch",	"",	VSurface::pitch  );
+	Ini->SetVal( "VDG", "VRect_x",			"",	VSurface::rect.x );
+	Ini->SetVal( "VDG", "VRect_y",			"",	VSurface::rect.y );
+	Ini->SetVal( "VDG", "VRect_w",			"",	VSurface::rect.w );
+	Ini->SetVal( "VDG", "VRect_h",			"",	VSurface::rect.h );
 	
 	return true;
 }
@@ -721,6 +731,7 @@ bool VDG6::DokoLoad( cIni* Ini )
 	
 	// 64,68
 	Ini->GetVal( "VDG", "SRmode",		SRmode      );
+	Ini->GetVal( "VDG", "SRBusReq",		SRBusReq    );
 	Ini->GetVal( "VDG", "SRBitmap",		SRBitmap    );
 	Ini->GetVal( "VDG", "SRBMPage",		SRBMPage    );
 	Ini->GetVal( "VDG", "SRLine204",	SRLine204   );
@@ -742,6 +753,17 @@ bool VDG6::DokoLoad( cIni* Ini )
 		Ini->GetVal( "VDG", Stringf( "COL_CG2_0_%02d", i ),	COL_CG2[0][i] );
 		Ini->GetVal( "VDG", Stringf( "COL_CG2_1_%02d", i ),	COL_CG2[1][i] );
 	}
+	
+	// VSurface
+	Ini->GetVal( "VDG", "VSurface_w",		VSurface::w      );
+	Ini->GetVal( "VDG", "VSurface_h",		VSurface::h      );
+	Ini->GetVal( "VDG", "VSurface_pitch",	VSurface::pitch  );
+	Ini->GetVal( "VDG", "VRect_x",			VSurface::rect.x );
+	Ini->GetVal( "VDG", "VRect_y",			VSurface::rect.y );
+	Ini->GetVal( "VDG", "VRect_w",			VSurface::rect.w );
+	Ini->GetVal( "VDG", "VRect_h",			VSurface::rect.h );
+	VSurface::pixels.resize( VSurface::pitch * VSurface::h );
+	
 	return true;
 }
 

@@ -401,7 +401,7 @@ bool OSD_FileReadOnly( const P6VPATH& fullpath )
 ////////////////////////////////////////////////////////////////
 bool OSD_FileRename( const P6VPATH& fullpath1, const P6VPATH& fullpath2 )
 {
-	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str() P6VPATH2STR( fullpath2 ).c_str() );
+	PRINTD( OSD_LOG, "[OSD][OSD_FileRename] %s -> %s\n", P6VPATH2STR( fullpath1 ).c_str(), P6VPATH2STR( fullpath2 ).c_str() );
 	
 	std::string tpath1 = fullpath1;
 	std::string tpath2 = fullpath2;

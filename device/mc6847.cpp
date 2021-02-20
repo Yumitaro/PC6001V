@@ -191,11 +191,11 @@ const VDGInfo vinfo = { SCRNW, SCRNH, ARATIO };
 MC6847core::MC6847core( void ) :
 	CrtDisp( true ), BusReq( false ), N60Win( true ),
 	Mode4Col( 0 ), VAddr( 0 ), HAddr( 0 ), RowCntA( 0 ), RowCntG( 0 ),
+	AT_AG( 0 ), AT_AS( 0 ), AT_IE( 0 ), AT_GM( 0 ), AT_CSS( 0 ), AT_INV( 0 ),
 	CharMode( true ), GraphMode( false ), Css1( 1 ), Css2( 1 ), Css3( 1 ),
 	SRmode( false ), SRBusReq( true ), SRBitmap( false ), SRBMPage( false ), SRLine204( false ),
 	SRCharLine( true ), SRCharWidth( true ),
-	SRTextAddr( 0 ), SRRollX( 0 ), SRRollY( 0 ), SRVramAddrY( 0 ),
-	AT_AG( 0 ), AT_AS( 0 ), AT_IE( 0 ), AT_GM( 0 ), AT_CSS( 0 ), AT_INV( 0 )
+	SRTextAddr( 0 ), SRRollX( 0 ), SRRollY( 0 ), SRVramAddrY( 0 )
 {
 }
 
