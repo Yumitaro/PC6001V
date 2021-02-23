@@ -319,8 +319,17 @@ void DSP6::SnapShot( const P6VPATH& path )
 		std::vector<BYTE> pixels;
 		
 		scr.x = scr.y = 0;
-		scr.w = ScreenX();
-		scr.h = ScreenY();
+		
+		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		if( DISPMON ){	// モニタモード?
+			scr.w = P6DEBUGW;
+			scr.h = P6DEBUGH;
+		}else
+		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		{
+			scr.w = ScreenX();
+			scr.h = ScreenY();
+		}
 		
 		pixels.resize( ((scr.w * 24 + 31) / 32) * sizeof(DWORD) * scr.h );
 		

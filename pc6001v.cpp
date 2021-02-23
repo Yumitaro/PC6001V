@@ -204,9 +204,9 @@ int main( int argc, char* argv[] )
 		Error::Clear();
 	}
 	
-	// P6VMオブジェクトを作成して実行
+	// P6ELオブジェクトを作成して実行
 	do{
-		std::unique_ptr<EL6> P6Core;			// P6VMオブジェクト
+		std::unique_ptr<EL6> P6Core;	// P6ELオブジェクト
 		
 		// 再起動ならばINIファイル再読込み
 		if( Restart == EL6::Restart ){

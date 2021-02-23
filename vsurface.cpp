@@ -10,7 +10,7 @@ std::array<DWORD,256> VSurface::col32;	// 32bitカラーテーブル
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-VSurface::VSurface( void ) : w(0), h(0), pitch(0)
+VSurface::VSurface( void ) : w( 0 ), h( 0 ), pitch( 0 )
 {
 }
 
@@ -279,7 +279,7 @@ void VSurface::Blit( VRect* srect, VSurface* dst, VRect* drect )
 
 
 ////////////////////////////////////////////////////////////////
-// 32bitカラーテーブル設定
+// 32bitカラー設定
 //
 // 引数:	num				インデックス(0-255)
 //			col				32bitカラーデータ
@@ -288,7 +288,7 @@ void VSurface::Blit( VRect* srect, VSurface* dst, VRect* drect )
 void VSurface::SetColor( int num, DWORD col )
 {
 	try{
-		col32.at( num&0xff ) = col;
+		col32.at( num & 0xff ) = col;
 	}
 	catch( std::out_of_range& ){}
 }
@@ -303,7 +303,7 @@ void VSurface::SetColor( int num, DWORD col )
 DWORD VSurface::GetColor( int num )
 {
 	try{
-		return col32.at( num&0xff );
+		return col32.at( num & 0xff );
 	}
 	catch( std::out_of_range& ){
 		return 0;

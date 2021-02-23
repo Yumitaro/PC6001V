@@ -340,12 +340,12 @@ DSK60::DSK60( VM6* vm, const ID& id ) : DSK6( vm, id ), io_D1H( 0 )
 	INITARRAY( WBuf, 0 );
 	UType = PC6031;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outD1H, STATIC_CAST( Device::OutFuncPtr, &DSK60::OutD1H ) );
 	descs.outdef.emplace( outD2H, STATIC_CAST( Device::OutFuncPtr, &DSK60::OutD2H ) );
 	descs.outdef.emplace( outD3H, STATIC_CAST( Device::OutFuncPtr, &DSK60::OutD3H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inD0H,  STATIC_CAST( Device::InFuncPtr,  &DSK60::InD0H  ) );
 	descs.indef.emplace ( inD1H,  STATIC_CAST( Device::InFuncPtr,  &DSK60::InD1H  ) );
 	descs.indef.emplace ( inD2H,  STATIC_CAST( Device::InFuncPtr,  &DSK60::InD2H  ) );
@@ -1084,7 +1084,7 @@ DSK66::DSK66( VM6* vm, const ID& id ) : DSK6( vm, id ),	SendBytes( 0 ), ExtDrv( 
 	INITARRAY( FDDBuf, 0 );
 	UType = PC6601;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB1H, STATIC_CAST( Device::OutFuncPtr, &DSK66::OutB1H ) );
 	descs.outdef.emplace( outB3H, STATIC_CAST( Device::OutFuncPtr, &DSK66::OutB3H ) );
 	descs.outdef.emplace( outD0H, STATIC_CAST( Device::OutFuncPtr, &DSK66::OutD0H ) );
@@ -1097,7 +1097,7 @@ DSK66::DSK66( VM6* vm, const ID& id ) : DSK6( vm, id ),	SendBytes( 0 ), ExtDrv( 
 	descs.outdef.emplace( outDDH, STATIC_CAST( Device::OutFuncPtr, &DSK66::OutDDH ) );
 	descs.outdef.emplace( outDEH, STATIC_CAST( Device::OutFuncPtr, &DSK66::OutDEH ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inB2H,  STATIC_CAST( Device::InFuncPtr,  &DSK66::InB2H  ) );
 	descs.indef.emplace ( inD0H,  STATIC_CAST( Device::InFuncPtr,  &DSK66::InD0H  ) );
 	descs.indef.emplace ( inD1H,  STATIC_CAST( Device::InFuncPtr,  &DSK66::InD1H  ) );

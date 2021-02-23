@@ -34,6 +34,13 @@ class cWndMon;
 class EL6 : public cThread, public AVI6, public REPLAY {
 	
 	friend class DSP6;
+	friend class cWndStat;
+	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	friend class cWndReg;
+	friend class cWndMem;
+	friend class cWndMon;
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 public:
 	enum ReturnCode{

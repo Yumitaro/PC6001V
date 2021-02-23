@@ -26,23 +26,23 @@ PSGb::PSGb( VM6* vm, const ID& id ) : Device( vm, id ), JoyNo( 0 ), Clock( 0 )
 
 PSG60::PSG60( VM6* vm, const ID& id ) : PSGb( vm, id )
 {
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outA0H, STATIC_CAST( Device::OutFuncPtr, &PSG60::OutA0H ) );
 	descs.outdef.emplace( outA1H, STATIC_CAST( Device::OutFuncPtr, &PSG60::OutA1H ) );
 	descs.outdef.emplace( outA3H, STATIC_CAST( Device::OutFuncPtr, &PSG60::OutA3H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &PSG60::InA2H  ) );
 }
 
 OPN64::OPN64( VM6* vm, const ID& id ) : PSGb( vm, id )
 {
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outA0H, STATIC_CAST( Device::OutFuncPtr, &OPN64::OutA0H ) );
 	descs.outdef.emplace( outA1H, STATIC_CAST( Device::OutFuncPtr, &OPN64::OutA1H ) );
 	descs.outdef.emplace( outA3H, STATIC_CAST( Device::OutFuncPtr, &OPN64::OutA3H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &OPN64::InA2H  ) );
 	descs.indef.emplace ( inA3H,  STATIC_CAST( Device::InFuncPtr,  &OPN64::InA3H  ) );
 }

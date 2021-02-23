@@ -73,7 +73,7 @@ public:
 	
 	void Blit( VRect*, VSurface*, VRect* );		// 転送する
 	
-	static void SetColor( int, DWORD );			// 32bitカラーテーブル設定
+	static void SetColor( int, DWORD );			// 32bitカラー設定
 	static DWORD GetColor( int );				// 32bitカラー取得
 };
 

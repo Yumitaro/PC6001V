@@ -32,12 +32,12 @@ VCE60::VCE60( VM6* vm, const ID& id ) : VCE6( vm, id )
 
 VCE62::VCE62( VM6* vm, const ID& id ) : VCE6( vm, id )
 {
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outE0H, STATIC_CAST( Device::OutFuncPtr, &VCE62::OutE0H ) );
 	descs.outdef.emplace( outE2H, STATIC_CAST( Device::OutFuncPtr, &VCE62::OutE2H ) );
 	descs.outdef.emplace( outE3H, STATIC_CAST( Device::OutFuncPtr, &VCE62::OutE3H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inE0H,  STATIC_CAST( Device::InFuncPtr,  &VCE62::InE0H  ) );
 	descs.indef.emplace ( inE2H,  STATIC_CAST( Device::InFuncPtr,  &VCE62::InE2H  ) );
 	descs.indef.emplace ( inE3H,  STATIC_CAST( Device::InFuncPtr,  &VCE62::InE3H  ) );

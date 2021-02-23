@@ -27,6 +27,11 @@ ID_MENU MENU
             MENUITEM "リセット", ID_RESET
             MENUITEM "再起動", ID_RESTART
             MENUITEM SEPARATOR
+            MENUITEM "ポーズ", ID_PAUSE
+            MENUITEM "ノーウェイト", ID_NOWAIT
+            MENUITEM SEPARATOR
+            MENUITEM "スナップショット", ID_SNAPSHOT
+            MENUITEM SEPARATOR
             POPUP "どこでもLOAD"
             {
                 MENUITEM "ファイル...", ID_DOKOLOAD
@@ -173,7 +178,6 @@ ID_MENU MENU
                 MENUITEM "11025Hz", ID_SPR11
             }
             MENUITEM SEPARATOR
-            MENUITEM "ウェイト無効", ID_NOWAIT
             MENUITEM "Turbo TAPE", ID_TURBO
             MENUITEM "Boost Up", ID_BOOST
             MENUITEM SEPARATOR

@@ -9,22 +9,43 @@
 #define	FSIZE		(6)	// 半角フォントの幅
 
 // 色定義
-#define	FC_BLACK	0
-#define	FC_DBLUE	1
-#define	FC_DGREEN	2
-#define	FC_DCYAN	3
-#define	FC_DRED		4
-#define	FC_DMAGENTA	5
-#define	FC_DYELLOW	6
-#define	FC_GRAY		7
-#define	FC_DGRAY	8
-#define	FC_BLUE		9
-#define	FC_GREEN	10
-#define	FC_CYAN		11
-#define	FC_RED		12
-#define	FC_MAGENTA	13
-#define	FC_YELLOW	14
-#define	FC_WHITE	15
+enum SystemColor {
+	FC_BLACK = 128,
+	
+	FC_BLUE1,
+	FC_GREEN1,
+	FC_CYAN1,
+	FC_RED1,
+	FC_MAGENTA1,
+	FC_YELLOW1,
+	FC_WHITE1,
+	
+	FC_BLUE2,
+	FC_GREEN2,
+	FC_CYAN2,
+	FC_RED2,
+	FC_MAGENTA2,
+	FC_YELLOW2,
+	FC_WHITE2,
+	
+	FC_BLUE3,
+	FC_GREEN3,
+	FC_CYAN3,
+	FC_RED3,
+	FC_MAGENTA3,
+	FC_YELLOW3,
+	FC_WHITE3,
+	
+	FC_BLUE4,
+	FC_GREEN4,
+	FC_CYAN4,
+	FC_RED4,
+	FC_MAGENTA4,
+	FC_YELLOW4,
+	FC_WHITE4
+};
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -52,9 +73,9 @@ public:
 class ZCons : public JFont, public VSurface {
 protected:
 	VRect con;					// 描画範囲
-	int Xmax,Ymax;				// 縦横最大文字数(半角)
-	int x,y;					// カーソル位置
-	BYTE fgc,bgc;				// 描画色と背景色
+	int Xmax, Ymax;				// 縦横最大文字数(半角)
+	int x, y;					// カーソル位置
+	BYTE fgc, bgc;				// 描画色と背景色
 	std::string Caption;		// キャプション
 	
 	void DrawFrame();							// 枠描画
@@ -70,8 +91,8 @@ public:
 	ZCons();
 	virtual ~ZCons();
 	
-	bool Init   ( int, int, const std::string&, BYTE = FC_WHITE, BYTE = FC_BLACK );	// 初期化(文字数でサイズ指定)
-	bool InitRes( int, int, const std::string&, BYTE = FC_WHITE, BYTE = FC_BLACK );	// 初期化(解像度でサイズ指定)
+	bool Init   ( int, int, const std::string&, BYTE = FC_WHITE4, BYTE = FC_BLACK );	// 初期化(文字数でサイズ指定)
+	bool InitRes( int, int, const std::string&, BYTE = FC_WHITE4, BYTE = FC_BLACK );	// 初期化(解像度でサイズ指定)
 	void SetColor( BYTE, BYTE );				// 描画色設定
 	void SetColor( BYTE );
 	
