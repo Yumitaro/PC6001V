@@ -39,12 +39,25 @@ class DSK6;
 
 class EVSC;
 class BPoint;
+class cWndStat;
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+class cWndReg;
+class cWndMem;
+class cWndMon;
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 // 基本仮想マシンクラス
 class VM6 : public std::enable_shared_from_this<VM6> {
 	
 	friend class EL6;
+	friend class cWndStat;
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	friend class cWndReg;
+	friend class cWndMem;
+	friend class cWndMon;
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	
 protected:
 	// デバイスコネクタテーブル構造体
@@ -136,12 +149,6 @@ public:
 	void IntReqIntr( DWORD );							// 割込み要求
 	void IntCancelIntr( DWORD );						// 割込み撤回
 	bool IntGetTimerIntr();								// タイマ割込みスイッチ取得
-	// CPU6
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	int CpumDisasm( std::string&, WORD );				// 1ライン逆アセンブル
-	void CpumGetRegister( cZ80::Register* );			// レジスタ値取得
-	void CpumSetRegister( cZ80::Register* );			// レジスタ値設定
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// SUB6
 	void CpusReqKeyIntr( int, BYTE );					// キー割込み要求
 	void CpusExtIntr();									// 外部割込み要求
@@ -152,25 +159,17 @@ public:
 	BYTE MemRead( WORD, int* = nullptr );				// メモリリード
 	void MemWrite( WORD, BYTE, int* = nullptr );		// メモリライト
 	void MemSetCGBank( bool );							// CG ROM BANK 選択
-	BYTE MemReadSysRom( WORD ) const;					// 直接読込み
 	BYTE MemReadIntRam( WORD ) const;					// 直接読込み
-	BYTE MemReadExtRom( WORD ) const;					// 直接読込み
 	BYTE MemReadExtRam( WORD ) const;					// 直接読込み
 	BYTE MemReadCGrom1( WORD ) const;					// 直接読込み
 	BYTE MemReadCGrom2( WORD ) const;					// 直接読込み
 	BYTE MemReadCGrom3( WORD ) const;					// 直接読込み
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	const std::string& MemGetReadMemBlk( int ) const;	// メモリブロック取得(Read)
-	const std::string& MemGetWriteMemBlk( int ) const;	// メモリブロック取得(Write)
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// VDG6
-	bool VdgGetCrtDisp() const;							// CRT表示状態取得
+//	bool VdgGetCrtDisp() const;							// CRT表示状態取得
 	void VdgSetCrtDisp( bool );							// CRT表示状態設定
 	bool VdgGetWinSize() const;							// ウィンドウサイズ取得
 	bool VdgIsBusReqStop() const;						// バスリクエスト区間停止フラグ取得
 	bool VdgIsBusReqExec() const;						// バスリクエスト区間実行フラグ取得
-	WORD VdgGetVramAddr() const;						// VRAMアドレス取得
-	WORD VdgGerAttrAddr() const;						// ATTRアドレス取得
 	bool VdgIsSRmode() const;							// SRモード取得
 	bool VdgIsSRBitmap( WORD ) const;					// SRビットマップモード取得
 	WORD VdgSRGVramAddr( WORD ) const;					// SRのG-VRAMアドレス取得(ビットマップモード)
@@ -179,39 +178,13 @@ public:
 	// KEY6
 	BYTE KeyGetKeyJoy() const;							// カーソルキー状態取得
 	BYTE KeyGetJoy( int ) const;						// ジョイスティック状態取得
-	BYTE KeyGetKeyIndicator() const;					// キーボードインジケータ状態取得
 	void KeyChangeKana();								// 英字<->かな切換
 	void KeyChangeKKana();								// かな<->カナ切換
-	// CMTL
-	bool CmtlIsMount() const;							// マウント済み?
-	bool CmtlIsAutoStart() const;						// オートスタート?
-	const P6VPATH& CmtlGetFile() const;					// ファイルパス取得
-	const std::string& CmtlGetName() const;				// TAPE名取得
-	DWORD CmtlGetBetaSize() const;						// ベタイメージサイズ取得
-	int CmtlGetCount() const;							// カウンタ取得
 	// CMTS
 	bool CmtsMount();									// TAPE マウント
 	void CmtsUnmount();									// TAPE アンマウント
 	void CmtsSetBaud( int );							// ボーレート設定
 	void CmtsWriteOne( BYTE );							// 1文字書込み
-	// DSK6
-	bool DskIsMount( int ) const;						// マウント済み?
-	bool DskIsSystem( int ) const;						// システムディスク?
-	bool DskIsProtect( int ) const;						// プロテクト?
-	bool DskInAccess( int ) const;						// アクセス中?
-	const P6VPATH& DskGetFile( int ) const;				// ファイルパス取得
-	const std::string& DskGetName( int ) const;			// DISK名取得
-	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	// BPoint
-	void BpSet( const BPoint::BPtype, const WORD );		// ブレークポイントを設定
-	void BpDelete( const int );							// ブレークポイントを削除
-	BPoint::BPtype BpGetType( const int ) const;		// ブレークポイントのタイプを取得
-	WORD BpGetAddr( const int ) const;					// ブレークポイントのアドレスを取得
-	int BpGetNum() const;								// ブレークポイント登録数取得
-	bool BpCheck( const BPoint::BPtype, const WORD );	// ブレークポイントをチェック
-	int BpGetReqNum() const;							// ブレーク要求のあったブレークポイントNo.を取得
-	void BpReset();										// ブレーク要求キャンセル
-	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 };
 
 

@@ -41,7 +41,7 @@ JFont::JFont( void )
 			ff.y = hHeight * y + 1;
 			for( int x=0; x<192; x++ ){
 				ff.x = hWidth * x + 1;
-				HFont.Fill( FC_WHITE, &ff );
+				HFont.Fill( FC_WHITE4, &ff );
 			}
 		}
 	}
@@ -59,7 +59,7 @@ JFont::JFont( void )
 			ff.y = zHeight * y + 1;
 			for( int x=0; x<192; x++ ){
 				ff.x = zWidth * x + 1;
-				ZFont.Fill( FC_WHITE, &ff );
+				ZFont.Fill( FC_WHITE4, &ff );
 			}
 		}
 	}
@@ -98,7 +98,7 @@ bool JFont::OpenFont( const P6VPATH& zfilename, const P6VPATH& hfilename )
 ////////////////////////////////////////////////////////////////
 // コンストラクタ
 ////////////////////////////////////////////////////////////////
-ZCons::ZCons( void ) : Xmax(0), Ymax(0), x(0), y(0), fgc(FC_WHITE), bgc(FC_BLACK), Caption("")
+ZCons::ZCons( void ) : Xmax( 0 ), Ymax( 0 ), x( 0 ), y( 0 ), fgc( FC_WHITE4 ), bgc( FC_BLACK ), Caption( "" )
 {
 }
 

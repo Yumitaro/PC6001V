@@ -39,21 +39,13 @@ bool IOBus::Init( int banksize )
 	InBank idummy;
 	idummy.device = &dummyio;
 	idummy.func   = STATIC_CAST( InFuncPtr, &DummyIO::dummyin );
-	ins.resize( banksize );
-	for( auto &i : ins ){
-		i.clear();
-		i.emplace_back( idummy );
-	}
+	ins.assign( banksize, std::vector<InBank>( 1, idummy ) );
 	
 	// OUTポート初期化(ダミーデバイス割当)
 	OutBank odummy;
 	odummy.device = &dummyio;
 	odummy.func   = STATIC_CAST( OutFuncPtr, &DummyIO::dummyout );
-	outs.resize( banksize );
-	for( auto &i : outs ){
-		i.clear();
-		i.emplace_back( odummy );
-	}
+	outs.assign( banksize, std::vector<OutBank>( 1, odummy ) );
 	
 	return true;
 }
@@ -166,7 +158,7 @@ BYTE IOBus::In( int port )
 {
 	BYTE data = 0xff;
 	
-	for( auto &i : ins.at( port&0xff ) ) try{
+	for( auto &i : ins.at( port & 0xff ) ) try{
 		data &= (i.device->*i.func)( port );
 	}
 	catch( std::out_of_range& ){}
@@ -180,11 +172,39 @@ BYTE IOBus::In( int port )
 ////////////////////////////////////////////////////////////////
 void IOBus::Out( int port, BYTE data )
 {
-	for( auto &i : outs.at( port&0xff ) ) try{
+	for( auto &i : outs.at( port & 0xff ) ) try{
 		(i.device->*i.func)( port, data );
 	}
 	catch( std::out_of_range& ){}
 }
+
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+////////////////////////////////////////////////////////////////
+// 登録済I/Oポートリスト取得
+////////////////////////////////////////////////////////////////
+void IOBus::GetPortList( std::vector<int>& inp, std::vector<int>& outp )
+{
+	inp.clear();
+	outp.clear();
+	
+	int i = 0;
+	for( auto &p : ins ){
+		if( p.size() > 1 ){ inp.emplace_back( i ); }
+		i++;
+	}
+	
+	i = 0;
+	for( auto &p : outs ){
+		if( p.size() > 1 ){ outp.emplace_back( i ); }
+		i++;
+	}
+}
+
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
 
 
 // ---------------------------------------------------------------------------
@@ -258,11 +278,10 @@ bool IO6::Init( int banksize )
 	try{
 		if( !IOBus::Init( banksize ) ) throw Error::InitFailed;
 		
-		Iwait.resize( BANKMASK + 1 );
-		Owait.resize( BANKMASK + 1 );
-		
-		for( auto &i : Iwait ) i = 0;
-		for( auto &i : Owait ) i = 0;
+		Iwait.assign( BANKMASK + 1, 0 );
+		Owait.assign( BANKMASK + 1, 0 );
+		Idata.assign( BANKMASK + 1, -1 );
+		Odata.assign( BANKMASK + 1, -1 );
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -280,8 +299,9 @@ BYTE IO6::In( int port, int* wcnt )
 {
 	PRINTD( IO_LOG, "[IO][In] port : %02X\n", port );
 	
-	if( wcnt ) (*wcnt) += Iwait[port&BANKMASK];
-	return IOBus::In( port );
+	if( wcnt ) (*wcnt) += Iwait[port & BANKMASK];
+	Idata[port & BANKMASK] = IOBus::In( port );
+	return Idata[port & BANKMASK];
 }
 
 
@@ -292,7 +312,8 @@ void IO6::Out( int port, BYTE data, int* wcnt )
 {
 	PRINTD( IO_LOG, "[IO][Out] port : %02X  data : %02X\n", port, data );
 	
-	if( wcnt ) (*wcnt) += Owait[port&BANKMASK];
+	if( wcnt ) (*wcnt) += Owait[port & BANKMASK];
+	Odata[port & BANKMASK] = data;
 	IOBus::Out( port, data );
 }
 
@@ -302,7 +323,7 @@ void IO6::Out( int port, BYTE data, int* wcnt )
 ////////////////////////////////////////////////////////////////
 void IO6::SetInWait( int port, int wait )
 {
-	Iwait[port&BANKMASK] = wait;
+	Iwait[port & BANKMASK] = wait;
 }
 
 
@@ -311,7 +332,7 @@ void IO6::SetInWait( int port, int wait )
 ////////////////////////////////////////////////////////////////
 void IO6::SetOutWait( int port, int wait )
 {
-	Owait[port&BANKMASK] = wait;
+	Owait[port & BANKMASK] = wait;
 }
 
 
@@ -320,7 +341,7 @@ void IO6::SetOutWait( int port, int wait )
 ////////////////////////////////////////////////////////////////
 int IO6::GetInWait( int port )
 {
-	return Iwait[port&BANKMASK];
+	return Iwait[port & BANKMASK];
 }
 
 
@@ -329,5 +350,27 @@ int IO6::GetInWait( int port )
 ////////////////////////////////////////////////////////////////
 int IO6::GetOutWait( int port )
 {
-	return Owait[port&BANKMASK];
+	return Owait[port & BANKMASK];
 }
+
+
+#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+////////////////////////////////////////////////////////////////
+// IN データ参照
+////////////////////////////////////////////////////////////////
+int IO6::PeepIn( int port )
+{
+	return Idata[port & BANKMASK];
+}
+
+
+////////////////////////////////////////////////////////////////
+// OUTデータ参照
+////////////////////////////////////////////////////////////////
+int IO6::PeepOut( int port )
+{
+	return Odata[port & BANKMASK];
+}
+
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

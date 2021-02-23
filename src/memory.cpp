@@ -741,7 +741,7 @@ MEM62::MEM62( VM6* vm, const ID& id ) : MEM6( vm, id ),
 	MemTable.Voice   = &MEM62::IVOICE;
 	MemTable.IntRam  = &MEM62::IINTRAM;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outC1H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC1H ) );
 	descs.outdef.emplace( outC2H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC2H ) );
 	descs.outdef.emplace( outC3H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutC3H ) );
@@ -751,7 +751,7 @@ MEM62::MEM62( VM6* vm, const ID& id ) : MEM6( vm, id ),
 	descs.outdef.emplace( outF3H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF3H ) );
 	descs.outdef.emplace( outF8H, STATIC_CAST( Device::OutFuncPtr, &MEM62::OutF8H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inC2H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InC2H  ) );
 	descs.indef.emplace ( inF0H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF0H  ) );
 	descs.indef.emplace ( inF1H,  STATIC_CAST( Device::InFuncPtr,  &MEM62::InF1H  ) );
@@ -783,10 +783,10 @@ MEM64::MEM64( VM6* vm, const ID& id ) : MEM62( vm, id )
 	MemTable.Voice   = nullptr;
 	MemTable.IntRam  = &MEM64::IINTRAM;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( out6xH, STATIC_CAST( Device::OutFuncPtr, &MEM64::Out6xH ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( in6xH,  STATIC_CAST( Device::InFuncPtr,  &MEM64::In6xH  ) );
 	descs.indef.emplace ( inB2H,  STATIC_CAST( Device::InFuncPtr,  &MEM64::InB2H  ) );
 }
@@ -1155,7 +1155,7 @@ bool MEM6::GetWriteEnableExt( WORD addr )
 	case EXCSOL3:	// 戦士のカートリッジmkⅢ
 		return Sol60Mode && ((CS01W && (idx == 0 || idx == 1)) || (CS02W && (idx == 2 || idx == 3)));
 	}
-	return true;
+	return false;
 }
 
 
@@ -1555,6 +1555,10 @@ bool MEM6::InitInt( void )
 	for( auto &mb : IRom ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 1 ); }
 	for( auto &mb : IRam ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 0 ); }
 	
+	// 外部メモリもここで初期化しておく
+	for( auto &mb : ERom ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 1 ); }
+	for( auto &mb : ERam ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 0 ); }
+	
 	// 汎用アクセス用
 	IRom[RWCOMMON].SetFunc( FN( STATIC_CAST( NFuncPtr, &MEM6::GetNameCommon ) ), FR( STATIC_CAST( RFuncPtr, &MEM6::CommonRead ) ), FW( STATIC_CAST( WFuncPtr, &MEM6::CommonWrite ) ), 0 );
 	
@@ -1587,8 +1591,8 @@ bool MEM6::InitExt( void )
 	PRINTD( MEM_LOG, "[MEM][InitExt]\n" );
 	
 	// とりあえず全メモリブロックをEmptyに設定(ROMはウェイトあり)
-	for( auto &mb : ERom ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 1 ); }
-	for( auto &mb : ERam ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 0 ); }
+//	for( auto &mb : ERom ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 1 ); }
+//	for( auto &mb : ERam ){ mb.SetFunc( "EMPTY", nullptr, nullptr, 0 ); }
 	
 	// ROM
 	switch( ExCart ){

@@ -31,7 +31,7 @@ IRQ60::IRQ60( VM6* vm, const ID& id ) : IRQ6( vm, id )
 	IntEnable[0] = true;
 	IntEnable[2] = true;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &IRQ60::OutB0H ) );
 }
 
@@ -39,7 +39,7 @@ IRQ62::IRQ62( VM6* vm, const ID& id ) : IRQ6( vm, id )
 {
 	Timer1st = 88;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &IRQ62::OutB0H ) );
 	descs.outdef.emplace( outF3H, STATIC_CAST( Device::OutFuncPtr, &IRQ62::OutF3H ) );
 	descs.outdef.emplace( outF4H, STATIC_CAST( Device::OutFuncPtr, &IRQ62::OutF4H ) );
@@ -47,7 +47,7 @@ IRQ62::IRQ62( VM6* vm, const ID& id ) : IRQ6( vm, id )
 	descs.outdef.emplace( outF6H, STATIC_CAST( Device::OutFuncPtr, &IRQ62::OutF6H ) );
 	descs.outdef.emplace( outF7H, STATIC_CAST( Device::OutFuncPtr, &IRQ62::OutF7H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inF3H,  STATIC_CAST( Device::InFuncPtr,  &IRQ62::InF3H  ) );
 	descs.indef.emplace ( inF4H,  STATIC_CAST( Device::InFuncPtr,  &IRQ62::InF4H  ) );
 	descs.indef.emplace ( inF5H,  STATIC_CAST( Device::InFuncPtr,  &IRQ62::InF5H  ) );
@@ -59,7 +59,7 @@ IRQ64::IRQ64( VM6* vm, const ID& id ) : IRQ6( vm, id )
 {
 	Timer1st = 88;
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &IRQ64::OutB0H ) );
 	descs.outdef.emplace( outBxH, STATIC_CAST( Device::OutFuncPtr, &IRQ64::OutBxH ) );
 	descs.outdef.emplace( outF3H, STATIC_CAST( Device::OutFuncPtr, &IRQ64::OutF3H ) );
@@ -70,7 +70,7 @@ IRQ64::IRQ64( VM6* vm, const ID& id ) : IRQ6( vm, id )
 	descs.outdef.emplace( outFAH, STATIC_CAST( Device::OutFuncPtr, &IRQ64::OutFAH ) );
 	descs.outdef.emplace( outFBH, STATIC_CAST( Device::OutFuncPtr, &IRQ64::OutFBH ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inF3H,  STATIC_CAST( Device::InFuncPtr,  &IRQ64::InF3H  ) );
 	descs.indef.emplace ( inF4H,  STATIC_CAST( Device::InFuncPtr,  &IRQ64::InF4H  ) );
 	descs.indef.emplace ( inF5H,  STATIC_CAST( Device::InFuncPtr,  &IRQ64::InF5H  ) );

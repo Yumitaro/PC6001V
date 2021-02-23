@@ -5,26 +5,28 @@
 #include <string>
 #include <vector>
 
-#include "typedef.h"
-#include "device.h"
 #include "console.h"
+#include "device.h"
+#include "typedef.h"
 
 
 #ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+class EL6;
 
 //------------------------------------------------------
 //  モニタモードウィンドウ インターフェース(?)クラス
 //------------------------------------------------------
 class iMon : public ZCons {
 protected:
-	std::shared_ptr<VM6> vm;
+	EL6* el;
 	
 private:
 	int x;								// X座標(モニタモード内での表示位置)
 	int y;								// Y座標(モニタモード内での表示位置)
 	
 public:
-	iMon( const std::shared_ptr<VM6>& );
+	iMon( EL6* );
 	~iMon();
 	
 	int X();							// X座標取得
@@ -45,7 +47,7 @@ private:
 	WORD Addr;							// 表示アドレス
 	
 public:
-	cWndMem( const std::shared_ptr<VM6>& );
+	cWndMem( EL6* );
 	~cWndMem();
 	
 	bool Init() override;				// 初期化
@@ -63,7 +65,7 @@ class cWndReg : public iMon {
 private:
 	
 public:
-	cWndReg( const std::shared_ptr<VM6>& );
+	cWndReg( EL6* );
 	~cWndReg();
 	
 	bool Init() override;				// 初期化
@@ -94,7 +96,7 @@ private:
 	void Help( int );					// ヘルプ表示
 	
 public:
-	cWndMon( const std::shared_ptr<VM6>& );
+	cWndMon( EL6* );
 	~cWndMon();
 	
 	bool Init() override;				// 初期化

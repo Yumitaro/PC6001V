@@ -30,63 +30,70 @@
 
 
 // カラーコード
+#define	CM1			(0)			// mode 1   カラーセット 5
+#define	CM2			(CM1+5)		// mode 2,3 カラーセット 8
+#define	CM4			(CM2+8)		// mode 4   カラーセット 28
+#define	CMD			(CM4+28)	// RGB      カラーセット 16
 
 // --------- 60 ---------
 const BYTE VDG6::COL60_AN[] =			// mode 1 -----
-				{ 17,18,19,20,16 };
+				{ CM1+1, CM1+2, CM1+3, CM1+4, CM1 };
 
 const BYTE VDG6::COL60_SG[] =			// mode 2 -----
-				{ 21,22,23,24,25,26,27,28,16 };
+				{ CM2,   CM2+1, CM2+2, CM2+3, CM2+4, CM2+5, CM2+6, CM2+7, CM1 };
 
 const BYTE VDG6::COL60_CG[][8] = {		// mode 3 -----
-				{ 21,22,23,24, 0, 0, 0, 0 },
-				{ 25,26,27,28, 0, 0, 0, 0 },
-				{ 29,33,34,30,37,38,39,40 },	// mode4(Set1) Jにじみ
-				{ 31,45,46,32,49,50,51,52 },	// mode4(Set2) Jにじみ
-				{ 29,34,33,30,39,40,37,38 },	// mode4(Set1) Jにじみ
-				{ 31,46,45,32,51,52,49,50 },	// mode4(Set2) Jにじみ
-				{ 29,35,36,30,41,42,43,44 },	// mode4(Set1) Jにじみ
-				{ 31,47,48,32,53,54,55,56 },	// mode4(Set2) Jにじみ
-				{ 29,36,35,30,43,44,41,42 },	// mode4(Set1) Jにじみ
-				{ 31,48,47,32,55,56,53,54 }		// mode4(Set2) Jにじみ
+				{ CM2,   CM2+ 1, CM2+ 2, CM2+3, 0,      0,      0,      0      },
+				{ CM2+4, CM2+ 5, CM2+ 6, CM2+7, 0,      0,      0,      0      },
+				{ CM4,   CM4+ 4, CM4+ 5, CM4+1, CM4+ 8, CM4+ 9, CM4+10, CM4+11 },	// mode4(Set1) Jにじみ
+				{ CM4+2, CM4+16, CM4+17, CM4+3, CM4+20, CM4+21, CM4+22, CM4+23 },	// mode4(Set2) Jにじみ
+				{ CM4,   CM4+ 5, CM4+ 4, CM4+1, CM4+10, CM4+11, CM4+ 8, CM4+ 9 },	// mode4(Set1) Jにじみ
+				{ CM4+2, CM4+17, CM4+16, CM4+3, CM4+22, CM4+23, CM4+20, CM4+21 },	// mode4(Set2) Jにじみ
+				{ CM4,   CM4+ 6, CM4+ 7, CM4+1, CM4+12, CM4+13, CM4+14, CM4+15 },	// mode4(Set1) Jにじみ
+				{ CM4+2, CM4+18, CM4+19, CM4+3, CM4+24, CM4+25, CM4+26, CM4+27 },	// mode4(Set2) Jにじみ
+				{ CM4,   CM4+ 7, CM4+ 6, CM4+1, CM4+14, CM4+15, CM4+12, CM4+13 },	// mode4(Set1) Jにじみ
+				{ CM4+2, CM4+19, CM4+18, CM4+3, CM4+26, CM4+27, CM4+24, CM4+25 }	// mode4(Set2) Jにじみ
 			};
 
 const BYTE VDG6::COL60_RG[][2] = {		// mode 4 -----
-				{ 29,30 },
-				{ 31,32 }
+				{ CM4,   CM4+1 },
+				{ CM4+2, CM4+3 }
 			};
 
 // --------- mk2 ---------
 const BYTE VDG6::COL62_AN[] =			// mode 1-1 -----
-				{ 72,65,67,65,65 };
+				{ CMD+15, CMD+8, CMD+10, CMD+8, CMD+8 };
 
 const BYTE VDG6::COL62_SG[] =			// mode 1-2 -----
-				{ 67,68,69,66,72,71,70,58,65 };
+				{ CMD+10, CMD+11, CMD+12, CMD+9, CMD+15, CMD+14, CMD+13, CMD+1, CMD+8 };
 
 const BYTE VDG6::COL62_CG[][8] = {		// mode 1-3 -----
-				{ 67,68,69,66, 0, 0, 0, 0 },	// mode1-4(Set1) Jにじみ
-				{ 72,71,70,58, 0, 0, 0, 0 },	// mode1-4(Set1) Jにじみ
-				{ 65,33,34,67,37,38,39,40 },	// mode1-4(Set1) Jにじみ
-				{ 65,45,46,72,49,50,51,52 },	// mode1-4(Set1) Jにじみ
-				{ 65,34,33,67,39,40,37,38 },	// mode1-4(Set1) Jにじみ
-				{ 65,46,45,72,51,52,49,50 },	// mode1-4(Set1) Jにじみ
-				{ 65,35,36,67,41,42,43,44 },	// mode1-4(Set1) Jにじみ
-				{ 65,47,48,72,53,54,55,56 },	// mode1-4(Set1) Jにじみ
-				{ 65,36,35,67,43,44,41,42 },	// mode1-4(Set1) Jにじみ
-				{ 65,48,47,72,55,56,53,54 }		// mode1-4(Set1) Jにじみ
+				{ CMD+10, CMD+11, CMD+12, CMD+ 9, 0,      0,      0,      0      },	// mode1-4(Set1) Jにじみ
+				{ CMD+15, CMD+14, CMD+13, CMD+ 1, 0,      0,      0,      0      },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+ 4, CM4+ 5, CMD+10, CM4+ 8, CM4+ 9, CM4+10, CM4+11 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+16, CM4+17, CMD+15, CM4+20, CM4+21, CM4+22, CM4+23 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+ 5, CM4+ 4, CMD+10, CM4+10, CM4+11, CM4+ 8, CM4+ 9 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+17, CM4+16, CMD+15, CM4+22, CM4+23, CM4+20, CM4+21 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+ 6, CM4+ 7, CMD+10, CM4+12, CM4+13, CM4+14, CM4+15 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+18, CM4+19, CMD+15, CM4+24, CM4+25, CM4+26, CM4+27 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+ 7, CM4+ 6, CMD+10, CM4+14, CM4+15, CM4+12, CM4+13 },	// mode1-4(Set1) Jにじみ
+				{ CMD+ 8, CM4+19, CM4+18, CMD+15, CM4+26, CM4+27, CM4+24, CM4+25 }	// mode1-4(Set1) Jにじみ
 			};
 
 const BYTE VDG6::COL62_RG[][2] = {		// mode 1-4 -----
-				{ 65,67 },
-				{ 65,72 }
+				{ CMD+8, CMD+10 },
+				{ CMD+8, CMD+15 }
 			};
 
 const BYTE VDG6::COL62_AN2[] =			// mode 2-1,2 -----
-				{ 57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72 };
+				{ CMD,   CMD+1, CMD+ 2, CMD+ 3, CMD+ 4, CMD+ 5, CMD+ 6, CMD+ 7,
+				  CMD+8, CMD+9, CMD+10, CMD+11, CMD+12, CMD+13, CMD+14, CMD+15 };
 
 const BYTE VDG6::COL62_CG2[][16] = {	// mode 2-3,4 -----
-				{ 57,61,58,62,59,63,60,64,65,69,66,70,67,71,68,72 },
-				{ 67,68,69,66,72,71,70,58,67,68,69,66,72,71,70,58 }
+				{ CMD,    CMD+ 4, CMD+ 1, CMD+ 5, CMD+ 2, CMD+ 6, CMD+ 3, CMD+ 7,
+				  CMD+ 8, CMD+12, CMD+ 9, CMD+13, CMD+10, CMD+14, CMD+11, CMD+15 },
+				{ CMD+10, CMD+11, CMD+12, CMD+ 9, CMD+15, CMD+14, CMD+13, CMD+ 1,
+				  CMD+10, CMD+11, CMD+12, CMD+ 9, CMD+15, CMD+14, CMD+13, CMD+ 1 }
 			};
 
 
@@ -118,7 +125,7 @@ VDG60::VDG60( VM6* vm, const ID& id ) : VDG6( vm, id )
 		for( int j=0; j<COUNTOF(COL_RG[0]); j++ )
 			COL_RG[i][j] = COL60_RG[i][j];
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &VDG60::OutB0H ) );
 }
 
@@ -149,12 +156,12 @@ VDG62::VDG62( VM6* vm, const ID& id ) : VDG6( vm, id )
 		for( int j=0; j<COUNTOF(COL_CG2[0]); j++ )
 			COL_CG2[i][j] = COL62_CG2[i][j];
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &VDG62::OutB0H ) );
 	descs.outdef.emplace( outC0H, STATIC_CAST( Device::OutFuncPtr, &VDG62::OutC0H ) );
 	descs.outdef.emplace( outC1H, STATIC_CAST( Device::OutFuncPtr, &VDG62::OutC1H ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &VDG62::InA2H  ) );
 }
 
@@ -185,7 +192,7 @@ VDG64::VDG64( VM6* vm, const ID& id ) : VDG6( vm, id )
 		for( int j=0; j<COUNTOF(COL_CG2[0]); j++ )
 			COL_CG2[i][j] = COL62_CG2[i][j];
 	
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( out4xH, STATIC_CAST( Device::OutFuncPtr, &VDG64::Out4xH ) );
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutB0H ) );
 	descs.outdef.emplace( outC0H, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutC0H ) );
@@ -195,10 +202,11 @@ VDG64::VDG64( VM6* vm, const ID& id ) : VDG6( vm, id )
 	descs.outdef.emplace( outCAH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCAH ) );
 	descs.outdef.emplace( outCBH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCBH ) );
 	descs.outdef.emplace( outCCH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCCH ) );
+	descs.outdef.emplace( outCDH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCDH ) );
 	descs.outdef.emplace( outCEH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCEH ) );
 	descs.outdef.emplace( outCFH, STATIC_CAST( Device::OutFuncPtr, &VDG64::OutCFH ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( inA2H,  STATIC_CAST( Device::InFuncPtr,  &VDG64::InA2H  ) );
 }
 
@@ -621,14 +629,15 @@ void VDG6::OutC1H( int, BYTE data )
 	CreateBuffer();
 }
 
-void VDG64::Out4xH( int port, BYTE data ){ SetPalette( 15-(port&3), 15-(data&0xf) ); }
+void VDG64::Out4xH( int port, BYTE data ){ SetPalette( 15-(port & 3), 15-(data & 0xf) ); }
 void VDG64::OutC8H( int, BYTE data ){ SetCrtCtrlType( data ); }
-void VDG64::OutC9H( int, BYTE data ){ SRTextAddr = data&0x0f; }
-void VDG64::OutCAH( int, BYTE data ){ SRRollX = (SRRollX&0xff00) | (WORD)data; }
-void VDG64::OutCBH( int, BYTE data ){ SRRollX = (SRRollX&0x00ff) | (((WORD)data&3)<<8); }
-void VDG64::OutCCH( int, BYTE data ){ SRRollY = (WORD)data; }
-void VDG64::OutCEH( int, BYTE data ){ SRVramAddrY = (SRVramAddrY&0xff00) | (WORD)data; }
-void VDG64::OutCFH( int, BYTE data ){ SRVramAddrY = (SRVramAddrY&0x00ff) | (((WORD)data&1)<<8); }
+void VDG64::OutC9H( int, BYTE data ){ SRTextAddr = data & 0x0f; }
+void VDG64::OutCAH( int, BYTE data ){ SRRollX = (SRRollX & 0xff00) |   (WORD)data; }
+void VDG64::OutCBH( int, BYTE data ){ SRRollX = (SRRollX & 0x00ff) | (((WORD)data & 3) << 8); }
+void VDG64::OutCCH( int, BYTE data ){ SRRollY = (SRRollY & 0xff00) |   (WORD)data; }
+void VDG64::OutCDH( int, BYTE data ){ SRRollY = (SRRollY & 0x00ff) | (((WORD)data & 0) << 8); }
+void VDG64::OutCEH( int, BYTE data ){ SRVramAddrY = (SRVramAddrY & 0xff00) |   (WORD)data; }
+void VDG64::OutCFH( int, BYTE data ){ SRVramAddrY = (SRVramAddrY & 0x00ff) | (((WORD)data & 1) << 8); }
 
 BYTE VDG6::InA2H( int ){ return (VSYNC ? 0 : 0x80) | (HSYNC ? 0 : 0x40) | 0x3f; }
 

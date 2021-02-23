@@ -80,7 +80,7 @@ public:
 	WORD SRGVramAddr( WORD ) const;				// SRのG-VRAMアドレス取得(ビットマップモード)
 	
 	// デバイスID
-	enum IDOut{ out4xH=0, outB0H, outC0H, outC1H, outC8H, outC9H, outCAH, outCBH, outCCH, outCEH, outCFH };
+	enum IDOut{ out4xH=0, outB0H, outC0H, outC1H, outC8H, outC9H, outCAH, outCBH, outCCH, outCDH, outCEH, outCFH };
 	enum IDIn {  inA2H=0 };
 	
 	// ---------------------------------------------------------
@@ -131,6 +131,7 @@ protected:
 	void OutCAH( int, BYTE );
 	void OutCBH( int, BYTE );
 	void OutCCH( int, BYTE );
+	void OutCDH( int, BYTE );
 	void OutCEH( int, BYTE );
 	void OutCFH( int, BYTE );
 	

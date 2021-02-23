@@ -68,6 +68,10 @@ public:
 	BYTE In( int );
 	void Out( int, BYTE );
 	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	void GetPortList( std::vector<int>&, std::vector<int>& );	// 登録済I/Oポートリスト取得
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	
 private:
 	std::vector<std::vector<InBank>> ins;
 	std::vector<std::vector<OutBank>> outs;
@@ -79,8 +83,8 @@ private:
 
 class IO6 : public IOBus {
 private:
-	std::vector<int> Iwait;			// IN ウェイトテーブル
-	std::vector<int> Owait;			// OUTウェイトテーブル
+	std::vector<int> Iwait, Owait;	// IN/OUT ウェイトテーブル
+	std::vector<int> Idata, Odata;	// IN/OUT データ
 	
 public:
 	IO6();
@@ -95,6 +99,11 @@ public:
 	void SetOutWait( int, int );			// OUTウェイト設定
 	int GetInWait( int );					// IN ウェイト取得
 	int GetOutWait( int );					// OUTウェイト取得
+	
+	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	int PeepIn( int );						// IN データ参照
+	int PeepOut( int );						// OUTデータ参照
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 };
 
 

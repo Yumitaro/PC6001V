@@ -61,7 +61,7 @@ CMTL::CMTL( VM6* vm, const ID& id ) : Device( vm, id ),
 	Boost( DEFAULT_BOOST ), MaxBoost60( DEFAULT_MAXBOOST60 ),
 	MaxBoost62( DEFAULT_MAXBOOST62 ), StopBit( DEFAULT_STOPBIT )
 {
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( outB0H, STATIC_CAST( Device::OutFuncPtr, &CMTL::OutB0H ) );
 }
 

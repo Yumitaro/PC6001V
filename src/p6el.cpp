@@ -307,9 +307,9 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		graph = std::make_unique<DSP6>( this );		// 画面描画
 		staw  = std::make_unique<cWndStat>();		// ステータスバー
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		regw  = std::make_unique<cWndReg>( vm );	// レジスタウィンドウ
-		memw  = std::make_unique<cWndMem>( vm );	// メモリウィンドウ
-		monw  = std::make_unique<cWndMon>( vm );	// モニタウィンドウ
+		regw  = std::make_unique<cWndReg>( this );	// レジスタウィンドウ
+		memw  = std::make_unique<cWndMem>( this );	// メモリウィンドウ
+		monw  = std::make_unique<cWndMon>( this );	// モニタウィンドウ
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		
 		
@@ -862,8 +862,7 @@ bool EL6::ScreenUpdate( void )
 	vm->vdg->UpdateBackBuf();
 	
 	// ステータスバー更新
-	staw->SetIndicator( REPLAY::GetStatus() | (AVI6::IsAVI() ? ST_CAPTUREREC : ST_IDLE) );
-	staw->Update( vm );
+	staw->Update( this );
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// モニタモード画面更新
@@ -1193,7 +1192,7 @@ void EL6::SetPalette( void )
 {
 	if( !cfg ) return;
 	
-	for( int i=0; i<128; i++ )
+	for( int i=0; i<256; i++ )
 		VSurface::SetColor( i, COL2DW( cfg->GetColor( i ) ) );
 }
 
@@ -2390,6 +2389,7 @@ void EL6::ExecMenu( int id )
 	switch( id ){
 	case ID_TAPEINSERT:		UI_TapeInsert();						break;	// TAPE 挿入
 	case ID_TAPEEJECT:		TapeUnmount();							break;	// TAPE 排出
+	
 	case ID_DISKINSERT1:													// DISK 挿入
 	case ID_DISKINSERT2:	UI_DiskInsert( id - ID_DISKINSERT1 );	break;
 	case ID_DISKEJECT1:														// DISK 排出
@@ -2424,17 +2424,25 @@ void EL6::ExecMenu( int id )
 	case ID_JOY203:
 	case ID_JOY204:
 	case ID_JOY205:			joy->Connect( 1, id - ID_JOY201 );		break;
+	
 	case ID_CONFIG:			UI_Config();							break;	// 環境設定
 	case ID_RESET:			UI_Reset();								break;	// リセット
 	case ID_RESTART:		UI_Restart();							break;	// 再起動
+	case ID_PAUSE:			UI_Pause();								break;	// ポーズ
+	case ID_NOWAIT:			UI_NoWait();							break;	// Wait変更
+	
+	case ID_SNAPSHOT:		UI_SnapShot();							break;	// スナップショット
+	
 	case ID_DOKOSAVE:		UI_DokoSave();							break;	// どこでもSAVE
 	case ID_DOKOSAVE1:														// どこでもSAVE1
 	case ID_DOKOSAVE2:														// どこでもSAVE2
 	case ID_DOKOSAVE3:		UI_DokoSave( id - ID_DOKOSAVE );		break;	// どこでもSAVE3
+	
 	case ID_DOKOLOAD:		UI_DokoLoad();							break;	// どこでもLOAD
 	case ID_DOKOLOAD1:														// どこでもLOAD1
 	case ID_DOKOLOAD2:														// どこでもLOAD2
 	case ID_DOKOLOAD3:		UI_DokoLoad( id - ID_DOKOLOAD );		break;	// どこでもLOAD3
+	
 	case ID_REPLAYSAVE:		UI_ReplaySave();						break;	// リプレイ保存/停止
 	case ID_REPLAYRESUME:	UI_ReplayResumeSave();					break;	// リプレイ保存再開
 	case ID_REPLAYDOKOSAVE:	UI_ReplayDokoSave();					break;	// リプレイ中どこでもSAVE
@@ -2444,33 +2452,39 @@ void EL6::ExecMenu( int id )
 	case ID_REPLAYMOVIE:	UI_ReplayMovie();						break;	// リプレイを動画に変換
 	case ID_AVISAVE:		AVI6::IsAVI() ? UI_AVISaveStop()
 										  : UI_AVISaveStart();		break;	// ビデオキャプチャ
+										  
 	case ID_AUTOTYPE:		UI_AutoType();							break;	// 打込み代行
 	case ID_QUIT:			UI_Quit();								break;	// 終了
-	case ID_NOWAIT:			UI_NoWait();							break;	// Wait変更
 	case ID_TURBO:			UI_TurboTape();							break;	// Turbo TAPE
 	case ID_BOOST:			UI_BoostUp();							break;	// Boost Up
 	case ID_FULLSCRN:		UI_FullScreen();						break;	// フルスクリーン変更
+	
 	case ID_ZOOM100:														// ウィンドウ表示倍率100%
 	case ID_ZOOM200:														// ウィンドウ表示倍率200%
 	case ID_ZOOM300:		UI_WindowZoom( (id-ID_ZOOM100+1)*100 );	break;	// ウィンドウ表示倍率300%
+	
 	case ID_STATUS:			UI_StatusBar();							break;	// ステータスバー表示状態変更
 	case ID_DISP43:			UI_Disp43();							break;	// 4:3表示変更
 	case ID_SCANLINE:		UI_ScanLine();							break;	// スキャンラインモード変更
 	case ID_FILTERING:		UI_Filtering();							break;	// フィルタリング変更
+	
 	case ID_M4MONO:															// MODE4カラー モノクロ
 	case ID_M4RDBL:															// MODE4カラー 赤/青
 	case ID_M4BLRD:															// MODE4カラー 青/赤
 	case ID_M4PKGR:															// MODE4カラー ピンク/緑
 	case ID_M4GRPK:			UI_Mode4Color( id - ID_M4MONO );		break;	// MODE4カラー 緑/ピンク
+	
 	case ID_FSKP0:															// フレームスキップ なし
 	case ID_FSKP1:															// フレームスキップ 1
 	case ID_FSKP2:															// フレームスキップ 2
 	case ID_FSKP3:															// フレームスキップ 3
 	case ID_FSKP4:															// フレームスキップ 4
 	case ID_FSKP5:			UI_FrameSkip( id - ID_FSKP0 );			break;	// フレームスキップ 5
+	
 	case ID_SPR44:															// サンプリングレート 44100Hz
 	case ID_SPR22:															// サンプリングレート 22050Hz
 	case ID_SPR11:			UI_SampleRate( 44100 >> (id - ID_SPR44 ) );	break;	// サンプリングレート 11025Hz
+	
 	case ID_VERSION:		OSD_VersionDialog( GetWindowHandle(), cfg->GetValue( CV_Model ) );	break;	// バージョン情報
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	case ID_MONITOR:		UI_Monitor();							break;	// モニターモード

@@ -158,14 +158,14 @@ void cPRT::Strobe( bool st )
 ////////////////////////////////////////////////////////////////
 PIO6::PIO6( VM6* vm, const ID& id ) : Device( vm, id )
 {
-	// Dvice Description (Out)
+	// Device Description (Out)
 	descs.outdef.emplace( out90H, STATIC_CAST( Device::OutFuncPtr, &PIO6::Out90H ) );
 	descs.outdef.emplace( out91H, STATIC_CAST( Device::OutFuncPtr, &PIO6::Out91H ) );
 	descs.outdef.emplace( out92H, STATIC_CAST( Device::OutFuncPtr, &PIO6::Out92H ) );
 	descs.outdef.emplace( out93H, STATIC_CAST( Device::OutFuncPtr, &PIO6::Out93H ) );
 	descs.outdef.emplace( outPBH, STATIC_CAST( Device::OutFuncPtr, &PIO6::OutPBH ) );
 	
-	// Dvice Description (In)
+	// Device Description (In)
 	descs.indef.emplace ( in90H,  STATIC_CAST( Device::InFuncPtr,  &PIO6::In90H  ) );
 	descs.indef.emplace ( in92H,  STATIC_CAST( Device::InFuncPtr,  &PIO6::In92H  ) );
 	descs.indef.emplace ( in93H,  STATIC_CAST( Device::InFuncPtr,  &PIO6::In93H  ) );
