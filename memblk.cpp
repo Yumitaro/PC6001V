@@ -157,11 +157,16 @@ void MemCells::Resize( size_t size, BYTE idata )
 bool MemCells::SetData( const P6VPATH& filepath )
 {
 	try{
-		// ファイルサイズに合わせてメモリセル再設定(端数考慮)
-		Cells.resize( (OSD_GetFileSize( filepath ) + MemCell::PAGEMASK) >> MemCell::PAGEBITS );
+		// ファイルサイズに合わせてメモリセル再設定(端数考慮&2のべき乗)
+		size_t szc = ((OSD_GetFileSize( filepath ) + MemCell::PAGEMASK) >> MemCell::PAGEBITS);
+		if( szc == 0 ){ throw Error::NoRom; }
+		
+		size_t szn = 1;
+		while( szn < szc - 1 ){ szn |= szn << 1; }
+		Cells.resize( szn + 1 );
 		
 		std::fstream fs;
-		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ) throw Error::NoRom;
+		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ){ throw Error::NoRom; }
 		
 		for( auto &mc : Cells ){
 			mc.SetData( fs );

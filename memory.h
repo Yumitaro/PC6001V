@@ -5,10 +5,13 @@
 #include <string>
 #include <vector>
 
-#include "typedef.h"
 #include "device.h"
 #include "ini.h"
+#include "io.h"
 #include "memblk.h"
+#include "typedef.h"
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -29,7 +32,7 @@ const std::vector<std::vector<ROMINFO>>& GetRomSetList( const int );
 ////////////////////////////////////////////////////////////////
 
 
-class MEM6 : public Device, public IDoko {
+class MEMB {
 protected:
 	// メモリ情報構造体
 	struct MEMINFO {
@@ -39,6 +42,22 @@ protected:
 		const int Wait;						// アクセスウェイト
 	};
 	
+	// メモリ情報
+	static const MEMINFO IEMPTROM;
+	static const MEMINFO IEMPTRAM;
+	
+	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH&, bool );	// メモリ確保とROMファイル読込み
+
+
+public:
+	MEMB();
+	virtual ~MEMB();
+	
+};
+
+
+class MEM6 : public MEMB, public Device, public IDoko {
+protected:
 	// メモリ情報テーブル構造体
 	struct MEMINFOTABLE {
 		const MEMINFO* System1;
@@ -58,11 +77,6 @@ protected:
 			ExtRom( &IEMPTROM ), ExtRam( &IEMPTROM ) {}
 	};
 	
-	
-	// メモリ情報
-	static const MEMINFO IEMPTROM;
-	static const MEMINFO IEMPTRAM;
-	
 	MEMINFOTABLE MemTable;				// 内部メモリ情報テーブル
 	
 	MemCells SysRom1;					// BASIC ROM	ALL (64,68の時はSystem ROM1)
@@ -76,10 +90,10 @@ protected:
 	std::vector<MemBlock> IRom;			// 内部ROMブロック
 	std::vector<MemBlock> IRam;			// 内部RAMブロック
 	
-	std::array<MemBlock*,8> RBLK;		// リード時メモリブロックポインタ(8KB*8) 1段目
-	std::array<MemBlock*,8> WBLK;		// ライト時メモリブロックポインタ(8KB*8) 1段目
-	std::array<MemBlock*,8> RD_Blk;		// リード時メモリブロックポインタ(8KB*8) 2段目
-	std::array<MemBlock*,8> WR_Blk;		// ライト時メモリブロックポインタ(8KB*8) 2段目
+	std::array<MemBlock*,8> RBLK1;		// リード時メモリブロックポインタ(8KB*8) 1段目
+	std::array<MemBlock*,8> WBLK1;		// ライト時メモリブロックポインタ(8KB*8) 1段目
+	std::array<MemBlock*,8> RBLK2;		// リード時メモリブロックポインタ(8KB*8) 2段目
+	std::array<MemBlock*,8> WBLK2;		// ライト時メモリブロックポインタ(8KB*8) 2段目
 	
 	bool CGBank;						// CG ROM BANK	true:有効 false:無効
 	int M1Wait;							// M1ウェイト
@@ -88,12 +102,11 @@ protected:
 	std::array<BYTE,3> Rf;				// メモリコントローラ内部レジスタ
 	// ---------------------------------------------------------------------------------------
 	
-	bool AllocMemory( MemCells&, const MEMINFO*, const P6VPATH&, bool );	// メモリ確保とROMファイル読込み
-	virtual bool AllocMemorySpec( const P6VPATH&, bool ) = 0;				// 内部メモリ確保とROMファイル読込み(機種別)
-	virtual void SetRamValue() = 0;											// 内部RAMの初期値を設定
-	virtual bool InitIntSpec() = 0;											// 内部メモリ初期化(機種別)
-	virtual void SetMemBlockR( BYTE, BYTE ) = 0;							// メモリリード時のメモリブロック指定(62,66)
-	virtual void SetMemBlockW( BYTE ) = 0;									// メモリライト時のメモリブロック指定(62,66)
+	virtual bool AllocMemorySpec( const P6VPATH&, bool ) = 0;	// 内部メモリ確保とROMファイル読込み(機種別)
+	virtual void SetRamValue() = 0;								// 内部RAMの初期値を設定
+	virtual bool InitIntSpec() = 0;								// 内部メモリ初期化(機種別)
+	virtual void SetMemBlockR( BYTE, BYTE ) = 0;				// メモリリード時のメモリブロック指定(62,66)
+	virtual void SetMemBlockW( BYTE ) = 0;						// メモリライト時のメモリブロック指定(62,66)
 	
 	// メモリブロック用関数 ------------------------------------------------------------------
 	virtual const std::string& GetNameCommon( WORD, bool );		// 汎用 メモリブロック名取得
@@ -118,16 +131,24 @@ protected:
 	static const MEMINFO IEXKANJI;		// 拡張漢字
 	static const MEMINFO IEXVOICE;		// ボイスシンセサイザー
 	
-	MemCells ExtRom;					// 外部ROM		ALL
-	MemCells ExtRam;					// 外部RAM		ALL
+	// デバイスコネクタ
+	static const std::vector<IOBus::Connector> c_dummy;		// Dummy
+	static const std::vector<IOBus::Connector> c_exvoice;	// ボイスシンセサイザー
+	static const std::vector<IOBus::Connector> c_exfm;		// FM音源カートリッジ
+	static const std::vector<IOBus::Connector> c_exkanji;	// 拡張漢字ROMカートリッジ
+	static const std::vector<IOBus::Connector> c_soldier1;	// 戦士のカートリッジ
+	static const std::vector<IOBus::Connector> c_soldier2;	// 戦士のカートリッジmkⅡ
+	static const std::vector<IOBus::Connector> c_soldier3;	// 戦士のカートリッジmkⅢ
 	
-	std::vector<MemBlock> ERom;			// 外部ROMブロック
-	std::vector<MemBlock> ERam;			// 外部RAMブロック
+	MemCells ExtRom;					// 外部ROM
+	MemCells ExtRam;					// 外部RAM
+	
+	std::vector<MemBlock> EMem;			// 外部ROM/RAMブロック
 	
 	WORD ExCart;						// 0:なし
 	P6VPATH FilePath;					// 拡張ROMファイルフルパス
 	
-	bool AllocMemoryExt( const P6VPATH&, bool );	// 外部メモリ確保とROMファイル読込み
+	bool AllocMemoryExt( const P6VPATH&, bool );	// 外部メモリ確保とSystemROMファイル読込み
 	void AddDeviceDescriptorExt();		// 拡張カートリッジ デバイスディスクリプタ追加
 	
 	bool GetReadEnableExt( WORD );		// Read Enable取得 (ROM KILL)
@@ -145,11 +166,12 @@ protected:
 	std::array<BYTE,8> SolBank;			// メモリバンクレジスタ
 	int SolBankSet;						// ROMバンクセット
 	
-	void SetSolBank( BYTE, BYTE );								// 戦士のカートリッジmkⅡ メモリバンクレジスタ設定
-	const std::string& GetNameSolReadEx( WORD, bool );			// 戦士のカートリッジ メモリブロック名取得
-	BYTE SolReadEx( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジ読込み(外部ROM領域)
-	BYTE SolSccRead( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジSCC読込み
-	void SolSccWrite( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジSCC書込み
+	void SetSol2Bank( BYTE, BYTE );								// 戦士のカートリッジmkⅡ/Ⅲ メモリバンクレジスタ設定
+	const std::string& Sol2GetName( WORD, bool );				// 戦士のカートリッジmkⅡ/Ⅲ メモリブロック名取得
+	BYTE Sol2Read( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジmkⅡ/Ⅲ 読込み
+	void Sol2Write( MemCell*, WORD, BYTE, int* = nullptr );		// 戦士のカートリッジmkⅡ/Ⅲ 書込み
+	BYTE Sol2SccRead( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジmkⅡ SCC読込み
+	void Sol2SccWrite( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジmkⅡ SCC書込み
 	
 	// I/Oアクセス関数 -----------------------------------------------------------------------
 	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
@@ -165,8 +187,14 @@ protected:
 	BYTE In70H( int );
 	BYTE In72H( int );
 	BYTE In73H( int );
+	// FM音源カートリッジ --------------------------------------------------------------------
+	void Out70Hf( int, BYTE );
+	void Out71Hf( int, BYTE );
+	BYTE In72Hf( int );
+	BYTE In73Hf( int );
 	// 戦士のカートリッジ --------------------------------------------------------------------
 	void Out06H( int, BYTE );
+	void Out07H( int, BYTE );	// mkⅢ
 	void Out3xH( int, BYTE );
 	void Out7FH( int, BYTE );
 	void OutF0Hs( int, BYTE );
@@ -209,6 +237,7 @@ public:
 	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
 	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
 	bool MountExtCart( WORD, const P6VPATH&, bool );	// 拡張カートリッジマウント
+	const std::vector<IOBus::Connector>& GetDeviceConnector();	// デバイスコネクタリスト取得
 	
 	// 直接アクセス関数
 	BYTE ReadExtRom ( WORD ) const;
@@ -216,8 +245,8 @@ public:
 	// =======================================================================================
 	
 	// デバイスID
-	enum IDOut{ out06H=0, out3xH, out70H, out72H, out73H, out74H, out7FH, outF0Hs, outF2Hs, outFCH, outFFH, out6xH, outC1H, outC2H, outC3H, outF0H, outF1H, outF2H, outF3H, outF8H };
-	enum IDIn {  in70H=0,  in72H,  in73H,  inFDH,  inFEH,  in6xH,  inB2H,  inC2H,   inF0H,   inF1H,  inF2H,  inF3H };
+	enum IDOut{ out06H=0, out07H, out3xH, out70H, out72H, out73H, out74H, out70Hf, out71Hf, out7FH, outF0Hs, outF2Hs, outFCH, outFFH, out6xH, outC1H, outC2H, outC3H, outF0H, outF1H, outF2H, outF3H, outF8H };
+	enum IDIn {  in70H=0,  in72H,  in73H, in72Hf, in73Hf,  inFDH,  inFEH,   in6xH,   inB2H,  inC2H,   inF0H,   inF1H,  inF2H,  inF3H };
 	
 	// ---------------------------------------------------------
 	bool DokoSave( cIni* ) override;	// どこでもSAVE
@@ -243,13 +272,11 @@ private:
 	// メモリブロック用関数 ------------------------------------------------------------------
 	const std::string& GetNameAreaA60Read( WORD, bool );		// AreaA,B メモリブロック名取得(60)
 	BYTE AreaA60Read( MemCell*, WORD, int* );					// AreaA,B 読込み(60)
-	void AreaA60Write( MemCell*, WORD, BYTE, int* );			// AreaA,B 書込み(60)
+	void AreaABCD60Write( MemCell*, WORD, BYTE, int* );			// AreaA,B,C,D 書込み(60)
 	const std::string& GetNameAreaC60Read( WORD, bool );		// AreaC メモリブロック名取得(60)
 	BYTE AreaC60Read( MemCell*, WORD, int* );					// AreaC 読込み(60)
-	void AreaC60Write( MemCell*, WORD, BYTE, int* );			// AreaC 書込み(60)
 	const std::string& GetNameAreaD60Read( WORD, bool );		// AreaD メモリブロック名取得(60)
 	BYTE AreaD60Read( MemCell*, WORD, int* );					// AreaD 読込み(60)
-	void AreaD60Write( MemCell*, WORD, BYTE, int* );			// AreaD 書込み(60)
 	// ---------------------------------------------------------------------------------------
 
 public:
@@ -367,8 +394,8 @@ protected:
 	static const MEMINFO ICGROM1;
 	static const MEMINFO IINTRAM;
 	
-	std::array<MemBlock*,8> RD_BlkSR;	// リード時メモリブロックポインタ(8KB*8) SRモード用
-	std::array<MemBlock*,8> WR_BlkSR;	// ライト時メモリブロックポインタ(8KB*8) SRモード用
+	std::array<MemBlock*,8> RBLKSR;		// リード時メモリブロックポインタ(8KB*8) SRモード用
+	std::array<MemBlock*,8> WBLKSR;		// ライト時メモリブロックポインタ(8KB*8) SRモード用
 	std::array<BYTE,16> RfSR;			// メモリコントローラ内部レジスタ		 SRモード用
 	
 	bool AllocMemorySpec( const P6VPATH&, bool ) override;			// 内部メモリ確保とROMファイル読込み(機種別)
@@ -428,5 +455,128 @@ public:
 	MEM68( VM6*, const ID& );
 	virtual ~MEM68();
 };
+
+
+
+
+
+
+
+
+
+
+
+
+class EXTCART : public MEMB, public Device {
+protected:
+	// メモリ情報テーブル構造体
+	struct MEMINFOTABLE {
+		const MEMINFO* ExtRom;
+		const MEMINFO* ExtRam;
+		
+		MEMINFOTABLE() :
+			ExtRom( &MEM6::IEMPTROM ), ExtRam( &MEM6::IEMPTROM ) {}
+	};
+	
+	// メモリ情報
+	static const MEMINFO IEXTROM8;
+	static const MEMINFO IEXTROM16;
+	static const MEMINFO IEXTROM128;
+	static const MEMINFO IEXTROM512;
+	static const MEMINFO IEXTROM8M;
+	
+	static const MEMINFO IEXTRAM16;
+	static const MEMINFO IEXTRAM32;
+	static const MEMINFO IEXTRAM64;
+	static const MEMINFO IEXTRAM128;
+	static const MEMINFO IEXTRAM512;
+	
+	static const MEMINFO IEXBASIC;		// 拡張BASIC
+	static const MEMINFO IEXKANJI;		// 拡張漢字
+	static const MEMINFO IEXVOICE;		// ボイスシンセサイザー
+	
+	MEMINFOTABLE MemTable;				// 外部メモリ情報テーブル
+	
+	MemCells ExtRom;					// 外部ROM		ALL
+	MemCells ExtRam;					// 外部RAM		ALL
+	
+	WORD ExCart;						// 0:なし
+	P6VPATH FilePath;					// 拡張ROMファイルフルパス
+	
+	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
+	WORD Kaddr;							// 漢字ROMアドレス
+	bool Kenable;						// 漢字ROMチップイネーブル
+	
+	// 戦士のカートリッジ --------------------------------------------------------------------
+	bool Sol60Mode;						// 初代機モード　true:有効 false:無効
+	bool CS01R;							// 初代機 0000-3FFFH 読込みフラグ
+	bool CS01W;							// 初代機 0000-3FFFH 書込みフラグ
+	bool CS02W;							// 初代機 4000-7FFFH 書込みフラグ
+	std::array<BYTE,8> SolBank;			// メモリバンクレジスタ
+	int SolBankSet;						// ROMバンクセット
+	
+	void SetSol2Bank( BYTE, BYTE );								// 戦士のカートリッジmkⅡ/Ⅲ メモリバンクレジスタ設定
+	const std::string& Sol2GetName( WORD, bool );				// 戦士のカートリッジmkⅡ/Ⅲ メモリブロック名取得
+	BYTE Sol2Read( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジmkⅡ/Ⅲ 読込み
+	void Sol2Write( MemCell*, WORD, BYTE, int* = nullptr );		// 戦士のカートリッジmkⅡ/Ⅲ 書込み
+	BYTE Sol2SccRead( MemCell*, WORD, int* = nullptr );			// 戦士のカートリッジmkⅡ SCC読込み
+	void Sol2SccWrite( MemCell*, WORD, BYTE, int* = nullptr );	// 戦士のカートリッジmkⅡ SCC書込み
+	
+	// I/Oアクセス関数 -----------------------------------------------------------------------
+	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
+	void OutFCH( int, BYTE );
+	void OutFFH( int, BYTE );
+	BYTE InFDH( int );
+	BYTE InFEH( int );
+	// ボイスシンセサイザー ------------------------------------------------------------------
+	void Out70H( int, BYTE );
+	void Out72H( int, BYTE );
+	void Out73H( int, BYTE );
+	void Out74H( int, BYTE );
+	BYTE In70H( int );
+	BYTE In72H( int );
+	BYTE In73H( int );
+	// FM音源カートリッジ --------------------------------------------------------------------
+	void Out70Hf( int, BYTE );
+	void Out71Hf( int, BYTE );
+	BYTE In72Hf( int );
+	BYTE In73Hf( int );
+	// 戦士のカートリッジ --------------------------------------------------------------------
+	void Out06H( int, BYTE );
+	void Out07H( int, BYTE );	// mkⅢ
+	void Out3xH( int, BYTE );
+	void Out7FH( int, BYTE );
+	void OutF0Hs( int, BYTE );
+	void OutF2Hs( int, BYTE );
+	// =======================================================================================
+	
+	void AddDeviceDescriptorExt();						// 拡張カートリッジ デバイスディスクリプタ追加
+	bool AllocMemoryExt( const P6VPATH&, bool );		// 外部メモリ確保とSystemROMファイル読込み
+
+public:
+	EXTCART( VM6*, const ID&, DWORD );
+	virtual ~EXTCART();
+	
+	bool InitExt( std::vector<MemBlock>& );				// 外部メモリ初期化
+	void ResetExt();									// 外部メモリリセット
+	
+	bool MountExtRom( const P6VPATH& );					// 拡張ROM マウント
+	void UnmountExtRom();								// 拡張ROM アンマウント
+	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
+	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
+//	bool MountExtCart( WORD, const P6VPATH&, bool );	// 拡張カートリッジマウント
+	
+	// 直接アクセス関数
+	BYTE ReadExtRom ( WORD ) const;
+	BYTE ReadExtRam ( WORD ) const;
+	
+	virtual bool GetReadEnableExt( WORD );		// Read  Enable取得 (ROM KILL)
+	virtual bool GetWriteEnableExt( WORD );		// Write Enable取得
+	
+	// デバイスID
+	enum IDOut{ out06H=0, out07H, out3xH, out70H, out72H, out73H, out74H, out70Hf, out71Hf, out7FH, outF0Hs, outF2Hs, outFCH, outFFH };
+	enum IDIn { in72Hf=0, in73Hf,  inFDH,  inFEH };
+};
+
 
 #endif	// MEMORY_H_INCLUDED

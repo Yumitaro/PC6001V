@@ -410,34 +410,13 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 		
 		// ROMファイル読込み
 		if( !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){
-			// ファイルがなければエラーメッセージセットして継続
+			// 失敗したらエラーをセットして継続
 			Error::SetError( Error::ExtRomMountFailed, P6VPATH2STR( cnfg->GetValue( CF_ExtRom ) ) );
 		}
 		
 		// I/Oポートにデバイスを接続
-		switch( mem->GetCartridge() ){
-		case EXC660101:	// 拡張漢字ROMカートリッジ
-		case EXC6007SR:	// 拡張漢字ROM&RAMカートリッジ
-			DevTable.ExCart = &VM6::c_exkanji;
-			break;
-			
-		case EXC6053:	// ボイスシンセサイザー
-			DevTable.ExCart = &VM6::c_exvoice;
-			break;
-			
-		case EXCSOL1:	// 戦士のカートリッジ
-			DevTable.ExCart = &VM6::c_soldier1;
-			break;
-			
-		case EXCSOL2:	// 戦士のカートリッジmkⅡ
-			DevTable.ExCart = &VM6::c_soldier2;
-			break;
-		}
-		
-		if( DevTable.ExCart  ){
-			if( !iom->Connect( mem, *DevTable.ExCart ) ){
-				return false;
-			}
+		if( !iom->Connect( mem, mem->GetDeviceConnector() ) ){
+			return false;
 		}
 	}
 	// =========================================================
@@ -964,70 +943,6 @@ void VM6::CmtsWriteOne( BYTE data )
 ////////////////////////////////////////////////////////////////
 // デバイスコネクタ
 ////////////////////////////////////////////////////////////////
-
-// 拡張漢字ROMカートリッジ -------------------------------------
-const std::vector<IOBus::Connector> VM6::c_exkanji = {
-	{ 0xfc, IOBus::portout, MEM6::outFCH },
-	{ 0xff, IOBus::portout, MEM6::outFFH },
-	{ 0xfd, IOBus::portin,  MEM6::inFDH },
-	{ 0xfe, IOBus::portin,  MEM6::inFEH }
-};
-
-// ボイスシンセサイザー ----------------------------------------
-const std::vector<IOBus::Connector> VM6::c_exvoice = {
-	{ 0x70, IOBus::portout, MEM6::out70H },
-	{ 0x72, IOBus::portout, MEM6::out72H },
-	{ 0x73, IOBus::portout, MEM6::out73H },
-	{ 0x74, IOBus::portout, MEM6::out74H },
-	{ 0x70, IOBus::portin,  MEM6::in70H },
-	{ 0x72, IOBus::portin,  MEM6::in72H },
-	{ 0x73, IOBus::portin,  MEM6::in73H }
-};
-
-// 戦士のカートリッジ ------------------------------------------
-const std::vector<IOBus::Connector> VM6::c_soldier1 = {
-	{ 0x70, IOBus::portout, MEM6::out7FH  },
-	{ 0x71, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x72, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x73, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x74, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x75, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x76, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x77, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x78, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x79, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7a, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7b, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7c, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7d, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7e, IOBus::portout, MEM6::out7FH  },	// イメージ
-	{ 0x7f, IOBus::portout, MEM6::out7FH  }		// イメージ
-};
-
-// 戦士のカートリッジmkⅡ --------------------------------------
-const std::vector<IOBus::Connector> VM6::c_soldier2 = {
-	{ 0x06, IOBus::portout, MEM6::out06H  },
-	{ 0x7f, IOBus::portout, MEM6::out7FH  },
-	{ 0x30, IOBus::portout, MEM6::out3xH  },
-	{ 0x31, IOBus::portout, MEM6::out3xH  },
-	{ 0x32, IOBus::portout, MEM6::out3xH  },
-	{ 0x33, IOBus::portout, MEM6::out3xH  },
-	{ 0x34, IOBus::portout, MEM6::out3xH  },
-	{ 0x35, IOBus::portout, MEM6::out3xH  },
-	{ 0x36, IOBus::portout, MEM6::out3xH  },
-	{ 0x37, IOBus::portout, MEM6::out3xH  },
-	{ 0x38, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x39, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3a, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3b, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3c, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3d, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3e, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0x3f, IOBus::portout, MEM6::out3xH  },	// イメージ
-	{ 0xf0, IOBus::portout, MEM6::outF0Hs },
-	{ 0xf2, IOBus::portout, MEM6::outF2Hs }
-};
-
 
 // PC-6001,PC-6001A --------------------------------------------
 
