@@ -71,11 +71,10 @@ protected:
 		const std::vector<IOBus::Connector>* Voice;		// 音声合成
 		const std::vector<IOBus::Connector>* Disk;		// DISK
 		const std::vector<IOBus::Connector>* CmtL;		// CMT(LOAD)
-		const std::vector<IOBus::Connector>* ExCart;	// 拡張カートリッジ
 		
 		DEVCONNTABLE() :
 			Intr( nullptr ), Memory( nullptr ), Vdg( nullptr ), Psg( nullptr ), M8255( nullptr ), S8255( nullptr ),
-			Voice( nullptr ), Disk( nullptr ), CmtL( nullptr ), ExCart( nullptr ) {}
+			Voice( nullptr ), Disk( nullptr ), CmtL( nullptr ) {}
 	};
 	
 	int cclock;						// CPUクロック
@@ -111,12 +110,6 @@ protected:
 public:
 	VM6();
 	virtual ~VM6();
-	
-	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_exkanji;	// 拡張漢字ROMカートリッジ
-	const static std::vector<IOBus::Connector> c_exvoice;	// ボイスシンセサイザー
-	const static std::vector<IOBus::Connector> c_soldier1;	// 戦士のカートリッジ
-	const static std::vector<IOBus::Connector> c_soldier2;	// 戦士のカートリッジmkⅡ
 	
 	bool Init( const std::shared_ptr<CFG6>& );			// 初期化
 	void Reset();										// リセット
@@ -198,13 +191,13 @@ public:
 	~VM60();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_intr;		// 割込み
-	const static std::vector<IOBus::Connector> c_vdg;		// VDG
-	const static std::vector<IOBus::Connector> c_psg;		// PSG
-	const static std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
-	const static std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
-	const static std::vector<IOBus::Connector> c_disk;		// DISK
-	const static std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
+	static const std::vector<IOBus::Connector> c_intr;		// 割込み
+	static const std::vector<IOBus::Connector> c_vdg;		// VDG
+	static const std::vector<IOBus::Connector> c_psg;		// PSG
+	static const std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
+	static const std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
+	static const std::vector<IOBus::Connector> c_disk;		// DISK
+	static const std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
 };
 
 
@@ -229,15 +222,15 @@ public:
 	~VM62();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_intr;		// 割込み
-	const static std::vector<IOBus::Connector> c_memory;	// メモリ
-	const static std::vector<IOBus::Connector> c_vdg;		// VDG
-	const static std::vector<IOBus::Connector> c_psg;		// PSG
-	const static std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
-	const static std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
-	const static std::vector<IOBus::Connector> c_voice;		// 音声合成
-	const static std::vector<IOBus::Connector> c_disk;		// DISK
-	const static std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
+	static const std::vector<IOBus::Connector> c_intr;		// 割込み
+	static const std::vector<IOBus::Connector> c_memory;	// メモリ
+	static const std::vector<IOBus::Connector> c_vdg;		// VDG
+	static const std::vector<IOBus::Connector> c_psg;		// PSG
+	static const std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
+	static const std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
+	static const std::vector<IOBus::Connector> c_voice;		// 音声合成
+	static const std::vector<IOBus::Connector> c_disk;		// DISK
+	static const std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
 };
 
 
@@ -251,7 +244,7 @@ public:
 	~VM66();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_disk;	// DISK
+	static const std::vector<IOBus::Connector> c_disk;	// DISK
 };
 
 
@@ -265,15 +258,15 @@ public:
 	~VM64();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_intr;		// 割込み
-	const static std::vector<IOBus::Connector> c_memory;	// メモリ
-	const static std::vector<IOBus::Connector> c_vdg;		// VDG
-	const static std::vector<IOBus::Connector> c_psg;		// OPN
-	const static std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
-	const static std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
-	const static std::vector<IOBus::Connector> c_voice;		// 音声合成
-	const static std::vector<IOBus::Connector> c_disk;		// DISK
-	const static std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
+	static const std::vector<IOBus::Connector> c_intr;		// 割込み
+	static const std::vector<IOBus::Connector> c_memory;	// メモリ
+	static const std::vector<IOBus::Connector> c_vdg;		// VDG
+	static const std::vector<IOBus::Connector> c_psg;		// OPN
+	static const std::vector<IOBus::Connector> c_8255m;		// I/O(Z80側)
+	static const std::vector<IOBus::Connector> c_8255s;		// I/O(SUB CPU側)
+	static const std::vector<IOBus::Connector> c_voice;		// 音声合成
+	static const std::vector<IOBus::Connector> c_disk;		// DISK
+	static const std::vector<IOBus::Connector> c_cmtl;		// CMT(LOAD)
 };
 
 
@@ -287,7 +280,7 @@ public:
 	~VM68();
 	
 	// デバイスコネクタ
-	const static std::vector<IOBus::Connector> c_disk;	// DISK
+	static const std::vector<IOBus::Connector> c_disk;	// DISK
 };
 
 
