@@ -406,7 +406,9 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	// 拡張カートリッジ ========================================
 	// 拡張カートリッジマウント
 	if( cnfg->GetValue( CV_ExCartridge ) ){
-		if( !mem->MountExtCart( cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ) return false;
+		if( !mem->MountExtCart( cnfg->GetValue( CV_ExCartridge ), cnfg->GetValue( CF_RomPath ), cnfg->GetValue( CB_CheckCRC ) ) ){
+			return false;
+		}
 		
 		// ROMファイル読込み
 		if( !mem->MountExtRom( cnfg->GetValue( CF_ExtRom ) ) ){

@@ -151,9 +151,6 @@ protected:
 	bool AllocMemoryExt( const P6VPATH&, bool );	// 外部メモリ確保とSystemROMファイル読込み
 	void AddDeviceDescriptorExt();		// 拡張カートリッジ デバイスディスクリプタ追加
 	
-	bool GetReadEnableExt( WORD );		// Read Enable取得 (ROM KILL)
-	bool GetWriteEnableExt( WORD );		// Write Enable取得
-	
 	// 拡張漢字ROMカートリッジ ---------------------------------------------------------------
 	WORD Kaddr;							// 漢字ROMアドレス
 	bool Kenable;						// 漢字ROMチップイネーブル
@@ -242,6 +239,9 @@ public:
 	// 直接アクセス関数
 	BYTE ReadExtRom ( WORD ) const;
 	BYTE ReadExtRam ( WORD ) const;
+	
+	bool GetReadEnableExt( WORD );		// Read Enable取得 (ROM KILL)
+	bool GetWriteEnableExt( WORD );		// Write Enable取得
 	// =======================================================================================
 	
 	// デバイスID
@@ -575,7 +575,7 @@ public:
 	
 	// デバイスID
 	enum IDOut{ out06H=0, out07H, out3xH, out70H, out72H, out73H, out74H, out70Hf, out71Hf, out7FH, outF0Hs, outF2Hs, outFCH, outFFH };
-	enum IDIn { in72Hf=0, in73Hf,  inFDH,  inFEH };
+	enum IDIn {  in70H=0,  in72H,  in73H, in72Hf, in73Hf,  inFDH,  inFEH };
 };
 
 

@@ -162,8 +162,8 @@ bool MemCells::SetData( const P6VPATH& filepath )
 		if( szc == 0 ){ throw Error::NoRom; }
 		
 		size_t szn = 1;
-		while( szn < szc - 1 ){ szn |= szn << 1; }
-		Cells.resize( szn + 1 );
+		while( szn < szc ){ szn <<= 1; }
+		Cells.resize( szn );
 		
 		std::fstream fs;
 		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ){ throw Error::NoRom; }
