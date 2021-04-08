@@ -42,8 +42,8 @@
 #define DEFAULT_MAXBOOST62		(5)					// BoostUp最大倍率(N60m/N66モード)
 #define	DEFAULT_BAUD			(1200)				// CMTボーレート
 #define	DEFAULT_STOPBIT			(3)					// CMTストップビット数
-#define	DEFAULT_FDDrive			(0)					// FDドライブ数
-#define	DEFAULT_FDDWAIT			(true)				// FDDウェイト true:有効 false:無効
+#define	DEFAULT_FDDrive			(0)					// ドライブ数
+#define	DEFAULT_FDDWAIT			(true)				// アクセスウェイト true:有効 false:無効
 #define	DEFAULT_MODE4COLOR		(1)					// モード４カラーモード 0:モノ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク
 #define	DEFAULT_SCANLINE		(true) 				// スキャンライン true:あり false:なし
 #define	DEFAULT_SCANLINEBR		(75)				// スキャンライン輝度 (0-100)%
@@ -68,12 +68,12 @@
 
 #define	MIN_MODEL				(60)				// 機種 最小値
 #define	MAX_MODEL				(68)				// 機種 最大値
-#define	MIN_FDDrive				(0)					// FDドライブ数 最小値
-#define	MAX_FDDrive				(2)					// FDドライブ数 最大値
+#define	MIN_FDDrive				(0)					// ドライブ数 最小値
+#define	MAX_FDDrive				(2)					// ドライブ数 最大値
 #define	MIN_BOOST				(1)					// BoostUp最大倍率 最小値
 #define	MAX_BOOST				(10)				// BoostUp最大倍率 最大値
-#define	MIN_STOPBIT				(2)					// TAPEストップビット数 最小値
-#define	MAX_STOPBIT				(10)				// TAPEストップビット数 最大値
+#define	MIN_STOPBIT				(2)					// CMTストップビット数 最小値
+#define	MAX_STOPBIT				(10)				// CMTストップビット数 最大値
 #define	MIN_SAMPLERATE			(11025)				// サンプリングレート 最小値
 #define	MAX_SAMPLERATE			(44100)				// サンプリングレート 最大値
 #define	MIN_SOUNDBUF			(1)					// サウンドバッファ長倍率 最小値

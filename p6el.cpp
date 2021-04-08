@@ -331,7 +331,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		if( !joy->Init() ) throw Error::GetError();
 		
 		// ステータスバー -----
-		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDDrive ) ) ) throw Error::GetError();
+		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDDrive ), cfg->GetValue( CV_ExCartridge ) ) ) throw Error::GetError();
 		
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		// レジスタウィンドウ　-----
@@ -2347,7 +2347,7 @@ void EL6::UI_Config( void )
 		// [CONFIG] ----------------------------------------------------
 		vm->cmtl->SetBoost( cfg->GetValue( CB_BoostUp ) );			// BoostUp 有効フラグ
 		vm->cmtl->SetMaxBoost( cfg->GetValue( CV_MaxBoost60 ), cfg->GetValue( CV_MaxBoost62 ) );	// BoostUp 最大倍率
-		vm->disk->WaitEnable( cfg->GetValue( CB_FDDWait ) );		// FDDウェイト有効フラグ
+		vm->disk->WaitEnable( cfg->GetValue( CB_FDDWait ) );		// FDアクセスウェイト有効フラグ
 		vm->cmtl->SetStopBit( cfg->GetValue( CV_StopBit ) );		// ストップビット数
 		
 		// [DISPLAY] ---------------------------------------------------

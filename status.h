@@ -13,13 +13,14 @@
 class cWndStat : public ZCons {
 private:
 	int DrvNum;				// ドライブ数
+	WORD ExCart;			// 拡張カートリッジ
 	
 public:
 	cWndStat();
 	~cWndStat();
 	
-	bool Init( int, int = -1 );			// 初期化
-	void Update( EL6* );				// ウィンドウ更新
+	bool Init( int, int = -1, WORD = 0xffff );	// 初期化
+	void Update( EL6* );						// ウィンドウ更新
 };
 
 #endif	// STATUS_H_INCLUDED

@@ -428,9 +428,9 @@ static const std::vector<VKeyConv> KeyIni = {	// 仮想キーコード -> P6キ�
 	{ KVC_YEN,			KP6_YEN },			// ￥	|
 	{ KVC_RBRACKET,		KP6_RBRACKET	},	// ]	}
 	{ KVC_UNDERSCORE,	KP6_UNDERSCORE	},	// \	_
-//	{ KVC_MUHENKAN,		KP6_UNKNOWN		},	// 無変換
-//	{ KVC_HENKAN,		KP6_UNKNOWN		},	// 変換
-	{ KVC_HIRAGANA,		KP6_KANA		},	// ひらがな		Pauseキー代替
+	{ KVC_MUHENKAN,		KP6_UNKNOWN		},	// 無変換
+	{ KVC_HENKAN,		KP6_UNKNOWN		},	// 変換
+	{ KVC_HIRAGANA,		KP6_KANA		},	// カタカナ/ひらがな	Pauseキー代替
 	
 	// 英語キーボードのみ
 	{ KVE_BACKSLASH,	KP6_YEN			},	// BackSlash	|
@@ -876,7 +876,7 @@ P6KEYsym CFG6::GetVKey( PCKEYsym pcs )
 // キー定義設定
 void CFG6::SetVKey( PCKEYsym pcs, P6KEYsym p6s )
 {
-	cIni::SetEntry( "KEY", GetPCKeyName( pcs ), GetKeyName( pcs ), GetP6KeyName( p6s ) );
+	cIni::SetEntry( "KEY", GetPCKeyName( pcs ), ";" + GetKeyName( pcs ), GetP6KeyName( p6s ) );
 }
 
 
@@ -976,11 +976,11 @@ void CFG6::InitIni( bool over )
 	SetDefault( CB_BoostUp,			over );	// Boost Up
 	SetDefault( CV_MaxBoost60,		over );	// BoostUp 最大倍率(N60モード)
 	SetDefault( CV_MaxBoost62,		over );	// BoostUp 最大倍率(N60m/N66モード)
-	SetDefault( CV_StopBit,			over );	// TAPEストップビット数
+	SetDefault( CV_StopBit,			over );	// ストップビット数
 	
 	// [FDD] ---------------------------------------------------
-	SetDefault( CV_FDDrive,			over );	// FDドライブ数
-	SetDefault( CB_FDDWait,			over );	// FDDウェイト有効フラグ
+	SetDefault( CV_FDDrive,			over );	// ドライブ数
+	SetDefault( CB_FDDWait,			over );	// アクセスウェイト有効フラグ
 	
 	// [DISPLAY] -----------------------------------------------
 	SetDefault( CV_Mode4Color,		over );	// MODE4カラー

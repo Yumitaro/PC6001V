@@ -303,16 +303,17 @@ void ZCons::sprintc( const std::string& text )
 
 ////////////////////////////////////////////////////////////////
 // 文字列描画(右詰め)
+// (現在のカーソル位置に対して右詰め))
 ////////////////////////////////////////////////////////////////
 void ZCons::sprintr( const std::string& text )
 {
 	std::string str = text;
 	OSD_UTF8toSJIS( str );
 	
-	size_t num = min( str.length(), Xmax );
-	Locate( -num, y );
+	size_t num = min( str.length(), x + 1 );
+	Locate( x - num + 1, y );
 	
-	for( size_t i=0; i<num; i++ ){
+	for( size_t i = max( str.length() - num, 0 ); i < str.length(); i++ ){
 		if( std::isprint( str[i] ) ){
 			PutCharH( str[i] );
 		}else{
