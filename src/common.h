@@ -28,29 +28,38 @@ enum TextID{
 	T_REPLAYRES,			// "リプレイを途中保存地点まで巻き戻します\nよろしいですか？"
 	
 	// INIファイル用メッセージ ------
-	// [CONFIG]
 	TINI_TITLE,				// "; === PC6001V 初期設定ファイル ===\n\n"
+	// [CONFIG]
 	TINI_Model,				// "機種 60:PC-6001 61:PC-6001A 62:PC-6001mkⅡ 66:PC-6601 64:PC-6001mkⅡSR 68:PC-6601SR"
-	TINI_FDDrive,			// "FDドライブ数 (0-2)"
-	TINI_UseExtRam,			// "拡張RAM使用"
+	TINI_OverClock,			// "オーバークロック率 (1-1000)%"
+	TINI_CheckCRC,			// "CRCチェック Yes:有効 No:無効"
+	// [CMT]
 	TINI_TurboTAPE,			// "Turbo TAPE Yes:有効 No:無効"
 	TINI_BoostUp,			// "BoostUp Yes:有効 No:無効"
 	TINI_MaxBoost60,		// "BoostUp 最大倍率(N60モード)"
 	TINI_MaxBoost62,		// "BoostUp 最大倍率(N60m/N66モード)"
-	TINI_StopBit,			// "TAPEストップビット数 (2-10)"
-	TINI_OverClock,			// "オーバークロック率 (1-1000)%"
-	TINI_CheckCRC,			// "CRCチェック Yes:有効 No:無効"
-	TINI_FDDWait,			// "FDDウェイト Yes:有効 No:無効"
+	TINI_StopBit,			// "ストップビット数 (2-10)bit"
+	// [FDD]
+	TINI_FDDrive,			// "ドライブ数 (0-2)"
+	TINI_FDDWait,			// "アクセスウェイト Yes:有効 No:無効"
 	// [DISPLAY]
 	TINI_Mode4Color,		// "MODE4カラーモード 0:モノクロ 1:赤/青 2:青/赤 3:ピンク/緑 4:緑/ピンク"
+	TINI_WindowZoom,		// "ウィンドウ表示倍率(%)"
+	TINI_FrameSkip,			// "フレームスキップ"
 	TINI_ScanLine,			// "スキャンライン Yes:あり No:なし"
 	TINI_ScanLineBr,		// "スキャンライン輝度 (0-100)%"
 	TINI_DispNTSC,			// "4:3表示 Yes:有効 No:無効"
 	TINI_Filtering,			// "フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	TINI_FullScreen,		// "フルスクリーンモード Yes:有効 No:無効"
-	TINI_WindowZoom,		// "ウィンドウ表示倍率(%)"
 	TINI_DispStatus,		// "ステータスバー Yes:表示 No:非表示"
-	TINI_FrameSkip,			// "フレームスキップ"
+	// [MOVIE]
+	TINI_AviBpp,			// "ビデオキャプチャ色深度 (16,24,32)bit"
+	TINI_AviZoom,			// "ビデオキャプチャ時ウィンドウ表示倍率(%)"
+	TINI_AviFrameSkip,		// "ビデオキャプチャ時フレームスキップ"
+	TINI_AviScanLine,		// "ビデオキャプチャ時スキャンライン Yes:あり No:なし"
+	TINI_AviScanLineBr,		// "ビデオキャプチャ時スキャンライン輝度 (0-100)%"
+	TINI_AviDispNTSC,		// "ビデオキャプチャ時4:3表示 Yes:有効 No:無効"
+	TINI_AviFiltering,		// "ビデオキャプチャ時フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	// [SOUND]
 	TINI_SampleRate,		// "サンプリングレート (44100/22050/11025)Hz"
 	TINI_SoundBuffer,		// "サウンドバッファサイズ"
@@ -60,14 +69,6 @@ enum TextID{
 	TINI_VoiceVolume,		// "音声合成音量 (0-100)"
 	TINI_TapeVolume,		// "TAPEモニタ音量 (0-100)"
 	TINI_TapeLPF,			// "TAPE LPFカットオフ周波数(0で無効)"
-	// [MOVIE]
-	TINI_AviBpp,			// "ビデオキャプチャ色深度 (16,24,32)"
-	TINI_AviZoom,			// "ビデオキャプチャ時ウィンドウ表示倍率(%)"
-	TINI_AviFrameSkip,		// "ビデオキャプチャ時フレームスキップ"
-	TINI_AviScanLine,		// "ビデオキャプチャ時スキャンライン Yes:あり No:なし"
-	TINI_AviScanLineBr,		// "ビデオキャプチャ時スキャンライン輝度 (0-100)%"
-	TINI_AviDispNTSC,		// "ビデオキャプチャ時4:3表示 Yes:有効 No:無効"
-	TINI_AviFiltering,		// "ビデオキャプチャ時フィルタリング Yes:アンチエイリアシング No:ニアレストネイバー"
 	// [FILES]
 	TINI_ExtRom,			// "拡張ROMファイル名"
 	TINI_tape,				// "TAPE(LODE)ファイル名(起動時に自動マウント)"
@@ -75,8 +76,6 @@ enum TextID{
 	TINI_disk1,				// "DISK1ファイル名(起動時に自動マウント)"
 	TINI_disk2,				// "DISK2ファイル名(起動時に自動マウント)"
 	TINI_printer,			// "プリンタ出力ファイル名"
-	TINI_fontz,				// "全角フォントファイル名"
-	TINI_fonth,				// "半角フォントファイル名"
 	// [PATH]
 	TINI_RomPath,			// "ROMイメージ格納パス"
 	TINI_TapePath,			// "TAPEイメージ格納パス"

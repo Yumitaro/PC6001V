@@ -759,7 +759,8 @@ BYTE KEY6::GetKeyIndicator( void ) const
 {
 	PRINTD( KEY_LOG, "[KEY][GetKeyIndicator] -> " );
 	
-	BYTE ret = (ON_KKANA ? KI_KKANA : KI_KANA)
+	BYTE ret = (ON_KANA  ? KI_KANA  : 0)
+			 | (ON_KKANA ? KI_KKANA : 0)
 			 | (ON_CAPS  ? KI_CAPS  : 0)
 			 | (ON_SHIFT ? KI_SHIFT : 0)
 			 | (ON_GRAPH ? KI_GRAPH : 0)

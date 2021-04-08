@@ -219,6 +219,23 @@ const MEMB::MEMINFO MEM6::IEXKANJI   = { EXKANJI00,	0x020000,	0xff,	0 };
 const MEMB::MEMINFO MEM6::IEXVOICE   = { EXVOICE00,	0x004000,	0xff,	1 };
 
 
+// 拡張カートリッジ名(UTF-8)
+const std::map<WORD, const std::string> CartName {
+		{ 0,			"" },
+		{ EXC6001,		"PCS-6001R 拡張BASIC" },
+		{ EXC6005,		"PC-6005 ROMカートリッジ" },
+		{ EXC6006,		"PC-6006 拡張ROM/RAMカートリッジ" },
+		{ EXC660101,	"PC-6601-01 拡張漢字ROMカートリッジ" },
+		{ EXC6006SR,	"PC-6006SR 拡張64KRAMカートリッジ" },
+		{ EXC6007SR,	"PC-6007SR 拡張漢字ROM&RAMカートリッジ" },
+		{ EXC6053,		"PC-6053 ボイスシンセサイザー" },
+		{ EXC60M55,		"PC-60m55 FM音源カートリッジ" },
+		{ EXCSOL1,		"戦士のカートリッジ" },
+		{ EXCSOL2,		"戦士のカートリッジmkⅡ" },
+		{ EXCSOL3,		"戦士のカートリッジmkⅢ" }
+	};
+
+
 
 
 ////////////////////////////////////////////////////////////////
@@ -2289,7 +2306,7 @@ void MEM6::UnmountExtRom( void )
 
 
 ////////////////////////////////////////////////////////////////
-// 拡張ROMファイルパス取得
+// 拡張ROM ファイルパス取得
 //
 // 引数:	なし
 // 返値:	P6VPATH&	ファイルパス名への参照
@@ -2297,6 +2314,23 @@ void MEM6::UnmountExtRom( void )
 const P6VPATH& MEM6::GetFile( void ) const
 {
 	return FilePath;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 拡張カートリッジの名前取得
+//
+// 引数:	なし
+// 返値:	std::string&	カートリッジ名への参照
+////////////////////////////////////////////////////////////////
+const std::string& MEM6::GetExtCartName( void ) const
+{
+	try{
+		return CartName.at( ExCart );
+	}
+	catch( std::out_of_range& ){
+		return CartName.at( 0 );
+	}
 }
 
 
@@ -3457,7 +3491,7 @@ void EXTCART::UnmountExtRom( void )
 
 
 ////////////////////////////////////////////////////////////////
-// 拡張ROMファイルパス取得
+// 拡張ROM ファイルパス取得
 //
 // 引数:	なし
 // 返値:	P6VPATH&	ファイルパス名への参照
@@ -3465,6 +3499,23 @@ void EXTCART::UnmountExtRom( void )
 const P6VPATH& EXTCART::GetFile( void ) const
 {
 	return FilePath;
+}
+
+
+////////////////////////////////////////////////////////////////
+// 拡張カートリッジの名前取得
+//
+// 引数:	なし
+// 返値:	std::string&	カートリッジ名への参照
+////////////////////////////////////////////////////////////////
+const std::string& EXTCART::GetExtCartName( void ) const
+{
+	try{
+		return CartName.at( ExCart );
+	}
+	catch( std::out_of_range& ){
+		return CartName.at( 0 );
+	}
 }
 
 

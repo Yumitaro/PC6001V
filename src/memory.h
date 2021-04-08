@@ -231,7 +231,8 @@ public:
 	
 	bool MountExtRom( const P6VPATH& );					// 拡張ROM マウント
 	void UnmountExtRom();								// 拡張ROM アンマウント
-	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
+	const P6VPATH& GetFile() const;						// 拡張ROM ファイルパス取得
+	const std::string& GetExtCartName() const;			// 拡張カートリッジの名前取得
 	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
 	bool MountExtCart( WORD, const P6VPATH&, bool );	// 拡張カートリッジマウント
 	const std::vector<IOBus::Connector>& GetDeviceConnector();	// デバイスコネクタリスト取得
@@ -562,7 +563,8 @@ public:
 	
 	bool MountExtRom( const P6VPATH& );					// 拡張ROM マウント
 	void UnmountExtRom();								// 拡張ROM アンマウント
-	const P6VPATH& GetFile() const;						// 拡張ROMファイルパス取得
+	const P6VPATH& GetFile() const;						// 拡張ROM ファイルパス取得
+	const std::string& GetExtCartName() const;			// 拡張カートリッジの名前取得
 	WORD GetCartridge() const;							// 拡張カートリッジの種類取得
 //	bool MountExtCart( WORD, const P6VPATH&, bool );	// 拡張カートリッジマウント
 	
