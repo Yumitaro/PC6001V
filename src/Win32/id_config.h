@@ -1,3 +1,7 @@
+/////////////////////////////////////////////////////////////////////////////
+//  P C 6 0 0 1 V
+//  Copyright 1999,2021 Yumitaro
+/////////////////////////////////////////////////////////////////////////////
 #define ID_G1			2001
 #define ID_G8			2003
 #define ID_G13			2004
@@ -160,7 +164,7 @@
 #define ID_URL			4002
 #define ID_VERICON		4003
 
-// ƒƒjƒ…[
+// ãƒ¡ãƒ‹ãƒ¥ãƒ¼
 #define IDS_AVI0		9001
 #define IDS_AVI1		9002
 #define IDS_REP0		9003
@@ -168,10 +172,10 @@
 #define IDS_REP2		9005
 #define IDS_REP3		9006
 
-// ƒtƒHƒ‹ƒ_‚ÌQÆ
+// ãƒ•ã‚©ãƒ«ãƒ€ã®å‚ç…§
 #define	IDS_FSTITLE		9101
 
-// ŠÂ‹«İ’è
+// ç’°å¢ƒè¨­å®š
 #define	IDS_CFTITLE		9201
 
 
