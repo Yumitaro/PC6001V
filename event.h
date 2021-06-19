@@ -40,6 +40,8 @@ typedef enum {
 	EV_JOYAXISMOTION,			// Joystick axis motion
 	EV_JOYBUTTONDOWN,			// Joystick button pressed
 	EV_JOYBUTTONUP,				// Joystick button released
+	EV_JOYDEVICEADDED,			// Joystick added
+	EV_JOYDEVICEREMOVED,		// Joystick removed
 	EV_WINDOWRESIZED,			// Window resized
 	EV_WINDOWSIZECHANGED,		// Window size changed
 	EV_WINDOWEVENT_MINIMIZED,	// Window minimized
@@ -89,6 +91,12 @@ typedef struct {
 	uint8_t button;		// The joystick button index
 	bool state;			// true:ON false:OFF
 } Event_JoyButton;
+
+// ジョイスティック 接続
+typedef struct {
+	EventType type;		// SDL_JOYDEVICEADDED or SDL_JOYDEVICEREMOVED
+	uint8_t idx;		// The joystick device index
+} Event_JoyDevice;
 
 // 終了
 typedef struct {
@@ -167,6 +175,7 @@ typedef union Event {
 	Event_MouseWheel mousewh;
 	Event_JoyAxis joyax;
 	Event_JoyButton joybt;
+	Event_JoyDevice joydev;
 	Event_Quit quit;
 	Event_Restart restart;
 	Event_DOKOLoad doko;
