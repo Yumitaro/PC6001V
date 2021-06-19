@@ -55,16 +55,17 @@ bool JOY6::Init( void )
 /////////////////////////////////////////////////////////////////////////////
 bool JOY6::Connect( int jno, int index )
 {
-	if( jno == 0 || jno == 1 ){
-		if( index >= 0 && index < min( OSD_GetJoyNum(), MAX_JOY ) ){
-			if( OSD_OpenedJoy( Jinfo[index] ) ){
-				JID[jno] = index;
-				return true;
-			}else
-				Jinfo[index] = OSD_OpenJoy( index );
+	if( jno < 0 || jno > 1 ){ return false; }
+	
+	if( index >= 0 && index < min( OSD_GetJoyNum(), MAX_JOY ) ){
+		if( OSD_OpenedJoy( Jinfo[index] ) ){
+			JID[jno] = index;
+			return true;
+		}else{
+			Jinfo[index] = OSD_OpenJoy( index );
 		}
-		JID[jno] = -1;
 	}
+	JID[jno] = -1;
 	return false;
 }
 
@@ -97,26 +98,26 @@ int JOY6::GetID( int jno )
 /////////////////////////////////////////////////////////////////////////////
 BYTE JOY6::GetJoyState( int jno )
 {
-	BYTE ret = 0;
+	BYTE ret = 0xff;
 	
-	if( jno == 0 || jno == 1 ){
-		if( JID[jno] >= 0 ){
-			int Xmove, Ymove;
-			
-			// 軸
-			Xmove = OSD_GetJoyAxis( Jinfo[JID[jno]], 0 );
-			Ymove = OSD_GetJoyAxis( Jinfo[JID[jno]], 1 );
-			
-			if( Xmove < INT16_MIN/2 ) ret |= 4;	// 左
-			if( Xmove > INT16_MAX/2 ) ret |= 8;	// 右
-			if( Ymove < INT16_MIN/2 ) ret |= 1;	// 下
-			if( Ymove > INT16_MAX/2 ) ret |= 2;	// 上
-			
-			// ボタン
-			for( int i=0; i < min( OSD_GetJoyNumButtons( Jinfo[JID[jno]] ), 4 ); i++ )
-				if( OSD_GetJoyButton( Jinfo[JID[jno]], i ) ) ret |= 0x10<<i;
+	if( jno < 0 || jno > 1 || JID[jno] < 0 ){ return ret; }
+	
+	HJOYINFO jj = Jinfo[JID[jno]];
+	
+	int Xmove = OSD_GetJoyAxis( jj, 0 );	// X軸
+	int Ymove = OSD_GetJoyAxis( jj, 1 );	// Y軸
+	
+	if( Xmove < INT16_MIN/2 ){ ret &= ~4; }	// 左
+	if( Xmove > INT16_MAX/2 ){ ret &= ~8; }	// 右
+	if( Ymove < INT16_MIN/2 ){ ret &= ~1; }	// 下
+	if( Ymove > INT16_MAX/2 ){ ret &= ~2; }	// 上
+	
+	// ボタン
+	for( int i=0; i < min( OSD_GetJoyNumButtons( jj ), 4 ); i++ ){
+		if( OSD_GetJoyButton( jj, i ) ){
+			ret &= ~(0x10 << i);
 		}
 	}
 	
-	return ~ret;
+	return ret;
 }

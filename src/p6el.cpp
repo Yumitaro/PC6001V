@@ -540,6 +540,10 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 //			}
 			break;
 			
+		case EV_JOYDEVICEADDED:
+		case EV_JOYDEVICEREMOVED:
+			break;
+			
 		case EV_JOYAXISMOTION:
 		case EV_JOYBUTTONDOWN:
 		case EV_JOYBUTTONUP:

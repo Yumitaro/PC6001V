@@ -1309,6 +1309,16 @@ bool OSD_GetEvent( Event* ev )
 		ev->joybt.state		= false;
 		break;
 		
+	case SDL_JOYDEVICEADDED:
+		ev->type			= EV_JOYDEVICEADDED;
+		ev->joydev.idx		= event.jdevice.which;
+		break;
+		
+	case SDL_JOYDEVICEREMOVED:
+		ev->type			= EV_JOYDEVICEREMOVED;
+		ev->joydev.idx		= event.jdevice.which;
+		break;
+		
 	case SDL_DROPFILE:
 		ev->type			= event.drop.file ? EV_DROPFILE : EV_NOEVENT;
 		ev->drop.file		= event.drop.file;
