@@ -361,11 +361,11 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		
 		
 		// TAPE挿入
-		if( !cfg->GetValue( CF_tape ).empty() ) TapeMount( cfg->GetValue( CF_tape ) );
+		if( !cfg->GetValue( CF_Tape ).empty() ) TapeMount( cfg->GetValue( CF_Tape ) );
 		
 		// ドライブ1,2にDISK挿入
-		if( !cfg->GetValue( CF_disk1 ).empty() ) DiskMount( 0, cfg->GetValue( CF_disk1 ) );
-		if( !cfg->GetValue( CF_disk2 ).empty() ) DiskMount( 1, cfg->GetValue( CF_disk2 ) );
+		if( !cfg->GetValue( CF_Disk1 ).empty() ) DiskMount( 0, cfg->GetValue( CF_Disk1 ) );
+		if( !cfg->GetValue( CF_Disk2 ).empty() ) DiskMount( 1, cfg->GetValue( CF_Disk2 ) );
 		
 		// リセット
 		UI_Reset();
@@ -2339,9 +2339,9 @@ void EL6::UI_Config( void )
 					cfg->GetValue( CV_OverClock )   != ccfg.GetValue( CV_OverClock )   ||	// オーバークロック率
 					cfg->GetValue( CV_ExCartridge ) != ccfg.GetValue( CV_ExCartridge ) ||	// 拡張カートリッジ
 					cfg->GetValue( CF_ExtRom )      != ccfg.GetValue( CF_ExtRom )      ||	// 拡張ROMファイル名取得
-					cfg->GetValue( CF_tape )        != ccfg.GetValue( CF_tape )        ||	// TAPE(LOAD)ファイル名
-					cfg->GetValue( CF_disk1 )       != ccfg.GetValue( CF_disk1 )       ||	// DISK1ファイル名
-					cfg->GetValue( CF_disk2 )       != ccfg.GetValue( CF_disk2 );			// DISK2ファイル名
+					cfg->GetValue( CF_Tape )        != ccfg.GetValue( CF_Tape )        ||	// TAPE(LOAD)ファイル名
+					cfg->GetValue( CF_Disk1 )       != ccfg.GetValue( CF_Disk1 )       ||	// DISK1ファイル名
+					cfg->GetValue( CF_Disk2 )       != ccfg.GetValue( CF_Disk2 );			// DISK2ファイル名
 		
 		cfg->Init();	// 変更したINIを読込み(オリジナル)
 		
@@ -2372,7 +2372,7 @@ void EL6::UI_Config( void )
 		vm->cmtl->SetLPF( cfg->GetValue( CV_TapeLPF ) );			// TAPE LPFカットオフ周波数取得
 		
 		// [FILES] -----------------------------------------------------
-		vm->pio->cPRT::SetFile( cfg->GetValue( CF_printer ) );		// プリンタファイル名取得
+		vm->pio->cPRT::SetFile( cfg->GetValue( CF_Printer ) );		// プリンタファイル名取得
 		
 		// [PATH] ------------------------------------------------------
 		vm->voice->SetPath( cfg->GetValue( CF_WavePath ) );			// WAVEパス取得

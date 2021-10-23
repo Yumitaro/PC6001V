@@ -1133,19 +1133,19 @@ static bool OsdReadINI( HWND hwnd, int page )
 		SetTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
 		
 		// TAPE(LOAD)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPLD, CF_tape );
+		SetTextBoxPath( hwnd, ID_FTPLD, CF_Tape );
 		
 		// TAPE(SAVE)ファイル名
-		SetTextBoxPath( hwnd, ID_FTPSV, CF_save );
+		SetTextBoxPath( hwnd, ID_FTPSV, CF_Save );
 		
 		// DISK1ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
+		SetTextBoxPath( hwnd, ID_FDISK1, CF_Disk1 );
 		
 		// DISK2ファイル名
-		SetTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
+		SetTextBoxPath( hwnd, ID_FDISK2, CF_Disk2 );
 		
 		// プリンタファイル名
-		SetTextBoxPath( hwnd, ID_FPRINT, CF_printer );
+		SetTextBoxPath( hwnd, ID_FPRINT, CF_Printer );
 		
 		
 		// ROMパス
@@ -1310,19 +1310,19 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		SaveTextBoxPath( hwnd, ID_FEXROM, CF_ExtRom );
 		
 		// TAPE(LOAD)ファイル名
-		SaveTextBoxPath( hwnd, ID_FTPLD, CF_tape );
+		SaveTextBoxPath( hwnd, ID_FTPLD, CF_Tape );
 		
 		// TAPE(SAVE)ファイル名
-		SaveTextBoxPath( hwnd, ID_FTPSV, CF_save );
+		SaveTextBoxPath( hwnd, ID_FTPSV, CF_Save );
 		
 		// DISK1ファイル名
-		SaveTextBoxPath( hwnd, ID_FDISK1, CF_disk1 );
+		SaveTextBoxPath( hwnd, ID_FDISK1, CF_Disk1 );
 		
 		// DISK2ファイル名
-		SaveTextBoxPath( hwnd, ID_FDISK2, CF_disk2 );
+		SaveTextBoxPath( hwnd, ID_FDISK2, CF_Disk2 );
 		
 		// プリンタファイル名
-		SaveTextBoxPath( hwnd, ID_FPRINT, CF_printer );
+		SaveTextBoxPath( hwnd, ID_FPRINT, CF_Printer );
 		
 		
 		// ROMパス

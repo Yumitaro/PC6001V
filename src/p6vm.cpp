@@ -352,7 +352,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	
 	// 8255 -----
 	pio->Reset();
-	pio->cPRT::SetFile( cnfg->GetValue( CF_printer ) );
+	pio->cPRT::SetFile( cnfg->GetValue( CF_Printer ) );
 	
 	// キー -----
 	if( !key->Init() ) return false;
@@ -369,7 +369,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	cmtl->SetStopBit( cnfg->GetValue( CV_StopBit ) );	// ストップビット数
 	
 	// CMT(SAVE) -----
-	if( !cmts->Init( cnfg->GetValue( CF_save ) ) ) return false;
+	if( !cmts->Init( cnfg->GetValue( CF_Save ) ) ) return false;
 	
 	// DISK -----
 	if( !disk->Init( cnfg->GetValue( CV_FDDrive ) ) ) return false;

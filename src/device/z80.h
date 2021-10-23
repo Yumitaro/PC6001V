@@ -17,7 +17,7 @@ class cZ80 {
 public:
 	// ペアレジスタ データ型定義
 	typedef union {
-	#if BYTEORDER == BIG_ENDIAN
+	#if BYTEORDER == P6V_BIG_ENDIAN
 	 	struct { BYTE h,l; } B;
 	#else
 		struct { BYTE l,h; } B;
