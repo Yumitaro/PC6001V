@@ -330,7 +330,7 @@ protected:
 	
 	void SetWait( BYTE );											// メモリアクセスウェイト設定
 	BYTE GetWait() const;											// メモリアクセスウェイト取得
-	void SetCGrom( BYTE );											// CG ROM アドレス設定
+	virtual void SetCGrom( BYTE );									// CG ROM アドレス設定
 	void SelectCGrom( bool );										// CG ROM 選択
 	void SetKanjiRom( BYTE );										// 漢字ROMおよび音声合成ROM設定
 	BYTE GetKanjiRom() const;										// 漢字ROMおよび音声合成ROM取得
@@ -363,7 +363,7 @@ public:
 	MEM62( VM6*, const ID& );
 	virtual ~MEM62();
 	
-	void Reset() override;								// リセット
+	virtual void Reset() override;						// リセット
 	
 	// 直接アクセス関数
 	virtual BYTE ReadCGrom2( WORD ) const override;
@@ -410,6 +410,8 @@ protected:
 	bool InitIntSpec() override;									// 内部メモリ初期化(機種別)
 	void SetMemBlockR( BYTE, BYTE ) override;						// メモリリード時のメモリブロック指定
 	void SetMemBlockSR( BYTE, BYTE );								// メモリリード/ライト時のメモリブロック指定(64,68)
+	
+	void SetCGrom( BYTE ) override;									// CG ROM アドレス設定
 	
 	// メモリブロック用関数 -------------------------------------------------
 	const std::string& KanjiGetName( WORD, bool = false ) override;	// 漢字ROM メモリブロック名取得

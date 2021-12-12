@@ -593,7 +593,7 @@ BYTE VM6::IomIn( int port, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( bp->Check( BPoint::BP_IN, port&0xff ) ){
+	if( bp->Check( BPoint::BP_IN, port & 0xff ) ){
 		PRINTD( IO_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -616,7 +616,7 @@ void VM6::IomOut( int port, BYTE data, int* wcnt )
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	// ブレークポイントチェック
-	if( bp->Check( BPoint::BP_OUT, port&0xff ) ){
+	if( bp->Check( BPoint::BP_OUT, port & 0xff ) ){
 		PRINTD( IO_LOG, " -> Break!\n" );
 	}
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

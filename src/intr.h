@@ -104,6 +104,7 @@ public:
 	void CancelIntr( DWORD );					// 割込み撤回
 	
 	bool GetTimerIntr();						// タイマ割込みスイッチ取得
+	DWORD GetIntrFlag();						// 割込み要求フラグ取得
 	
 	// デバイスID
 	enum IDOut{ outB0H=0, outBxH, outF3H, outF4H, outF5H, outF6H, outF7H, outFAH, outFBH };

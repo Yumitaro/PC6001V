@@ -110,8 +110,9 @@ void EL6::OnThread( void* inst )
 					st = p6->Emu();		// 1命令実行
 					
 					// ブレークポイントチェック(バスリクエスト期間中はチェックしない)
-					if( st > 0 && ( p6->vm->bp->Check( BPoint::BP_PC, p6->vm->cpum->GetPC() ) || p6->vm->bp->GetReqNum() ) ){
-						p6->vm->bp->Reset();
+					if( st > 0 && ( p6->vm->bp->Check( BPoint::BP_PC,   p6->vm->cpum->GetPC() ) ||
+									p6->vm->bp->Check( BPoint::BP_INTR, (WORD)p6->vm->cpum->GetIntVec() ) ||
+									p6->vm->bp->GetReqNum() ) ){
 						OSD_PushEvent( EV_DEBUGMODEBP, p6->vm->cpum->GetPC() );
 						break;	// ブレーク条件にヒットしたらスレッド抜ける
 					}

@@ -35,10 +35,11 @@ public:
 		BYTE IFF,IFF2;			// IFF,IFF2
 		BYTE IM;				// 割込モード
 		BYTE Halt;				// HALT フラグ
+		int IntVec;				// 割込みベクタ
 	};
 	
 protected:
-	typedef int8_t	offset;
+	using offset = int8_t;
 	
 	PAIR AF, BC, DE, HL;	// 汎用レジスタ
 	PAIR IX, IY, PC, SP;	// 専用レジスタ
@@ -48,6 +49,7 @@ protected:
 	BYTE IFF,IFF2;			// IFF,IFF2
 	BYTE IM;				// 割込モード
 	BYTE Halt;				// HALT フラグ
+	int IntVec;				// 割込みベクタ
 	
 	int mstate;				// メモリアクセスウェイト ステート数
 	
@@ -74,9 +76,10 @@ public:
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	int Disasm( std::string&, WORD );	// 1ライン逆アセンブル
-	void GetRegister( Register* );		// レジスタ値取得
-	void SetRegister( Register* );		// レジスタ値設定
+	void GetRegister( Register& );		// レジスタ値取得
+	void SetRegister( Register& );		// レジスタ値設定
 	WORD GetPC();						// PCレジスタ値取得
+	int GetIntVec();					// 割込みベクタ取得
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 };
 

@@ -284,10 +284,13 @@ void VDG64::EventCallback( int id, int clock )
 		
 	case EID_VSYNCE:	// VSYNC終了
 		VSYNC = false;
-		vm->IntReqIntr(IREQ_VRTC);		// VRTC割込み(立上りエッジで割込発生)
+		vm->IntReqIntr( IREQ_VRTC );	// VRTC割込み(立上りエッジで割込発生)
 		break;
 		
 	case EID_HDISPS:	// 表示区間開始
+		// (暫定)この時点でVRTC割込みが処理されていなkったらキャンセル
+		vm->IntCancelIntr( IREQ_VRTC );
+		
 		if( VLcnt ){
 			BusReq = CrtDisp ? true : false;
 			VLcnt--;
@@ -471,7 +474,8 @@ bool VDG6::Init( void )
 	e.devid = this->Device::GetID();
 	e.id    = EID_VSYNCE;
 	vm->EventGetInfo( &e );
-	e.Clock = (e.Clock * 3) / VSLINE;
+//	e.Clock += (e.Clock * 4) / VSLINE;
+	e.Clock += e.Clock / VSLINE * 4;	// SRに合わせて4H (mkIIは3H)
 	vm->EventSetInfo( &e );
 	
 	// バックバッファ作成

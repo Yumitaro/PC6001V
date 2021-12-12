@@ -153,6 +153,7 @@ void cZ80::Reset( void )
 	IM    = 0;
 	Halt  = false;
 	R_saved = R = 0;
+	IntVec = INTR_NONE;
 	
 	mstate = 0;
 }
@@ -543,7 +544,7 @@ enum CodesED
 /////////////////////////////////////////////////////////////////////////////
 int cZ80::Exec( void )
 {
-	int opcode,INTR_value;
+	BYTE opcode;
 	int state=0, istate=0;
 	bool NotIntrCheck = false;
 	BYTE i;
@@ -661,8 +662,8 @@ int cZ80::Exec( void )
 	if( NotIntrCheck ) NotIntrCheck = false;
 	else{
 		if( IFF == INT_ENABLE ){
-			INTR_value = GetIntrVector();				// 割込みベクタ取得
-			if( INTR_value >= 0 ){						// 割込み受け付け
+			IntVec = GetIntrVector();				// 割込みベクタ取得
+			if( IntVec != INTR_NONE ){					// 割込み受け付け
 				IFF = INT_DISABLE;
 				istate += 2;							// ??? Really ?
 				
@@ -675,8 +676,8 @@ int cZ80::Exec( void )
 				switch( IM ){
 				case 0:	// IM 0 の時
 					R ++;
-					istate += state_table[ INTR_value ];
-					switch( INTR_value ){
+					istate += state_table[ IntVec ];
+					switch( IntVec ){
 					case INTR_LEVEL_0:					// NOP
 						break;
 					case INTR_LEVEL_1:					// LD (BC),A
@@ -711,15 +712,16 @@ int cZ80::Exec( void )
 					break;
 				case 2:	// IM 2 の時
 					M_PUSH( PC );
-					INTR_value |= (WORD)cZ80::I << 8;
-					PC.B.l = ReadMem( INTR_value++ );
-					PC.B.h = ReadMem( INTR_value );
+					PC.B.l = ReadMem( ((WORD)cZ80::I << 8) |  IntVec      );
+					PC.B.h = ReadMem( ((WORD)cZ80::I << 8) | (IntVec + 1) );
 					//R += 0;			// ??? Really ?
 					//istate += 0;		// ??? Really ?
 					break;
 				}
 				state += istate;
 			}
+		}else{
+			IntVec = INTR_NONE;
 		}
 	}
 	
