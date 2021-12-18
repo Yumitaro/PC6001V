@@ -258,7 +258,7 @@ void IRQ64::Reset( void )
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 割込みチェック
+// 割込みチェック＆ベクタ取得
 /////////////////////////////////////////////////////////////////////////////
 //   割込み発生源はタイマか8049で,タイマ優先か?
 //   と思ったけどSRの調査をしていたら違うような気がしてきた。
@@ -300,7 +300,8 @@ int IRQ6::IntrCheck( void )
 		PRINTD( INTR_LOG, "(8049)" );
 		
 		CancelIntr( IREQ_8049 );
-		IntrNo = ( VecOutput[0] ? IntVector[0] : vm->PioReadA() ) >> 1;
+		BYTE vec = vm->PioReadA();	// 割込みベクタ出力設定に関わらず必ずポートを読む
+		IntrNo = ( VecOutput[0] ? IntVector[0] : vec ) >> 1;
 	}
 	// INT4:音声合成割込み
 	else if( ( IntrFlag & IREQ_VOICE ) && IntEnable[3] ){
@@ -431,6 +432,23 @@ void IRQ64::SetIntrEnable( BYTE data )
 {
 	PRINTD( INTR_LOG, "[INTR][SetIntrEnable]\n" );
 	
+	if( vm->VdgIsSRmode() ){ return; }	// SRモード時無効
+	
+	IntEnable[0] = (data & 0x01 ? false : true);
+	IntEnable[1] = (data & 0x02 ? false : true);
+	IntEnable[2] = (data & 0x04 ? false : true);
+	VecOutput[0] = (data & 0x08 ? true : false);
+	VecOutput[1] = (data & 0x10 ? true : false);
+	
+	PRINTD( INTR_LOG, "\tINT1:SUB CPU  %s\n", IntEnable[0] ? "Enable" : "Disable" );
+	PRINTD( INTR_LOG, "\tINT2:JOYSTICK %s\n", IntEnable[1] ? "Enable" : "Disable" );
+	PRINTD( INTR_LOG, "\tINT3:TIMER    %s\n", IntEnable[2] ? "Enable" : "Disable" );
+}
+
+void IRQ64::SetIntrEnableSR( BYTE data )
+{
+	PRINTD( INTR_LOG, "[INTR][SetIntrEnableSR]\n" );
+	
 	for( int i = 0; i < 8; i++ ){
 		IntEnable[i] = (data >> i) & 1 ? false : true;
 	}
@@ -447,11 +465,11 @@ void IRQ64::SetIntrEnable( BYTE data )
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 割込みベクタアドレス出力フラグ設定
+// 割込みベクタアドレス出力フラグ設定(SR)
 /////////////////////////////////////////////////////////////////////////////
-void IRQ64::SetIntrVectorEnable( BYTE data )
+void IRQ64::SetIntrVectorEnableSR( BYTE data )
 {
-	PRINTD( INTR_LOG, "[INTR][SetIntrVectorEnable]\n" );
+	PRINTD( INTR_LOG, "[INTR][SetIntrVectorEnableSR]\n" );
 	
 	for( int i = 0; i < 8; i++ ){
 		VecOutput[i] = (data >> i) & 1 ? true : false;
@@ -473,10 +491,10 @@ void IRQ64::SetIntrVectorEnable( BYTE data )
 /////////////////////////////////////////////////////////////////////////////
 void IRQ6::OutB0H( int, BYTE data ){ SetTimerIntr( data & 1 ? false : true ); }
 void IRQ6::OutF3H( int, BYTE data ){ SetIntrEnable( data ); }
-void IRQ6::OutF4H( int, BYTE data ){ IntVector[0] = data; }
-void IRQ6::OutF5H( int, BYTE data ){ IntVector[1] = data; }
+void IRQ6::OutF4H( int, BYTE data ){ if( !vm->VdgIsSRmode() ){ IntVector[0] = data; } }
+void IRQ6::OutF5H( int, BYTE data ){ if( !vm->VdgIsSRmode() ){ IntVector[1] = data; } }
 void IRQ6::OutF6H( int, BYTE data ){ SetTimerIntrHz( data ); }
-void IRQ6::OutF7H( int, BYTE data ){ IntVector[2] = data; }
+void IRQ6::OutF7H( int, BYTE data ){ if( !vm->VdgIsSRmode() ){ IntVector[2] = data; } }
 
 BYTE IRQ6::InF3H( int )
 {
@@ -490,8 +508,8 @@ BYTE IRQ6::InF6H( int ){ return TimerCntUp; }
 BYTE IRQ6::InF7H( int ){ return IntVector[2]; }
 
 void IRQ64::OutBxH( int port, BYTE data ){ IntVector[port & 7] = data; }
-void IRQ64::OutFAH( int, BYTE data ){ SetIntrEnable( data ); }
-void IRQ64::OutFBH( int, BYTE data ){ SetIntrVectorEnable( data ); }
+void IRQ64::OutFAH( int, BYTE data ){ SetIntrEnableSR( data ); }
+void IRQ64::OutFBH( int, BYTE data ){ SetIntrVectorEnableSR( data ); }
 
 BYTE IRQ64::InFAH( int )
 {

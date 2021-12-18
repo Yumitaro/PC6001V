@@ -631,7 +631,7 @@ void VM6::IosOut( int port, BYTE data, int* wcnt )
 // IRQ6 --------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////////////////
-// 割込みチェック
+// 割込みチェック＆ベクタ取得
 /////////////////////////////////////////////////////////////////////////////
 int VM6::IntIntrCheck( void )
 {
@@ -1014,10 +1014,10 @@ const std::vector<IOBus::Connector> VM60::c_psg = {
 
 // 8255(SUB CPU側) -----
 const std::vector<IOBus::Connector> VM60::c_8255s = {
-	{ IO8049_BUS, IOBus::portout, PIO6::outPBH },
-	{ IO8049_BUS, IOBus::portin,  PIO6::inPBH  },
-	{ IO8049_T0,  IOBus::portin,  PIO6::inIBF  },
-	{ IO8049_INT, IOBus::portin,  PIO6::inOBF  }
+	{ SUB6::IO_BUS, IOBus::portout, PIO6::outPBH },
+	{ SUB6::IO_BUS, IOBus::portin,  PIO6::inPBH  },
+	{ SUB6::IO_T0,  IOBus::portin,  PIO6::inIBF  },
+	{ SUB6::IO_INT, IOBus::portin,  PIO6::inOBF  }
 };
 
 // 8255(Z80側) -----
@@ -1170,10 +1170,10 @@ const std::vector<IOBus::Connector> VM62::c_8255m = {
 
 // 8255(SUB CPU側) -----
 const std::vector<IOBus::Connector> VM62::c_8255s = {
-	{ IO8049_BUS, IOBus::portout, PIO6::outPBH },
-	{ IO8049_BUS, IOBus::portin,  PIO6::inPBH  },
-	{ IO8049_T0,  IOBus::portin,  PIO6::inIBF  },
-	{ IO8049_INT, IOBus::portin,  PIO6::inOBF  }
+	{ SUB6::IO_BUS, IOBus::portout, PIO6::outPBH },
+	{ SUB6::IO_BUS, IOBus::portin,  PIO6::inPBH  },
+	{ SUB6::IO_T0,  IOBus::portin,  PIO6::inIBF  },
+	{ SUB6::IO_INT, IOBus::portin,  PIO6::inOBF  }
 };
 
 // 音声合成 -----
@@ -1397,10 +1397,10 @@ const std::vector<IOBus::Connector> VM64::c_8255m = {
 
 // 8255(SUB CPU側) -----
 const std::vector<IOBus::Connector> VM64::c_8255s = {
-	{ IO8049_BUS, IOBus::portout, PIO6::outPBH },
-	{ IO8049_BUS, IOBus::portin,  PIO6::inPBH  },
-	{ IO8049_T0,  IOBus::portin,  PIO6::inIBF  },
-	{ IO8049_INT, IOBus::portin,  PIO6::inOBF  }
+	{ SUB6::IO_BUS, IOBus::portout, PIO6::outPBH },
+	{ SUB6::IO_BUS, IOBus::portin,  PIO6::inPBH  },
+	{ SUB6::IO_T0,  IOBus::portin,  PIO6::inIBF  },
+	{ SUB6::IO_INT, IOBus::portin,  PIO6::inOBF  }
 };
 
 // 音声合成 -----

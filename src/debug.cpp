@@ -599,7 +599,7 @@ void cWndReg::Update( void )
 	int imax = el->cfg->GetValue( CV_Model );
 	imax = (imax == 64 || imax == 68) ? 18 : 12;
 		
-	for( int y = 0, i = 0; y < 5; y++ ){
+	for( int y = 0, i = 0; y < (imax + 3) / 4; y++ ){
 		ZCons::Locate( IVECX, IVECY + y + 1 );
 		for( int x = 0; x < 4; x++, i++ ){
 			if( i >= imax ){ break; }
@@ -620,9 +620,32 @@ void cWndReg::Update( void )
 			ZCons::Printf( "%02X:%02X%02X ", i * 2, el->vm->mem->Read( (reg.I << 8) + i * 2 + 1 ), el->vm->mem->Read( (reg.I << 8) + i * 2 ) );
 		}
 	}
-
-
-
+	
+	
+	// SUB CPU
+	ZCons::Locate( IVECX, IVECY + (imax + 3) / 4 );
+	ZCons::SetColor( FC_YELLOW4, FC_CYAN2 );
+	ZCons::Printf( "%-31s", "[SUB CPU]" );
+	ZCons::SetColor( FC_WHITE4, FC_BLACK );
+	ZCons::Locate( IVECX, IVECY + (imax + 3) / 4 + 1 );
+	
+	ZCons::Printf( "CPU STATUS : " );
+	switch( el->vm->cpus->GetStatus() ){
+	case SUB6::SS_IDLE:		ZCons::Printf( "IDLE     " );	break;	// 何もしていない
+	case SUB6::SS_KEY1:		ZCons::Printf( "KEY1     " );	break;	// キー割込み1その1
+	case SUB6::SS_KEY12:	ZCons::Printf( "KEY1-2   " );	break;	// キー割込み1その2
+	case SUB6::SS_KEY2:		ZCons::Printf( "KEY2     " );	break;	// キー割込み2
+	case SUB6::SS_KEY3:		ZCons::Printf( "KEY3     " );	break;	// キー割込み3
+	case SUB6::SS_CMTR:		ZCons::Printf( "CMT READ " );	break;	// CMT READ割込み
+	case SUB6::SS_CMTE:		ZCons::Printf( "CMT ERROR" );	break;	// CMT ERROR割込み
+	case SUB6::SS_SIO:		ZCons::Printf( "SIO      " );	break;	// RS232C受信割込み
+	case SUB6::SS_JOY:		ZCons::Printf( "STICK    " );	break;	// ゲーム用キー割込み
+	case SUB6::SS_TVRR:		ZCons::Printf( "TVR READ " );	break;	// TV予約読込み割込み
+	case SUB6::SS_DATE:		ZCons::Printf( "DATE     " );	break;	// DATE割込み
+	case SUB6::SS_CMTO:		ZCons::Printf( "CMT WRITE" );	break;	// CMT 1文字出力 データ待ち
+	case SUB6::SS_TVRW:		ZCons::Printf( "TVR WRITE" );	break;	// TV予約書込み データ待ち
+	default:				ZCons::Printf( "(UNKNOWN)" );			// 何か
+	}
 
 }
 

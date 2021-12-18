@@ -77,7 +77,6 @@ EL6::~EL6( void )
 void EL6::OnThread( void* inst )
 {
 	EL6* p6 = STATIC_CAST( EL6*, inst );	// 自分自身のオブジェクトポインタ取得
-	int st  = 0;
 	
 	
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -107,7 +106,7 @@ void EL6::OnThread( void* inst )
 					// ウェイト
 					p6->Wait();
 				}else{
-					st = p6->Emu();		// 1命令実行
+					int st = p6->Emu();		// 1命令実行
 					
 					// ブレークポイントチェック(バスリクエスト期間中はチェックしない)
 					if( st > 0 && ( p6->vm->bp->Check( BPoint::BP_PC,   p6->vm->cpum->GetPC() ) ||
@@ -221,7 +220,7 @@ void EL6::OnThread( void* inst )
 /////////////////////////////////////////////////////////////////////////////
 void EL6::Wait( void )
 {
-	if( sche->GetWaitEnable() && (!cfg->GetValue( CB_TurboTAPE ) || (vm->cpus->GetCmtStatus() == CMTCLOSE)) )
+	if( sche->GetWaitEnable() && (!cfg->GetValue( CB_TurboTAPE ) || (vm->cpus->GetCmtStatus() == SUB6::CMTCLOSE)) )
 		sche->VWait();
 	vm->evsc->ReVSYNC();
 }

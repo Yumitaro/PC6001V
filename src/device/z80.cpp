@@ -34,11 +34,11 @@
 //		  case DD/FD unknown opcode:
 //		    return;		← 存在しないDD/FDは割込判定なし
 //		}
-//		if( IFF==0 ){
+//		if( !IFF ){
 //		  if( 割込み判定 ){
 //		    CALL( 割込み番地 );
 //		    Halt = false;
-//		    IFF = 1;
+//		    IFF = true;
 //		  }
 //		}
 //	      }
@@ -98,12 +98,8 @@
 #define M_PE()	(FLAG & V_FLAG)
 #define M_PO()	(!M_PE())
 
-// IFF の中身
-#define INT_DISABLE	(0)
-#define INT_ENABLE	(1)
-
 // GetIntrVector() の返り値
-#define	INTR_NONE		(-1)
+#define	INTR_NONE		(0xff)
 #define	INTR_LEVEL_0	(0)
 #define	INTR_LEVEL_1	(2)
 #define	INTR_LEVEL_2	(4)
@@ -149,7 +145,7 @@ void cZ80::Reset( void )
 	IX.W  = IY.W  = SP.W  = 0xffff;
 	PC.W  = 0x0000;
 	I     = 0x00;
-	IFF   = IFF2 = INT_DISABLE;
+	IFF   = IFF2 = false;
 	IM    = 0;
 	Halt  = false;
 	R_saved = R = 0;
@@ -275,7 +271,7 @@ void cZ80::Reset( void )
 			}while(0)
 #define M_CALL_SKIP()	do{ PC.W += 2; }while(0)
 #define M_JP_SKIP()     do{ PC.W += 2; }while(0)
-#define M_JR_SKIP()     do{ PC.W ++;   }while(0)
+#define M_JR_SKIP()     do{ PC.W++;   }while(0)
 #define M_RET_SKIP()    do{            }while(0)
 
 //---------------------------------------------------------------------------
@@ -563,7 +559,7 @@ int cZ80::Exec( void )
 	state = istate = 0;
 	opcode = Fetch( PC.W++, &state );	// 命令フェッチ
 	state += state_table[ opcode ];
-	R ++;
+	R++;
 	
 	switch( opcode ){
 	#include "z80-code.h"			// 通常命令の場合
@@ -571,7 +567,7 @@ int cZ80::Exec( void )
 	case PFX_CB:					// CB 命令の場合
 		opcode = Fetch( PC.W++, &state );	// 命令フェッチ
 		state += state_CB_table[ opcode ];
-		R ++;
+		R++;
 		switch( opcode ){
 		#include "z80-cdCB.h"		// CB XX
 		default:					// CB ??
@@ -583,7 +579,7 @@ int cZ80::Exec( void )
 	case PFX_ED:					// ED 命令の場合
 		opcode = Fetch( PC.W++, &state );	// 命令フェッチ
 		state += state_ED_table[ opcode ];
-		R ++;
+		R++;
 		switch( opcode ){
 		#include "z80-cdED.h"		// ED XX
 		default:					// ED ??
@@ -595,7 +591,7 @@ int cZ80::Exec( void )
 	case PFX_DD:					// DD 命令の場合
 		opcode = Fetch( PC.W++, &state );	// 命令フェッチ
 		state += state_XX_table[ opcode ];
-		R ++;
+		R++;
 		#define XX IX
 		switch( opcode ){
 		#include "z80-cdXX.h"		// DD XX
@@ -625,7 +621,7 @@ int cZ80::Exec( void )
 	case PFX_FD:					// FD 命令の場合
 		opcode = Fetch( PC.W++, &state );	// 命令フェッチ
 		state += state_XX_table[ opcode ];
-		R ++;
+		R++;
 		#define XX IY
 		switch( opcode ){
 		#include "z80-cdXX.h"		// FD XX
@@ -661,21 +657,21 @@ int cZ80::Exec( void )
 	//------------ 割込み処理 ------------
 	if( NotIntrCheck ) NotIntrCheck = false;
 	else{
-		if( IFF == INT_ENABLE ){
-			IntVec = GetIntrVector();				// 割込みベクタ取得
+		if( IFF ){
+			IntVec = GetIntrVector();				// 割込みチェック＆ベクタ取得
 			if( IntVec != INTR_NONE ){					// 割込み受け付け
-				IFF = INT_DISABLE;
+				IFF = false;
 				istate += 2;							// ??? Really ?
 				
 				if( Halt ){
 					Halt = false;
-					PC.W ++;
+					PC.W++;
 					istate += 4;						// ??? Really ?
 				}
 				
 				switch( IM ){
 				case 0:	// IM 0 の時
-					R ++;
+					R++;
 					istate += state_table[ IntVec ];
 					switch( IntVec ){
 					case INTR_LEVEL_0:					// NOP
@@ -706,7 +702,7 @@ int cZ80::Exec( void )
 					}
 					break;
 				case 1:	// IM 1 の時
-					R ++;
+					R++;
 					istate += state_table[ RST38 ];	
 					M_RST( 0x0038 );
 					break;
