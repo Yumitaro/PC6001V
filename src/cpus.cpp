@@ -268,14 +268,20 @@ void SUB6::ExtIntr( void )
 		}
 		break;
 		
-	case SS_IDLE:	// ヒマなら新たな外部割込み受付
+	default:		// ヒマなら新たな外部割込み受付
 		PRINTD( SUB_LOG, "Command %02X\n", comm );
-		
 		ExtIntrExec( comm );
-		break;
+		// 本当はベクタ(+データ)出力中は外部割込み禁止
+		// 後で考える，かも
+
+//	case SS_IDLE:	// ヒマなら新たな外部割込み受付
+//		PRINTD( SUB_LOG, "Command %02X\n", comm );
 		
-	default:		// 何らか処理中
-		PRINTD( SUB_LOG, " %02X << Cancel >> (%d)\n", comm, CpuStatus );
+//		ExtIntrExec( comm );
+//		break;
+		
+//	default:		// 何らか処理中
+//		PRINTD( SUB_LOG, " %02X << Cancel >> (%d)\n", comm, CpuStatus );
 	}
 }
 

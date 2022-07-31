@@ -55,6 +55,7 @@ typedef enum {
 	CB_AviScanLine,
 	CB_AviDispNTSC,
 	CB_AviFiltering,
+	CB_CkDokoLoad,
 	CB_CkQuit,
 	CB_SaveQuit
 } TCBool;

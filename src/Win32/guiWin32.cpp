@@ -1181,6 +1181,9 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// CRCチェック
 		SetCheckBox( hwnd, ID_CB4, CB_CheckCRC );
 		
+		// どこでもLOAD(SLOT)実行時に確認する
+		SetCheckBox( hwnd, ID_CKDOKOLOAD, CB_CkDokoLoad );
+		
 		// 終了時 確認する
 		SetCheckBox( hwnd, ID_CB8, CB_CkQuit );
 		
@@ -1357,6 +1360,9 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// CRCチェック
 		SaveCheckBox( hwnd, ID_CB4, CB_CheckCRC );
+		
+		// どこでもLOAD(SLOT)実行時に確認する
+		SaveCheckBox( hwnd, ID_CKDOKOLOAD, CB_CkDokoLoad );
 		
 		// 終了時 確認する
 		SaveCheckBox( hwnd, ID_CB8, CB_CkQuit );

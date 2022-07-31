@@ -57,6 +57,7 @@ static const std::map<TCBool, const CfgSet<TCBool>> ConfigBool = {
 	{ CB_AviScanLine,	{ "MOVIE",		"AviScanLine",	TINI_AviScanLine,	DEFAULT_AVISCANLINE		} },
 	{ CB_AviDispNTSC,	{ "MOVIE",		"AviDispNTSC",	TINI_AviDispNTSC,	DEFAULT_AVIDISPNTSC		} },
 	{ CB_AviFiltering,	{ "MOVIE",		"AviFiltering",	TINI_AviFiltering,	DEFAULT_AVIFILTERING	} },
+	{ CB_CkDokoLoad,	{ "CHECK",		"CkDokoLoad",	TINI_CkDokoLoad,	DEFAULT_CKDOKOLOAD		} },
 	{ CB_CkQuit,		{ "CHECK",		"CkQuit",		TINI_CkQuit,		DEFAULT_CKQUIT			} },
 	{ CB_SaveQuit,		{ "CHECK",		"SaveQuit",		TINI_SaveQuit,		DEFAULT_SAVEQUIT		} }
 };
@@ -1035,6 +1036,7 @@ void CFG6::InitIni( bool over )
 	SetDefault( CF_DokoPath,		over );	// どこでもSAVEパス
 	
 	// [CHECK] -------------------------------------------------
+	SetDefault( CB_CkDokoLoad,		over );	// どこでもLOAD(SLOT)実行時確認
 	SetDefault( CB_CkQuit,			over );	// 終了時確認
 	SetDefault( CB_SaveQuit,		over );	// 終了時INI保存
 	

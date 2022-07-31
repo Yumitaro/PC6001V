@@ -22,6 +22,7 @@
 #define ID_CBAVISLINE	2216
 #define ID_AVINTSC		2217
 #define ID_AVIFILT		2218
+#define ID_CKDOKOLOAD	2219
 
 #define ID_TBPSG		2301
 #define ID_TBTAPE		2302

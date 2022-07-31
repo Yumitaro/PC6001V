@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include "typedef.h"
+
 
 // P6キーコード定義
 typedef enum {

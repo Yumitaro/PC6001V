@@ -526,6 +526,7 @@ static const std::unordered_map<TextID, const std::string> MsgString =
 	{ TINI_FontPath,			N_( "FONTファイル格納パス" ) },
 	{ TINI_DokoPath,			N_( "どこでもSAVE格納パス" ) },
 	// [CHECK]
+	{ TINI_CkDokoLoad,			N_( "どこでもLOAD(SLOT)実行時確認 Yes:する No:しない" ) },
 	{ TINI_CkQuit,				N_( "終了時確認 Yes:する No:しない" ) },
 	{ TINI_SaveQuit,			N_( "終了時INIファイルを保存 Yes:する No:しない" ) },
 	// [OPTION]

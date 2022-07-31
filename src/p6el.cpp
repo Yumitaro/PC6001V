@@ -772,7 +772,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 	case KVC_F10:			// Wait変更 or どこでもLOAD(スロット使用)
 		if( OnALT ){
 			Stop();
-			UI_DokoLoad( 1, true );
+			UI_DokoLoad( 1, cfg->GetValue( CB_CkDokoLoad ) );
 			Start();
 		}else{
 			UI_NoWait();
@@ -810,7 +810,7 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		
 	case KVC_HENKAN:		// どこでもLOAD(スロット使用)
 		Stop();
-		UI_DokoLoad( 1, true );
+		UI_DokoLoad( 1, cfg->GetValue( CB_CkDokoLoad ) );
 		Start();
 		break;
 		

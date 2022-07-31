@@ -90,6 +90,7 @@ enum TextID{
 	TINI_FontPath,			// "FONTファイル格納パス"
 	TINI_DokoPath,			// "どこでもSAVE格納パス"
 	// [CHECK]
+	TINI_CkDokoLoad,		// "どこでもLOAD(SLOT)実行時確認 Yes:する No:しない"
 	TINI_CkQuit,			// "終了時確認 Yes:する No:しない"
 	TINI_SaveQuit,			// "終了時INIファイルを保存 Yes:する No:しない"
 	// [OPTION]
