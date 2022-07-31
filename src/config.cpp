@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include <fstream>
 #include <algorithm>
@@ -841,9 +841,9 @@ COLOR24 CFG6::GetColor( int num )
 		else           { str = Stringf( "%02X%02X%02X", SYSColor.at( num - 128 ).r, SYSColor.at( num - 128 ).g, SYSColor.at( num - 128 ).b ); }
 		cIni::GetEntry( "COLOR", Stringf( "COL%03d", num ), str );
 		int st = std::stoul( str, nullptr, 16 );
-		col.r = (st>>16)&0xff;
-		col.g = (st>> 8)&0xff;
-		col.b = (st    )&0xff;
+		col.r = (st >> 16) & 0xff;
+		col.g = (st >>  8) & 0xff;
+		col.b = (st    ) & 0xff;
 		col.a = 255;
 	}
 	catch( std::out_of_range& ){
@@ -1131,7 +1131,9 @@ P6KEYsym CFG6::GetP6KeyCode( const std::string& str )
 /////////////////////////////////////////////////////////////////////////////
 bool CFG6::DokoSave( cIni* Ini )
 {
-	if( !Ini ){ return false; }
+	if( !Ini ){
+		return false;
+	}
 	
 	// バージョン
 	Ini->SetEntry( "GLOBAL", "Version",	"", VERSION );
@@ -1157,7 +1159,9 @@ bool CFG6::DokoLoad( cIni* Ini )
 	int st;
 	std::string strva;
 	
-	if( !Ini ){ return false; }
+	if( !Ini ){
+		return false;
+	}
 	
 	// 共通
 	if( Ini->GetVal( "GLOBAL", "Model",       st ) ){ SetValue( CV_Model,   st ); }

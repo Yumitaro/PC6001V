@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // OS依存の汎用ルーチン(主にUI用)
 /////////////////////////////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ const P6VPATH& OSD_GetConfigPath( void )
 	
 	if( ConfigPath.empty() ){
 		// パス取得バッファ
-		char str[PATH_MAX+1];
+		char str[PATH_MAX + 1];
 		
 		// マイドキュメントを取得する場合
 //		if( SHGetSpecialFolderPath( nullptr, str, CSIDL_PERSONAL, 0 ) ){
@@ -157,7 +157,7 @@ bool OSD_CreateFont( const P6VPATH& hfile, const P6VPATH& zfile, int size )
 	
 	// 作業用ビットマップ作成
 	BYTE* ppixel;	// ピクセルデータ
-	char bmbuf[sizeof(BITMAPINFOHEADER)+sizeof(RGBQUAD)*2];
+	char bmbuf[sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * 2];
 	BITMAPINFO &bi        = *(BITMAPINFO*)&bmbuf;
 	BITMAPINFOHEADER &bih = bi.bmiHeader;
 	ZeroMemory( &bih, sizeof(bmbuf) );
@@ -186,29 +186,29 @@ bool OSD_CreateFont( const P6VPATH& hfile, const P6VPATH& zfile, int size )
 	// 半角
 	if( !hfile.empty() ){
 		Rectangle( hBmpDC, 0, 0, Wscr, Hscr );
-		for( int y=0; y<2; y++ ){
-			for( int x=32; x<128; x++ ){
+		for( int y = 0; y < 2; y++ ){
+			for( int x = 32; x < 128; x++ ){
 				strk[0] = x + y * 128;
-				TextOut( hBmpDC, x*size, y*size*2, (char*)strk, 1 );
+				TextOut( hBmpDC, x * size, y * size * 2, (char*)strk, 1 );
 			}
 		}
-		srec.w = size  *128;
-		srec.w = size  *192;
-		srec.h = size*2*  2;
+		srec.w = size     * 128;
+		srec.w = size     * 192;
+		srec.h = size * 2 *   2;
 		if( !SaveImgData( hfile, ppixel, 1, Wscr, Hscr, &srec ) ) ret++;
 	}
 	
 	// 全角
 	if( !zfile.empty() ){
 		Rectangle( hBmpDC, 0, 0, Wscr, Hscr );
-		// 上位 0x81-0x9f, 0xe0-0xef
-		// 下位 0x40-0x7e, 0x80-0xfc
-		for( int y=1; y<48; y++ ){
-			for( int x=0; x<189; x++ ){
-				strk[0] = y + (y<32 ? 0x80 : 0xc0);
+		// 上位 0x81 - 0x9f, 0xe0 - 0xef
+		// 下位 0x40 - 0x7e, 0x80 - 0xfc
+		for( int y = 1; y < 48; y++ ){
+			for( int x = 0; x < 189; x++ ){
+				strk[0] = y + (y < 32 ? 0x80 : 0xc0);
 				strk[1] = x + 0x40;
-				TextOut( hBmpDC, x*size*2, y*size*2, (char*)strk, 2 );
-				x += strk[1]==0x7e ? 1 : 0;
+				TextOut( hBmpDC, x * size * 2, y * size * 2, (char*)strk, 2 );
+				x += strk[1] == 0x7e ? 1 : 0;
 			}
 		}
 		if( !SaveImgData( zfile, ppixel, 1, Wscr, Hscr, nullptr ) ) ret++;
@@ -239,7 +239,7 @@ bool OSD_SJIStoUTF8( std::string& str )
 	if( !lUtf16 ) return false;
 	
 	// 必要な分だけUnicode文字列のバッファを確保
-	wchar_t bufUtf16[lUtf16+1];
+	wchar_t bufUtf16[lUtf16 + 1];
 	
 	// ShiftJISからUnicodeへ変換
 	if( MultiByteToWideChar( CP_THREAD_ACP, 0, str.c_str(), -1, bufUtf16, lUtf16 ) != lUtf16 )
@@ -250,7 +250,7 @@ bool OSD_SJIStoUTF8( std::string& str )
 	if( !lUtf8 ) return false;
 	
 	// 必要な分だけUTF8文字列のバッファを確保
-	char bufUtf8[lUtf8+1];
+	char bufUtf8[lUtf8 + 1];
 	
 	// UnicodeからUTF8へ変換
 	if( WideCharToMultiByte( CP_UTF8, 0, bufUtf16, -1, bufUtf8, lUtf8, nullptr, nullptr ) != lUtf8 )
@@ -275,7 +275,7 @@ bool OSD_UTF8toSJIS( std::string& str )
 	if( !lUtf16 ) return false;
 	
 	// 必要な分だけUnicode文字列のバッファを確保
-	wchar_t bufUtf16[lUtf16+1];
+	wchar_t bufUtf16[lUtf16 + 1];
 	
 	// UTF8からUnicodeへ変換
 	if( MultiByteToWideChar( CP_UTF8, 0, str.c_str(), -1, bufUtf16, lUtf16 ) != lUtf16 )
@@ -286,7 +286,7 @@ bool OSD_UTF8toSJIS( std::string& str )
 	if( !lSJIS ) return false;
 	
 	// 必要な分だけShiftJIS文字列のバッファを確保
-	char bufSJIS[lSJIS+1];
+	char bufSJIS[lSJIS + 1];
 	
 	// UnicodeからShiftJISへ変換
 	if( WideCharToMultiByte( CP_THREAD_ACP, 0, bufUtf16, -1, bufSJIS, lSJIS, nullptr, nullptr ) != lSJIS )

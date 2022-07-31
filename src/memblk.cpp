@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include <fstream>
 
@@ -163,14 +163,18 @@ bool MemCells::SetData( const P6VPATH& filepath )
 	try{
 		// ファイルサイズに合わせてメモリセル再設定(端数考慮&2のべき乗)
 		size_t szc = ((OSD_GetFileSize( filepath ) + MemCell::PAGEMASK) >> MemCell::PAGEBITS);
-		if( szc == 0 ){ throw Error::NoRom; }
+		if( szc == 0 ){
+			throw Error::NoRom;
+		}
 		
 		size_t szn = 1;
 		while( szn < szc ){ szn <<= 1; }
 		Cells.resize( szn );
 		
 		std::fstream fs;
-		if( !OSD_FSopen( fs, filepath, std::ios_base::in|std::ios_base::binary ) ){ throw Error::NoRom; }
+		if( !OSD_FSopen( fs, filepath, std::ios_base::in | std::ios_base::binary ) ){
+			throw Error::NoRom;
+		}
 		
 		for( auto &mc : Cells ){
 			mc.SetData( fs );

@@ -75,7 +75,7 @@ CFLAGS	= -std=c++$(CPPVER) -Wall -Wno-unused-parameter -Wextra -Wno-pmf-conversi
 	  $(shell pkg-config $(PKGCNFG) --cflags)
 LFLAGS	= -static-libgcc -static-libstdc++ --static
 RFLAGS	= -J rc -O coff -I $(DIRSRC)/$(DIROSD)
-LIBS	= $(shell pkg-config $(PKGCNFG) --static --libs) -lcomctl32 -lwinmm -lshlwapi -limm32 -lole32 -loleaut32 -lsetupapi -lversion -lvfw32
+LIBS	= $(shell pkg-config $(PKGCNFG) --static --libs) -lcomctl32 -lwinmm -lshlwapi -limm32 -lole32 -loleaut32 -lsetupapi -lversion -lvfw32 -lintl -liconv
 
 #-----------------------------------------------------------------------------
 ifeq ($(CPPVER), 17)

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // SDL依存ルーチン
 /////////////////////////////////////////////////////////////////////////////
@@ -32,7 +32,7 @@
 #endif
 
 // Renderer,Texture作成用オプション
-#define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED|SDL_RENDERER_TARGETTEXTURE)
+#define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -359,7 +359,7 @@ int OSD_Message( HWINDOW hwnd, const char* mes, const char* cap, int type )
     int res;
 	
 	// メッセージボックスのタイプ
-	switch( type&0x000f ){
+	switch( type & 0x000f ){
 	case OSDM_OKCANCEL:		mb.numbuttons = 2;	mb.buttons = bb_OKCANCEL;		break;
 	case OSDM_YESNO:		mb.numbuttons = 2;	mb.buttons = bb_YESNOCANCEL;	break;
 	case OSDM_YESNOCANCEL:	mb.numbuttons = 3;	mb.buttons = bb_YESNOCANCEL;	break;
@@ -367,7 +367,7 @@ int OSD_Message( HWINDOW hwnd, const char* mes, const char* cap, int type )
 	}
 	
 	// メッセージボックスのアイコンタイプ
-	switch( type&0x00f0 ){
+	switch( type & 0x00f0 ){
 	case OSDM_ICONERROR:	mb.flags = SDL_MESSAGEBOX_ERROR;		break;
 //	case OSDM_ICONQUESTION:	mb.flags = MB_ICONQUESTION;	break;
 	case OSDM_ICONWARNING:	mb.flags = SDL_MESSAGEBOX_WARNING;		break;
@@ -764,7 +764,7 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	
 	// Renderer,Textureのフォーマットを選定する
 	SDL_GetRendererInfo( rend, &info );
-	for( int i=(int)info.num_texture_formats-1; i>=0; i-- ){
+	for( int i = (int)info.num_texture_formats - 1; i >= 0; i-- ){
 		DWORD tx = info.texture_formats[i];
 		if( SDL_BYTESPERPIXEL(tx) == 4 && (SDL_BITSPERPIXEL(tx) == 32 || SDL_BITSPERPIXEL(tx) == 24) &&
 			(SDL_PIXELORDER(tx) == SDL_PACKEDORDER_ARGB || SDL_PIXELORDER(tx) == SDL_PACKEDORDER_XRGB) ){
@@ -811,14 +811,14 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	// スキャンライン用Texture作成
 	sdl_texsl = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_TARGET,    sw, sh * 2 );
 	SDL_SetTextureBlendMode( sdl_texsl, SDL_BLENDMODE_BLEND );
-	SDL_SetTextureAlphaMod( sdl_texsl, ((100 - scanbr) * 255)/100 );
+	SDL_SetTextureAlphaMod( sdl_texsl, ((100 - scanbr) * 255) / 100 );
 	
 	SDL_SetRenderTarget( rend, sdl_texsl );
 	SDL_SetRenderDrawColor( rend, 0, 0, 0, 0 );		// 無色透明
 	SDL_RenderClear( rend );
 	SDL_SetRenderDrawColor( rend, 0, 0, 0, 255 );	// 黒 + alpha
-	for( int yy=0; yy < sh*2; yy += 2 ){
-		SDL_RenderDrawLine( rend, 0, yy, sw-1, yy );
+	for( int yy = 0; yy < sh * 2; yy += 2 ){
+		SDL_RenderDrawLine( rend, 0, yy, sw - 1, yy );
 	}
 	SDL_SetRenderTarget( rend, nullptr );
 	
@@ -995,10 +995,10 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	SDL_LockTexture( sdl_texwx, &drc1, &ptex, &tpp );
 	if( !ptex ) return;
 	
-	for( int yy=0; yy < src1.h; yy++ ){
+	for( int yy = 0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
-		for( int xx=0; xx < src1.w; xx++ )
+		for( int xx = 0; xx < src1.w; xx++ )
 			*tpd++ = VSurface::GetColor( *tps++ );
 	}
 	
@@ -1045,10 +1045,10 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	SDL_LockTexture( sdl_texbb, &src1, &ptex, &tpp );
 	if( !ptex ) return;
 	
-	for( int yy=0; yy < src1.h; yy++ ){
+	for( int yy = 0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
-		for( int xx=0; xx < src1.w; xx++ )
+		for( int xx = 0; xx < src1.w; xx++ )
 			*tpd++ = VSurface::GetColor( *tps++ );
 	}
 	

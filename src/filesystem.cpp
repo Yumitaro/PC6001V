@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include <filesystem>
 #include <fstream>
@@ -75,7 +75,7 @@ void OSD_AbsolutePath( P6VPATH& path )
 	P6VPATH p = path;
 	
 	// 既に絶対パスなら正規化のみ実施
-	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative()==true らしい
+	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative() == true らしい
 		p = OSD_GetConfigPath() / p;
 	
 	// パスを結合して正規化

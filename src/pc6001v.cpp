@@ -1,9 +1,8 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
-#include <clocale>
 #include <memory>
 #include <string>
 
@@ -23,6 +22,14 @@
 
 
 #include "SDL_main.h"
+
+
+#include <locale.h>
+#include <libintl.h>
+#define	_(str)	gettext(str)
+// xgettext -d P6V -o P6V.pot src/*.cpp -k_ --from-code=UTF-8
+// msginit --locale=ja_JP.UTF-8 -i p6v.pot --output-file p6v.po
+// msgfmt -o locale/ja/LC_MESSAGES/p6v.mo p6v.po
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -103,7 +110,7 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 	
 	// 選定
 	std::vector<int> models = { 60, 61, 62, 66, 64, 68 };
-	for( size_t i=0; i<models.size(); i++ ){
+	for( size_t i = 0; i < models.size(); i++ ){
 		// 見つからなかった機種はスキップ
 		if( IniModel == models[i] ) continue;
 		
@@ -146,10 +153,16 @@ int main( int argc, char* argv[] )
 	EL6::ReturnCode Restart = EL6::Quit;	// 再起動フラグ
 	
 	
-	std::setlocale( LC_CTYPE, "" );
+	// i18n
+	setlocale( LC_ALL, "ja_JP.UTF-8" );
+	bindtextdomain( "P6V", "./locale" );
+	textdomain( "P6V" );
+	
 	
 	// 二重起動禁止
-	if( OSD_IsWorking() ) return false;
+	if( OSD_IsWorking() ){
+		return false;
+	}
 	
 	// 環境設定オブジェクト確保
 	try{
@@ -188,7 +201,9 @@ int main( int argc, char* argv[] )
 	// 各種フォルダの存在チェック&作成
 	std::vector<TCPath> paths = { CF_RomPath, CF_TapePath, CF_DiskPath, CF_ExtRomPath, CF_ImgPath, CF_WavePath, CF_FontPath, CF_DokoPath };
 	for( auto& cf : paths ){
-		if( !OSD_FileExist( Cfg->GetValue( cf ) ) ) OSD_CreateFolder( Cfg->GetValue( cf ) );
+		if( !OSD_FileExist( Cfg->GetValue( cf ) ) ){
+			OSD_CreateFolder( Cfg->GetValue( cf ) );
+		}
 	}
 	
 	

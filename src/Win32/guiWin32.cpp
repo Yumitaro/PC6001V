@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // OS依存の汎用ルーチン(主にUI用)
 /////////////////////////////////////////////////////////////////////////////
@@ -68,7 +68,7 @@ const char* GetTextConv( HINSTANCE hinst, int id )
 {
 	static char txt[1024] = "";
 	
-	if( !LoadString( hinst, id, txt, sizeof(txt)-1 ) ) return nullptr;
+	if( !LoadString( hinst, id, txt, sizeof(txt) - 1 ) ) return nullptr;
 	
 	return txt;
 }
@@ -212,7 +212,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	EnableMenuItem( hsm, ID_C60M55, MF_BYCOMMAND | MF_GRAYED );
 	
 	// コントローラ
-	for( int i=0; i < 5; i++ ){
+	for( int i = 0; i < 5; i++ ){
 		if( i < OSD_GetJoyNum() ){
 			EnableMenuItem( hsm, ID_JOY101 + i, MF_BYCOMMAND | MF_ENABLED );
 			EnableMenuItem( hsm, ID_JOY201 + i, MF_BYCOMMAND | MF_ENABLED );
@@ -245,7 +245,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	
 	
 	// サンプリングレート
-	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CV_SampleRate )/11025)>>1), MF_BYCOMMAND );
+	CheckMenuRadioItem( hsm, ID_SPR44, ID_SPR11, ID_SPR11 - ((cfg->GetValue( CV_SampleRate ) / 11025) >> 1), MF_BYCOMMAND );
 	
 	CheckMenuItem( hsm, ID_NOWAIT,    sche->GetWaitEnable()          ? MF_UNCHECKED : MF_CHECKED   );
 	CheckMenuItem( hsm, ID_TURBO,     cfg->GetValue( CB_TurboTAPE )  ? MF_CHECKED   : MF_UNCHECKED );
@@ -295,7 +295,7 @@ void EL6::ShowPopupMenu( int x, int y )
 /////////////////////////////////////////////////////////////////////////////
 static int CALLBACK OsdBrowseCallbackProc( HWND hwnd, UINT msg, LPARAM lp1, LPARAM lp2 )
 {
-	char Path[PATH_MAX*2];	// 念のため2倍?
+	char Path[PATH_MAX * 2];	// 念のため2倍
 	
 	// BIF_STATUSTEXT以外は何もしない
 	if( OBI.ulFlags & BIF_STATUSTEXT ){
@@ -326,8 +326,8 @@ bool FolderDiaog_Win32( HWND hwnd, P6VPATH& path )
 {
 	LPMALLOC Memory;
 	LPITEMIDLIST Ret, Root;
-	char Buffer[PATH_MAX+1];
-	char stitle[PATH_MAX+1];
+	char Buffer[PATH_MAX + 1];
+	char stitle[PATH_MAX + 1];
 	bool res = false;
 	std::string tpath;
 	
@@ -406,8 +406,8 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 	PRINTD( OSD_LOG, "[OSD][FileDiaog_Win32] (%s)(%s)(%s)\n", P6VPATH2STR( fullpath ).c_str(), P6VPATH2STR( path ).c_str(), ext.c_str() );
 	
 	OPENFILENAME fname;
-	char File[PATH_MAX+1];
-	char Path[PATH_MAX+1];
+	char File[PATH_MAX + 1];
+	char Path[PATH_MAX + 1];
 	bool ret = false;
 	MSG msg;
 	std::string tpath;
@@ -418,11 +418,11 @@ bool FileDiaog_Win32( HWND hwnd, FileMode mode, const std::string& title, const 
 	if( OSD_FileExist( fullpath ) ){
 		tpath = P6VPATH2STR( fullpath );
 		OSD_UTF8toSJIS( tpath );
-		std::strncpy( File, tpath.c_str(), sizeof(File)-1 );
+		std::strncpy( File, tpath.c_str(), sizeof(File) - 1 );
 	}else{
 		tpath = P6VPATH2STR( path );
 		OSD_UTF8toSJIS( tpath );
-		std::strncpy( Path, tpath.c_str(), sizeof(Path)-1 );
+		std::strncpy( Path, tpath.c_str(), sizeof(Path) - 1 );
 	}
 	ZeroMemory( &fname, sizeof(OPENFILENAME) );
 	
@@ -582,9 +582,9 @@ bool FileSelect_Win32( HWND hwnd, FileDlg type, P6VPATH& fullpath, P6VPATH& path
 		break;
 	}
 	
-	LoadString( hinst, idt, title,  sizeof(title)-1 );
-	LoadString( hinst, idf, filter, sizeof(filter)-1 );
-	LoadString( hinst, idx, ext,    sizeof(ext)-1 );
+	LoadString( hinst, idt, title,  sizeof(title)  - 1 );
+	LoadString( hinst, idf, filter, sizeof(filter) - 1 );
+	LoadString( hinst, idx, ext,    sizeof(ext)    - 1 );
 	
 	return FileDiaog_Win32( hwnd, mode, title, filter, fullpath, path, ext );
 }
@@ -627,7 +627,7 @@ int Message_Win32( HWND hwnd, const std::string& mes, const std::string& cap, in
 	OSD_UTF8toSJIS( tcap );
 	
 	// メッセージボックスのタイプ
-	switch( type&0x000f ){
+	switch( type & 0x000f ){
 	case OSDM_OK:			Type = MB_OK;			break;
 	case OSDM_OKCANCEL:		Type = MB_OKCANCEL;		break;
 	case OSDM_YESNO:		Type = MB_YESNO;		break;
@@ -635,7 +635,7 @@ int Message_Win32( HWND hwnd, const std::string& mes, const std::string& cap, in
 	}
 	
 	// メッセージボックスのアイコンタイプ
-	switch( type&0x00f0 ){
+	switch( type & 0x00f0 ){
 	case OSDM_ICONERROR:	Type |= MB_ICONERROR;		break;
 	case OSDM_ICONQUESTION:	Type |= MB_ICONQUESTION;	break;
 	case OSDM_ICONWARNING:	Type |= MB_ICONWARNING;		break;
@@ -776,7 +776,7 @@ int OSD_ConfigDialog( HWINDOW hwnd )
 /////////////////////////////////////////////////////////////////////////////
 static void FileSelCom( const HWND hwnd, const int id, const FileDlg type, const P6VPATH& path )
 {
-	char str[PATH_MAX+1];			// 文字列取得用
+	char str[PATH_MAX + 1];			// 文字列取得用
 	std::string tstr;				// 文字列取得用
 	P6VPATH folder, fpath;			// パス取得用
 	
@@ -797,7 +797,7 @@ static void FileSelCom( const HWND hwnd, const int id, const FileDlg type, const
 /////////////////////////////////////////////////////////////////////////////
 static void FolderSelCom( const HWND hwnd, const int id )
 {
-	char str[PATH_MAX+1];			// 文字列取得用
+	char str[PATH_MAX + 1];			// 文字列取得用
 	std::string tstr;				// 文字列取得用
 	P6VPATH folder;					// パス取得用
 	
@@ -849,7 +849,7 @@ static void SetSpinControl( const HWND hwnd, const int ids, const int ide, const
 /////////////////////////////////////////////////////////////////////////////
 static void SaveSpinControl( const HWND hwnd, const int id, const TCValue cv )
 {
-	char str[PATH_MAX+1];			// 文字列取得用
+	char str[PATH_MAX + 1];			// 文字列取得用
 	
 	GetDlgItemText( hwnd, id, str, sizeof(str) );
 	ecfg.SetValue( cv, (int)std::strtol( str, nullptr, 0 ) );
@@ -862,7 +862,7 @@ static void SaveSpinControl( const HWND hwnd, const int id, const TCValue cv )
 static void CallbackSpinControl( const HWND hwnd, const int ids, const int delta )
 {
 	int st, spmin, spmax;
-	char str[PATH_MAX+1];
+	char str[PATH_MAX + 1];
 	HWND hedit = (HWND)SendMessage( GetDlgItem( hwnd, ids ), UDM_GETBUDDY, 0, 0 );
 	
 	SendMessage( GetDlgItem( hwnd, ids ), UDM_GETRANGE32, (WPARAM)&spmin, (LPARAM)&spmax );
@@ -995,7 +995,7 @@ static void SetTextBoxPath( const HWND hwnd, const int id, const TCPath path )
 /////////////////////////////////////////////////////////////////////////////
 static void SaveTextBoxPath( const HWND hwnd, const int id, const TCPath path )
 {
-	char str[PATH_MAX+1];			// 文字列取得用
+	char str[PATH_MAX + 1];			// 文字列取得用
 	
 	GetDlgItemText( hwnd, id, str, sizeof(str) );
 	std::string tstr = str;
@@ -1074,7 +1074,7 @@ static bool OsdReadINI( HWND hwnd, int page )
 		if( LBpairs.find( CV_FrameSkip ) == LBpairs.end() ){
 			std::vector<LBitem> items;
 			for( int i = ecfg.GetMin( CV_FrameSkip ); i <= ecfg.GetMax( CV_FrameSkip ); i++ ){
-				LBitem item = { i, Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i+1) ) };
+				LBitem item = { i, Stringf( "%d (%4.2f fps)", i, VSYNC_HZ / (i + 1) ) };
 				items.emplace_back( item );
 			}
 			LBpairs.emplace( CV_FrameSkip,    items );
@@ -1704,9 +1704,9 @@ static INT_PTR CALLBACK VerInfoProc( HWND hwnd, UINT msg, WPARAM wp, LPARAM lp )
 		
 		// 指型カーソル取得
 		HINSTANCE hInstHelp;
-		char WinDir[PATH_MAX+1];
+		char WinDir[PATH_MAX + 1];
 		
-		GetWindowsDirectory( WinDir, PATH_MAX-13 );
+		GetWindowsDirectory( WinDir, PATH_MAX - 13 );
 		lstrcat( WinDir, "\\winhlp32.exe");
 		hInstHelp = LoadLibrary( WinDir );
 		if( hInstHelp ){

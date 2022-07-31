@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2021 Yumitaro
+//  Copyright 1999,2022 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // OS依存の汎用ルーチン(ファイル処理)
 /////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,7 @@ void OSD_AddDelimiter( P6VPATH& path )
 {
 	OSD_UTF8toSJIS( path );
 	
-	char str[path.length()+2];
+	char str[path.length() + 2];
 	
 	std::strcpy( str, P6VPATH2STR( path ).c_str() );
 	PathAddBackslash( str );
@@ -49,7 +49,7 @@ void OSD_DelDelimiter( P6VPATH& path )
 {
 	OSD_UTF8toSJIS( path );
 	
-	char str[path.length()+1];
+	char str[path.length() + 1];
 	
 	std::strcpy( str, P6VPATH2STR( path ).c_str() );
 	PathRemoveBackslash( str );
@@ -67,7 +67,7 @@ void OSD_DelDelimiter( P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_RelativePath( P6VPATH& path )
 {
-	char str[PATH_MAX+1];
+	char str[PATH_MAX + 1];
 	
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
@@ -99,7 +99,7 @@ void OSD_AbsolutePath( P6VPATH& path )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_AbsolutePath] %s -> ", P6VPATH2STR( path ).c_str() );
 	
-	char str[PATH_MAX+1];
+	char str[PATH_MAX + 1];
 	
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
@@ -130,7 +130,7 @@ void OSD_AbsolutePath( P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_AddPath( P6VPATH& cpath, const P6VPATH& path1, const P6VPATH& path2 )
 {
-	char str[PATH_MAX+1];
+	char str[PATH_MAX + 1];
 	
 	std::string tpath1 = path1;
 	std::string tpath2 = path2;
@@ -156,7 +156,7 @@ const std::string OSD_GetFolderNamePart( const P6VPATH& path )
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
 	
-	char str[tpath.length()+1];
+	char str[tpath.length() + 1];
 	
 	std::strcpy( str, tpath.c_str() );
 	PathRemoveFileSpec( str );
@@ -181,7 +181,7 @@ const std::string OSD_GetFileNamePart( const P6VPATH& path )
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
 	
-	char str[tpath.length()+1];
+	char str[tpath.length() + 1];
 	
 	std::strcpy( str, tpath.c_str() );
 	tpath = PathFindFileName( str );
@@ -205,7 +205,7 @@ const std::string OSD_GetFileNameExt( const P6VPATH& path )
 	std::string tpath = path;
 	OSD_UTF8toSJIS( tpath );
 	
-	char str[tpath.length()+1];
+	char str[tpath.length() + 1];
 	
 	std::strcpy( str, tpath.c_str() );
 	tpath = PathFindExtension( str );
@@ -233,7 +233,7 @@ bool OSD_ChangeFileNameExt( P6VPATH& path, const std::string& ext )
 	std::string text = '.' + ext;
 	OSD_UTF8toSJIS( text );
 	
-	char str[path.length()+text.length()+1];
+	char str[path.length() + text.length() + 1];
 	
 	std::strcpy( str, path.c_str() );
 	bool res = PathRenameExtension( str, text.c_str() );
@@ -334,7 +334,7 @@ bool OSD_FileExist( const P6VPATH& fullpath )
 	std::string tpath = fullpath;
 	OSD_UTF8toSJIS( tpath );
 	
-	char str[tpath.length()+1];
+	char str[tpath.length() + 1];
 	
 	std::strcpy( str, tpath.c_str() );
 	PathRemoveBackslash( str );
@@ -384,7 +384,7 @@ bool OSD_FileReadOnly( const P6VPATH& fullpath )
 	std::string tpath = fullpath;
 	OSD_UTF8toSJIS( tpath );
 	
-	char str[tpath.length()+1];
+	char str[tpath.length() + 1];
 	
 	std::strcpy( str, tpath.c_str() );
 	PathRemoveBackslash( str );
