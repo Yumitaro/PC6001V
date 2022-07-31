@@ -2337,8 +2337,8 @@ WORD MEM6::GetCartridge( void ) const
 /////////////////////////////////////////////////////////////////////////////
 // 直接アクセス関数
 /////////////////////////////////////////////////////////////////////////////
-BYTE MEM6::ReadExtRom   ( WORD addr ) const { return ExtRom.Read  ( addr ); }
-BYTE MEM6::ReadExtRam   ( WORD addr ) const { return ExtRam.Read  ( addr ); }
+BYTE MEM6::ReadExtRom( DWORD addr ) const { return ExtRom.Read( addr ); }
+BYTE MEM6::ReadExtRam( DWORD addr ) const { return ExtRam.Read( addr ); }
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3509,8 +3509,8 @@ WORD EXTCART::GetCartridge( void ) const
 /////////////////////////////////////////////////////////////////////////////
 // 直接アクセス関数
 /////////////////////////////////////////////////////////////////////////////
-BYTE EXTCART::ReadExtRom( WORD addr ) const { return ExtRom.Read( addr ); }
-BYTE EXTCART::ReadExtRam( WORD addr ) const { return ExtRam.Read( addr ); }
+BYTE EXTCART::ReadExtRom( DWORD addr ) const { return ExtRom.Read( addr ); }
+BYTE EXTCART::ReadExtRam( DWORD addr ) const { return ExtRam.Read( addr ); }
 
 
 /////////////////////////////////////////////////////////////////////////////

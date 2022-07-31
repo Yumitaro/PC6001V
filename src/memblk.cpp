@@ -209,10 +209,10 @@ size_t MemCells::Size( void ) const
 // 引数:	addr	アドレス
 // 返値:	BYTE	データ
 /////////////////////////////////////////////////////////////////////////////
-BYTE MemCells::Read( WORD addr ) const
+BYTE MemCells::Read( DWORD addr ) const
 {
 	try{
-		return Cells.at( (addr >> MemCell::PAGEBITS) & (Cells.size() - 1) ).Read( addr );
+		return Cells.at( (addr >> MemCell::PAGEBITS) & (Cells.size() - 1) ).Read( addr & 0xffff );
 	}
 	catch( std::out_of_range& ){}
 	
@@ -227,10 +227,10 @@ BYTE MemCells::Read( WORD addr ) const
 //			data	データ
 // 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-void MemCells::Write( WORD addr, BYTE data )
+void MemCells::Write( DWORD addr, BYTE data )
 {
 	try{
-		Cells.at( (addr >> MemCell::PAGEBITS) & (Cells.size() - 1) ).Write( addr, data );
+		Cells.at( (addr >> MemCell::PAGEBITS) & (Cells.size() - 1) ).Write( addr & 0xffff, data );
 	}
 	catch( std::out_of_range& ){}
 }
