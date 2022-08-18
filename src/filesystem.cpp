@@ -34,7 +34,7 @@ void OSD_AddDelimiter( P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_DelDelimiter( P6VPATH& path )
 {
-	if( path.filename().empty() ) path = path.parent_path();
+	if( path.filename().empty() ){ path = path.parent_path(); }
 }
 
 
@@ -46,15 +46,20 @@ void OSD_DelDelimiter( P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_RelativePath( P6VPATH& path )
 {
-	if( path.empty() ) return;
+	if( path.empty() ){
+		return;
+	}
 	
 	std::error_code ec;
 	P6VPATH p = std::filesystem::proximate( path, OSD_GetConfigPath(), ec );
-	if( ec ) return;
+	if( ec ){
+		return;
+	}
 	
 	// ../なら絶対パス化
-	if( P6VPATH2STR( p ).length() >= 2 && P6VPATH2STR( p ).substr( 0, 2 ) == ".." )
+	if( P6VPATH2STR( p ).length() >= 2 && P6VPATH2STR( p ).substr( 0, 2 ) == ".." ){
 		OSD_AbsolutePath( p );
+	}
 	
 	path = p;
 }
@@ -70,13 +75,16 @@ void OSD_AbsolutePath( P6VPATH& path )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_AbsolutePath] %s -> ", P6VPATH2STR( path ).c_str() );
 	
-	if( path.empty() ) return;
+	if( path.empty() ){
+		return;
+	}
 	
 	P6VPATH p = path;
 	
 	// 既に絶対パスなら正規化のみ実施
-	if( p.is_relative() && !p.has_root_name() )	// Windowsの場合, "C:"は is_relative() == true らしい
+	if( p.is_relative() && !p.has_root_name() ){	// Windowsの場合, "C:"は is_relative() == true らしい
 		p = OSD_GetConfigPath() / p;
+	}
 	
 	// パスを結合して正規化
 	path = std::filesystem::weakly_canonical( p );
@@ -223,7 +231,9 @@ bool OSD_CreateFolder( const P6VPATH& path )
 		PRINTD( OSD_LOG, "-> %s\n", P6VPATH2STR( tpath ).c_str() );
 		
 		// 設定ファイルパスより外側には作成しない
-		if( P6VPATH2STR( tpath ).compare( 0, P6VPATH2STR( OSD_GetConfigPath() ).length(), P6VPATH2STR( OSD_GetConfigPath() ) ) ) return false;
+		if( P6VPATH2STR( tpath ).compare( 0, P6VPATH2STR( OSD_GetConfigPath() ).length(), P6VPATH2STR( OSD_GetConfigPath() ) ) ){
+			return false;
+		}
 		
 		return std::filesystem::create_directories( tpath, ec );
 	}

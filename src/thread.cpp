@@ -38,7 +38,9 @@ cThread::~cThread( void )
 /////////////////////////////////////////////////////////////////////////////
 bool cThread::BeginThread ( void* lpVoid )
 {
-	if( this->m_hThread.joinable() ) return false;
+	if( this->m_hThread.joinable() ){
+		return false;
+	}
 	
 	this->m_BeginTheadParam = lpVoid;
 	this->m_bCancel			= false;
@@ -60,7 +62,9 @@ bool cThread::BeginThread ( void* lpVoid )
 /////////////////////////////////////////////////////////////////////////////
 bool cThread::Waiting( void )
 {
-	if( !this->m_hThread.joinable() ) return true;
+	if( !this->m_hThread.joinable() ){
+		return true;
+	}
 	
 	try{
 		this->m_hThread.join();

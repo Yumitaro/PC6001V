@@ -149,7 +149,7 @@ void Sjis2P6( std::string& dstr, const std::string& sstr )
 				break;
 				
 			case 0x0d:
-				if( *ss == 0x0a ) ss++;
+				if( *ss == 0x0a ){ ss++; }
 				dstr += 0x0d;
 			}
 		}else
@@ -210,8 +210,9 @@ bool SaveImgData( const P6VPATH& filepath, BYTE* pixels, const int bpp, const in
 	VRect rec;
 	
 	
-	if( !(bpp == 32 || bpp == 24 || bpp == 8 || bpp == 1) )
+	if( !(bpp == 32 || bpp == 24 || bpp == 8 || bpp == 1) ){
 		return false;
+	}
 	
 	// 領域設定
 	if( pos ){
@@ -227,8 +228,9 @@ bool SaveImgData( const P6VPATH& filepath, BYTE* pixels, const int bpp, const in
 	
 	
 	// 各構造体を確保・初期化する
-	if( !(PngPtr = png_create_write_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) )
+	if( !(PngPtr = png_create_write_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) ){
 		return false;
+	}
 	
 	if( !(InfoPtr = png_create_info_struct( PngPtr )) ){
 		png_destroy_write_struct( &PngPtr, nullptr );
@@ -238,10 +240,11 @@ bool SaveImgData( const P6VPATH& filepath, BYTE* pixels, const int bpp, const in
 	// エラー処理
 	if( setjmp( png_jmpbuf( PngPtr ) ) ){
 		png_destroy_write_struct( &PngPtr, &InfoPtr );
-		if( fp ) fclose( fp );
+		if( fp ){ fclose( fp ); }
 		if( image ){
-			for( int i = 0; i < rec.h; i++ )
-				if( image[i] ) delete [] image[i];
+			for( int i = 0; i < rec.h; i++ ){
+				if( image[i] ){ delete [] image[i]; }
+			}
 			delete [] image;
 		}
 		return false;
@@ -287,8 +290,9 @@ bool SaveImgData( const P6VPATH& filepath, BYTE* pixels, const int bpp, const in
 	
 	// 画像ファイルを開く
 	if( !(fp = OSD_Fopen( filepath, "wb" )) ){
-		for( int i = 0; i < rec.h; i++ )
-			if( image[i] ) delete [] image[i];
+		for( int i = 0; i < rec.h; i++ ){
+			if( image[i] ){ delete [] image[i]; }
+		}
 		delete [] image;
 		png_destroy_write_struct( &PngPtr, &InfoPtr );
 		return false;
@@ -354,8 +358,9 @@ VSurface* LoadImg( const P6VPATH& filepath )
 	
 	
 	// 各構造体を確保・初期化する
-	if( !(PngPtr = png_create_read_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) )
+	if( !(PngPtr = png_create_read_struct( PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) ){
 		return nullptr;
+	}
 	
 	if( !(InfoPtr = png_create_info_struct( PngPtr )) ){
 		png_destroy_read_struct( &PngPtr, nullptr, nullptr );
@@ -369,9 +374,9 @@ VSurface* LoadImg( const P6VPATH& filepath )
 	
 	// エラー処理
 	if( setjmp( png_jmpbuf( PngPtr ) ) ){
-		if( fp ) fclose( fp );
+		if( fp ){ fclose( fp ); }
 		png_destroy_read_struct( &PngPtr, &InfoPtr, &EndInfo );
-		if( sur ) delete sur;
+		if( sur ){ delete sur; }
 		return nullptr;
 	}
 	

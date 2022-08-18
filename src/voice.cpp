@@ -89,9 +89,9 @@ void VCE6::EventCallback( int id, int clock )
 			PRINTD( VOI_LOG, "(EXT)\n" );
 			if( PReady ){	// パラメータセット完了してる?
 				// フレーム数=0ならば終了処理
-				if( !(ParaBuf[0] >> 3) )
+				if( !(ParaBuf[0] >> 3) ){
 					AbortVoice();
-				else{
+				}else{
 					// 1フレーム分のサンプル生成
 					cD7752::Synth( ParaBuf, Fbuf );
 					
@@ -116,8 +116,9 @@ void VCE6::EventCallback( int id, int clock )
 				SndDev::cRing::Put( ( IVBuf.front() * SndDev::Volume ) / 100 );
 				IVBuf.pop();
 			}
-			if( IVBuf.empty() )		// 最後まで発生したら発声終了
+			if( IVBuf.empty() ){	// 最後まで発生したら発声終了
 				AbortVoice();
+			}
 		}
 		
 		break;
@@ -158,7 +159,9 @@ void VCE6::VSetCommand( BYTE comm )
 	case 0x03:
 	case 0x04:
 		// WAVファイルを読込む
-		if( !LoadVoice( comm ) ) break;
+		if( !LoadVoice( comm ) ){
+			break;
+		}
 		
 		// ステータスを内部句再生モードにセット
 		VStat = D7752E_BSY;
@@ -202,14 +205,14 @@ void VCE6::VSetData( BYTE data )
 	if(	(VStat & D7752E_BSY) && (VStat & D7752E_REQ) ){
 		if( Fnum == 0 || Pnum ){	// 最初のフレーム?
 			// 最初のパラメータだったら繰り返し数を設定
-			if( Pnum == 0 ) Fnum = data >> 3;
+			if( Pnum == 0 ){ Fnum = data >> 3; }
 			// パラメータバッファに保存
 			ParaBuf[Pnum++] = data;
 			// もし1フレーム分のパラメータが溜まったら発声準備完了
 			if( Pnum == 7 ){
 				VStat &= ~D7752E_REQ;
 				Pnum = 0;
-				if( Fnum > 0 ) Fnum--;
+				if( Fnum > 0 ){ Fnum--; }
 				PReady = true;
 			}else
 				ReqIntr();		// 音声合成割込み
@@ -426,7 +429,9 @@ BYTE VCE62::InE3H( int ){ return io_E3H; }
 /////////////////////////////////////////////////////////////////////////////
 bool VCE6::DokoSave( cIni* Ini )
 {
-	if( !Ini ) return false;
+	if( !Ini ){
+		return false;
+	}
 	
 	Ini->SetVal( "VOICE", "io_E0H",		"", "0x%02X", io_E0H );
 	Ini->SetVal( "VOICE", "io_E2H",		"", "0x%02X", io_E2H );
@@ -458,7 +463,9 @@ bool VCE6::DokoSave( cIni* Ini )
 /////////////////////////////////////////////////////////////////////////////
 bool VCE6::DokoLoad( cIni* Ini )
 {
-	if( !Ini ) return false;
+	if( !Ini ){
+		return false;
+	}
 	
 	Ini->GetVal( "VOICE", "io_E0H",	io_E0H );
 	Ini->GetVal( "VOICE", "io_E2H",	io_E2H );

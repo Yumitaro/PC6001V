@@ -480,7 +480,9 @@ void KEY6::UpdateMatrixKey( PCKEYsym code, bool pflag )
 	try{
 		// P6キーコード->キーマトリクスを取得
 		BYTE mtx = MatTable.at( K6Table.at( code ) );
-		if( !mtx ) return;
+		if( !mtx ){
+			return;
+		}
 		
 		// マトリクス更新(押したキーに対応するbitが0になる)
 		BYTE matX = 1 << (mtx & 0x0f);
@@ -494,11 +496,11 @@ void KEY6::UpdateMatrixKey( PCKEYsym code, bool pflag )
 			// 前回のマトリクスをリリースに書き換える。
 			// リピートをSDL任せにしている間の暫定処置で
 			// サブCPU側で処理するようになったら不要。
-			if( ~P6Matrix.at( matY+NOM ) & matX ) P6Matrix.at( matY+NOM ) |= matX;
+			if( ~P6Matrix.at( matY+NOM ) & matX ){ P6Matrix.at( matY+NOM ) |= matX; }
 		}else{
 			P6Matrix.at( matY ) |=  matX;
 			//【キーを離した時の取りこぼし防止】
-			if( P6Matrix.at( matY+NOM ) & matX ) P6Matrix.at( matY+NOM ) &= ~matX;
+			if( P6Matrix.at( matY+NOM ) & matX ){ P6Matrix.at( matY+NOM ) &= ~matX; }
 		}
 	}
 	catch( std::out_of_range& ){}
@@ -549,7 +551,7 @@ bool KEY6::ScanMatrix( void )
 		ON_SHIFT = P6Mtrx.at( 0 ) & 0x04 ? false : true;
 		ON_GRAPH = P6Mtrx.at( 0 ) & 0x08 ? false : true;
 		// 前回のマトリクスと変化あり?
-		if( P6Mtrx.at( 0 ) != P6Mtrx.at( 0 + NOM ) ) MatChg = true;
+		if( P6Mtrx.at( 0 ) != P6Mtrx.at( 0 + NOM ) ){ MatChg = true; }
 	}
 	catch( std::out_of_range& ){}
 	
@@ -626,14 +628,15 @@ bool KEY6::ScanMatrix( void )
 			}
 		}else{
 			if( ON_KANA ){
-				if( ON_KKANA ) KeyData = KeyMap[ON_SHIFT ? KEYKKANASHIFT : KEYKKANA];
-				else           KeyData = KeyMap[ON_SHIFT ? KEYKANASHIFT  : KEYKANA];
+				if( ON_KKANA ){ KeyData = KeyMap[ON_SHIFT ? KEYKKANASHIFT : KEYKKANA]; }
+				else          { KeyData = KeyMap[ON_SHIFT ? KEYKANASHIFT  : KEYKANA]; }
 			}else{
-				if( ON_GRAPH )
+				if( ON_GRAPH ){
 					KeyData = KeyMap[KEYGRAPH];
-				else
-					if( ON_CTRL ) KeyData = KeyMap[KEYCTRL];
-					else          KeyData = KeyMap[ON_SHIFT ? KEYSHIFT : KEYSTD];
+				}else{
+					if( ON_CTRL ){ KeyData = KeyMap[KEYCTRL]; }
+					else         { KeyData = KeyMap[ON_SHIFT ? KEYSHIFT : KEYSTD]; }
+				}
 			}
 		}
 		
@@ -653,7 +656,7 @@ bool KEY6::ScanMatrix( void )
 	// ジョイスティック判定
 	for( int y = NOM - 2; y < NOM; y++ ) try{
 		// 前回のマトリクスと変化あり?
-		if( P6Mtrx.at( y ) != P6Mtrx.at( y + NOM ) ) MatChg = true;
+		if( P6Mtrx.at( y ) != P6Mtrx.at( y + NOM ) ){ MatChg = true; }
 	}
 	catch( std::out_of_range& ){}
 	
@@ -822,7 +825,9 @@ void KEY6::ChangeKKana( void )
 /////////////////////////////////////////////////////////////////////////////
 bool KEY6::DokoSave( cIni* Ini )
 {
-	if( !Ini ) return false;
+	if( !Ini ){
+		return false;
+	}
 	
 	Ini->SetVal( "KEY", "ON_KANA",	"", ON_KANA  );
 	Ini->SetVal( "KEY", "ON_KKANA",	"", ON_KKANA );
@@ -853,7 +858,9 @@ bool KEY6::DokoLoad( cIni* Ini )
 {
 	std::string strva;
 	
-	if( !Ini ) return false;
+	if( !Ini ){
+		return false;
+	}
 	
 	Ini->GetVal( "KEY", "ON_KANA",	ON_KANA  );
 	Ini->GetVal( "KEY", "ON_KKANA",	ON_KKANA );

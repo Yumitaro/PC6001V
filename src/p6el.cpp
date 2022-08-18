@@ -220,8 +220,9 @@ void EL6::OnThread( void* inst )
 /////////////////////////////////////////////////////////////////////////////
 void EL6::Wait( void )
 {
-	if( sche->GetWaitEnable() && (!cfg->GetValue( CB_TurboTAPE ) || (vm->cpus->GetCmtStatus() == SUB6::CMTCLOSE)) )
+	if( sche->GetWaitEnable() && (!cfg->GetValue( CB_TurboTAPE ) || (vm->cpus->GetCmtStatus() == SUB6::CMTCLOSE)) ){
 		sche->VWait();
+	}
 	vm->evsc->ReVSYNC();
 }
 
@@ -250,7 +251,7 @@ int EL6::EmuVSYNC( void )
 	// VSYNCが発生するまで繰返し
 	while( !vm->evsc->IsVSYNC() ){
 		int st = vm->Emu();		// VM 1命令実行
-		if( st <= 0 ) st = 1;
+		if( st <= 0 ){ st = 1; }
 		vm->evsc->Update( st );	// イベント更新
 		sche->Update( st );
 		state += st;
@@ -287,7 +288,9 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 	StopFPSTimer();
 	ak.Buffer.clear();
 	
-	if( !config ) return false;
+	if( !config ){
+		return false;
+	}
 	cfg = config;
 	
 	// パレット設定
@@ -318,38 +321,56 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		
 		
 		// VM初期化
-		if( !vm->Init( cfg ) ) throw Error::GetError();
+		if( !vm->Init( cfg ) ){
+			throw Error::GetError();
+		}
 		
 		// スケジューラ -----
 		sche->SetMasterClock( vm->evsc->GetMasterClock() );
 		
 		// サウンド -----
-		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ) throw Error::GetError();
+		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
+			throw Error::GetError();
+		}
 		snd->SetVolume( cfg->GetValue( CV_MasterVol ) );
 		
 		// 画面描画 -----
-		if( !graph->Init() ) throw Error::GetError();
+		if( !graph->Init() ){
+			throw Error::GetError();
+		}
 		graph->SetIcon( cfg->GetValue( CV_Model ) );	// アイコン設定
 		
 		// ジョイスティック -----
-		if( !joy->Init() ) throw Error::GetError();
+		if( !joy->Init() ){
+			throw Error::GetError();
+		}
 		
 		// ステータスバー -----
-		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDDrive ), cfg->GetValue( CV_ExCartridge ) ) ) throw Error::GetError();
+		if( !staw->Init( graph->ScreenX(), cfg->GetValue( CV_FDDrive ), cfg->GetValue( CV_ExCartridge ) ) ){
+			throw Error::GetError();
+		}
 		
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		// レジスタウィンドウ　-----
-		if( !regw->Init() ) throw Error::GetError();
+		if( !regw->Init() ){
+			throw Error::GetError();
+		}
 		
 		// メモリウィンドウ　-----
-		if( !memw->Init() ) throw Error::GetError();
+		if( !memw->Init() ){
+			throw Error::GetError();
+		}
 		
 		// モニタウィンドウ　-----
-		if( !monw->Init() ) throw Error::GetError();
+		if( !monw->Init() ){
+			throw Error::GetError();
+		}
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		
 		// リプレイ -----
-		if( !REPLAY::Init() ) throw Error::GetError();
+		if( !REPLAY::Init() ){
+			throw Error::GetError();
+		}
 		
 		// スクリーンサイズ変更
 		graph->ResizeScreen();
@@ -361,11 +382,11 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		
 		
 		// TAPE挿入
-		if( !cfg->GetValue( CF_Tape ).empty() ) TapeMount( cfg->GetValue( CF_Tape ) );
+		if( !cfg->GetValue( CF_Tape ).empty() ){ TapeMount( cfg->GetValue( CF_Tape ) ); }
 		
 		// ドライブ1,2にDISK挿入
-		if( !cfg->GetValue( CF_Disk1 ).empty() ) DiskMount( 0, cfg->GetValue( CF_Disk1 ) );
-		if( !cfg->GetValue( CF_Disk2 ).empty() ) DiskMount( 1, cfg->GetValue( CF_Disk2 ) );
+		if( !cfg->GetValue( CF_Disk1 ).empty() ){ DiskMount( 0, cfg->GetValue( CF_Disk1 ) ); }
+		if( !cfg->GetValue( CF_Disk2 ).empty() ){ DiskMount( 1, cfg->GetValue( CF_Disk2 ) ); }
 		
 		// リセット
 		UI_Reset();
@@ -399,7 +420,9 @@ bool EL6::Start( void )
 	FSkipCount = 0;
 	
 	// スレッド生成
-	if( !this->cThread::BeginThread( this ) ) return false;
+	if( !this->cThread::BeginThread( this ) ){
+		return false;
+	}
 	
 	sche->Start();
 	snd->Play();
@@ -488,12 +511,13 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 		switch( event.type ){
 		case EV_FPSUPDATE:		// FPS表示
 			str = cfg->GetCaption();
-			if( sche->GetPauseEnable() )
+			if( sche->GetPauseEnable() ){
 				str += " === PAUSE ===";
-			else{
+			}else{
 				str += Stringf( " (%4d%%  %5.2f/%5.2f fps)", sche->GetRatio(), sche->GetFPS(), FRAMERATE );
-				if( sche->GetSpeedRatio() != 100 )
+				if( sche->GetSpeedRatio() != 100 ){
 					str += Stringf( " [x%3.1f]", (double)sche->GetSpeedRatio() / 100 );
+				}
 			}
 			OSD_SetWindowCaption( GetWindowHandle(), str );
 			
@@ -513,8 +537,9 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 			}
 			#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			// 各種機能キーチェック
-			if( CheckFuncKey( event.key.sym, event.key.mod & KVM_ALT ? true : false ) )
+			if( CheckFuncKey( event.key.sym, event.key.mod & KVM_ALT ? true : false ) ){
 				break;
+			}
 			
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
@@ -548,9 +573,10 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 		case EV_JOYBUTTONDOWN:
 		case EV_JOYBUTTONUP:
 			// リプレイ再生中 or 自動キー入力実行中でなければ
-			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() )
+			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
 				// キーマトリクス更新(ジョイスティック)
 				vm->key->UpdateMatrixJoy( joy->GetJoyState( 0 ), joy->GetJoyState( 1 ) );
+			}
 			break;
 			
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -614,7 +640,9 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 		case EV_WINDOWSIZECHANGED:	// ウィンドウサイズ変更
 			{
 				// ResizeScreen()でリサイズしたなら何もしないで戻る
-				if( graph->CheckResize() ) break;
+				if( graph->CheckResize() ){
+					break;
+				}
 				
 				// 変化率が大きい方の軸のサイズを優先
 				double rx = (double) event.window.w                   / (double)graph->ScreenX();
@@ -1009,14 +1037,20 @@ char EL6::GetAutoKey( void )
 {
 	// リレーON待ち
 	if( ak.RelayOn ){
-		if( vm->cmtl->IsRelay() ) ak.RelayOn = false;
-		else                      return 0;
+		if( vm->cmtl->IsRelay() ){
+			ak.RelayOn = false;
+		}else{
+			return 0;
+		}
 	}
 	
 	// リレーOFF待ち
 	if( ak.Relay ){
-		if( !vm->cmtl->IsRelay() ) ak.Relay = false;
-		else                       return 0;
+		if( !vm->cmtl->IsRelay() ){
+			ak.Relay = false;
+		}else{
+			return 0;
+		}
 	}
 	
 	// 待ち?
@@ -1027,8 +1061,9 @@ char EL6::GetAutoKey( void )
 	
 	
 	// バッファが空なら終了
-	if( ak.Buffer.empty() )
+	if( ak.Buffer.empty() ){
 		return 0;
+	}
 	
 	// 次の文字を取得
 	BYTE dat = ak.Buffer.front();
@@ -1089,7 +1124,9 @@ bool EL6::SetAutoKeyFile( const P6VPATH& filepath )
 	std::fstream fs;
 	char lbuf[1024];
 	
-	if( !OSD_FSopen( fs, filepath, std::ios_base::in ) ) return false;
+	if( !OSD_FSopen( fs, filepath, std::ios_base::in ) ){
+		return false;
+	}
 	
 	ak.Buffer.clear();
 	
@@ -1123,7 +1160,9 @@ void EL6::SetAutoStart( void )
 {
 	std::string kbuf;
 	
-	if( !(vm->cmtl->IsMount() && vm->cmtl->IsAutoStart()) ) return;
+	if( !(vm->cmtl->IsMount() && vm->cmtl->IsAutoStart()) ){
+		return;
+	}
 	
 	const P6TAUTOINFO& ainf = vm->cmtl->GetAutoStartInfo();
 	
@@ -1136,10 +1175,11 @@ void EL6::SetAutoStart( void )
 		
 	case 64:	// PC-6001mk2SR
 		if( ainf.BASIC == 6 ){
-			if( vm->disk->GetDrives() )	// ??? 実際は?
+			if( vm->disk->GetDrives() ){	// ??? 実際は?
 				kbuf = Stringf( "%c%c%c%c%c%c%c%c", 0x17, 50, ainf.BASIC+'0', 0x17, 20, 0x0d, 0x17, 10 );
-			else
+			}else{
 				kbuf = Stringf( "%c%c%c%c%c%c%c",   0x17, 10, ainf.BASIC+'0', 0x17, 20,       0x17, 10 );
+			}
 			break;
 		}
 		[[fallthrough]];
@@ -1149,10 +1189,11 @@ void EL6::SetAutoStart( void )
 		case 3:
 		case 4:
 		case 5:
-			if( vm->disk->GetDrives() )	// ??? 実際は?
+			if( vm->disk->GetDrives() ){	// ??? 実際は?
 				kbuf = Stringf( "%c%c%c%c%c%c%c%c%c%c", 0x17, 50, ainf.BASIC+'0', 0x17, 30, 0x0d, ainf.Page+'0', 0x0d, 0x17, 120 );
-			else
+			}else{
 				kbuf = Stringf( "%c%c%c%c%c%c%c%c%c",   0x17, 50, ainf.BASIC+'0', 0x17, 30,       ainf.Page+'0', 0x0d, 0x17, 120 );
+			}
 			break;
 		default:
 			kbuf = Stringf( "%c%c%c%c%c%c%c%c%c", 0x17, 50, ainf.BASIC+'0', 0x17, 30, ainf.Page+'0', 0x0d, 0x17, 20 );
@@ -1161,10 +1202,11 @@ void EL6::SetAutoStart( void )
 		
 	case 68:	// PC-6601SR
 		if( ainf.BASIC == 6 ){
-			if( vm->disk->IsMount( 0 ) )
+			if( vm->disk->IsMount( 0 ) ){
 				kbuf = Stringf( "%c%c%c%c%c%c%c%c%c%c%c", 0x17, 240, 0x17, 60, 0x14, 0xf4, 0x17, 30, 0x0d, 0x17, 10 );
-			else
+			}else{
 				kbuf = Stringf( "%c%c%c%c%c%c%c%c",   0x17, 240, 0x14, 0xf4, 0x17, 30,       0x17, 10 );
+			}
 			break;
 		}else{
 			kbuf = Stringf( "%c%c%c%c%c%c%c%c", 0x17, 240, 0x17, vm->disk->IsMount( 0 ) ? 60 : 1, 0x17, vm->disk->IsMount( 1 ) ? 60 : 1, 0x14, 0xf3 );
@@ -1176,10 +1218,11 @@ void EL6::SetAutoStart( void )
 		case 3:
 		case 4:
 		case 5:
-			if( vm->disk->IsMount( 0 ) )
+			if( vm->disk->IsMount( 0 ) ){
 				kbuf += Stringf( "%c%c%c%c%c%c%c%c%c%c", 0x17, 50, ainf.BASIC+'0', 0x17, 30, 0x0d, ainf.Page+'0', 0x0d, 0x17, 110 );
-			else
+			}else{
 				kbuf += Stringf( "%c%c%c%c%c%c%c%c%c",   0x17, 50, ainf.BASIC+'0', 0x17, 30,       ainf.Page+'0', 0x0d, 0x17, 110 );
+			}
 			break;
 		default:
 			kbuf += Stringf( "%c%c%c%c%c%c%c%c%c", 0x17, 50, ainf.BASIC+'0', 0x17, 30, ainf.Page+'0', 0x0d, 0x17, 10 );
@@ -1190,7 +1233,7 @@ void EL6::SetAutoStart( void )
 	kbuf += ainf.ask.data();
 	
 	// 自動キー入力設定
-	if( !kbuf.empty() ) SetAutoKey( kbuf );
+	if( !kbuf.empty() ){ SetAutoKey( kbuf ); }
 }
 
 
@@ -1202,7 +1245,9 @@ void EL6::SetAutoStart( void )
 /////////////////////////////////////////////////////////////////////////////
 void EL6::SetPalette( void )
 {
-	if( !cfg ) return;
+	if( !cfg ){
+		return;
+	}
 	
 	for( int i = 0; i < 256; i++ )
 		VSurface::SetColor( i, COL2DW( cfg->GetColor( i ) ) );
@@ -1262,14 +1307,18 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 	try{
 		std::fstream fs;
 		
-		if( !OSD_FSopen( fs, path, std::ios_base::out ) ) throw Error::DokoWriteFailed;
+		if( !OSD_FSopen( fs, path, std::ios_base::out ) ){
+			throw Error::DokoWriteFailed;
+		}
 		
 		// タイトル行を出力して一旦閉じる
 		fs << GetText( TDOK_TITLE ) << std::endl;
 		fs.close();
 		
 		// どこでもSAVEファイルを開く
-		if( !ini.Read( path ) ) throw Error::DokoWriteFailed;
+		if( !ini.Read( path ) ){
+			throw Error::DokoWriteFailed;
+		}
 		
 		// 各オブジェクトのパラメータ書込み
 		if( !cfg->DokoSave( &ini )      ||
@@ -1301,8 +1350,9 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 				strva.clear();
 			}
 		};
-		if( !ak.Buffer.empty() )
+		if( !ak.Buffer.empty() ){
 			ini.SetEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", strva.c_str() );
+		}
 		
 		ini.Write();
 	}
@@ -1331,11 +1381,15 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 	Error::Clear();
 	try{
 		// どこでもLOADファイルを開く
-		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
+		if( !ini.Read( path ) ){
+			throw Error::DokoReadFailed;
+		}
 		
 		// PC6001Vのバージョン確認と主要構成情報を読込み
 		// (機種,FDドライブ数,拡張カートリッジ)
-		if( !cfg->DokoLoad( &ini ) ) throw Error::GetError();
+		if( !cfg->DokoLoad( &ini ) ){
+			throw Error::GetError();
+		}
 		
 		// VM再初期化
 		Init( cfg );
@@ -1372,8 +1426,12 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 		}
 		
 		// ディスクドライブ数によってステータスバーサイズ変更
-		if( !staw->Init( -1, vm->disk->GetDrives() ) ) throw Error::GetError();
-		if( !graph->ResizeScreen() ) throw Error::GetError();
+		if( !staw->Init( -1, vm->disk->GetDrives() ) ){
+			throw Error::GetError();
+		}
+		if( !graph->ResizeScreen() ){
+			throw Error::GetError();
+		}
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -1397,11 +1455,15 @@ bool EL6::CheckDokoVer( const P6VPATH& path )
 	
 	try{
 		// どこでもLOADファイルを開く
-		if( !ini.Read( path ) ) throw Error::DokoReadFailed;
+		if( !ini.Read( path ) ){
+			throw Error::DokoReadFailed;
+		}
 		
 		// バージョン取得
 		ini.GetEntry( "GLOBAL", "Version", str );
-		if( str != VERSION ) throw Error::DokoDiffVersion;
+		if( str != VERSION ){
+			throw Error::DokoDiffVersion;
+		}
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -1420,7 +1482,9 @@ bool EL6::CheckDokoVer( const P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 bool EL6::TapeMount( const P6VPATH& path )
 {
-	if( !vm->cmtl->Mount( path ) ) return false;
+	if( !vm->cmtl->Mount( path ) ){
+		return false;
+	}
 	
 	vm->cmtl->SetStopBit( cfg->GetValue( CV_StopBit ) );		// ストップビット数
 	return true;
@@ -1448,7 +1512,9 @@ void EL6::TapeUnmount( void )
 /////////////////////////////////////////////////////////////////////////////
 bool EL6::DiskMount( int drv, const P6VPATH& path )
 {
-	if( !vm->disk->Mount( drv, path ) ) return false;
+	if( !vm->disk->Mount( drv, path ) ){
+		return false;
+	}
 	return true;
 }
 

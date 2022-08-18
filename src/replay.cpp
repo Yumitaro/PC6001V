@@ -71,9 +71,13 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
-		if( RepST != ST_IDLE ) throw Error::ReplayRecError;
+		if( RepST != ST_IDLE ){
+			throw Error::ReplayRecError;
+		}
 		
-		if( !cIni::Read( filepath ) ) throw Error::ReplayRecError;
+		if( !cIni::Read( filepath ) ){
+			throw Error::ReplayRecError;
+		}
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -100,7 +104,9 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::ResumeRecord( const P6VPATH& filepath, int frame )
 {
-	if( !StartRecord( filepath ) ) return false;
+	if( !StartRecord( filepath ) ){
+		return false;
+	}
 	
 	// 指定されたフレーム以降のリプレイを削除し、そこから再開
 	cIni::DeleteAfter( "REPLAY", Stringf( "%08lX", frame ) );
@@ -118,7 +124,9 @@ bool REPLAY::ResumeRecord( const P6VPATH& filepath, int frame )
 /////////////////////////////////////////////////////////////////////////////
 void REPLAY::StopRecord( void )
 {
-	if( RepST != ST_REPLAYREC ) return;
+	if( RepST != ST_REPLAYREC ){
+		return;
+	}
 	
 	cIni::SetEntry( "REPLAY", "EndFrm", "", "0x%08lX", RepFrm );
 	cIni::Write();
@@ -139,11 +147,14 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 {
 	std::string strva;
 	
-	if( RepST != ST_REPLAYREC ) return false;
+	if( RepST != ST_REPLAYREC ){
+		return false;
+	}
 	
 	// マトリクスを書出し
-	for( auto &i : mt )
+	for( auto &i : mt ){
 		strva += Stringf( "%02X", i );
+	}
 	cIni::SetEntry( "REPLAY", Stringf( "%08lX ", RepFrm ), "", strva.c_str() );
 	
 	RepFrm++;
@@ -163,10 +174,16 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
-		if( RepST != ST_IDLE ) throw Error::ReplayPlayError;
+		if( RepST != ST_IDLE ){
+			throw Error::ReplayPlayError;
+		}
 		
-		if( !cIni::Read( filepath ) ) throw Error::ReplayPlayError;
-		if( !cIni::GetVal( "REPLAY", "EndFrm", EndFrm ) ) throw Error::NoReplayData;
+		if( !cIni::Read( filepath ) ){
+			throw Error::ReplayPlayError;
+		}
+		if( !cIni::GetVal( "REPLAY", "EndFrm", EndFrm ) ){
+			throw Error::NoReplayData;
+		}
 	}
 	catch( Error::Errno i ){	// 例外発生
 		Error::SetError( i );
@@ -192,7 +209,9 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 /////////////////////////////////////////////////////////////////////////////
 void REPLAY::StopReplay( void )
 {
-	if( RepST != ST_REPLAYPLAY ) return;
+	if( RepST != ST_REPLAYPLAY ){
+		return;
+	}
 	
 	cIni::Init();
 	
@@ -210,7 +229,9 @@ bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 {
 	std::string strva;
 	
-	if( RepST != ST_REPLAYPLAY ) return false;
+	if( RepST != ST_REPLAYPLAY ){
+		return false;
+	}
 	
 	if( cIni::GetEntry( "REPLAY", Stringf( "%08lX", RepFrm ), strva ) ){
 		strva.resize( mt.size() * 2, 'F' );

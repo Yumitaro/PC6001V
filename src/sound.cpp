@@ -78,8 +78,9 @@ void cRing::Put( int data )
 {
 	std::lock_guard<cMutex> lock( Mutex );
 	
-	if( (int)Buffer.size() < (Size * MULTI) )
+	if( (int)Buffer.size() < (Size * MULTI) ){
 		Buffer.emplace_back( data );
+	}
 }
 
 
@@ -208,7 +209,9 @@ bool SndDev::SetSampleRate( int rate, int size )
 {
 	SampleRate = rate;
 	
-	if( !this->cRing::InitBuffer( size ) ) return false;
+	if( !this->cRing::InitBuffer( size ) ){
+		return false;
+	}
 	
 	return true;
 }
@@ -279,10 +282,14 @@ bool SND6::Init( void* cbdata, void (*callback)(void*, BYTE*, int ), int rate, i
 	int samples = (rate / 11025) << (size - 1 + 8);
 	
 	// バッファ初期化
-	if( !this->cRing::InitBuffer( samples ) ) return false;
+	if( !this->cRing::InitBuffer( samples ) ){
+		return false;
+	}
 	
 	// オーディオデバイスを開く
-	if( !OSD_OpenAudio( cbdata, callback, rate, samples ) ) return false;
+	if( !OSD_OpenAudio( cbdata, callback, rate, samples ) ){
+		return false;
+	}
 	
 	CbData     = cbdata;
 	CbFunc     = callback;
@@ -306,7 +313,9 @@ bool SND6::ConnectStream( const std::shared_ptr<SndDev>& sd )
 {
 	PRINTD( SND_LOG, "[SND6][ConnectStream]\n" );
 	
-	if( !sd->InitBuffer( this->cRing::GetSize() ) ) return false;
+	if( !sd->InitBuffer( this->cRing::GetSize() ) ){
+		return false;
+	}
 	sdev.emplace_back( sd );
 	return true;
 }
@@ -359,20 +368,27 @@ bool SND6::SetSampleRate( int rate, int size )
 	int samples = (rate / 11025) << ((size ? size : BSize) - 1 + 8);
 	
 	// バッファ初期化
-	if( !this->cRing::InitBuffer( samples ) ) return false;
+	if( !this->cRing::InitBuffer( samples ) ){
+		return false;
+	}
 	
 	// デバイス毎にサンプリングレートを設定
-	for( auto p = sdev.begin(); p != sdev.end(); ++p )
-		if( !(*p)->SetSampleRate( rate, samples ) ) return false;
+	for( auto p = sdev.begin(); p != sdev.end(); ++p ){
+		if( !(*p)->SetSampleRate( rate, samples ) ){
+			return false;
+		}
+	}
 	
 	// オーディオデバイスを開く
-	if( !OSD_OpenAudio( CbData, CbFunc, rate, samples ) ) return false;
+	if( !OSD_OpenAudio( CbData, CbFunc, rate, samples ) ){
+		return false;
+	}
 	
 	SampleRate = rate;
 	BSize      = size ? size : BSize;
 	
 	// 再生中だったなら即再生開始
-	if( pflag ) Play();
+	if( pflag ){ Play(); }
 	
 	PRINTD( SND_LOG, " SampleRate : %d\n", SampleRate );
 	PRINTD( SND_LOG, " BufferSize : %d\n", samples );

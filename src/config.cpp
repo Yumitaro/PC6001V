@@ -607,19 +607,25 @@ bool CFG6::Init( void )
 		if( !OSD_FileExist( IniPath ) ){
 			std::fstream fs;
 			
-			if( !OSD_FSopen( fs, IniPath, std::ios_base::out ) ) throw Error::IniWriteFailed;
+			if( !OSD_FSopen( fs, IniPath, std::ios_base::out ) ){
+				throw Error::IniWriteFailed;
+			}
 			
 			// タイトル行を出力して一旦閉じる
 			fs << GetText( TINI_TITLE ) << std::endl;
 			fs.close();
 			
 			// INIファイルを開く
-			if( !cIni::Read( IniPath ) ) throw Error::IniDefault;
+			if( !cIni::Read( IniPath ) ){
+				throw Error::IniDefault;
+			}
 			InitIni( true );	// INIオブジェクト初期値設定(全項目上書き)
 			cIni::Write();
 		}else{
 			// INIファイルを開く
-			if( !cIni::Read( IniPath ) ) throw Error::IniDefault;
+			if( !cIni::Read( IniPath ) ){
+				throw Error::IniDefault;
+			}
 			InitIni( false );	// INIオブジェクト初期値設定(不足分のみ追加)
 		}
 	}
@@ -1052,16 +1058,19 @@ void CFG6::InitIni( bool over )
 	// [COLOR] -------------------------------------------------
 	// パレット
 	for( size_t i = 0; i < STDColor.size(); i++ ){
-		if( over || !cIni::GetEntry( "COLOR", Stringf( "COL%03d", i ), str ) )
+		if( over || !cIni::GetEntry( "COLOR", Stringf( "COL%03d", i ), str ) ){
 			SetColor( i, STDColor[i] );
+		}
 	}
 	
 	
 	// [KEY] ---------------------------------------------------
 	// キー定義
-	for( auto &i : KeyIni )
-		if( over || !cIni::GetEntry( "KEY", GetPCKeyName( i.PCKey ), str ) )
+	for( auto &i : KeyIni ){
+		if( over || !cIni::GetEntry( "KEY", GetPCKeyName( i.PCKey ), str ) ){
 			SetVKey( i.PCKey, i.P6Key );
+		}
+	}
 }
 
 

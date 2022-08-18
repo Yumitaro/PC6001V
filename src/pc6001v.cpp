@@ -44,18 +44,20 @@ bool CheckFont( const std::shared_ptr<CFG6>& cfg )
 	
 	OSD_AddPath( FontFile, cfg->GetValue( CF_FontPath ), STR2P6VPATH( FILE_FONTH ) );
 	
-	if( !OSD_FileExist( FontFile ) )
+	if( !OSD_FileExist( FontFile ) ){
 		if( !OSD_CreateFont( FontFile, "", FSIZE ) ){
 			Error::SetError( Error::FontCreateFailed );
 			return false;
 		}
+	}
 	
 	OSD_AddPath( FontFile, cfg->GetValue( CF_FontPath ), STR2P6VPATH( FILE_FONTZ ) );
-	if( !OSD_FileExist( FontFile ) )
+	if( !OSD_FileExist( FontFile ) ){
 		if( !OSD_CreateFont( "", FontFile, FSIZE ) ){
 			Error::SetError( Error::FontCreateFailed );
 			return false;
 		}
+	}
 	
 	return true;
 }
@@ -112,7 +114,9 @@ bool SearchRom( const std::shared_ptr<CFG6>& cfg )
 	std::vector<int> models = { 60, 61, 62, 66, 64, 68 };
 	for( size_t i = 0; i < models.size(); i++ ){
 		// 見つからなかった機種はスキップ
-		if( IniModel == models[i] ) continue;
+		if( IniModel == models[i] ){
+			continue;
+		}
 		
 		bool resf = false;
 		bool res = true;
@@ -181,7 +185,7 @@ int main( int argc, char* argv[] )
 	}
 	
 	// 設定ファイルフォルダの存在チェック&作成
-	if( !OSD_FileExist( OSD_GetConfigPath() ) ) OSD_CreateFolder( OSD_GetConfigPath() );
+	if( !OSD_FileExist( OSD_GetConfigPath() ) ){ OSD_CreateFolder( OSD_GetConfigPath() ); }
 	
 	// INIファイル読込み
 	if( !Cfg->Init() ){
@@ -263,7 +267,9 @@ int main( int argc, char* argv[] )
 				// CRCが合わない場合
 				int ret = OSD_Message( nullptr, Error::GetErrorText(), GetText( TERR_WARNING ), OSDM_YESNO | OSDM_ICONWARNING );
 				Error::Clear();
-				if( ret != OSDR_YES ) break;
+				if( ret != OSDR_YES ){
+					break;
+				}
 				
 				Cfg->SetValue( CB_CheckCRC, false );
 				Cfg->Write();
