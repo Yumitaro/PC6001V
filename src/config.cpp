@@ -46,6 +46,7 @@ static const std::map<TCValue, const CfgSet<TCValue>> ConfigValue = {
 
 static const std::map<TCBool, const CfgSet<TCBool>> ConfigBool = {
 	{ CB_CheckCRC,		{ "CONFIG",		"CheckCRC",		TINI_CheckCRC,		DEFAULT_CHECKCRC		} },
+	{ CB_Romaji,		{ "CONFIG",		"Romaji",		TINI_Romaji,		DEFAULT_ROMAJI			} },
 	{ CB_TurboTAPE,		{ "CMT",		"TurboTAPE",	TINI_TurboTAPE,		DEFAULT_TURBO			} },
 	{ CB_BoostUp,		{ "CMT",		"BoostUp",		TINI_BoostUp,		DEFAULT_BOOST			} },
 	{ CB_FDDWait,		{ "FDD",		"FDDWait",		TINI_FDDWait,		DEFAULT_FDDWAIT			} },
@@ -981,6 +982,7 @@ void CFG6::InitIni( bool over )
 	SetDefault( CV_Model,			over );	// 機種
 	SetDefault( CV_OverClock,		over );	// オーバークロック率
 	SetDefault( CB_CheckCRC,		over );	// CRCチェック
+	SetDefault( CB_Romaji,			over );	// ローマ字入力
 	
 	// [CMT] ---------------------------------------------------
 	SetDefault( CB_TurboTAPE,		over );	// Turbo TAPE

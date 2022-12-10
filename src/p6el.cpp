@@ -117,22 +117,27 @@ void EL6::OnThread( void* inst )
 					}
 					
 					if( p6->vm->evsc->IsVSYNC() ){
-						p6->vm->key->ScanMatrix();	// キーマトリクススキャン
+						// 自動キー入力
+						if( IsAutoKey() ){
+							// キーマトリクス更新 前のキーを離す
+							p6->vm->key->UpdateMatrixKeyChrRelease();
+							if( IsAutoKey() ){
+								// キーマトリクス更新
+								p6->vm->key->UpdateMatrixKeyChr( GetAutoKey() );
+							}else{
+								// 自動キー入力終了ならモディファイア復帰
+								p6->vm->key->PopMod();
+							}
+						}
+						
+						// キーマトリクススキャン
+						p6->vm->key->ScanMatrix();
 						
 						// サウンド更新
 						p6->SoundUpdate( 0 );
 						// 画面更新
 						if( p6->ScreenUpdate() ){
 							OSD_PushEvent( EV_RENDER );
-						}
-						
-						// 自動キー入力
-						if( IsAutoKey() ){
-							BYTE key = GetAutoKey();
-							if( key ){
-								if( key == 0x14 ){ p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() ); }
-								else			 { p6->vm->cpus->ReqKeyIntr( 0, key ); }
-							}
 						}
 						
 						// ウェイト
@@ -152,6 +157,19 @@ void EL6::OnThread( void* inst )
 				}
 			// ビデオキャプチャ フレーム出力が終わるまで空回り
 			}else if( !AVI6::GetRequest() ){
+				// 自動キー入力
+				if( IsAutoKey() ){
+					// キーマトリクス更新 前のキーを離す
+					p6->vm->key->UpdateMatrixKeyChrRelease();
+					if( IsAutoKey() ){
+						// キーマトリクス更新
+						p6->vm->key->UpdateMatrixKeyChr( GetAutoKey() );
+					}else{
+						// 自動キー入力終了ならモディファイア復帰
+						p6->vm->key->PopMod();
+					}
+				}
+				
 				// キーマトリクススキャン
 				bool matchg = p6->vm->key->ScanMatrix();
 				
@@ -195,15 +213,6 @@ void EL6::OnThread( void* inst )
 					if( p6->ScreenUpdate() ){
 						// 画面更新処理はSDLと同じメインスレッドで実施
 						OSD_PushEvent( EV_RENDER );
-					}
-				}
-				
-				// 自動キー入力
-				if( IsAutoKey() ){
-					BYTE key = GetAutoKey();
-					if( key ){
-						if( key == 0x14 ){ p6->vm->cpus->ReqKeyIntr( 6, GetAutoKey() ); }
-						else			 { p6->vm->cpus->ReqKeyIntr( 0, key ); }
 					}
 				}
 			}
@@ -462,10 +471,6 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 	Event event;
 	std::string str;
 	
-//	Event lastkey;
-//	lastkey.key.sym   = KVC_UNKNOWN;
-//	lastkey.key.state = false;
-	
 	
 	switch( rc ){
 	case ReplayPlay:	// リプレイ再生
@@ -543,26 +548,26 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 			
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
-				// キーリピート無効化実験
-//				if( event.key.sym != lastkey.key.sym || lastkey.key.state == false ){
-					// キーマトリクス更新(キー)
-					vm->key->UpdateMatrixKey( event.key.sym, event.key.state );
-//				}
+				// ローマ字入力
+				int ret = vm->key->RomajiConvert( event.key.sym );
+				if( ret == HENKAN_SUCCESS ){		// 変換できたら自動キー入力セット
+					SetAutoKey( vm->key->RomajiGetResult(), 0 );
+					break;
+				}else if( ret == HENKAN_DOING ){	// 入力途中ならイベント無視
+					break;
+				}
+				
+				// キーマトリクス更新(キー,仮想キーコード)
+				vm->key->UpdateMatrixKey( event.key.sym, event.key.state );
 			}
-//			lastkey = event;
 			break;
 			
 		case EV_KEYUP:
 			// リプレイ再生中 or 自動キー入力実行中でなければ
 			if( REPLAY::GetStatus() != ST_REPLAYPLAY && !IsAutoKey() ){
-				// キーマトリクス更新(キー)
+				// キーマトリクス更新(キー,仮想キーコード)
 				vm->key->UpdateMatrixKey( event.key.sym, event.key.state );
 			}
-			
-			// キーリピート無効化実験
-//			if( event.key.sym == lastkey.key.sym ){
-//				lastkey = event;
-//			}
 			break;
 			
 		case EV_JOYDEVICEADDED:
@@ -815,8 +820,9 @@ bool EL6::CheckFuncKey( int kcode, bool OnALT )
 		}
 		break;
 		
-	case KVC_F12:			// スナップショット
+	case KVC_F12:			// スナップショット or ローマ字入力切換
 		if( OnALT ){
+			UI_Romaji();
 		}else{
 			Stop();
 			UI_SnapShot();
@@ -1022,7 +1028,7 @@ void EL6::StopFPSTimer( void )
 /////////////////////////////////////////////////////////////////////////////
 bool EL6::IsAutoKey( void )
 {
-	return !ak.Buffer.empty();
+	return !ak.Buffer.empty() || !vm->key->GetLastKeyReleased();
 }
 
 
@@ -1031,9 +1037,10 @@ bool EL6::IsAutoKey( void )
 //   (VSYNC=1/60sec毎に呼ばれる)
 //
 // 引数:	なし
-// 返値:	BYTE	P6のキーコード
+// 返値:	WORD	bit 7-0	P6のキーコード
+//					bit15-8	0x14:グラフィック0x00-0x1Fの場合 0x00:それ以外
 /////////////////////////////////////////////////////////////////////////////
-char EL6::GetAutoKey( void )
+WORD EL6::GetAutoKey( void )
 {
 	// リレーON待ち
 	if( ak.RelayOn ){
@@ -1065,9 +1072,20 @@ char EL6::GetAutoKey( void )
 		return 0;
 	}
 	
+	
 	// 次の文字を取得
-	BYTE dat = ak.Buffer.front();
-	ak.Buffer.erase( ak.Buffer.begin() );
+	WORD dat = (BYTE)ak.Buffer.front();
+	
+	// かなチェック
+	if( (dat >= 0x86 && dat <= 0xfd) != ((vm->key->GetKeyIndicator() & KI_KANA) ? true : false) ){
+		dat = 0x12;	// 勝手定義 かなキー
+	}else if( (vm->key->GetKeyIndicator() & KI_KANA) &&
+	          (((dat >= 0xa6 && dat <= 0xaf) || (dat >= 0xb1 && dat <= 0xdd)) != ((vm->key->GetKeyIndicator() & KI_KKANA) ? true : false)) ){
+		dat = 0x13;	// 勝手定義 かなカナ
+	}else{
+		ak.Buffer.erase( ak.Buffer.begin() );
+	}
+	
 	
 	switch( dat ){
 	case 0x17:	// '\w' ウェイト設定
@@ -1083,12 +1101,17 @@ char EL6::GetAutoKey( void )
 		dat = 0x0d;
 		[[fallthrough]];
 		
-	case 0x0d:	// '\n' 改行?
+	case 0x0d:	// '\n' 改行
 		ak.Wait = 9;	// 待ち9回(=150msec)
 		break;
 		
+	case 0x14:	// グラフィックキー
+		dat = 0x1400 + (BYTE)ak.Buffer.front();
+		ak.Buffer.erase( ak.Buffer.begin() );
+		[[fallthrough]];
+		
 	default:	// 一般の文字
-		ak.Wait = 0;	// 待ちなし
+		ak.Wait = 1;	// 待ち1回
 	}
 	return dat;
 }
@@ -1098,16 +1121,19 @@ char EL6::GetAutoKey( void )
 // 自動キー入力文字列設定
 //
 // 引数:	str		文字列への参照
+//			wait	初回ウェイト
 // 返値:	bool	true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
-bool EL6::SetAutoKey( const std::string& str )
+bool EL6::SetAutoKey( const std::string& str, int wait )
 {
 	ak.Buffer.clear();
 	
 	ak.Buffer  = str;
-	ak.Wait    = 60;	// 待ち回数カウンタ(初回は1sec)
+	ak.Wait    = wait;	// 待ち回数カウンタ(初回は60=1sec)
 	ak.Relay   = false;	// リレースイッチOFF待ちフラグ
 	ak.RelayOn = false;	// リレースイッチON待ちフラグ
+	
+	vm->key->PushMod();	// モディファイア保存
 	
 	return true;
 }
@@ -1122,7 +1148,7 @@ bool EL6::SetAutoKey( const std::string& str )
 bool EL6::SetAutoKeyFile( const P6VPATH& filepath )
 {
 	std::fstream fs;
-	char lbuf[1024];
+	std::string lbuf;
 	
 	if( !OSD_FSopen( fs, filepath, std::ios_base::in ) ){
 		return false;
@@ -1132,19 +1158,20 @@ bool EL6::SetAutoKeyFile( const P6VPATH& filepath )
 	
 	// 文字列を読込み
 	// データが無くなるまで繰り返し
-	// 最初の1行読込む
-	fs.getline( lbuf, sizeof(lbuf) );
-	while( !fs.eof() ){
-		Sjis2P6( ak.Buffer, lbuf );	// SJIS -> P6
-		ak.Buffer += 0x0d;			// '\n'追加
-		// 次の1行読込む
-		fs.getline( lbuf, sizeof(lbuf) );
-	}
+	do{
+		std::getline( fs, lbuf );
+		if( lbuf.size() ){
+			Sjis2P6( ak.Buffer, lbuf );	// SJIS -> P6
+			ak.Buffer += 0x0d;			// '\n'追加
+		}
+	}while( !fs.eof() );
 	fs.close();
 	
 	ak.Wait    = 60;	// 待ち回数カウンタ(初回は1sec)
 	ak.Relay   = false;	// リレースイッチOFF待ちフラグ
 	ak.RelayOn = false;	// リレースイッチON待ちフラグ
+	
+	vm->key->PushMod();	// モディファイア保存
 	
 	return true;
 }
@@ -1335,7 +1362,8 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 			!vm->disk->DokoSave( &ini ) ||
 			!vm->voice->DokoSave( &ini )
 		) throw Error::GetError();
-		
+
+#if 0
 		ini.SetVal( "KEY", "AK_Wait",		"", ak.Wait    );
 		ini.SetVal( "KEY", "AK_Relay",		"", ak.Relay   );
 		ini.SetVal( "KEY", "AK_RelayOn",	"", ak.RelayOn );
@@ -1353,7 +1381,8 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 		if( !ak.Buffer.empty() ){
 			ini.SetEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", strva.c_str() );
 		}
-		
+#endif
+
 		ini.Write();
 	}
 	catch( Error::Errno i ){	// 例外発生
@@ -1408,7 +1437,8 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 			!vm->disk->DokoLoad( &ini ) ||
 			!vm->voice->DokoLoad( &ini )
 		) throw Error::GetError();
-		
+
+#if 0
 		ini.GetVal( "KEY", "AK_Wait",		ak.Wait    );
 		ini.GetVal( "KEY", "AK_Relay",		ak.Relay   );
 		ini.GetVal( "KEY", "AK_RelayOn",	ak.RelayOn );
@@ -1424,7 +1454,8 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 				strva.erase( strva.begin() );
 			}
 		}
-		
+#endif
+
 		// ディスクドライブ数によってステータスバーサイズ変更
 		if( !staw->Init( -1, vm->disk->GetDrives() ) ){
 			throw Error::GetError();
@@ -1529,10 +1560,6 @@ void EL6::DiskUnmount( int drv )
 {
 	vm->disk->Unmount( drv );
 }
-
-
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2421,6 +2448,19 @@ void EL6::UI_SampleRate( int rate )
 	
 	cfg->SetValue( CV_SampleRate, rate );
 	snd->SetSampleRate( rate );
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// UI:ローマ字入力切換
+//
+// 引数:	なし
+// 返値:	なし
+/////////////////////////////////////////////////////////////////////////////
+void EL6::UI_Romaji( void )
+{
+	vm->key->ChangeRomaji();
+	cfg->SetValue( CB_Romaji, (vm->key->GetKeyIndicator() & KI_ROMAJI) ? true : false );
 }
 
 

@@ -376,6 +376,9 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	if( cnfg->GetVKeyDef( vk ) ){				// キー定義配列取得
 		key->SetVKeySymbols( vk );				// 仮想キーコード -> P6キーコード 設定
 	}
+	if( cnfg->GetValue( CB_Romaji ) != (key->GetKeyIndicator() & KI_ROMAJI ? true : false) ){
+		key->ChangeRomaji();	// ローマ字入力
+	}
 	
 	// CMT(LOAD) -----
 	if( !cmtl->Init( cnfg->GetValue( CV_SampleRate ) ) ){

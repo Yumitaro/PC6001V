@@ -161,6 +161,7 @@ int main( int argc, char* argv[] )
 	setlocale( LC_ALL, "ja_JP.UTF-8" );
 	bindtextdomain( "P6V", "./locale" );
 	textdomain( "P6V" );
+	bind_textdomain_codeset( "P6V", "UTF-8" );
 	
 	
 	// 二重起動禁止

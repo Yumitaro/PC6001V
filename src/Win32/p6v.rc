@@ -561,7 +561,7 @@ FONT 9, "MS UI Gothic"
 {
     ICON            P60ICON, ID_VERICON, 8, 16, 21, 23, SS_ICON
     LTEXT           APPNAME " Ver." VERSION, 0, 40, 10, 111, 8, SS_LEFT
-    LTEXT           "Copyright (C) 1999-2021 by Yumitaro", 0, 40, 26, 111, 8, SS_LEFT
+    LTEXT           "Copyright (C) 1999-2022 by Yumitaro", 0, 40, 26, 111, 8, SS_LEFT
     LTEXT           "http://papicom.net/", ID_URL, 40, 42, 58, 8, SS_LEFT | SS_NOTIFY
     PUSHBUTTON      "OK", IDOK, 130, 40, 35, 14, BS_FLAT
 }

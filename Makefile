@@ -20,7 +20,7 @@ TARGET	= pc6001v.exe
 
 OBJC	= breakpoint common config console cpum cpus d88 debug device disk error graph ini intr		\
 	  io joystick keyboard memory memblk movie p6t2 p6el p6vm pc6001v pio psgfm replay schedule	\
-	  sound status tape voice vdg vsurface
+	  sound status tape voice vdg vsurface romaji
 OBJDEV	= ay8910 mc6847 pd7752 pd8255 ym2203 z80 z80-dbg fmgen/fmgen fmgen/psg fmgen/opna fmgen/fmtimer
 OBJSDL	= osdSDL
 OBJOSD	= guiWin32 osdWin32
