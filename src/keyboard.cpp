@@ -13,7 +13,7 @@
 #include "pc6001v.h"
 
 
-#define	NOM	( (int)P6Matrix.size() / 2 )
+#define	NOM	16
 
 
 // 文字コード -> P6キースキャンコード定義
@@ -664,9 +664,9 @@ KEY6::KEY6( VM6* vm, const ID& id ) : Device( vm, id ),
 	}
 	
 	// キーマトリクス初期化
-	for( int i = 0; i < 16 * 2; i++ ){
-		P6Matrix.emplace_back( 0xff );
-		P6Mtrx.emplace_back( 0xff );
+	for( int i = 0; i < NOM * 2; i++ ){
+		P6Matrix0.emplace_back( 0xff );
+		P6Matrix1.emplace_back( 0xff );
 	}
 }
 
@@ -752,30 +752,38 @@ void KEY6::UpdateMatrixP6Key( const P6KEYsym code, const bool pflag )
 {
 	PRINTD( KEY_LOG, "[KEY][UpdateMatrixP6Key] %02X %s\n", code, pflag ? "PUSH" : "RELEASE" );
 	
+	BYTE mtx = 0;
+	
 	try{
 		// P6キーコード->キーマトリクスを取得
-		BYTE mtx = MatTable.at( code );
-		if( !mtx ){
-			return;
-		}
-		
-		// マトリクス更新(押したキーに対応するbitが0になる)
-		BYTE matX = 1 << (mtx & 0x0f);
-		BYTE matY = (mtx >> 4) & 0x0f;
+		mtx = MatTable.at( code );
+	}
+	catch( std::out_of_range& ){}
+	
+	if( !mtx ){
+		return;
+	}
+	
+	// マトリクス更新(押したキーに対応するbitが0になる)
+	BYTE matX = 1 << (mtx & 0x0f);
+	BYTE matY = (mtx >> 4) & 0x0f;
+	
+	try{
+		std::lock_guard<cMutex> lock( Mutex );
 		
 		if( pflag ){
-			P6Matrix.at( matY ) &= ~matX;
+			P6Matrix0.at( matY ) &= ~matX;
 			
 			// 【キーリピート対応の暫定処置】
 			// リピート時はリリース情報が出力されないので
 			// 前回のマトリクスをリリースに書き換える。
 			// リピートをSDL任せにしている間の暫定処置で
 			// サブCPU側で処理するようになったら不要。
-			if( ~P6Matrix.at( matY+NOM ) & matX ){ P6Matrix.at( matY+NOM ) |= matX; }
+			if( ~P6Matrix0.at( matY + NOM ) & matX ){ P6Matrix0.at( matY + NOM ) |= matX; }
 		}else{
-			P6Matrix.at( matY ) |=  matX;
+			P6Matrix0.at( matY ) |=  matX;
 			//【キーを離した時の取りこぼし防止】
-			if( P6Matrix.at( matY+NOM ) & matX ){ P6Matrix.at( matY+NOM ) &= ~matX; }
+			if( P6Matrix0.at( matY + NOM ) & matX ){ P6Matrix0.at( matY + NOM ) &= ~matX; }
 		}
 	}
 	catch( std::out_of_range& ){}
@@ -833,13 +841,18 @@ void KEY6::UpdateMatrixKeyChr( const WORD code )
 		iakey.P6Key = scan->second.P6Key;
 		UpdateMatrixP6Key( scan->second.P6Key, true );
 		
-		//モディファイア
-		PCKEYmod mod = scan->second.mod;
-		P6Matrix.at( 0 ) |= 0b00001110;	// 一旦クリア
-		
-		if( mod & KVM_LCTRL  ){ P6Matrix.at( 0 ) &= 0b11111101; }	// CTRL
-		if( mod & KVM_LSHIFT ){ P6Matrix.at( 0 ) &= 0b11111011; }	// SHIFT
-		if( mod & KVM_LALT   ){ P6Matrix.at( 0 ) &= 0b11110111; }	// GRAPH
+		try{
+			std::lock_guard<cMutex> lock( Mutex );
+			
+			//モディファイア
+			PCKEYmod mod = scan->second.mod;
+			P6Matrix0.at( 0 ) |= 0b00001110;	// 一旦クリア
+			
+			if( mod & KVM_LCTRL  ){ P6Matrix0.at( 0 ) &= 0b11111101; }	// CTRL
+			if( mod & KVM_LSHIFT ){ P6Matrix0.at( 0 ) &= 0b11111011; }	// SHIFT
+			if( mod & KVM_LALT   ){ P6Matrix0.at( 0 ) &= 0b11110111; }	// GRAPH
+		}
+		catch( std::out_of_range& ){}
 	}
 }
 
@@ -856,8 +869,10 @@ void KEY6::UpdateMatrixJoy( const BYTE joy1, const BYTE joy2 )
 	PRINTD( KEY_LOG, "[KEY][UpdateMatrixJoy] JOY1:%02X JOY2:%02X\n", joy1, joy2 );
 	
 	try{
-		P6Matrix.at( NOM - 2 ) = joy1;
-		P6Matrix.at( NOM - 1 ) = joy2;
+		std::lock_guard<cMutex> lock( Mutex );
+		
+		P6Matrix0.at( NOM - 2 ) = joy1;
+		P6Matrix0.at( NOM - 1 ) = joy2;
 	}
 	catch( std::out_of_range& ){}
 }
@@ -867,43 +882,39 @@ void KEY6::UpdateMatrixJoy( const BYTE joy1, const BYTE joy2 )
 // キーマトリクススキャン
 //
 // 引数:	なし
-// 返値:	true:変化あり false:変化なし
+// 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-bool KEY6::ScanMatrix( void )
+void KEY6::ScanMatrix( void )
 {
 	PRINTD( KEY_LOG, "[KEY][ScanMatrix] " );
 	
-	bool MatChg  = false;	// 前回のマトリクスと変化したかフラグ
 	bool KeyPUSH = false;	// キー押したフラグ
-	bool ON_FUNC = false;	// ファンクションキーとかフラグ
 	BYTE MatData = 0;		// P6のマトリクスコード(bit7-4:Y-1 bit3-0:X)
-	BYTE KeyData = 0;		// P6のキーコード
 	
-	// キーマトリクスを保存
-	P6Mtrx = P6Matrix;
+	std::lock_guard<cMutex> lock( Mutex );
+	
+	// キーマトリクスを保存(後処理用)
+	P6Matrix1 = P6Matrix0;
 	
 	try{
 		// 特殊キー判定(ON-OFF状態を判定) キーマトリクスY0
-		ON_CTRL  = P6Mtrx.at( 0 ) & 0x02 ? false : true;
-		ON_SHIFT = P6Mtrx.at( 0 ) & 0x04 ? false : true;
-		ON_GRAPH = P6Mtrx.at( 0 ) & 0x08 ? false : true;
-		// 前回のマトリクスと変化あり?
-		if( P6Mtrx.at( 0 ) != P6Mtrx.at( 0 + NOM ) ){ MatChg = true; }
+		ON_CTRL  = P6Matrix0.at( 0 ) & 0x02 ? false : true;
+		ON_SHIFT = P6Matrix0.at( 0 ) & 0x04 ? false : true;
+		ON_GRAPH = P6Matrix0.at( 0 ) & 0x08 ? false : true;
 	}
 	catch( std::out_of_range& ){}
 	
 	// 一般キー判定 キーマトリクスY1～
 	for( int y = 1; (y < (NOM - 2)) && !KeyPUSH; y++ ) try{
 		// 前回のマトリクスと変化あり?
-		if( P6Mtrx.at( y ) != P6Mtrx.at( y + NOM ) ){
-			MatChg = true;
+		if( P6Matrix0.at( y ) != P6Matrix0.at( y + NOM ) ){
 			// キー押した?
-			if( (P6Mtrx.at( y ) ^ P6Mtrx.at( y + NOM )) & P6Mtrx.at( y + NOM ) ){
+			if( (P6Matrix0.at( y ) ^ P6Matrix0.at( y + NOM )) & P6Matrix0.at( y + NOM ) ){
 				KeyPUSH = true;
 				for( int x = 0; x < 8; x++ ) try{
 					// マトリクスコードセット bit7-4:Y-1 bit3-0:X
 					// 1->0 になったビットを検出
-					if( (~P6Mtrx.at( y ) >> x) & 1 && (P6Mtrx.at( y + NOM ) >> x) & 1 ){
+					if( (~P6Matrix0.at( y ) >> x) & 1 && (P6Matrix0.at( y + NOM ) >> x) & 1 ){
 						MatData = (y << 4) | (x & 7);
 						break;
 					}
@@ -914,7 +925,17 @@ bool KEY6::ScanMatrix( void )
 	}
 	catch( std::out_of_range& ){}
 	
+	// キーマトリクスの変化を保存
+	for( int i = 0; i < NOM; i++ ) try{
+		P6Matrix0.at( i + NOM ) = P6Matrix0.at( i );
+	}
+	catch( std::out_of_range& ){}
+	
+	
 	if( KeyPUSH ){	// キー押した?
+		bool ON_FUNC = false;	// ファンクションキーとかフラグ
+		BYTE KeyData = 0;		// P6のキーコード
+		
 		switch( MatData ){	// マトリクスコード
 		case 0x96:	// CAPS
 			ON_CAPS = !ON_CAPS;
@@ -990,23 +1011,7 @@ bool KEY6::ScanMatrix( void )
 		}
 	}
 	
-	// ジョイスティック判定
-	for( int y = NOM - 2; y < NOM; y++ ) try{
-		// 前回のマトリクスと変化あり?
-		if( P6Mtrx.at( y ) != P6Mtrx.at( y + NOM ) ){ MatChg = true; }
-	}
-	catch( std::out_of_range& ){}
-	
-	// 変化があればキーマトリクス保存
-	if( MatChg )
-		for( int i = 0; i < NOM; i++ ) try{
-			P6Matrix.at( i + NOM ) = P6Mtrx.at( i );
-		}
-		catch( std::out_of_range& ){}
-	
 	PRINTD( KEY_LOG, "\n" );
-	
-	return MatChg;
 }
 
 
@@ -1016,9 +1021,9 @@ bool KEY6::ScanMatrix( void )
 // 引数:	なし
 // 返値:	vector<BYTE>&	マトリクスデータ
 /////////////////////////////////////////////////////////////////////////////
-std::vector<BYTE>& KEY6::GetMatrix( void )
+std::vector<BYTE>& KEY6::GetMatrix0( void )
 {
-	return P6Matrix;
+	return P6Matrix0;
 }
 
 
@@ -1028,9 +1033,9 @@ std::vector<BYTE>& KEY6::GetMatrix( void )
 // 引数:	なし
 // 返値:	vector<BYTE>&	マトリクスデータ(保存用)
 /////////////////////////////////////////////////////////////////////////////
-const std::vector<BYTE>& KEY6::GetMatrix2( void ) const
+const std::vector<BYTE>& KEY6::GetMatrix1( void ) const
 {
-	return P6Mtrx;
+	return P6Matrix1;
 }
 
 
@@ -1053,8 +1058,8 @@ BYTE KEY6::GetKeyJoy( void ) const
 	PRINTD( KEY_LOG, "[KEY][GetKeyJoy]\n" );
 	
 	try{
-		return	(~P6Mtrx.at( 5 ) & 0x80) | (~P6Mtrx.at( 8 ) & 0x20) | (~P6Mtrx.at( 8 ) & 0x10) | (~P6Mtrx.at( 8 ) & 0x08) |
-				(~P6Mtrx.at( 8 ) & 0x04) | (~P6Mtrx.at( 8 ) & 0x02) | (~P6Mtrx.at( 0 ) & 0x04) >> 2;
+		return	(~P6Matrix1.at( 5 ) & 0x80) | (~P6Matrix1.at( 8 ) & 0x20) | (~P6Matrix1.at( 8 ) & 0x10) | (~P6Matrix1.at( 8 ) & 0x08) |
+				(~P6Matrix1.at( 8 ) & 0x04) | (~P6Matrix1.at( 8 ) & 0x02) | (~P6Matrix1.at( 0 ) & 0x04) >> 2;
 	}
 	catch( std::out_of_range& ){
 		return 0;
@@ -1079,7 +1084,7 @@ BYTE KEY6::GetKeyJoy( void ) const
 BYTE KEY6::GetJoy( const int JoyNo ) const
 {
 	try{
-		return P6Mtrx.at( NOM - 2 + (JoyNo & 1) ) | 0xc0;
+		return P6Matrix1.at( NOM - 2 + (JoyNo & 1) ) | 0xc0;
 	}
 	catch( std::out_of_range& ){
 		return 0xff;
@@ -1184,10 +1189,13 @@ bool KEY6::GetLastKeyReleased( void )
 /////////////////////////////////////////////////////////////////////////////
 void KEY6::PushMod( void )
 {
-	iakey.P6Key = KP6_RELEASED;
-	iakey.mod   = (P6Matrix.at( 0 ) & 0x02) ? KVM_NONE : KVM_LSHIFT |	// SHIFT
-				  (P6Matrix.at( 0 ) & 0x04) ? KVM_NONE : KVM_LALT   |	// GRAPH
-				  (P6Matrix.at( 0 ) & 0x08) ? KVM_NONE : KVM_LCTRL;		// CTRL
+	try{
+		iakey.P6Key = KP6_RELEASED;
+		iakey.mod   = (P6Matrix0.at( 0 ) & 0x02) ? KVM_NONE : KVM_LSHIFT |	// SHIFT
+					  (P6Matrix0.at( 0 ) & 0x04) ? KVM_NONE : KVM_LALT   |	// GRAPH
+					  (P6Matrix0.at( 0 ) & 0x08) ? KVM_NONE : KVM_LCTRL;		// CTRL
+	}
+	catch( std::out_of_range& ){}
 	
 	ak_KANA   = ON_KANA;	// かな状態保存
 	ak_KKANA  = ON_KKANA;	// カタカナ状態保存
@@ -1199,10 +1207,15 @@ void KEY6::PushMod( void )
 /////////////////////////////////////////////////////////////////////////////
 void KEY6::PopMod( void )
 {
-	P6Matrix.at( 0 ) |= 0b00001110;	// 一旦クリア
-	if( iakey.mod & KVM_LCTRL  ){ P6Matrix.at( 0 ) &= ~0x02; }	// CTRL
-	if( iakey.mod & KVM_LSHIFT ){ P6Matrix.at( 0 ) &= ~0x04; }	// SHIFT
-	if( iakey.mod & KVM_LALT   ){ P6Matrix.at( 0 ) &= ~0x08; }	// GRAPH
+	try{
+		std::lock_guard<cMutex> lock( Mutex );
+		
+		P6Matrix0.at( 0 ) |= 0b00001110;	// 一旦クリア
+		if( iakey.mod & KVM_LCTRL  ){ P6Matrix0.at( 0 ) &= ~0x02; }	// CTRL
+		if( iakey.mod & KVM_LSHIFT ){ P6Matrix0.at( 0 ) &= ~0x04; }	// SHIFT
+		if( iakey.mod & KVM_LALT   ){ P6Matrix0.at( 0 ) &= ~0x08; }	// GRAPH
+	}
+	catch( std::out_of_range& ){}
 	
 	ON_KANA   = ak_KANA;	// かな状態保存
 	ON_KKANA  = ak_KKANA;	// カタカナ状態保存
@@ -1252,16 +1265,22 @@ bool KEY6::DokoSave( cIni* Ini )
 	Ini->SetVal( "KEY", "ON_CAPS",		"", ON_CAPS   );
 	
 	std::string strva;
-	for( auto &i : P6Matrix ){
+#if 0
+	// P6Matrix0は(前フレームの状態+物理キーの入力状態)を格納しており、
+	// リプレイの再現性検証の妨げになる。(リプレイにはP6Matrix1の方しか記録してない)
+	// リプレイやどこでもLoadの目的に対してはP6Matrix1の方だけ保存しておけば十分であり、
+	// P6Matrix0はどこでもSAVEには残さないことにする。
+	for( auto &i : P6Matrix0 ){
 		strva += Stringf( "%02X", i );
 	}
-	Ini->SetEntry( "KEY", "P6Matrix",	"", strva.c_str() );
+	Ini->SetEntry( "KEY", "P6Matrix0",	"", strva.c_str() );
 	
 	strva.clear();
-	for( auto &i : P6Mtrx ){
+#endif
+	for( auto &i : P6Matrix1 ){
 		strva += Stringf( "%02X", i );
 	}
-	Ini->SetEntry( "KEY", "P6Mtrx",		"", strva.c_str() );
+	Ini->SetEntry( "KEY", "P6Matrix1",		"", strva.c_str() );
 	
 	return true;
 }
@@ -1287,18 +1306,23 @@ bool KEY6::DokoLoad( cIni* Ini )
 	Ini->GetVal( "KEY", "ON_STOP",		ON_STOP   );
 	Ini->GetVal( "KEY", "ON_CAPS",		ON_CAPS   );
 	
-	if( Ini->GetEntry( "KEY", "P6Matrix", strva ) ){
-		strva.resize( P6Matrix.size() * 2, 'F' );
+#if 0
+	// P6Matrix0は(前フレームの状態+物理キーの入力状態)を格納しており、
+	// リプレイの再現性検証の妨げになる。(リプレイにはP6Matrix1の方しか記録してない)
+	// リプレイやどこでもLoadの目的に対してはP6Matrix1の方だけ保存しておけば十分であり、
+	// P6Matrix0はどこでもSAVEには残さないことにする。
+	if( Ini->GetEntry( "KEY", "P6Matrix0", strva ) ){
+		strva.resize( P6Matrix0.size() * 2, 'F' );
 		int i = 0;
-		for( auto &m : P6Matrix ){
+		for( auto &m : P6Matrix0 ){
 			m = std::stoul( strva.substr( i++ * 2, 2 ), nullptr, 16 );
 		}
 	}
-	
-	if( Ini->GetEntry( "KEY", "P6Mtrx", strva ) ){
-		strva.resize( P6Mtrx.size() * 2, 'F' );
+#endif
+	if( Ini->GetEntry( "KEY", "P6Matrix1", strva ) ){
+		strva.resize( P6Matrix1.size() * 2, 'F' );
 		int i = 0;
-		for( auto &m : P6Mtrx ){
+		for( auto &m : P6Matrix1 ){
 			m = std::stoul( strva.substr( i++ * 2, 2 ), nullptr, 16 );
 		}
 	}

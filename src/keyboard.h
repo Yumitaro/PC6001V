@@ -15,6 +15,7 @@
 #include "ini.h"
 #include "keydef.h"
 #include "romaji.h"
+#include "semaphore.h"
 
 
 // キーボードインジケータ状態
@@ -45,9 +46,10 @@ protected:
 	bool ON_STOP;	// STOP
 	bool ON_CAPS;	// CAPS
 	
-	std::vector<BYTE> P6Matrix;	// キーマトリクス (前半:今回 後半:前回)
-	std::vector<BYTE> P6Mtrx;	// キーマトリクス保存用
-								//  いずれも末尾の2byteはジョイスティックの状態保存用
+	std::vector<BYTE> P6Matrix0;	// キーマトリクス (前半:今回 後半:前回)
+	std::vector<BYTE> P6Matrix1;	// キーマトリクス保存用
+									//  いずれも末尾の2byteはジョイスティックの状態保存用
+	mutable cMutex Mutex;
 	
 	P6KeyScan iakey;	// キーマトリクス 前回キー保存
 	bool ak_KANA;		// かな状態保存
@@ -65,9 +67,9 @@ public:
 	void UpdateMatrixKeyChrRelease();					// キーマトリクス更新(キー,文字コード)自動キー入力用リリース
 	void UpdateMatrixKeyChr( const WORD );				// キーマトリクス更新(キー,文字コード)自動キー入力用
 	void UpdateMatrixJoy( const BYTE, const BYTE );		// キーマトリクス更新(ジョイスティック)
-	bool ScanMatrix();									// キーマトリクススキャン
-	std::vector<BYTE>& GetMatrix();						// キーマトリクス取得
-	const std::vector<BYTE>& GetMatrix2() const;		// キーマトリクス(保存用)取得
+	void ScanMatrix();									// キーマトリクススキャン
+	std::vector<BYTE>& GetMatrix0();						// キーマトリクス取得
+	const std::vector<BYTE>& GetMatrix1() const;		// キーマトリクス(保存用)取得
 	
 	BYTE GetKeyJoy() const;								// カーソルキー状態取得
 	BYTE GetKeyIndicator() const;						// キーボードインジケータ状態取得

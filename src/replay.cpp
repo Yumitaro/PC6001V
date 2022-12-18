@@ -102,7 +102,7 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 // 引数:	frame       途中再開するフレーム
 // 返値:	bool		true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
-bool REPLAY::ResumeRecord( const P6VPATH& filepath, int frame )
+bool REPLAY::ResumeRecord( const P6VPATH& filepath, DWORD frame )
 {
 	if( !StartRecord( filepath ) ){
 		return false;
@@ -128,7 +128,7 @@ void REPLAY::StopRecord( void )
 		return;
 	}
 	
-	cIni::SetEntry( "REPLAY", "EndFrm", "", "0x%08lX", RepFrm );
+	cIni::SetEntry( "REPLAY", "EndFrm", "", "%ld", RepFrm );
 	cIni::Write();
 	cIni::Init();
 	
@@ -140,10 +140,9 @@ void REPLAY::StopRecord( void )
 // リプレイ1フレーム書出し
 //
 // 引数:	mt		キーマトリクス
-// 			chg		キーマトリクス変化 true:した false:しない
 // 返値:	bool	true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
-bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
+bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt )
 {
 	std::string strva;
 	
@@ -155,9 +154,7 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt, bool chg )
 	for( auto &i : mt ){
 		strva += Stringf( "%02X", i );
 	}
-	cIni::SetEntry( "REPLAY", Stringf( "%08lX ", RepFrm ), "", strva.c_str() );
-	
-	RepFrm++;
+	cIni::SetEntry( "REPLAY", Stringf( "%08lX ", RepFrm++ ), "", strva.c_str() );
 	
 	return true;
 }
@@ -191,7 +188,7 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 		return false;
 	}
 	
-	RepFrm = 1;
+	RepFrm = 0;
 	RepST  = ST_REPLAYPLAY;
 	
 	// 無事だったのでエラーなし

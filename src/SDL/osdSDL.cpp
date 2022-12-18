@@ -42,7 +42,7 @@ static SDL_Texture* sdl_texwx;						// 汎用Texture
 static SDL_Texture* sdl_texbb;						// バックバッファ用Texture
 static SDL_Texture* sdl_texsl;						// スキャンライン用Texture
 static DWORD sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
-static SDL_AudioDeviceID sdl_adev;					// オーディオデバイス
+static SDL_AudioDeviceID sdl_adev = 0;				// オーディオデバイス
 static DWORD UEVnum = -1;							// 確保済みユーザー定義イベント数
 //static P6VPATH ConfigPath = "";					// 設定ファイルパス保存用
 
@@ -278,8 +278,9 @@ static void ConvertLogicalToAbsolute( DWORD winid, int* x, int* y )
 bool OSD_Init_Sub( void )
 {
 	// SDL初期化
-	if( SDL_Init( SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) )
+	if( SDL_Init( SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) ){
 		return false;
+	}
 	
 	// ユーザー定義イベント確保
 	UEVnum = SDL_RegisterEvents( EV_QUIT );
@@ -529,12 +530,12 @@ bool OSD_GetJoyButton( HJOYINFO jinfo, int num )
 // 引数:	obj				自分自身へのオブジェクトポインタ
 //			callback		コールバック関数へのポインタ
 //			rate			サンプリングレート
-//			sample			バッファサイズ(サンプル数)
+//			samples			バッファサイズ(サンプル数)
 // 返値:	bool			true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_OpenAudio( void* obj, CBF_SND callback, int rate, int samples )
 {
-	SDL_AudioSpec ASpec, AHave;				// オーディオスペック
+	SDL_AudioSpec ASpec, AHave;			// オーディオスペック
 	
 	ASpec.freq     = rate;				// サンプリングレート
 	ASpec.format   = AUDIOFORMAT;		// フォーマット
@@ -543,10 +544,11 @@ bool OSD_OpenAudio( void* obj, CBF_SND callback, int rate, int samples )
 	ASpec.callback = callback;			// コールバック関数の指定
 	ASpec.userdata = obj;				// コールバック関数に自分自身のオブジェクトポインタを渡す
 	
-	// オーディオデバイスを開く
-	if( !(sdl_adev = SDL_OpenAudioDevice( nullptr, 0, &ASpec, &AHave, 0 )) ) return false;
+	// オーディオデバイスを一旦閉じて開く
+	SDL_CloseAudioDevice( sdl_adev );
+	sdl_adev = SDL_OpenAudioDevice( nullptr, 0, &ASpec, &AHave, 0 );
 	
-	return true;
+	return sdl_adev ? true : false;
 }
 
 
@@ -613,7 +615,9 @@ bool OSD_LoadWAV( const P6VPATH& filepath, BYTE** buf, DWORD* len, int* freq )
 {
 	SDL_AudioSpec ws;
 	
-	if( !SDL_LoadWAV( P6VPATH2STR( filepath ).c_str(), &ws, buf, (Uint32*)len ) ) return false;
+	if( !SDL_LoadWAV( P6VPATH2STR( filepath ).c_str(), &ws, buf, (Uint32*)len ) ){
+		return false;
+	}
 	
 	if( ws.freq < 22050 || ws.format != AUDIO_S16 || ws.channels != 1 ){
 		SDL_FreeWAV( *buf );
@@ -742,7 +746,9 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	if( !*hwnd ){
 		*hwnd = (HWINDOW)SDL_CreateWindow( "", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN );
 //		*hwnd = (HWINDOW)SDL_CreateWindow( "", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
-		if( !*hwnd ) return false;
+		if( !*hwnd ){
+			return false;
+		}
 	}
 	
 	// ハードウェアRenderer作成
@@ -758,9 +764,9 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	SDL_RenderSetLogicalSize( rend, w, h );
 	
 	// 作成済みのTextureは一旦破棄
-	if( sdl_texwx ) SDL_DestroyTexture( sdl_texwx );
-	if( sdl_texbb ) SDL_DestroyTexture( sdl_texbb );
-	if( sdl_texsl ) SDL_DestroyTexture( sdl_texsl );
+	if( sdl_texwx ){ SDL_DestroyTexture( sdl_texwx ); }
+	if( sdl_texbb ){ SDL_DestroyTexture( sdl_texbb ); }
+	if( sdl_texsl ){ SDL_DestroyTexture( sdl_texsl ); }
 	
 	// Renderer,Textureのフォーマットを選定する
 	SDL_GetRendererInfo( rend, &info );
@@ -841,8 +847,8 @@ void OSD_DestroyWindow( HWINDOW hwnd )
 	if( sdl_texwx ){ SDL_DestroyTexture( sdl_texwx );	sdl_texwx = nullptr; }
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( rend ) SDL_DestroyRenderer( rend );
-	if( hwnd ) SDL_DestroyWindow( (SDL_Window*)hwnd );
+	if( rend ){ SDL_DestroyRenderer( rend ); }
+	if( hwnd ){ SDL_DestroyWindow( (SDL_Window*)hwnd ); }
 }
 
 
@@ -855,7 +861,7 @@ void OSD_DestroyWindow( HWINDOW hwnd )
 int OSD_GetWindowWidth( HWINDOW hwnd )
 {
 	int res = 0;
-	if( hwnd ) SDL_GetWindowSize( (SDL_Window*)hwnd, &res, nullptr );
+	if( hwnd ){ SDL_GetWindowSize( (SDL_Window*)hwnd, &res, nullptr ); }
 	return res;
 }
 
@@ -869,7 +875,7 @@ int OSD_GetWindowWidth( HWINDOW hwnd )
 int OSD_GetWindowHeight( HWINDOW hwnd )
 {
 	int res = 0;
-	if( hwnd ) SDL_GetWindowSize( (SDL_Window*)hwnd, nullptr, &res );
+	if( hwnd ){ SDL_GetWindowSize( (SDL_Window*)hwnd, nullptr, &res ); }
 	return res;
 }
 
@@ -925,7 +931,9 @@ void OSD_ClearWindow( HWINDOW hwnd )
 	PRINTD( OSD_LOG, "[OSD][OSD_ClearWindow]\n" );
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( !rend ) return;
+	if( !rend ){
+		return;
+	}
 	
 	SDL_SetRenderDrawColor( rend, 0, 0, 0, SDL_ALPHA_OPAQUE );
 	SDL_RenderClear( rend );
@@ -944,7 +952,9 @@ void OSD_RenderWindow( HWINDOW hwnd )
 	PRINTD( OSD_LOG, "[OSD][OSD_RenderWindow]\n" );
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( !rend ) return;
+	if( !rend ){
+		return;
+	}
 	
 	SDL_RenderPresent( rend );
 }
@@ -965,10 +975,14 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	
 	SDL_Rect src1,drc1;
 	
-	if( !hwnd || !src ) return;
+	if( !hwnd || !src ){
+		return;
+	}
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( !rend ) return;
+	if( !rend ){
+		return;
+	}
 	
 	// 転送元VSurface範囲設定
 	// ウィンドウからはみ出す部分はトリム
@@ -978,7 +992,9 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	src1.w = min( src->Width()  + x, src1.w) - max( 0, x );
 	src1.h = min( src->Height() + y, src1.h) - max( 0, y );
 	
-	if( src1.w <= 0 || src1.h <= 0 ) return;
+	if( src1.w <= 0 || src1.h <= 0 ){
+		return;
+	}
 	
 	// 転送先Render範囲設定
 	drc1.x = x;
@@ -993,13 +1009,16 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	int tpp;
 	
 	SDL_LockTexture( sdl_texwx, &drc1, &ptex, &tpp );
-	if( !ptex ) return;
+	if( !ptex ){
+		return;
+	}
 	
 	for( int yy = 0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
-		for( int xx = 0; xx < src1.w; xx++ )
+		for( int xx = 0; xx < src1.w; xx++ ){
 			*tpd++ = VSurface::GetColor( *tps++ );
+		}
 	}
 	
 	SDL_UnlockTexture( sdl_texwx );
@@ -1022,10 +1041,14 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	
 	SDL_Rect src1;
 	
-	if( !hwnd || !src ) return;
+	if( !hwnd || !src ){
+		return;
+	}
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( !rend ) return;
+	if( !rend ){
+		return;
+	}
 	
 	// 転送元/Texture範囲設定
 	// バックバッファからはみ出す部分はトリム
@@ -1035,7 +1058,9 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	src1.w = min( src->Width() , src1.w );
 	src1.h = min( src->Height(), src1.h );
 	
-	if( src1.w <= 0 || src1.h <= 0 ) return;
+	if( src1.w <= 0 || src1.h <= 0 ){
+		return;
+	}
 	
 	BYTE* psrc = (BYTE*)src->GetPixels().data();
 	int spp    = src->Pitch();
@@ -1043,13 +1068,16 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	void* ptex;
 	int tpp;
 	SDL_LockTexture( sdl_texbb, &src1, &ptex, &tpp );
-	if( !ptex ) return;
+	if( !ptex ){
+		return;
+	}
 	
 	for( int yy = 0; yy < src1.h; yy++ ){
 		BYTE*  tps =                 psrc + yy * spp;
 		DWORD* tpd = (DWORD*)((BYTE*)ptex + yy * tpp);
-		for( int xx = 0; xx < src1.w; xx++ )
+		for( int xx = 0; xx < src1.w; xx++ ){
 			*tpd++ = VSurface::GetColor( *tps++ );
+		}
 	}
 	
 	SDL_UnlockTexture( sdl_texbb );
@@ -1077,10 +1105,14 @@ bool OSD_GetWindowImage( HWINDOW hwnd, std::vector<BYTE>& pixels, VRect* pos, Pi
 	VRect src1;
 	int fmt, dpt;
 	
-	if( !hwnd ) return false;
+	if( !hwnd ){
+		return false;
+	}
 	
 	SDL_Renderer* rend = SDL_GetRenderer( (SDL_Window*)hwnd );
-	if( !rend ) return false;
+	if( !rend ){
+		return false;
+	}
 	
 	SDL_RenderGetLogicalSize( rend, &src1.w, &src1.h );
 	dpt = ( pos ? pos->w : src1.w );
@@ -1106,8 +1138,9 @@ bool OSD_GetWindowImage( HWINDOW hwnd, std::vector<BYTE>& pixels, VRect* pos, Pi
 		dpt *= sizeof(DWORD);
 	}
 	
-	if( SDL_RenderReadPixels( rend, (SDL_Rect*)pos, fmt, (void*)(&pixels[0]), dpt ) )
+	if( SDL_RenderReadPixels( rend, (SDL_Rect*)pos, fmt, (void*)(&pixels[0]), dpt ) ){
 		return false;
+	}
 	
 	return true;
 }
@@ -1181,10 +1214,11 @@ void* OSD_GetWindowHandle( HWINDOW hwnd )
 	SDL_SysWMinfo WinInfo;
 	
 	SDL_VERSION( &WinInfo.version );
-	if( SDL_GetWindowWMInfo( (SDL_Window*)hwnd, &WinInfo ) )
+	if( SDL_GetWindowWMInfo( (SDL_Window*)hwnd, &WinInfo ) ){
 		return WinInfo.info.win.window;
-	else
+	}else{
 		return nullptr;
+	}
 }
 
 
@@ -1211,7 +1245,9 @@ bool OSD_GetEvent( Event* ev )
 {
 	SDL_Event event;
 	
-	if( !SDL_WaitEvent( &event ) ) return false;
+	if( !SDL_WaitEvent( &event ) ){
+		return false;
+	}
 	
 	switch( event.type ){
 	case SDL_KEYDOWN:

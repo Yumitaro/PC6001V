@@ -373,8 +373,8 @@ bool SND6::SetSampleRate( int rate, int size )
 	}
 	
 	// デバイス毎にサンプリングレートを設定
-	for( auto p = sdev.begin(); p != sdev.end(); ++p ){
-		if( !(*p)->SetSampleRate( rate, samples ) ){
+	for( auto &p : sdev ){
+		if( !p->SetSampleRate( rate, samples ) ){
 			return false;
 		}
 	}
@@ -446,20 +446,19 @@ int SND6::PreUpdate( int samples, cRing* exbuf )
 	
 	PRINTD( SND_LOG,"PreUpdate" );
 	
-	for( auto p = sdev.begin(); p != sdev.end(); ++p ){
-		PRINTD( SND_LOG," %d", (*p)->ReadySize() );
-		exsam = min( exsam, (*p)->ReadySize() );
+	for( auto &p : sdev ){
+		PRINTD( SND_LOG," %d", p->ReadySize() );
+		exsam = min( exsam, p->ReadySize() );
 	}
 	PRINTD( SND_LOG,"\n" );
 	
-//	exsam = min( exsam, this->cRing::FreeSize( true ) );
 	exsam = min( exsam, exbuf ? exbuf->cRing::FreeSize( true ) : this->cRing::FreeSize( true ) );
 	
 	for( int i = 0; i < exsam; i++ ){
 		int dat = 0;
 		
-		for( auto p = sdev.begin(); p != sdev.end(); ++p ){
-			dat += (*p)->Get();
+		for( auto &p : sdev ){
+			dat += p->Get();
 		}
 		
 		dat = ( dat * Volume ) / 100;
@@ -485,7 +484,7 @@ int SND6::PreUpdate( int samples, cRing* exbuf )
 /////////////////////////////////////////////////////////////////////////////
 void SND6::Update( BYTE* stream, int samples )
 {
-	int16_t *str = (int16_t*)stream;
+	int16_t* str = (int16_t*)stream;
 	
 	PRINTD( SND_LOG, "[SND6][Update] Stream:%p Samples:%d / %d\n", stream, samples, this->cRing::ReadySize() );
 	

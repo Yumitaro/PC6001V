@@ -170,21 +170,21 @@ void EL6::OnThread( void* inst )
 					}
 				}
 				
-				// キーマトリクススキャン
-				bool matchg = p6->vm->key->ScanMatrix();
-				
-				// リプレイ記録中
-				if( REPLAY::GetStatus() == ST_REPLAYREC ){
-					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix2(), matchg );
-				}
-				
 				// リプレイ再生中
 				if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
-					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix() );
+					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix0() );
 					// リプレイ終了時にビデオキャプチャ中だったらキャプチャを停止する
 					if( REPLAY::GetStatus() == ST_IDLE && AVI6::IsAVI() ){
 						UI_AVISaveStop();
 					}
+				}
+				
+				// キーマトリクススキャン
+				p6->vm->key->ScanMatrix();
+				
+				// リプレイ記録中
+				if( REPLAY::GetStatus() == ST_REPLAYREC ){
+					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix1() );
 				}
 				
 				p6->EmuVSYNC();			// 1画面分実行
@@ -481,7 +481,7 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 		{
 			P6VPATH fpath = cfg->GetDokoFile();
 			cIni save;
-			int frame = 0;
+			DWORD frame = 0;
 			
 			save.Read( fpath );
 			save.GetVal( "REPLAY", "frame", frame );
@@ -1836,8 +1836,9 @@ void EL6::UI_DokoSave( int slot )
 		cIni save;
 		if( save.Read( fpath ) ){
 			// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-			save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-			save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+			std::string strva( vm->key->GetMatrix1().size() * 2, 'F' );
+			save.SetEntry( "KEY", "P6Matrix0", "", strva.c_str() );
+			save.SetEntry( "KEY", "P6Matrix1", "", strva.c_str() );
 			
 			save.Write();
 		}
@@ -1977,8 +1978,9 @@ void EL6::UI_ReplayDokoSave( void )
 	
 	save.SetVal( "REPLAY", "frame", "", REPLAY::RepFrm );
 	// 一旦キー入力を無効化する(LOAD時にキーが押しっぱなしになるのを防ぐため)
-	save.SetEntry( "KEY", "P6Matrix", "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
-	save.SetEntry( "KEY", "P6Mtrx",   "", "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" );
+	std::string strva( vm->key->GetMatrix1().size() * 2, 'F' );
+	save.SetEntry( "KEY", "P6Matrix0", "", strva.c_str() );
+	save.SetEntry( "KEY", "P6Matrix1", "", strva.c_str() );
 	
 	if( !save.Write() ){
 		Error::SetError( Error::ReplayRecError );
