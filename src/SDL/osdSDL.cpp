@@ -12,6 +12,7 @@
 #include <SDL.h>
 #include <SDL_syswm.h>
 
+#include "../pc6001v.h"
 #include "../common.h"
 #include "../log.h"
 #include "../osd.h"
@@ -31,6 +32,8 @@
 #define	AUDIOFORMAT	AUDIO_S16		// 16ビット符号あり
 #endif
 
+#define	AUDIOBYTE	(SDL_AUDIO_BITSIZE( AUDIOFORMAT ) / 8)	// オーディオサンプルのバイト数
+
 // Renderer,Texture作成用オプション
 #define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE)
 
@@ -43,6 +46,7 @@ static SDL_Texture* sdl_texbb;						// バックバッファ用Texture
 static SDL_Texture* sdl_texsl;						// スキャンライン用Texture
 static DWORD sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
 static SDL_AudioDeviceID sdl_adev = 0;				// オーディオデバイス
+static SDL_AudioSpec AHave;							// オーディオスペック
 static DWORD UEVnum = -1;							// 確保済みユーザー定義イベント数
 //static P6VPATH ConfigPath = "";					// 設定ファイルパス保存用
 
@@ -535,7 +539,7 @@ bool OSD_GetJoyButton( HJOYINFO jinfo, int num )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_OpenAudio( void* obj, CBF_SND callback, int rate, int samples )
 {
-	SDL_AudioSpec ASpec, AHave;			// オーディオスペック
+	SDL_AudioSpec ASpec;				// オーディオスペック
 	
 	ASpec.freq     = rate;				// サンプリングレート
 	ASpec.format   = AUDIOFORMAT;		// フォーマット
@@ -562,6 +566,7 @@ void OSD_CloseAudio( void )
 {
 	SDL_CloseAudioDevice( sdl_adev );
 	sdl_adev = 0;
+	ZeroMemory( &AHave, sizeof(AHave) );
 }
 
 
@@ -599,6 +604,32 @@ bool OSD_AudioPlaying( void )
 {
 	return SDL_GetAudioStatus() == SDL_AUDIO_PLAYING ? true : false;
 }
+
+
+#ifdef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+/////////////////////////////////////////////////////////////////////////////
+// オーディオキューサンプル数取得
+// 引数:	なし
+// 返値:	int				キューサンプル数
+/////////////////////////////////////////////////////////////////////////////
+int OSD_GetQueuedAudioSamples( void )
+{
+	return SDL_GetQueuedAudioSize( sdl_adev ) / AUDIOBYTE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// オーディオストリーム書込み
+//
+// 引数:	stream			オーディオデータのストリーム
+//			samples			サンプル数
+// 返値:	なし
+/////////////////////////////////////////////////////////////////////////////
+void OSD_WriteAudioStream( BYTE* stream, int samples )
+{
+	SDL_QueueAudio( sdl_adev, reinterpret_cast<const void*>(stream), samples * AUDIOBYTE );
+}
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 /////////////////////////////////////////////////////////////////////////////

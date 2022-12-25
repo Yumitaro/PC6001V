@@ -105,16 +105,6 @@ void CMTL::EventCallback( int id, int clock )
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 初期化
-/////////////////////////////////////////////////////////////////////////////
-bool CMTL::Init( int srate )
-{
-	Unmount();
-	return SndDev::Init( srate );
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // TAPEマウント
 /////////////////////////////////////////////////////////////////////////////
 bool CMTL::Mount( const P6VPATH& filepath )
@@ -215,7 +205,7 @@ WORD CMTL::Update( void )
 /////////////////////////////////////////////////////////////////////////////
 int CMTL::SoundUpdate( int samples )
 {
-	int length = min( max( 0, samples - SndDev::cRing::ReadySize() ), SndDev::cRing::FreeSize() );
+	int length = max( 0, samples - SndDev::cRing::ReadySize() );
 	
 	PRINTD( TAPE_LOG, "[TAPE][SoundUpdate] Samples: %d -> %d\n", samples, length );
 	
@@ -392,9 +382,7 @@ int CMTL::GetSinCurve( int fq )
 	// テーブルサイズは72(sizeof(sinc))
 	if( n >= COUNTOF(sinc) ){ n -= COUNTOF(sinc); }
 	
-	int ret = ( sinc[n] * SndDev::Volume ) / 100;
-	
-	return ret;
+	return sinc[n];
 }
 
 

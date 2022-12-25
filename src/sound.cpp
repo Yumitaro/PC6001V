@@ -78,7 +78,7 @@ void cRing::Put( int data )
 {
 	std::lock_guard<cMutex> lock( Mutex );
 	
-	if( (int)Buffer.size() < (Size * MULTI) ){
+	if( (int)Buffer.size() < (Size * (MULTI+1)) ){	// +1は保険
 		Buffer.emplace_back( data );
 	}
 }
@@ -95,22 +95,6 @@ int cRing::ReadySize( void ) const
 	std::lock_guard<cMutex> lock( Mutex );
 	
 	return Buffer.size();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// 残りバッファ取得
-//
-// 引数:	ml			true:MULTI考慮 false:MULTI非考慮
-// 返値:	int			残りバッファサンプル数
-/////////////////////////////////////////////////////////////////////////////
-int cRing::FreeSize( bool ml ) const
-{
-	std::lock_guard<cMutex> lock( Mutex );
-	
-	int fsize = ml ? Size * MULTI - Buffer.size() : Size - min( Size, Buffer.size() );
-	
-	return fsize;
 }
 
 
@@ -141,19 +125,6 @@ SndDev::SndDev( void ) : SampleRate(DEFAULT_SAMPLERATE),
 // Destructor
 /////////////////////////////////////////////////////////////////////////////
 SndDev::~SndDev( void ){}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// 初期化
-// 引数:	rate	サンプリングレート
-// 返値:	bool	true:成功 false:失敗
-/////////////////////////////////////////////////////////////////////////////
-bool SndDev::Init( int rate )
-{
-	SampleRate = rate;
-	
-	return true;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -194,7 +165,7 @@ int SndDev::LPF( int src )
 /////////////////////////////////////////////////////////////////////////////
 int SndDev::Get( void )
 {
-	return LPF( this->cRing::Get() );
+	return LPF( (this->cRing::Get() * Volume) / 100 );
 }
 
 
@@ -313,7 +284,7 @@ bool SND6::ConnectStream( const std::shared_ptr<SndDev>& sd )
 {
 	PRINTD( SND_LOG, "[SND6][ConnectStream]\n" );
 	
-	if( !sd->InitBuffer( this->cRing::GetSize() ) ){
+	if( !sd->SetSampleRate( SampleRate, this->cRing::GetSize() ) ){
 		return false;
 	}
 	sdev.emplace_back( sd );
@@ -452,8 +423,6 @@ int SND6::PreUpdate( int samples, cRing* exbuf )
 	}
 	PRINTD( SND_LOG,"\n" );
 	
-	exsam = min( exsam, exbuf ? exbuf->cRing::FreeSize( true ) : this->cRing::FreeSize( true ) );
-	
 	for( int i = 0; i < exsam; i++ ){
 		int dat = 0;
 		
@@ -476,7 +445,24 @@ int SND6::PreUpdate( int samples, cRing* exbuf )
 
 
 /////////////////////////////////////////////////////////////////////////////
-// サウンド更新関数
+// バッファから溢れたサンプル数取得
+// 引数:	なし
+// 返値:	int			溢れたサンプル数 (溢れていなければ0)
+/////////////////////////////////////////////////////////////////////////////
+int SND6::OverflowSamples( void )
+{
+#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	int size = cRing::ReadySize();
+#else				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	int size = OSD_GetQueuedAudioSamples();
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	return size > cRing::GetSize() * MULTI ? size - cRing::GetSize() : 0;
+}
+
+
+#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+/////////////////////////////////////////////////////////////////////////////
+// サウンド更新関数(Callback)
 //
 // 引数:	stream		ストリーム書込みバッファへのポインタ
 //			samples		サンプル数
@@ -492,3 +478,36 @@ void SND6::Update( BYTE* stream, int samples )
 		*(str++) = (int16_t)this->cRing::Get();
 	}
 }
+
+
+#else				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+/////////////////////////////////////////////////////////////////////////////
+// サウンド更新関数(Push)
+//
+// 引数:	なし
+// 返値:	なし
+/////////////////////////////////////////////////////////////////////////////
+void SND6::Update( void )
+{
+	PRINTD( SND_LOG, "[SND6][Update] " );
+	
+	// キューがいっぱいならスキップ
+	int ofsize = OverflowSamples();
+	if( ofsize > 0 ){
+		PRINTD( SND_LOG, "<Overflow> %d\n", ofsize );
+		return;
+	}
+	
+	int samples = this->cRing::ReadySize();
+	
+	PRINTD( SND_LOG, "Samples:%d\n", samples );
+	
+	std::vector<int16_t> stream;
+	stream.reserve( samples );
+	
+	for( int i = 0; i < samples; i++ ){
+		stream.push_back((int16_t)this->cRing::Get());
+	}
+	OSD_WriteAudioStream( reinterpret_cast<BYTE*>(stream.data()), stream.size() );
+}
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

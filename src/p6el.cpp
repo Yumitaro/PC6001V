@@ -231,6 +231,17 @@ void EL6::Wait( void )
 {
 	if( sche->GetWaitEnable() && (!cfg->GetValue( CB_TurboTAPE ) || (vm->cpus->GetCmtStatus() == SUB6::CMTCLOSE)) ){
 		sche->VWait();
+		
+		// 実行速度微調整　オーディオの再生速度と合わせる(等速実行時かつ再生バッファが溢れていた場合のみ)
+		int ofsize = snd->OverflowSamples();
+		if( sche->GetSpeedRatio() == 100 && ofsize > 0 ){
+			// キューのサンプル数がバッファサイズと同じになるまで待つ
+			// 調整幅は最大2フレーム分(暫定)
+			DWORD dtick = OSD_GetTicks() + min( (ofsize * 1000) / snd->GetSampleRate(), (DWORD)(1000.0 / FRAMERATE) * 2 );
+			while( OSD_GetTicks() < dtick ){
+				OSD_Delay( 0 );
+			}
+		}
 	}
 	vm->evsc->ReVSYNC();
 }
@@ -338,7 +349,11 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		sche->SetMasterClock( vm->evsc->GetMasterClock() );
 		
 		// サウンド -----
+		#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
+		#else				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		if( !snd->Init( this, nullptr, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
+		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			throw Error::GetError();
 		}
 		snd->SetVolume( cfg->GetValue( CV_MasterVol ) );
@@ -948,10 +963,16 @@ int EL6::SoundUpdate( int samples, cRing* exbuf )
 	vm->voice->SoundUpdate( size );
 	
 	// サウンドバッファ更新
-	return snd->PreUpdate( size, exbuf );
+	int ret = snd->PreUpdate( size, exbuf );
+	#ifdef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	// サウンド更新(Push)
+	snd->Update();
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	return ret;
 }
 
 
+#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 /////////////////////////////////////////////////////////////////////////////
 // ストリーム更新 コールバック関数
 //
@@ -966,10 +987,11 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 	
 	// サウンドバッファ更新
 	//  もしサンプル数が足りなければここで追加
-	//  ただしビデオキャプチャ中,ポーズ中,モニタモードの場合は無視
+	//  ただしビデオキャプチャ中,ポーズ中,リプレイ録再中,モニタモードの場合は無視
 	int addsam = len / sizeof(int16_t) - p6->snd->cRing::ReadySize();
 	
 	if( addsam > 0 && !p6->AVI6::IsAVI() && !p6->sche->GetPauseEnable()
+		&& (p6->REPLAY::GetStatus() == ST_IDLE)
 		#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		&& !p6->vm->IsMonitor()
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -978,6 +1000,7 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 	}
 	p6->snd->Update( stream, len / sizeof(int16_t) );
 }
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 /////////////////////////////////////////////////////////////////////////////

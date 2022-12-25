@@ -82,7 +82,9 @@ protected:
 	
 	bool ScreenUpdate();								// 画面更新
 	int SoundUpdate( int, cRing* = nullptr );			// サウンド更新
+	#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	static void StreamUpdate( void*, BYTE*, int );		// ストリーム更新 コールバック関数
+	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	static DWORD UpDateFPS( DWORD, void* );				// FPS表示タイマ コールバック関数
 	bool StartFPSTimer();								// FPS表示タイマ開始
 	void StopFPSTimer();								// FPS表示タイマ停止

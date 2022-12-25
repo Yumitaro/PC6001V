@@ -23,7 +23,7 @@
 // Constructor
 /////////////////////////////////////////////////////////////////////////////
 VCE6::VCE6( VM6* vm, const ID& id ) : Device( vm, id ),
-	FilePath( "" ), io_E0H( 0 ), io_E2H( 0 ), io_E3H( 0 ), VStat( D7752E_IDL ),
+	FilePath( DIR_WAVE ), io_E0H( 0 ), io_E2H( 0 ), io_E3H( 0 ), VStat( D7752E_IDL ),
 	Pnum( 0 ), Fnum( 0 ), PReady( false )
 {
 	INITARRAY( ParaBuf, 0 );
@@ -113,7 +113,7 @@ void VCE6::EventCallback( int id, int clock )
 			int num = min( IVBuf.size(), cD7752::GetFrameSize() * SndDev::SampleRate / 10000 );
 			PRINTD( VOI_LOG, "%d/%lld\n", num, IVBuf.size() );
 			while( num-- ){
-				SndDev::cRing::Put( ( IVBuf.front() * SndDev::Volume ) / 100 );
+				SndDev::cRing::Put( IVBuf.front() );
 				IVBuf.pop();
 			}
 			if( IVBuf.empty() ){	// 最後まで発生したら発声終了
@@ -277,8 +277,7 @@ void VCE6::UpConvert( void )
 			dat = Fbuf.front() * 4;	// * 4 は 16bit<-14bit のため
 			Fbuf.pop();
 		}
-//		SndDev::cRing::Put( ( dat * SndDev::Volume ) / 100 );
-		SndDev::cRing::Put( ( dat * SndDev::Volume * 2 ) / 100 );		// 出力レベルが低いのでとりあえず2倍
+		SndDev::cRing::Put( dat * 2 );		// 出力レベルが低いのでとりあえず2倍
 	}
 	
 	PRINTD( VOI_LOG, "\n" );
@@ -355,19 +354,6 @@ void VCE64::ReqIntr( void )
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 初期化
-/////////////////////////////////////////////////////////////////////////////
-bool VCE6::Init( int srate )
-{
-	PRINTD( VOI_LOG, "[VOICE][Init]\n" );
-	
-	SetPath( DIR_WAVE );
-	
-	return SndDev::Init( srate );
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // リセット
 /////////////////////////////////////////////////////////////////////////////
 void VCE6::Reset( void )
@@ -397,7 +383,7 @@ void VCE6::SetPath( const P6VPATH& path )
 /////////////////////////////////////////////////////////////////////////////
 int VCE6::SoundUpdate( int samples )
 {
-	int length = min( max( 0, samples - SndDev::cRing::ReadySize() ), SndDev::cRing::FreeSize() );
+	int length = max( 0, samples - SndDev::cRing::ReadySize() );
 	
 	PRINTD( VOI_LOG, "[VOICE][SoundUpdate] Samples: %d -> %d\n", samples, length );
 	

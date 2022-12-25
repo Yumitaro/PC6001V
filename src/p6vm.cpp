@@ -381,9 +381,7 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	}
 	
 	// CMT(LOAD) -----
-	if( !cmtl->Init( cnfg->GetValue( CV_SampleRate ) ) ){
-		return false;
-	}
+	cmtl->Unmount();
 	cmtl->SetVolume( cnfg->GetValue( CV_TapeVolume ) );	// 音量設定
 	cmtl->SetLPF( cnfg->GetValue( CV_TapeLPF ) );		// ローパスフィルタ カットオフ周波数設定
 	cmtl->SetBoost( cnfg->GetValue( CB_BoostUp ) );
@@ -403,9 +401,6 @@ bool VM6::Init( const std::shared_ptr<CFG6>& cnfg  )
 	
 	// 音声合成 -----
 	if( DevTable.Voice ){
-		if( !voice->Init( cnfg->GetValue( CV_SampleRate ) ) ){
-			return false;
-		}
 		voice->SetVolume( cnfg->GetValue( CV_VoiceVolume ) );	// 音量設定
 		voice->SetPath( cnfg->GetValue( CF_WavePath ) );
 	}
