@@ -106,7 +106,8 @@ void EL6::OnThread( void* inst )
 					// ウェイト
 					p6->Wait();
 				}else{
-					int st = p6->Emu();		// 1命令実行
+					// 1命令実行
+					int st = p6->Emu();
 					
 					// ブレークポイントチェック(バスリクエスト期間中はチェックしない)
 					if( st > 0 && ( p6->vm->bp->Check( BPoint::BP_PC,   p6->vm->cpum->GetPC() ) ||
@@ -173,21 +174,38 @@ void EL6::OnThread( void* inst )
 				// リプレイ再生中
 				if( REPLAY::GetStatus() == ST_REPLAYPLAY ){
 					REPLAY::ReplayReadFrame( p6->vm->key->GetMatrix0() );
+					#ifdef REPLAYDEBUG_FRAME
+					// 設定ファイルと同じフォルダにreplayフォルダを予め作成しておくこと
+					P6VPATH fullPath = Stringf( "replay/%06ld.dds", REPLAY::RepFrm - 1 );
+					OSD_AddPath(fullPath, OSD_GetConfigPath(), fullPath);
+					DokoDemoSave(fullPath);
+					#endif
 					// リプレイ終了時にビデオキャプチャ中だったらキャプチャを停止する
 					if( REPLAY::GetStatus() == ST_IDLE && AVI6::IsAVI() ){
 						UI_AVISaveStop();
 					}
 				}
 				
+				#ifdef REPLAYDEBUG_FRAME
+				// リプレイ記録中
+				if( REPLAY::GetStatus() == ST_REPLAYREC ){
+					// 設定ファイルと同じフォルダにrecordフォルダを予め作成しておくこと
+					P6VPATH fullPath = Stringf( "record/%06ld.dds", REPLAY::RepFrm );
+					OSD_AddPath(fullPath, OSD_GetConfigPath(), fullPath);
+					DokoDemoSave(fullPath);
+				}
+				#endif
+				
 				// キーマトリクススキャン
 				p6->vm->key->ScanMatrix();
 				
 				// リプレイ記録中
 				if( REPLAY::GetStatus() == ST_REPLAYREC ){
-					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix1() );
+					REPLAY::ReplayWriteFrame( p6->vm->key->GetMatrix1() );	// マトリクス固定後に取得
 				}
 				
-				p6->EmuVSYNC();			// 1画面分実行
+				// 1画面分実行
+				p6->EmuVSYNC();
 				
 				// ビデオキャプチャ中?
 				if( AVI6::IsAVI() ){
@@ -1385,8 +1403,7 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 			!vm->disk->DokoSave( &ini ) ||
 			!vm->voice->DokoSave( &ini )
 		) throw Error::GetError();
-
-#if 0
+		
 		ini.SetVal( "KEY", "AK_Wait",		"", ak.Wait    );
 		ini.SetVal( "KEY", "AK_Relay",		"", ak.Relay   );
 		ini.SetVal( "KEY", "AK_RelayOn",	"", ak.RelayOn );
@@ -1404,8 +1421,7 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 		if( !ak.Buffer.empty() ){
 			ini.SetEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", strva.c_str() );
 		}
-#endif
-
+		
 		ini.Write();
 	}
 	catch( Error::Errno i ){	// 例外発生
@@ -1460,8 +1476,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 			!vm->disk->DokoLoad( &ini ) ||
 			!vm->voice->DokoLoad( &ini )
 		) throw Error::GetError();
-
-#if 0
+		
 		ini.GetVal( "KEY", "AK_Wait",		ak.Wait    );
 		ini.GetVal( "KEY", "AK_Relay",		ak.Relay   );
 		ini.GetVal( "KEY", "AK_RelayOn",	ak.RelayOn );
@@ -1477,8 +1492,7 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 				strva.erase( strva.begin() );
 			}
 		}
-#endif
-
+		
 		// ディスクドライブ数によってステータスバーサイズ変更
 		if( !staw->Init( -1, vm->disk->GetDrives() ) ){
 			throw Error::GetError();

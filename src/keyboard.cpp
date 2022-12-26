@@ -1193,7 +1193,7 @@ void KEY6::PushMod( void )
 		iakey.P6Key = KP6_RELEASED;
 		iakey.mod   = (P6Matrix0.at( 0 ) & 0x02) ? KVM_NONE : KVM_LSHIFT |	// SHIFT
 					  (P6Matrix0.at( 0 ) & 0x04) ? KVM_NONE : KVM_LALT   |	// GRAPH
-					  (P6Matrix0.at( 0 ) & 0x08) ? KVM_NONE : KVM_LCTRL;		// CTRL
+					  (P6Matrix0.at( 0 ) & 0x08) ? KVM_NONE : KVM_LCTRL;	// CTRL
 	}
 	catch( std::out_of_range& ){}
 	

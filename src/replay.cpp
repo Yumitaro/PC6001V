@@ -150,12 +150,25 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt )
 		return false;
 	}
 	
-	// マトリクスを書出し
-	for( auto &i : mt ){
-		strva += Stringf( "%02X", i );
+	// キーマトリクスの変化を確認
+	int sz = (int)mt.size() / 2;
+	int i;
+	for( i = 0; i < sz; i++ ) try{
+		if( mt.at( i ) != mt.at( i + sz ) ){
+			break;
+		}
 	}
-	cIni::SetEntry( "REPLAY", Stringf( "%08lX ", RepFrm++ ), "", strva.c_str() );
+	catch( std::out_of_range& ){}
 	
+	// 最初のフレームもしくはキーマトリクスに変化があれば書出し
+	if( RepFrm == 0 || i < sz ){
+		for( auto &m : mt ){
+			strva += Stringf( "%02X", m );
+		}
+		cIni::SetEntry( "REPLAY", Stringf( "%08ld", RepFrm ), "", strva.c_str() );
+	}
+	
+	RepFrm++;
 	return true;
 }
 
@@ -230,16 +243,18 @@ bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 		return false;
 	}
 	
-	if( cIni::GetEntry( "REPLAY", Stringf( "%08lX", RepFrm ), strva ) ){
+	if( cIni::GetEntry( "REPLAY", Stringf( "%08ld", RepFrm++ ), strva ) ){
 		strva.resize( mt.size() * 2, 'F' );
 		int i = 0;
-		for( auto &m : mt )
+		for( auto &m : mt ){
 			m = std::stoul( strva.substr( i++ * 2, 2 ), nullptr, 16 );
+		}
 	}
 	
-	if( ++RepFrm >= EndFrm )
+	if( RepFrm >= EndFrm ){
 		// データ終端に達したらリプレイ終了
 		StopReplay();
+	}
 	
 	return true;
 }

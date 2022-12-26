@@ -68,7 +68,7 @@ public:
 	void UpdateMatrixKeyChr( const WORD );				// キーマトリクス更新(キー,文字コード)自動キー入力用
 	void UpdateMatrixJoy( const BYTE, const BYTE );		// キーマトリクス更新(ジョイスティック)
 	void ScanMatrix();									// キーマトリクススキャン
-	std::vector<BYTE>& GetMatrix0();						// キーマトリクス取得
+	std::vector<BYTE>& GetMatrix0();					// キーマトリクス取得
 	const std::vector<BYTE>& GetMatrix1() const;		// キーマトリクス(保存用)取得
 	
 	BYTE GetKeyJoy() const;								// カーソルキー状態取得
