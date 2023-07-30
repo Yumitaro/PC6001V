@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // Based on SLibrary.
 /////////////////////////////////////////////////////////////////////////////
@@ -20,8 +20,8 @@
 /////////////////////////////////////////////////////////////////////////////
 cMutex::cMutex( void )
 {
-	mcs = (HCRSECT) new CRITICAL_SECTION;
-	InitializeCriticalSection( (LPCRITICAL_SECTION)mcs );
+	mtx = (HCRSECT) new CRITICAL_SECTION;
+	InitializeCriticalSection( (LPCRITICAL_SECTION)mtx );
 }
 
 
@@ -30,7 +30,9 @@ cMutex::cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cMutex::~cMutex( void )
 {
-	if( mcs ) DeleteCriticalSection( (LPCRITICAL_SECTION)mcs );
+	if( mtx ){
+		DeleteCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -39,7 +41,9 @@ cMutex::~cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::lock( void )
 {
-	if( mcs ) EnterCriticalSection( (LPCRITICAL_SECTION)mcs );
+	if( mtx ){
+		EnterCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -48,7 +52,9 @@ void cMutex::lock( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::unlock( void )
 {
-	if( mcs ) LeaveCriticalSection( (LPCRITICAL_SECTION)mcs );
+	if( mtx ){
+		LeaveCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -72,7 +78,9 @@ cSemaphore::cSemaphore( void ) : count( 0 )
 /////////////////////////////////////////////////////////////////////////////
 cSemaphore::~cSemaphore( void )
 {
-	if( sem ) CloseHandle( (HANDLE)sem );
+	if( sem ){
+		CloseHandle( (HANDLE)sem );
+	}
 }
 
 

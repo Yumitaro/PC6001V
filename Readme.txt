@@ -3,7 +3,7 @@
                           -- Ver.2.0.4 --
                  === NEC PC-6000 Series Emulator ===
 
-                  Copyright (C) 1999,2022 Yumitaro
+                    Copyright 1999,2023 Yumitaro
 ______________________________________________________________________
 *** WARNING ***
    BIOS ROM software of PC-6000 series are copyrighted by NEC

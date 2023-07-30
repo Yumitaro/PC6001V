@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include <algorithm>
 #include <cctype>
@@ -257,7 +257,7 @@ void EL6::Wait( void )
 			// 調整幅は最大2フレーム分(暫定)
 			DWORD dtick = OSD_GetTicks() + min( (ofsize * 1000) / snd->GetSampleRate(), (DWORD)(1000.0 / FRAMERATE) * 2 );
 			while( OSD_GetTicks() < dtick ){
-				OSD_Delay( 0 );
+				cThread::yield();
 			}
 		}
 	}

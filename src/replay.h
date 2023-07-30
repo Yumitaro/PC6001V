@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #ifndef REPLAY_H_INCLUDED
 #define REPLAY_H_INCLUDED
@@ -9,6 +9,7 @@
 
 #include "typedef.h"
 #include "ini.h"
+#include "semaphore.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -19,6 +20,7 @@ protected:
 	DWORD RepST;				// ステータス
 	DWORD RepFrm;				// フレームNo.カウンタ
 	DWORD EndFrm;				// リプレイ終了フレーム
+	mutable cRecursiveMutex Mutex;
 	
 public:
 	REPLAY();
@@ -36,7 +38,6 @@ public:
 	bool StartReplay( const P6VPATH& );							// リプレイ再生開始
 	void StopReplay();											// リプレイ再生止
 	bool ReplayReadFrame( std::vector<BYTE>& );					// リプレイ1フレーム読込み
-	
 };
 
 

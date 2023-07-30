@@ -1,11 +1,14 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include "log.h"
 #include "replay.h"
 #include "common.h"
 #include "error.h"
+
+
+#define	FMT_FRAMENO	"%08ld"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -21,6 +24,8 @@ REPLAY::REPLAY( void ) : RepST(ST_IDLE), RepFrm(0), EndFrm(0)
 /////////////////////////////////////////////////////////////////////////////
 REPLAY::~REPLAY( void )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	switch( RepST ){
 	case ST_REPLAYREC:	StopRecord(); break;
 	case ST_REPLAYPLAY:	StopReplay(); break;
@@ -36,6 +41,8 @@ REPLAY::~REPLAY( void )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::Init( void )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	PRINTD( GRP_LOG, "[REPLAY][Init]\n" );
 	
 	cIni::Init();
@@ -56,6 +63,8 @@ bool REPLAY::Init( void )
 /////////////////////////////////////////////////////////////////////////////
 DWORD REPLAY::GetStatus( void ) const
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	return RepST;
 }
 
@@ -68,6 +77,8 @@ DWORD REPLAY::GetStatus( void ) const
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::StartRecord( const P6VPATH& filepath )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
@@ -104,13 +115,14 @@ bool REPLAY::StartRecord( const P6VPATH& filepath )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::ResumeRecord( const P6VPATH& filepath, DWORD frame )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	if( !StartRecord( filepath ) ){
 		return false;
 	}
 	
 	// 指定されたフレーム以降のリプレイを削除し、そこから再開
-	cIni::DeleteAfter( "REPLAY", Stringf( "%08lX", frame ) );
-	
+	cIni::DeleteAfter( "REPLAY", Stringf( FMT_FRAMENO, frame ) );
 	RepFrm = frame;
 	return true;
 }
@@ -124,6 +136,8 @@ bool REPLAY::ResumeRecord( const P6VPATH& filepath, DWORD frame )
 /////////////////////////////////////////////////////////////////////////////
 void REPLAY::StopRecord( void )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	if( RepST != ST_REPLAYREC ){
 		return;
 	}
@@ -144,31 +158,20 @@ void REPLAY::StopRecord( void )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	std::string strva;
 	
 	if( RepST != ST_REPLAYREC ){
 		return false;
 	}
 	
-	// キーマトリクスの変化を確認
-	int sz = (int)mt.size() / 2;
-	int i;
-	for( i = 0; i < sz; i++ ) try{
-		if( mt.at( i ) != mt.at( i + sz ) ){
-			break;
-		}
+	// マトリクスを書出し
+	for( auto &m : mt ){
+		strva += Stringf( "%02X", m );
 	}
-	catch( std::out_of_range& ){}
+	cIni::SetEntry( "REPLAY", Stringf( FMT_FRAMENO, RepFrm++ ), "", strva.c_str() );
 	
-	// 最初のフレームもしくはキーマトリクスに変化があれば書出し
-	if( RepFrm == 0 || i < sz ){
-		for( auto &m : mt ){
-			strva += Stringf( "%02X", m );
-		}
-		cIni::SetEntry( "REPLAY", Stringf( "%08ld", RepFrm ), "", strva.c_str() );
-	}
-	
-	RepFrm++;
 	return true;
 }
 
@@ -181,6 +184,8 @@ bool REPLAY::ReplayWriteFrame( const std::vector<BYTE>& mt )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::StartReplay( const P6VPATH& filepath )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	// とりあえずエラー設定
 	Error::SetError( Error::ReplayPlayError );
 	try{
@@ -219,6 +224,8 @@ bool REPLAY::StartReplay( const P6VPATH& filepath )
 /////////////////////////////////////////////////////////////////////////////
 void REPLAY::StopReplay( void )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	if( RepST != ST_REPLAYPLAY ){
 		return;
 	}
@@ -237,13 +244,15 @@ void REPLAY::StopReplay( void )
 /////////////////////////////////////////////////////////////////////////////
 bool REPLAY::ReplayReadFrame( std::vector<BYTE>& mt )
 {
+	std::lock_guard<cRecursiveMutex> lock( Mutex );
+	
 	std::string strva;
 	
 	if( RepST != ST_REPLAYPLAY ){
 		return false;
 	}
 	
-	if( cIni::GetEntry( "REPLAY", Stringf( "%08ld", RepFrm++ ), strva ) ){
+	if( cIni::GetEntry( "REPLAY", Stringf( FMT_FRAMENO, RepFrm++ ), strva ) ){
 		strva.resize( mt.size() * 2, 'F' );
 		int i = 0;
 		for( auto &m : mt ){

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // Based on SLibrary.
 /////////////////////////////////////////////////////////////////////////////
@@ -12,6 +12,7 @@
 #define THREAD_H_INCLUDED
 
 #include "semaphore.h"
+
 
 
 class cThread {
@@ -35,6 +36,8 @@ public:
 	
 	void Cancel();							// スレッド終了要求
 	bool IsCancel();						// スレッド終了要求された？
+	
+	void yield();							// スレッドを明け渡す
 };
 
 #endif // THREAD_H_INCLUDED

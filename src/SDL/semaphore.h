@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////
 //  P C 6 0 0 1 V
-//  Copyright 1999,2022 Yumitaro
+//  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 // Based on SLibrary.
 /////////////////////////////////////////////////////////////////////////////
@@ -20,11 +20,25 @@
 // Mutex クラス
 class cMutex {
 private:
-	HCRSECT mcs;
+	HCRSECT mtx;
 	
 public:
 	cMutex();
 	~cMutex();
+	
+	void lock();		// Lock
+	void unlock();		// Unlock
+};
+
+
+// RecursiveMutex クラス
+class cRecursiveMutex {
+private:
+	HCRSECT mtx;
+	
+public:
+	cRecursiveMutex();
+	~cRecursiveMutex();
 	
 	void lock();		// Lock
 	void unlock();		// Unlock
