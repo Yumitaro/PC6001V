@@ -8,9 +8,7 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 /////////////////////////////////////////////////////////////////////////////
-#include <SDL.h>
-
-#include "semaphore.h"
+#include "csemaphore.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -22,7 +20,6 @@
 /////////////////////////////////////////////////////////////////////////////
 cMutex::cMutex( void )
 {
-	mtx = (HCRSECT)SDL_CreateMutex();
 }
 
 
@@ -31,7 +28,7 @@ cMutex::cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cMutex::~cMutex( void )
 {
-	SDL_DestroyMutex( (SDL_mutex*)mtx );
+	mtx.unlock();
 }
 
 
@@ -40,9 +37,7 @@ cMutex::~cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::lock( void )
 {
-	if( mtx ){
-		SDL_LockMutex( (SDL_mutex*)mtx );
-	}
+	mtx.lock();
 }
 
 
@@ -51,11 +46,8 @@ void cMutex::lock( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::unlock( void )
 {
-	if( mtx ){
-		SDL_UnlockMutex( (SDL_mutex*)mtx );
-	}
+	mtx.unlock();
 }
-
 
 
 
@@ -68,7 +60,6 @@ void cMutex::unlock( void )
 /////////////////////////////////////////////////////////////////////////////
 cRecursiveMutex::cRecursiveMutex( void )
 {
-	mtx = (HCRSECT)SDL_CreateMutex();
 }
 
 
@@ -77,7 +68,7 @@ cRecursiveMutex::cRecursiveMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cRecursiveMutex::~cRecursiveMutex( void )
 {
-	SDL_DestroyMutex( (SDL_mutex*)mtx );
+	mtx.unlock();
 }
 
 
@@ -86,9 +77,7 @@ cRecursiveMutex::~cRecursiveMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 void cRecursiveMutex::lock( void )
 {
-	if( mtx ){
-		SDL_LockMutex( (SDL_mutex*)mtx );
-	}
+	mtx.lock();
 }
 
 
@@ -97,9 +86,7 @@ void cRecursiveMutex::lock( void )
 /////////////////////////////////////////////////////////////////////////////
 void cRecursiveMutex::unlock( void )
 {
-	if( mtx ){
-		SDL_UnlockMutex( (SDL_mutex*)mtx );
-	}
+	mtx.unlock();
 }
 
 
@@ -112,9 +99,8 @@ void cRecursiveMutex::unlock( void )
 /////////////////////////////////////////////////////////////////////////////
 // Constructor
 /////////////////////////////////////////////////////////////////////////////
-cSemaphore::cSemaphore( void )
+cSemaphore::cSemaphore( void ) : count( 0 )
 {
-	sem = (HSEMAPHORE)SDL_CreateSemaphore( 0 );
 }
 
 
@@ -123,9 +109,11 @@ cSemaphore::cSemaphore( void )
 /////////////////////////////////////////////////////////////////////////////
 cSemaphore::~cSemaphore( void )
 {
-	if( sem ){
-		SDL_DestroySemaphore( (SDL_sem*)sem );
+	{
+		std::unique_lock<std::mutex> lock( mtx );
+		count = 1;
 	}
+	cv.notify_all();
 }
 
 
@@ -133,11 +121,15 @@ cSemaphore::~cSemaphore( void )
 // セマフォ加算
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-int cSemaphore::Post( void )
+void cSemaphore::Post( void )
 {
-	return SDL_SemPost( (SDL_sem*)sem );
+	{
+		std::unique_lock<std::mutex> lock( mtx );
+		count++;
+	}
+	cv.notify_one();
 }
 
 
@@ -145,9 +137,12 @@ int cSemaphore::Post( void )
 // セマフォ待つ
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-int cSemaphore::Wait( void )
+void cSemaphore::Wait( void )
 {
-	return SDL_SemWait( (SDL_sem*)sem );
+	std::unique_lock<std::mutex> lock( mtx );
+	
+	cv.wait( lock, [&]{ return count > 0; } );
+	count = 0;
 }

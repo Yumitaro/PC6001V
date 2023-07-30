@@ -24,7 +24,7 @@ OBJC	= breakpoint common config console cpum cpus d88 debug device disk error gr
 OBJDEV	= ay8910 mc6847 pd7752 pd8255 ym2203 z80 z80-dbg fmgen/fmgen fmgen/psg fmgen/opna fmgen/fmtimer
 OBJSDL	= osdSDL
 OBJOSD	= guiWin32 osdWin32
-OBJTRD	= semaphore thread
+OBJTRD	= csemaphore cthread
 OBJFSY	= filesystem
 OBJRES	= p6v
 

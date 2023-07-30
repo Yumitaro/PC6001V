@@ -9,7 +9,7 @@
 
 #include "typedef.h"
 #include "ini.h"
-#include "semaphore.h"
+#include "csemaphore.h"
 
 
 /////////////////////////////////////////////////////////////////////////////

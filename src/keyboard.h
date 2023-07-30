@@ -15,7 +15,7 @@
 #include "ini.h"
 #include "keydef.h"
 #include "romaji.h"
-#include "semaphore.h"
+#include "csemaphore.h"
 
 
 // キーボードインジケータ状態

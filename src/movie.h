@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "osd.h"
-#include "thread.h"
+#include "cthread.h"
 #include "sound.h"
 #include "vsurface.h"
 

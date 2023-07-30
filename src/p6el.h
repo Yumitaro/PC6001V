@@ -11,7 +11,7 @@
 #include "typedef.h"
 #include "movie.h"
 #include "replay.h"
-#include "thread.h"
+#include "cthread.h"
 #include "vdg.h"
 #include "vsurface.h"
 

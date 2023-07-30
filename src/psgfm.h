@@ -10,7 +10,7 @@
 #include "typedef.h"
 #include "device.h"
 #include "ini.h"
-#include "semaphore.h"
+#include "csemaphore.h"
 #include "sound.h"
 #include "device/ay8910.h"
 #include "device/ym2203.h"

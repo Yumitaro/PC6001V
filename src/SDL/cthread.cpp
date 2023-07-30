@@ -9,10 +9,10 @@
 // Official HP URL. http://ast.qt-space.com/
 /////////////////////////////////////////////////////////////////////////////
 #include <mutex>
-#include <windows.h>
-#include <process.h>
+#include <thread>
+#include <SDL.h>
 
-#include "thread.h"
+#include "cthread.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -28,10 +28,7 @@ cThread::cThread( void ) : m_bCancel( true ), m_hThread( nullptr ), m_BeginThead
 /////////////////////////////////////////////////////////////////////////////
 cThread::~cThread( void )
 {
-	bool bWaiting = this->Waiting();
-	if( bWaiting == false ){
-		::TerminateThread( (HANDLE)this->m_hThread, 0 );
-	}
+	this->Waiting();
 }
 
 
@@ -43,21 +40,17 @@ cThread::~cThread( void )
 /////////////////////////////////////////////////////////////////////////////
 bool cThread::BeginThread ( void* lpVoid )
 {
-	bool bSuccess = false;
+	if( this->m_hThread != nullptr ) return false;
 	
-	if( this->m_hThread == nullptr ){
-		this->m_BeginTheadParam = lpVoid;
-		this->m_bCancel			= false;
-		
-		HTHREAD hThread = (HTHREAD)::_beginthread( ThreadProc, 0, reinterpret_cast<void*>(this) );
-		if( hThread != (HTHREAD)(unsigned int)-1 ){
-			this->m_hThread = hThread;
-			::SetThreadPriority( hThread, THREAD_PRIORITY_NORMAL );
-			bSuccess = true;
-		}
-	}
+	this->m_BeginTheadParam = lpVoid;
+	this->m_bCancel			= false;
 	
-	return bSuccess;
+	HTHREAD hThread = (HTHREAD)SDL_CreateThread( (SDL_ThreadFunction)ThreadProc, nullptr, (void*)this );
+	if( !hThread ) return false;
+	
+	this->m_hThread = hThread;
+	
+	return true;
 }
 
 
@@ -69,19 +62,16 @@ bool cThread::BeginThread ( void* lpVoid )
 /////////////////////////////////////////////////////////////////////////////
 bool cThread::Waiting( void )
 {
-	bool bSuccess = false;
+	if( this->m_hThread == nullptr ) return true;
 	
-	if( this->m_hThread != nullptr ){
-		DWORD dwRet = WaitForSingleObject( (HANDLE)this->m_hThread, INFINITE );
-		if( dwRet == WAIT_OBJECT_0 ){
-			this->m_hThread = nullptr;
-			bSuccess = true;
-		}
-	}else{
-		bSuccess = true;
+	int status = 0;
+	SDL_WaitThread( (SDL_Thread*)this->m_hThread, &status );
+	if( !status ){
+		this->m_hThread = nullptr;
+		return true;
 	}
 	
-	return bSuccess;
+	return false;
 }
 
 
@@ -113,14 +103,15 @@ bool cThread::IsCancel( void )
 /////////////////////////////////////////////////////////////////////////////
 // デフォルトスレッド関数
 /////////////////////////////////////////////////////////////////////////////
-void cThread::ThreadProc( void* lpVoid )
+int cThread::ThreadProc( void* lpVoid )
 {
 	static thread_local cThread* lpThis;
 	
 	if( !lpThis ) lpThis = STATIC_CAST( cThread*, lpVoid );	// 自分自身のオブジェクトポインタ取得
 	lpThis->OnThread( lpThis->m_BeginTheadParam );			// virtual Procedure 
 	lpThis->m_hThread = nullptr;
-	::_endthread();
+	
+	return 0;
 }
 
 
@@ -132,5 +123,6 @@ void cThread::ThreadProc( void* lpVoid )
 /////////////////////////////////////////////////////////////////////////////
 void cThread::yield( void )
 {
-	Sleep( 0 );
+	// SDLにはyieldに相当するAPIがない
+	std::this_thread::yield();
 }

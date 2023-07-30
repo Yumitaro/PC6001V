@@ -8,7 +8,7 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 /////////////////////////////////////////////////////////////////////////////
-#include "semaphore.h"
+#include "csemaphore.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -20,6 +20,8 @@
 /////////////////////////////////////////////////////////////////////////////
 cMutex::cMutex( void )
 {
+	mtx = (HCRSECT) new CRITICAL_SECTION;
+	InitializeCriticalSection( (LPCRITICAL_SECTION)mtx );
 }
 
 
@@ -28,7 +30,9 @@ cMutex::cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cMutex::~cMutex( void )
 {
-	mtx.unlock();
+	if( mtx ){
+		DeleteCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -37,7 +41,9 @@ cMutex::~cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::lock( void )
 {
-	mtx.lock();
+	if( mtx ){
+		EnterCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -46,47 +52,9 @@ void cMutex::lock( void )
 /////////////////////////////////////////////////////////////////////////////
 void cMutex::unlock( void )
 {
-	mtx.unlock();
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// RecursiveMutex クラス
-/////////////////////////////////////////////////////////////////////////////
-
-/////////////////////////////////////////////////////////////////////////////
-// Constructor
-/////////////////////////////////////////////////////////////////////////////
-cRecursiveMutex::cRecursiveMutex( void )
-{
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Destructor
-/////////////////////////////////////////////////////////////////////////////
-cRecursiveMutex::~cRecursiveMutex( void )
-{
-	mtx.unlock();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Lock
-/////////////////////////////////////////////////////////////////////////////
-void cRecursiveMutex::lock( void )
-{
-	mtx.lock();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Unlock
-/////////////////////////////////////////////////////////////////////////////
-void cRecursiveMutex::unlock( void )
-{
-	mtx.unlock();
+	if( mtx ){
+		LeaveCriticalSection( (LPCRITICAL_SECTION)mtx );
+	}
 }
 
 
@@ -101,6 +69,7 @@ void cRecursiveMutex::unlock( void )
 /////////////////////////////////////////////////////////////////////////////
 cSemaphore::cSemaphore( void ) : count( 0 )
 {
+	sem = (HSEMAPHORE)CreateSemaphore( nullptr, 0, 32 * 1024, nullptr );
 }
 
 
@@ -109,11 +78,9 @@ cSemaphore::cSemaphore( void ) : count( 0 )
 /////////////////////////////////////////////////////////////////////////////
 cSemaphore::~cSemaphore( void )
 {
-	{
-		std::unique_lock<std::mutex> lock( mtx );
-		count = 1;
+	if( sem ){
+		CloseHandle( (HANDLE)sem );
 	}
-	cv.notify_all();
 }
 
 
@@ -121,15 +88,16 @@ cSemaphore::~cSemaphore( void )
 // セマフォ加算
 //
 // 引数:	なし
-// 返値:	なし
+// 返値:	0:成功 -1:失敗
 /////////////////////////////////////////////////////////////////////////////
-void cSemaphore::Post( void )
+int cSemaphore::Post( void )
 {
-	{
-		std::unique_lock<std::mutex> lock( mtx );
-		count++;
+	InterlockedIncrement( &count );
+	if( !ReleaseSemaphore( (HANDLE)sem, 1, nullptr ) ){
+		InterlockedDecrement( &count );
+		return -1;
 	}
-	cv.notify_one();
+	return 0;
 }
 
 
@@ -137,12 +105,22 @@ void cSemaphore::Post( void )
 // セマフォ待つ
 //
 // 引数:	なし
-// 返値:	なし
+// 返値:	0:成功 -1:失敗
 /////////////////////////////////////////////////////////////////////////////
-void cSemaphore::Wait( void )
+int cSemaphore::Wait( void )
 {
-	std::unique_lock<std::mutex> lock( mtx );
+	int ret = -1;
 	
-	cv.wait( lock, [&]{ return count > 0; } );
-	count = 0;
+	switch( WaitForSingleObject( (HANDLE)sem, INFINITE ) ){
+    case WAIT_OBJECT_0:
+		InterlockedDecrement( &count );
+		ret = 0;
+		break;
+		
+    case WAIT_TIMEOUT:
+		ret = 1;
+		break;
+	}
+	
+	return ret;
 }

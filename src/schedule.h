@@ -11,8 +11,8 @@
 #include "typedef.h"
 #include "device.h"
 #include "ini.h"
-#include "semaphore.h"
-#include "thread.h"
+#include "csemaphore.h"
+#include "cthread.h"
 
 
 // イベントスタイルフラグ
