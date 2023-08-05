@@ -19,10 +19,11 @@
 #define ID_CB13			2213
 #define ID_CB14			2214
 #define ID_CB15			2215
-#define ID_CBAVISLINE	2216
-#define ID_AVINTSC		2217
-#define ID_AVIFILT		2218
-#define ID_CKDOKOLOAD	2219
+#define ID_CB16			2216
+#define ID_CBAVISLINE	2217
+#define ID_AVINTSC		2218
+#define ID_AVIFILT		2219
+#define ID_CKDOKOLOAD	2220
 
 #define ID_TBPSG		2301
 #define ID_TBTAPE		2302
@@ -68,6 +69,7 @@
 #define ID_AVIZOOM		2514
 #define ID_FDDRV		2515
 #define ID_AVISLNBR		2516
+#define ID_ROMAWAIT		2517
 
 #define ID_FEXROM		2601
 #define ID_FTPLD		2602
@@ -153,6 +155,7 @@
 #define ID_SPPSGLPF		2908
 #define ID_SPFDDRV		2909
 #define ID_SPAVISLNBR	2910
+#define ID_SPROMAWAIT	2911
 
 #define ID_CNFG1		3001
 #define ID_CNFG2		3002

@@ -1152,7 +1152,8 @@ WORD EL6::GetAutoKey( void )
 		[[fallthrough]];
 		
 	default:	// 一般の文字
-		ak.Wait = 1;	// 待ち1回
+		// ローマ字入力の時は待ち増やす
+		ak.Wait = 1 + (vm->key->GetKeyIndicator() & KI_ROMAJI) ? cfg->GetValue( CV_RomajiWait ) : 0;
 	}
 	return dat;
 }
@@ -2558,6 +2559,9 @@ void EL6::UI_Config( void )
 		vm->cmtl->SetMaxBoost( cfg->GetValue( CV_MaxBoost60 ), cfg->GetValue( CV_MaxBoost62 ) );	// BoostUp 最大倍率
 		vm->disk->WaitEnable( cfg->GetValue( CB_FDDWait ) );		// FDアクセスウェイト有効フラグ
 		vm->cmtl->SetStopBit( cfg->GetValue( CV_StopBit ) );		// ストップビット数
+		if( cfg->GetValue( CB_Romaji ) != (vm->key->GetKeyIndicator() & KI_ROMAJI ? true : false) ){	// ローマ字入力
+			vm->key->ChangeRomaji();
+		}
 		
 		// [DISPLAY] ---------------------------------------------------
 		vm->vdg->SetMode4Color( cfg->GetValue( CV_Mode4Color ) );	// モード4カラーモード
@@ -2689,6 +2693,8 @@ void EL6::ExecMenu( int id )
 	case ID_FSKP3:																	// フレームスキップ 3
 	case ID_FSKP4:																	// フレームスキップ 4
 	case ID_FSKP5:			UI_FrameSkip( id - ID_FSKP0 );					break;	// フレームスキップ 5
+	
+	case ID_ROMAJI:			UI_Romaji();									break;	// ローマ字入力切替
 	
 	case ID_SPR44:																	// サンプリングレート 44100Hz
 	case ID_SPR22:																	// サンプリングレート 22050Hz

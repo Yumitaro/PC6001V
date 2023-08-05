@@ -50,6 +50,7 @@ public:
 	
 	bool GetEntry( const std::string&, const std::string&, std::string& );									// エントリ読込み(文字列)
 	bool SetEntry( const std::string&, const std::string&, const std::string&, const std::string&, ... );	// エントリ書込み(文字列)
+	bool SetEntryWithoutFormat( const std::string&, const std::string&, const std::string&, const std::string& );	// エントリ書込み(文字列)
 	
 	// エントリ読込み
 	template <typename T> bool GetVal( const std::string& section, const std::string& entry, T& val )

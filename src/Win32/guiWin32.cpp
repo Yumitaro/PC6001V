@@ -255,6 +255,7 @@ void EL6::ShowPopupMenu( int x, int y )
 	CheckMenuItem( hsm, ID_DISP43,    cfg->GetValue( CB_DispNTSC )   ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_SCANLINE,  cfg->GetValue( CB_ScanLine )   ? MF_CHECKED   : MF_UNCHECKED );
 	CheckMenuItem( hsm, ID_FILTERING, cfg->GetValue( CB_Filtering )  ? MF_CHECKED   : MF_UNCHECKED );
+	CheckMenuItem( hsm, ID_ROMAJI,    cfg->GetValue( CB_Romaji )     ? MF_CHECKED   : MF_UNCHECKED );
 	
 	// モニタモード
 	#ifndef NOMONITOR	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1027,6 +1028,12 @@ static bool OsdReadINI( HWND hwnd, int page )
 		// FDDウェイト
 		SetCheckBox( hwnd, ID_CB14, CB_FDDWait );
 		
+		// ローマ字入力
+		SetCheckBox( hwnd, ID_CB16, CB_Romaji );
+		
+		// ローマ字入力ウェイト
+		SetSpinControl( hwnd, ID_SPROMAWAIT, ID_ROMAWAIT, CV_RomajiWait );
+		
 		// Turbo TAPE
 		SetCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
 		
@@ -1215,6 +1222,12 @@ static bool OsdWriteINI( HWND hwnd, int page )
 		
 		// FDDウェイト
 		SaveCheckBox( hwnd, ID_CB14, CB_FDDWait );
+		
+		// ローマ字入力
+		SaveCheckBox( hwnd, ID_CB16, CB_Romaji );
+		
+		// ローマ字入力ウェイト
+		SaveSpinControl( hwnd, ID_ROMAWAIT, CV_RomajiWait );
 		
 		// Turbo TAPE
 		SaveCheckBox( hwnd, ID_CB3, CB_TurboTAPE );
