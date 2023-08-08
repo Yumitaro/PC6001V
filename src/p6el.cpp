@@ -584,7 +584,7 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 				// ローマ字入力
 				int ret = vm->key->RomajiConvert( event.key.sym );
 				if( ret == HENKAN_SUCCESS ){		// 変換できたら自動キー入力セット
-					SetAutoKey( vm->key->RomajiGetResult(), 0 );
+					SetAutoKey( vm->key->RomajiGetResult(), 0, cfg->GetValue( CV_RomajiWait ) );
 					break;
 				}else if( ret == HENKAN_DOING ){	// 入力途中ならイベント無視
 					break;
@@ -1152,8 +1152,7 @@ WORD EL6::GetAutoKey( void )
 		[[fallthrough]];
 		
 	default:	// 一般の文字
-		// ローマ字入力の時は待ち増やす
-		ak.Wait = 1 + (vm->key->GetKeyIndicator() & KI_ROMAJI) ? cfg->GetValue( CV_RomajiWait ) : 0;
+		ak.Wait = 1 + ak.ExWait;
 	}
 	return dat;
 }
@@ -1164,18 +1163,20 @@ WORD EL6::GetAutoKey( void )
 //
 // 引数:	str		文字列への参照
 //			wait	初回ウェイト
+//			exwait	追加ウェイト
 // 返値:	bool	true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
-bool EL6::SetAutoKey( const std::string& str, int wait )
+bool EL6::SetAutoKey( const std::string& str, int wait, int exwait )
 {
 	ak.Buffer.clear();
 	
 	ak.Buffer  = str;
-	ak.Wait    = wait;	// 待ち回数カウンタ(初回は60=1sec)
-	ak.Relay   = false;	// リレースイッチOFF待ちフラグ
-	ak.RelayOn = false;	// リレースイッチON待ちフラグ
+	ak.Wait    = wait;		// 待ち回数カウンタ
+	ak.ExWait  = exwait;	// 追加待ち回数
+	ak.Relay   = false;		// リレースイッチOFF待ちフラグ
+	ak.RelayOn = false;		// リレースイッチON待ちフラグ
 	
-	vm->key->PushMod();	// モディファイア保存
+	vm->key->PushMod();		// モディファイア保存
 	
 	return true;
 }
@@ -1209,7 +1210,8 @@ bool EL6::SetAutoKeyFile( const P6VPATH& filepath )
 	}while( !fs.eof() );
 	fs.close();
 	
-	ak.Wait    = 60;	// 待ち回数カウンタ(初回は1sec)
+	ak.Wait    = 60;	// 待ち回数カウンタ(1sec)
+	ak.ExWait  = 0;		// 追加待ち回数
 	ak.Relay   = false;	// リレースイッチOFF待ちフラグ
 	ak.RelayOn = false;	// リレースイッチON待ちフラグ
 	
