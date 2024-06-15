@@ -552,7 +552,7 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 			if( sche->GetPauseEnable() ){
 				str += " === PAUSE ===";
 			}else{
-				str += Stringf( " (%4d%%  %5.2f/%5.2f fps)", sche->GetRatio(), sche->GetFPS(), FRAMERATE );
+				str += Stringf( " (%4d%%  %5.1f/%5.1f fps)", sche->GetRatio(), sche->GetFPS(), FRAMERATE );
 				if( sche->GetSpeedRatio() != 100 ){
 					str += Stringf( " [x%3.1f]", (double)sche->GetSpeedRatio() / 100 );
 				}
@@ -1425,6 +1425,8 @@ bool EL6::DokoDemoSave( const P6VPATH& path )
 			ini.SetEntry( "KEY", Stringf( "AKBuf_%02X", nn ), "", strva.c_str() );
 		}
 		
+		ini.SetVal( "DOKOSAVE", "Complete",	"どこでもSAVEファイルの書き込み完了チェック用フラグ", true );
+		
 		ini.Write();
 	}
 	catch( Error::Errno i ){	// 例外発生
@@ -1453,6 +1455,12 @@ bool EL6::DokoDemoLoad( const P6VPATH& path )
 	try{
 		// どこでもLOADファイルを開く
 		if( !ini.Read( path ) ){
+			throw Error::DokoReadFailed;
+		}
+		
+		// どこでもSAVEファイルが最後まで書き込まれているかチェック
+		bool complete = false;
+		if( !ini.GetVal( "DOKOSAVE", "Complete", complete ) ){
 			throw Error::DokoReadFailed;
 		}
 		

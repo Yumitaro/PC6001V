@@ -149,39 +149,33 @@ static bool AddStream( OutputStream& ost, AVFormatContext* oc, const AVCodec*& c
 		return false;
 	}
 	
-	AVCodecContext* c = avcodec_alloc_context3(codec);
+	AVCodecContext* c = avcodec_alloc_context3( codec );
 	AVDictionary* opt = nullptr;
 	ost.st->id        = oc->nb_streams - 1;
 	ost.enc = c;
 	c->thread_count   = av_cpu_count();
-
+	
 	switch( codec->type ){
-	case AVMEDIA_TYPE_AUDIO:
+	case AVMEDIA_TYPE_AUDIO:{
 		c->sample_fmt  = codec->sample_fmts ? codec->sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 		c->bit_rate    = 128000;
-		c->sample_rate = rate;
-		if( codec->supported_samplerates ){
-			c->sample_rate = codec->supported_samplerates[0];
-			for( int i = 0; codec->supported_samplerates[i]; i++ ){
-				if( codec->supported_samplerates[i] == rate ){
-					c->sample_rate = rate;
-				}
+		
+		c->sample_rate = 44100;
+		const int* pss = codec->supported_samplerates;
+		while( pss && *pss ){
+			if( *pss == rate ){
+				c->sample_rate = rate;
+				break;
 			}
+			pss++;
 		}
-		c->channels       = av_get_channel_layout_nb_channels( c->channel_layout );
-		c->channel_layout = AV_CH_LAYOUT_STEREO;
-		if( codec->channel_layouts ){
-			c->channel_layout = codec->channel_layouts[0];
-			for( int i = 0; codec->channel_layouts[i]; i++ ){
-				if( codec->channel_layouts[i] == AV_CH_LAYOUT_STEREO ){
-					c->channel_layout = AV_CH_LAYOUT_STEREO;
-				}
-			}
-		}
-		c->channels       = av_get_channel_layout_nb_channels( c->channel_layout );
+		
+		const AVChannelLayout pstr = AV_CHANNEL_LAYOUT_STEREO;
+		av_channel_layout_copy( &c->ch_layout, &pstr );
+		
 		ost.st->time_base = (AVRational){ 1, c->sample_rate };
 		break;
-		
+		}
 	case AVMEDIA_TYPE_VIDEO:
 		c->codec_id       = codec_id;
 		c->width          = source_width;
@@ -191,17 +185,17 @@ static bool AddStream( OutputStream& ost, AVFormatContext* oc, const AVCodec*& c
 		c->gop_size       = 12;
 		c->pix_fmt        = AV_PIX_FMT_YUV420P;
 		c->hwaccel        = nullptr;
-
+		
 		// エンコード品質設定
 		// -1から63まで。値を上げるほど画質が下がり容量が小さくなるが、32より小さくしてもあまり変わらない。
-		av_dict_set_int(&opt, "crf", 32, AV_OPT_SEARCH_CHILDREN);
+		av_dict_set_int( &opt, "crf",             32, AV_OPT_SEARCH_CHILDREN );
 		// マルチスレッドエンコード設定
-		av_dict_set_int(&opt, "row-mt", 1, AV_OPT_SEARCH_CHILDREN);
-		av_dict_set_int(&opt, "frame-parallel", 1, AV_OPT_SEARCH_CHILDREN);
-		av_dict_set_int(&opt, "cpu-used", 8, AV_OPT_SEARCH_CHILDREN);
-		av_dict_set(&opt, "quality", "realtime", AV_OPT_SEARCH_CHILDREN);
+		av_dict_set_int( &opt, "row-mt",           1, AV_OPT_SEARCH_CHILDREN );
+		av_dict_set_int( &opt, "frame-parallel",   1, AV_OPT_SEARCH_CHILDREN );
+		av_dict_set_int( &opt, "cpu-used",         8, AV_OPT_SEARCH_CHILDREN );
+		av_dict_set    ( &opt, "quality", "realtime", AV_OPT_SEARCH_CHILDREN );
 		break;
-
+		
 	default:
 		break;
 	}
@@ -209,7 +203,7 @@ static bool AddStream( OutputStream& ost, AVFormatContext* oc, const AVCodec*& c
 	if( oc->oformat->flags & AVFMT_GLOBALHEADER ){
 		c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 	}
-	if ( avcodec_open2(c, codec, &opt) < 0 ){
+	if ( avcodec_open2( c, codec, &opt ) < 0 ){
 		return false;
 	}
 	if ( avcodec_parameters_from_context( ost.st->codecpar, c ) < 0 ){
@@ -221,7 +215,7 @@ static bool AddStream( OutputStream& ost, AVFormatContext* oc, const AVCodec*& c
 
 /////////////////////////////////////////////////////////////////////////////
 /* audio output */
-static AVFrame* AllocAudioFrame( enum AVSampleFormat sample_fmt, uint64_t channel_layout, int sample_rate, int nb_samples )
+static AVFrame* AllocAudioFrame( enum AVSampleFormat sample_fmt, AVChannelLayout* channel_layout, int sample_rate, int nb_samples )
 {
 	AVFrame* frame = av_frame_alloc();
 	if( !frame ){
@@ -229,9 +223,11 @@ static AVFrame* AllocAudioFrame( enum AVSampleFormat sample_fmt, uint64_t channe
 	}
 	
 	frame->format         = sample_fmt;
-	frame->channel_layout = channel_layout;
 	frame->sample_rate    = sample_rate;
 	frame->nb_samples     = nb_samples;
+	if( av_channel_layout_copy( &frame->ch_layout, channel_layout ) < 0 ){
+		return nullptr;
+	}
 	
 	if( nb_samples && (av_frame_get_buffer( frame, 0 ) < 0) ){
 		return nullptr;
@@ -248,8 +244,8 @@ static bool OpenAudio( OutputStream& ost, int sample_rate )
 	int nb_samples = (c->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE) ? 10000 : c->frame_size;
 	
 	// フレームを初期化
-	ost.frame     = AllocAudioFrame( c->sample_fmt,     c->channel_layout, c->sample_rate, nb_samples );
-	ost.tmp_frame = AllocAudioFrame( AV_SAMPLE_FMT_S16, c->channel_layout, sample_rate,    nb_samples / (c->sample_rate / sample_rate) );
+	ost.frame     = AllocAudioFrame( c->sample_fmt,     &c->ch_layout, c->sample_rate, nb_samples );
+	ost.tmp_frame = AllocAudioFrame( AV_SAMPLE_FMT_S16, &c->ch_layout, sample_rate,    nb_samples / (c->sample_rate / sample_rate) );
 	
 	// フレームを書き込み可能にする
 	av_frame_make_writable( ost.frame );
@@ -262,12 +258,12 @@ static bool OpenAudio( OutputStream& ost, int sample_rate )
 	}
 	
 	// 音声フォーマットの設定
-	av_opt_set_int       ( ost.swr_ctx, "in_channel_count",  c->channels,       0 );
-	av_opt_set_int       ( ost.swr_ctx, "in_sample_rate",    sample_rate,       0 );
-	av_opt_set_sample_fmt( ost.swr_ctx, "in_sample_fmt",     AV_SAMPLE_FMT_S16, 0 );
-	av_opt_set_int       ( ost.swr_ctx, "out_channel_count", c->channels,       0 );
-	av_opt_set_int       ( ost.swr_ctx, "out_sample_rate",   c->sample_rate,    0 );
-	av_opt_set_sample_fmt( ost.swr_ctx, "out_sample_fmt",    c->sample_fmt,     0 );
+	av_opt_set_int       ( ost.swr_ctx, "in_channel_count",  c->ch_layout.nb_channels, 0 );
+	av_opt_set_int       ( ost.swr_ctx, "in_sample_rate",    sample_rate,              0 );
+	av_opt_set_sample_fmt( ost.swr_ctx, "in_sample_fmt",     AV_SAMPLE_FMT_S16,        0 );
+	av_opt_set_int       ( ost.swr_ctx, "out_channel_count", c->ch_layout.nb_channels, 0 );
+	av_opt_set_int       ( ost.swr_ctx, "out_sample_rate",   c->sample_rate,           0 );
+	av_opt_set_sample_fmt( ost.swr_ctx, "out_sample_fmt",    c->sample_fmt,            0 );
 
 	// サンプル変換部を初期化
 	if( swr_init( ost.swr_ctx ) < 0 ){
@@ -292,7 +288,7 @@ static AVFrame* GetAudioFrame( OutputStream& ost, AVI6* avi )
 	// オーディオ出力
 	for( int j = 0; j <frame->nb_samples; j++ ){
 		short dat = avi->GetAudioBuffer()->Get();
-		for( int i = 0; i < ost.enc->channels; i++ ){
+		for( int i = 0; i < ost.enc->ch_layout.nb_channels; i++ ){
 			*q++ = dat;
 		}
 	}

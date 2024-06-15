@@ -28,9 +28,9 @@ OBJTRD	= csemaphore cthread
 OBJFSY	= filesystem
 OBJRES	= p6v
 
-DIRTRG	= .
-DIRSRC	= ./src
-DIROBJ	= ./o
+DIRTRG	= $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+DIRSRC	= $(DIRTRG)src
+DIROBJ	= $(DIRTRG)o
 DIRDEV	= device
 DIRSDL	= SDL
 DIROSD	= Win32
@@ -104,9 +104,9 @@ endif
 
 all : build
 
-build : $(DIRTRG)/$(TARGET)
+build : $(TARGET)
 
-$(DIRTRG)/$(TARGET) : $(OBJALL) $(RESALL)
+$(TARGET) : $(OBJALL) $(RESALL)
 	@echo Linking $@...
 	@mkdir -p $(dir $@)
 	$(CC) $(LFLAGS) -o $@ $(OBJALL) $(RESALL) $(LIBS)
@@ -126,7 +126,7 @@ $(DIROBJ)/%.ro : $(DIRSRC)/%.rc #Makefile
 
 clean :
 	@echo Deleting objects ...
-	-@$(RM) $(DIRTRG)/$(TARGET)
+	-@$(RM) $(TARGET)
 	-@$(RM) -r $(DIROBJ)
 
 
