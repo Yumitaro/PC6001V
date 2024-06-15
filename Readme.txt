@@ -79,12 +79,14 @@ http://papicom.net/
 
 
 【履歴】--------------------------------------------------------------
-24/06/xx  Ver.2.1.2
+24/06/12  Ver.2.1.2
+  MSYS2の環境をMIGW64からUCRT64に変更。
   どこでもSAVEファイルのエラーチェックを追加。(eighttailsさん Thanks)
     過去にSAVEしたファイルは末尾に下記のセクションを追加してください。
       [DOKOSAVE]
       Complete = Yes
   CPU負荷低減のため画面更新のスレッド監視を見直し。(eighttailsさん Thanks)
+  ffmpeg7対応。(eighttailsさん Thanks)
 
 23/08/08  Ver.2.1.1
   ローマ字入力時のウェイトが通常のキー自動入力にも適用されていたのを修正。
