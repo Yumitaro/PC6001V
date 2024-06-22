@@ -17,7 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////
 // バージョン情報,機種名など
 /////////////////////////////////////////////////////////////////////////////
-#define	VERSION					"2.1.2"
+#define	VERSION					"2.1.3"
 #define	APPNAME					"PC6001V"
                     			
 #define	P60NAME					"PC-6001"
@@ -42,7 +42,7 @@
 #define	DEFAULT_TAPEVOL			(10)				// TAPEモニタ音量
 #define	DEFAULT_TAPELPF			(1540)				// TAPE LPFカットオフ周波数(0で無効)
 #define	DEFAULT_TURBO			(true)				// Turbo TAPE Yes:有効 No:無効
-#define	DEFAULT_BOOST			(false)				// BoostUp Yes:有効 No:無効
+#define	DEFAULT_BOOST			(true)				// BoostUp Yes:有効 No:無効
 #define DEFAULT_MAXBOOST60		(7)					// BoostUp最大倍率(N60モード)
 #define DEFAULT_MAXBOOST62		(5)					// BoostUp最大倍率(N60m/N66モード)
 #define	DEFAULT_BAUD			(1200)				// CMTボーレート
@@ -61,8 +61,8 @@
 #define	DEFAULT_FULLSCREEN		(false) 			// フルスクリーン
 #define	DEFAULT_DISPSTATUS		(true) 				// ステータスバー表示状態
 #define	DEFAULT_AVIBPP			(24) 				// ビデオキャプチャ色深度
-#define	DEFAULT_AVIZOOM			(100) 				// ビデオキャプチャ時ウィンドウ表示倍率
-#define	DEFAULT_AVIFRMSKIP		(1)					// ビデオキャプチャ時フレームスキップ
+#define	DEFAULT_AVIZOOM			(200) 				// ビデオキャプチャ時ウィンドウ表示倍率
+#define	DEFAULT_AVIFRMSKIP		(0)					// ビデオキャプチャ時フレームスキップ
 #define	DEFAULT_AVISCANLINE		(false)				// ビデオキャプチャ時スキャンライン true:あり false:なし
 #define	DEFAULT_AVISCANLINEBR	(75)				// ビデオキャプチャ時スキャンライン輝度 (0-100)%
 #define	DEFAULT_AVIDISPNTSC		(true) 				// ビデオキャプチャ時4:3表示 true:有効 false:無効
@@ -163,12 +163,12 @@
 #define	FILE_FONTZ				"fontz12." EXT_IMG	// 半角フォントファイル
 #define	FILE_FONTH				"fonth12." EXT_IMG	// 全角フォントファイル
 
-#define	SUBCPU60				"subcpu.60"			// サブCPU ROM(PC-6001)
-#define	SUBCPU61				"subcpu.61"			// サブCPU ROM(PC-6001A)
-#define	SUBCPU62				"subcpu.62"			// サブCPU ROM(PC-6001mk2)
-#define	SUBCPU66				"subcpu.66"			// サブCPU ROM(PC-6601)
-#define	SUBCPU64				"subcpu.64"			// サブCPU ROM(PC-6001mk2SR)
-#define	SUBCPU68				"subcpu.68"			// サブCPU ROM(PC-6601SR)
+#define	SUBCPU60				"SUBCPU.60"			// サブCPU ROM(PC-6001)
+#define	SUBCPU61				"SUBCPU.61"			// サブCPU ROM(PC-6001A)
+#define	SUBCPU62				"SUBCPU.62"			// サブCPU ROM(PC-6001mk2)
+#define	SUBCPU66				"SUBCPU.66"			// サブCPU ROM(PC-6601)
+#define	SUBCPU64				"SUBCPU.64"			// サブCPU ROM(PC-6001mk2SR)
+#define	SUBCPU68				"SUBCPU.68"			// サブCPU ROM(PC-6601SR)
 
 
 /////////////////////////////////////////////////////////////////////////////
