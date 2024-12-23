@@ -717,7 +717,8 @@ EL6::ReturnCode EL6::EventLoop( ReturnCode rc )
 				}else if( ext == EXT_DISK ){
 					UI_DiskInsert( 0, fpath );
 				}else if( ext == EXT_ROM1 || ext == EXT_ROM2 ){
-					UI_CartInsert( EXC6005, fpath );
+					// カートリッジ設定済みの場合はカートリッジの種類を変更しないでROMデータのみ変更する
+					UI_CartInsert( cfg->GetValue( CV_ExCartridge ) ? cfg->GetValue( CV_ExCartridge ) : EXC6005, fpath );
 				}else if( ext == EXT_DOKO ){
 					UI_DokoLoad( fpath );
 				}else if( ext == EXT_REPLAY ){
@@ -2259,6 +2260,12 @@ void EL6::UI_Reset( void )
 	// システムディスクが入っていたらTAPEのオートスタート無効
 	if( !vm->disk->IsSystem(0) && !vm->disk->IsSystem(1) ){
 		SetAutoStart();
+	}
+	
+	// 拡張ROMがマウントされていたら再読込
+	P6VPATH exrom = vm->mem->GetFile();
+	if( !exrom.empty() ){
+		vm->mem->MountExtRom( exrom );
 	}
 	
 	vm->Reset();
