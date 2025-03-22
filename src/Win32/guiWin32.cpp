@@ -217,8 +217,10 @@ void EL6::ShowPopupMenu( int x, int y )
 			EnableMenuItem( hsm, ID_JOY101 + i, MF_BYCOMMAND | MF_ENABLED );
 			EnableMenuItem( hsm, ID_JOY201 + i, MF_BYCOMMAND | MF_ENABLED );
 			
-			minfo.fMask      = MIIM_TYPE;
-			minfo.dwTypeData = (char*)OSD_GetJoyName( i ).c_str();
+			std::string joyName = OSD_GetJoyName( i );
+ 			minfo.fMask         = MIIM_TYPE;
+			minfo.dwTypeData    = const_cast<LPSTR>(joyName.c_str());
+			
 			SetMenuItemInfo( hsm, ID_JOY101 + i, MF_BYCOMMAND, &minfo );
 			SetMenuItemInfo( hsm, ID_JOY201 + i, MF_BYCOMMAND, &minfo );
 		}else{
@@ -226,8 +228,8 @@ void EL6::ShowPopupMenu( int x, int y )
 			DeleteMenu( hsm, ID_JOY201 + i, MF_BYCOMMAND );
 		}
 	}
-	CheckMenuRadioItem( hsm, ID_JOY100, ID_JOY105, (joy->GetID(0) < 0) ? ID_JOY100 : ID_JOY101 + joy->GetID(0), MF_BYCOMMAND );
-	CheckMenuRadioItem( hsm, ID_JOY200, ID_JOY205, (joy->GetID(1) < 0) ? ID_JOY200 : ID_JOY201 + joy->GetID(1), MF_BYCOMMAND );
+	CheckMenuRadioItem( hsm, ID_JOY100, ID_JOY105, (joy->GetID(0) <= 0) ? ID_JOY100 : ID_JOY100 + joy->GetID(0), MF_BYCOMMAND );
+	CheckMenuRadioItem( hsm, ID_JOY200, ID_JOY205, (joy->GetID(1) <= 0) ? ID_JOY200 : ID_JOY200 + joy->GetID(1), MF_BYCOMMAND );
 	
 	
 	// MODE4カラー

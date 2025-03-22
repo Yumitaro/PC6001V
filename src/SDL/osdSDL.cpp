@@ -446,9 +446,9 @@ const std::string OSD_GetJoyName( int index )
 // 引数:	HJOYINFO		ジョイスティック情報へのポインタ
 // 返値:	bool			true:OPEN false:CLOSE
 /////////////////////////////////////////////////////////////////////////////
-bool OSD_OpenedJoy( HJOYINFO joy )
+bool OSD_OpenedJoy( HJOYINFO jinfo )
 {
-	return joy && SDL_JoystickGetAttached( (SDL_Joystick*)joy ) ? true : false;
+	return jinfo && SDL_JoystickGetAttached( (SDL_Joystick*)jinfo ) ? true : false;
 }
 
 
@@ -467,7 +467,7 @@ HJOYINFO OSD_OpenJoy( int index )
 /////////////////////////////////////////////////////////////////////////////
 // ジョイスティッククローズ
 //
-// 引数:	int				インデックス
+// 引数:	HJOYINFO		ジョイスティック情報へのポインタ
 // 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
 void OSD_CloseJoy( HJOYINFO jinfo )
@@ -509,7 +509,31 @@ int OSD_GetJoyNumButtons( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetJoyAxis( HJOYINFO jinfo, int num )
 {
-	return SDL_JoystickGetAxis( (SDL_Joystick*)jinfo, num );
+//	return SDL_JoystickGetAxis( (SDL_Joystick*)jinfo, num );
+
+	// HAT(デジタルスティック)から値を取得
+	SDL_JoystickUpdate();
+	auto hat   = SDL_JoystickGetHat( reinterpret_cast<SDL_Joystick*>(jinfo), 0 );
+	int hatVal = 0;
+	switch( num ){
+	case 0:
+		if( hat & SDL_HAT_RIGHT ){ hatVal =  32767; }
+		if( hat & SDL_HAT_LEFT  ){ hatVal = -32767; }
+		break;
+		
+	case 1:
+		if( hat & SDL_HAT_UP    ){ hatVal = -32767; }
+		if( hat & SDL_HAT_DOWN  ){ hatVal =  32767; }
+		break;
+		
+	default:;
+	}
+	
+	// アナログスティックから値を取得
+	int axisVal = SDL_JoystickGetAxis( reinterpret_cast<SDL_Joystick*>(jinfo), num );
+	
+	// 出力値はHAT優先
+	return hatVal ? hatVal : axisVal;
 }
 
 
@@ -1354,6 +1378,13 @@ bool OSD_GetEvent( Event* ev )
 		ev->mousewh.x		= event.wheel.direction == SDL_MOUSEWHEEL_NORMAL ? event.wheel.x : -event.wheel.x;
 		ev->mousewh.y		= event.wheel.direction == SDL_MOUSEWHEEL_NORMAL ? event.wheel.y : -event.wheel.y;
 		break;
+		
+	case SDL_JOYHATMOTION:
+		ev->type			= EV_JOYAXISMOTION;
+		ev->joyax.idx		= event.jaxis.which;
+		ev->joyax.axis		= event.jaxis.axis;
+		ev->joyax.value		= event.jaxis.value;
+	break;
 		
 	case SDL_JOYAXISMOTION:
 		ev->type			= EV_JOYAXISMOTION;
