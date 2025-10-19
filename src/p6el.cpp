@@ -370,7 +370,7 @@ bool EL6::Init( const std::shared_ptr<CFG6>& config )
 		#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		if( !snd->Init( this, EL6::StreamUpdate, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
 		#else				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-		if( !snd->Init( this, nullptr, cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
+		if( !snd->Init( this, nullptr,           cfg->GetValue( CV_SampleRate ), cfg->GetValue( CV_SoundBuffer ) ) ){
 		#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			throw Error::GetError();
 		}
@@ -1001,7 +1001,7 @@ int EL6::SoundUpdate( int samples, cRing* exbuf )
 //			len			バッファサイズ(バイト単位)
 // 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
+void EL6::StreamUpdate( void* userdata, BYTE* stream, int len, int tlen )
 {
 	EL6* p6 = STATIC_CAST( EL6*, userdata );	// 自分自身のオブジェクトポインタ取得
 	
@@ -1018,7 +1018,7 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 																		){
 		p6->SoundUpdate( addsam );
 	}
-	p6->snd->Update( stream, len / sizeof(int16_t) );
+	p6->snd->Update( len / sizeof(int16_t) );
 }
 #endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -1026,9 +1026,9 @@ void EL6::StreamUpdate( void* userdata, BYTE* stream, int len )
 /////////////////////////////////////////////////////////////////////////////
 // FPS表示タイマ コールバック関数
 /////////////////////////////////////////////////////////////////////////////
-DWORD EL6::UpDateFPS( DWORD interval, void* obj )
+DWORD EL6::UpDateFPS( void* obj, DWORD id, DWORD interval )
 {
-	// obj未使用
+	// obj,id未使用
 	
 	OSD_PushEvent( EV_FPSUPDATE );
 	

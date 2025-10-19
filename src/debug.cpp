@@ -1044,7 +1044,7 @@ void cWndMon::Shift( void )
 		argv.Str  = Argv.front();
 		
 		// 大文字化
-		std::transform( argv.Str.begin(), argv.Str.end(), argv.Str.begin(), ::toupper );
+//		std::transform( argv.Str.begin(), argv.Str.end(), argv.Str.begin(), ::toupper );
 		
 		if( argv.Str.front() == '#' ){
 			size = true;

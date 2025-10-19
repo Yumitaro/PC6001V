@@ -89,7 +89,7 @@ public:
 	
 	int PreUpdate( int, cRing* = nullptr );	// サウンド事前更新関数
 	#ifndef NOCALLBACK	// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	void Update( BYTE*, int );				// サウンド更新関数(Callback)
+	void Update( int );						// サウンド更新関数(Callback)
 	#else				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	void Update();							// サウンド更新関数(Push)
 	#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

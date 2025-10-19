@@ -9,8 +9,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL3/SDL.h>
 
 #include "../pc6001v.h"
 #include "../common.h"
@@ -27,28 +26,24 @@
 //#define USESDLMESSAGEBOX			// SDLのMESSAGEBOXを使用
 
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
-#define	AUDIOFORMAT	AUDIO_S16MSB	// 16ビット符号あり
+#define	AUDIOFORMAT	SDL_AUDIO_S16BE		// 16ビット符号あり
 #else
-#define	AUDIOFORMAT	AUDIO_S16		// 16ビット符号あり
+#define	AUDIOFORMAT	SDL_AUDIO_S16LE		// 16ビット符号あり
 #endif
 
 #define	AUDIOBYTE	(SDL_AUDIO_BITSIZE( AUDIOFORMAT ) / 8)	// オーディオサンプルのバイト数
-
-// Renderer,Texture作成用オプション
-#define SDLOP_SCREEN	(SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE)
 
 
 /////////////////////////////////////////////////////////////////////////////
 // スタティック変数
 /////////////////////////////////////////////////////////////////////////////
-static SDL_Texture* sdl_texwx;						// 汎用Texture
-static SDL_Texture* sdl_texbb;						// バックバッファ用Texture
-static SDL_Texture* sdl_texsl;						// スキャンライン用Texture
-static DWORD sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
-static SDL_AudioDeviceID sdl_adev = 0;				// オーディオデバイス
-static SDL_AudioSpec AHave;							// オーディオスペック
+static SDL_Texture* sdl_texwx = nullptr;			// 汎用Texture
+static SDL_Texture* sdl_texbb = nullptr;			// バックバッファ用Texture
+static SDL_Texture* sdl_texsl = nullptr;			// スキャンライン用Texture
+static SDL_PixelFormat sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
+//static SDL_AudioDeviceID sdl_adev = 0;			// オーディオデバイス
+static SDL_AudioStream* sdl_astr = nullptr;			// オーディオストリーム
 static DWORD UEVnum = -1;							// 確保済みユーザー定義イベント数
-//static P6VPATH ConfigPath = "";					// 設定ファイルパス保存用
 
 
 
@@ -190,22 +185,22 @@ static std::unordered_map<SDL_Scancode, PCKEYsym> VKMapTable =
 /////////////////////////////////////////////////////////////////////////////
 static std::unordered_map<EventType, DWORD> EvConv =
 {
-	{ EV_QUIT,					SDL_QUIT						},	// User-requested quit
-	{ EV_DROPFILE,				SDL_DROPFILE					},	// File dropped
-	{ EV_KEYDOWN,				SDL_KEYDOWN						},	// Keys pressed
-	{ EV_KEYUP,					SDL_KEYUP						},	// Keys released
-	{ EV_MOUSEMOTION,			SDL_MOUSEMOTION					},	// Mouse moved
-	{ EV_MOUSEBUTTONDOWN,		SDL_MOUSEBUTTONDOWN				},	// Mouse button pressed
-	{ EV_MOUSEBUTTONUP,			SDL_MOUSEBUTTONUP				},	// Mouse button released
-	{ EV_MOUSEWHEEL,			SDL_MOUSEWHEEL					},	// Mouse wheel motion
-	{ EV_JOYAXISMOTION,			SDL_JOYAXISMOTION				},	// Joystick axis motion
-	{ EV_JOYBUTTONDOWN,			SDL_JOYBUTTONDOWN				},	// Joystick button pressed
-	{ EV_JOYBUTTONUP,			SDL_JOYBUTTONUP					},	// Joystick button released
-	{ EV_WINDOWRESIZED,			SDL_WINDOWEVENT_RESIZED			},	// Window resized
-	{ EV_WINDOWSIZECHANGED,		SDL_WINDOWEVENT_SIZE_CHANGED	},	// Window size changed
-	{ EV_WINDOWEVENT_MINIMIZED,	SDL_WINDOWEVENT_MINIMIZED		},	// Window minimized
-	{ EV_WINDOWEVENT_MAXIMIZED,	SDL_WINDOWEVENT_MAXIMIZED		},	// Window maximized
-	{ EV_WINDOWEVENT_RESTORED,	SDL_WINDOWEVENT_RESTORED		}	// Window restored to normal size and position
+	{ EV_QUIT,					SDL_EVENT_QUIT						},	// User-requested quit
+	{ EV_DROPFILE,				SDL_EVENT_DROP_FILE					},	// File dropped
+	{ EV_KEYDOWN,				SDL_EVENT_KEY_DOWN					},	// Keys pressed
+	{ EV_KEYUP,					SDL_EVENT_KEY_UP					},	// Keys released
+	{ EV_MOUSEMOTION,			SDL_EVENT_MOUSE_MOTION				},	// Mouse moved
+	{ EV_MOUSEBUTTONDOWN,		SDL_EVENT_MOUSE_BUTTON_DOWN			},	// Mouse button pressed
+	{ EV_MOUSEBUTTONUP,			SDL_EVENT_MOUSE_BUTTON_UP			},	// Mouse button released
+	{ EV_MOUSEWHEEL,			SDL_EVENT_MOUSE_WHEEL				},	// Mouse wheel motion
+	{ EV_JOYAXISMOTION,			SDL_EVENT_JOYSTICK_AXIS_MOTION		},	// Joystick axis motion
+	{ EV_JOYBUTTONDOWN,			SDL_EVENT_JOYSTICK_BUTTON_DOWN		},	// Joystick button pressed
+	{ EV_JOYBUTTONUP,			SDL_EVENT_JOYSTICK_BUTTON_UP		},	// Joystick button released
+	{ EV_WINDOWRESIZED,			SDL_EVENT_WINDOW_RESIZED			},	// Window resized
+	{ EV_WINDOWSIZECHANGED,		SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED	},	// Window size changed
+	{ EV_WINDOWEVENT_MINIMIZED,	SDL_EVENT_WINDOW_MINIMIZED			},	// Window minimized
+	{ EV_WINDOWEVENT_MAXIMIZED,	SDL_EVENT_WINDOW_MAXIMIZED			},	// Window maximized
+	{ EV_WINDOWEVENT_RESTORED,	SDL_EVENT_WINDOW_RESTORED			}	// Window restored to normal size and position
 };
 
 
@@ -240,7 +235,7 @@ static DWORD ConvEventOSD2SDL( EventType ev )
 			type = EvConv.at( ev );
 		}
 		catch( std::out_of_range& ){
-			type = SDL_FIRSTEVENT;
+			type = SDL_EVENT_FIRST;
 		}
 	}
 	
@@ -263,7 +258,7 @@ static void ConvertLogicalToAbsolute( DWORD winid, int* x, int* y )
 	int wa, ha, wl, hl;
 	
 	SDL_GetWindowSize( SDL_GetWindowFromID( winid ), &wa, &ha );
-	SDL_RenderGetLogicalSize( SDL_GetRenderer( SDL_GetWindowFromID( winid ) ), &wl, &hl );
+	SDL_GetRenderLogicalPresentation( SDL_GetRenderer( SDL_GetWindowFromID( winid ) ), &wl, &hl, nullptr );
 	*x = (*x * wa) / wl;
 	*y = (*y * ha) / hl;
 }
@@ -282,7 +277,7 @@ static void ConvertLogicalToAbsolute( DWORD winid, int* x, int* y )
 bool OSD_Init_Sub( void )
 {
 	// SDL初期化
-	if( SDL_Init( SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) ){
+	if( !SDL_Init( SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK ) ){
 		return false;
 	}
 	
@@ -421,7 +416,10 @@ void OSD_SetKeyRepeat( int repeat )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetJoyNum( void )
 {
-	return SDL_NumJoysticks();
+	int jnum = 0;
+	
+	SDL_GetJoysticks( &jnum );
+	return jnum;
 }
 
 
@@ -433,7 +431,7 @@ int OSD_GetJoyNum( void )
 /////////////////////////////////////////////////////////////////////////////
 const std::string OSD_GetJoyName( int index )
 {
-	const char* name = SDL_JoystickNameForIndex( index );
+	const char* name = SDL_GetJoystickNameForID( index );
 	std::string tname = name ? name : "(Unknown)";
 	
 	return tname;
@@ -448,7 +446,7 @@ const std::string OSD_GetJoyName( int index )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_OpenedJoy( HJOYINFO jinfo )
 {
-	return jinfo && SDL_JoystickGetAttached( (SDL_Joystick*)jinfo ) ? true : false;
+	return jinfo && SDL_JoystickConnected( (SDL_Joystick*)jinfo ) ? true : false;
 }
 
 
@@ -460,7 +458,7 @@ bool OSD_OpenedJoy( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 HJOYINFO OSD_OpenJoy( int index )
 {
-	return (HJOYINFO)SDL_JoystickOpen( index );
+	return (HJOYINFO)SDL_OpenJoystick( index );
 }
 
 
@@ -472,7 +470,7 @@ HJOYINFO OSD_OpenJoy( int index )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_CloseJoy( HJOYINFO jinfo )
 {
-	SDL_JoystickClose( (SDL_Joystick*)jinfo );
+	SDL_CloseJoystick( (SDL_Joystick*)jinfo );
 }
 
 
@@ -484,7 +482,7 @@ void OSD_CloseJoy( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetJoyNumAxes( HJOYINFO jinfo )
 {
-	return SDL_JoystickNumAxes( (SDL_Joystick*)jinfo );
+	return SDL_GetNumJoystickAxes( (SDL_Joystick*)jinfo );
 }
 
 
@@ -496,7 +494,7 @@ int OSD_GetJoyNumAxes( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetJoyNumButtons( HJOYINFO jinfo )
 {
-	return SDL_JoystickNumButtons( (SDL_Joystick*)jinfo );
+	return SDL_GetNumJoystickButtons( (SDL_Joystick*)jinfo );
 }
 
 
@@ -509,11 +507,9 @@ int OSD_GetJoyNumButtons( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetJoyAxis( HJOYINFO jinfo, int num )
 {
-//	return SDL_JoystickGetAxis( (SDL_Joystick*)jinfo, num );
-
 	// HAT(デジタルスティック)から値を取得
-	SDL_JoystickUpdate();
-	auto hat   = SDL_JoystickGetHat( reinterpret_cast<SDL_Joystick*>(jinfo), 0 );
+	SDL_UpdateJoysticks();
+	auto hat   = SDL_GetJoystickHat( reinterpret_cast<SDL_Joystick*>(jinfo), 0 );
 	int hatVal = 0;
 	switch( num ){
 	case 0:
@@ -530,7 +526,7 @@ int OSD_GetJoyAxis( HJOYINFO jinfo, int num )
 	}
 	
 	// アナログスティックから値を取得
-	int axisVal = SDL_JoystickGetAxis( reinterpret_cast<SDL_Joystick*>(jinfo), num );
+	int axisVal = SDL_GetJoystickAxis( reinterpret_cast<SDL_Joystick*>(jinfo), num );
 	
 	// 出力値はHAT優先
 	return hatVal ? hatVal : axisVal;
@@ -546,7 +542,7 @@ int OSD_GetJoyAxis( HJOYINFO jinfo, int num )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_GetJoyButton( HJOYINFO jinfo, int num )
 {
-	return SDL_JoystickGetButton( (SDL_Joystick*)jinfo, num ) ? true : false;
+	return SDL_GetJoystickButton( (SDL_Joystick*)jinfo, num ) ? true : false;
 }
 
 
@@ -565,18 +561,14 @@ bool OSD_OpenAudio( void* obj, CBF_SND callback, int rate, int samples )
 {
 	SDL_AudioSpec ASpec;				// オーディオスペック
 	
-	ASpec.freq     = rate;				// サンプリングレート
 	ASpec.format   = AUDIOFORMAT;		// フォーマット
 	ASpec.channels = 1;					// モノラル
-	ASpec.samples  = samples;			// バッファサイズ(サンプル数)
-	ASpec.callback = callback;			// コールバック関数の指定
-	ASpec.userdata = obj;				// コールバック関数に自分自身のオブジェクトポインタを渡す
+	ASpec.freq     = rate;				// サンプリングレート
 	
 	// オーディオデバイスを一旦閉じて開く
-	SDL_CloseAudioDevice( sdl_adev );
-	sdl_adev = SDL_OpenAudioDevice( nullptr, 0, &ASpec, &AHave, 0 );
-	
-	return sdl_adev ? true : false;
+	OSD_CloseAudio();
+	sdl_astr = SDL_OpenAudioDeviceStream( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &ASpec, (SDL_AudioStreamCallback)callback, obj );
+	return sdl_astr ? true : false;
 }
 
 
@@ -588,9 +580,10 @@ bool OSD_OpenAudio( void* obj, CBF_SND callback, int rate, int samples )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_CloseAudio( void )
 {
-	SDL_CloseAudioDevice( sdl_adev );
-	sdl_adev = 0;
-	ZeroMemory( &AHave, sizeof(AHave) );
+	if( sdl_astr ){
+		SDL_CloseAudioDevice( SDL_GetAudioStreamDevice( sdl_astr ) );
+		sdl_astr = nullptr;
+	}
 }
 
 
@@ -602,7 +595,7 @@ void OSD_CloseAudio( void )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_StartAudio( void )
 {
-	SDL_PauseAudioDevice( sdl_adev, 0 );
+	SDL_ResumeAudioDevice( SDL_GetAudioStreamDevice( sdl_astr ) );
 }
 
 
@@ -614,7 +607,7 @@ void OSD_StartAudio( void )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_StopAudio( void )
 {
-	SDL_PauseAudioDevice( sdl_adev, 1 );
+	SDL_PauseAudioDevice( SDL_GetAudioStreamDevice( sdl_astr ) );
 }
 
 
@@ -626,7 +619,7 @@ void OSD_StopAudio( void )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_AudioPlaying( void )
 {
-	return SDL_GetAudioStatus() == SDL_AUDIO_PLAYING ? true : false;
+	return SDL_AudioDevicePaused( SDL_GetAudioStreamDevice( sdl_astr ) );
 }
 
 
@@ -638,8 +631,9 @@ bool OSD_AudioPlaying( void )
 /////////////////////////////////////////////////////////////////////////////
 int OSD_GetQueuedAudioSamples( void )
 {
-	return SDL_GetQueuedAudioSize( sdl_adev ) / AUDIOBYTE;
+	return SDL_GetAudioStreamQueued( sdl_astr ) / AUDIOBYTE;
 }
+#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -651,9 +645,8 @@ int OSD_GetQueuedAudioSamples( void )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_WriteAudioStream( BYTE* stream, int samples )
 {
-	SDL_QueueAudio( sdl_adev, reinterpret_cast<const void*>(stream), samples * AUDIOBYTE );
+	SDL_PutAudioStreamData( sdl_astr, reinterpret_cast<const void*>(stream), samples * AUDIOBYTE );
 }
-#endif				// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -674,8 +667,8 @@ bool OSD_LoadWAV( const P6VPATH& filepath, BYTE** buf, DWORD* len, int* freq )
 		return false;
 	}
 	
-	if( ws.freq < 22050 || ws.format != AUDIO_S16 || ws.channels != 1 ){
-		SDL_FreeWAV( *buf );
+	if( ws.freq < 22050 || ws.format != SDL_AUDIO_S16LE || ws.channels != 1 ){
+		SDL_free( *buf );
 		return false;
 	}
 	
@@ -693,7 +686,7 @@ bool OSD_LoadWAV( const P6VPATH& filepath, BYTE** buf, DWORD* len, int* freq )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_FreeWAV( BYTE* buf )
 {
-	SDL_FreeWAV( buf );
+	SDL_free( buf );
 }
 
 
@@ -705,7 +698,6 @@ void OSD_FreeWAV( BYTE* buf )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_LockAudio( void )
 {
-	SDL_LockAudioDevice( sdl_adev );
 }
 
 
@@ -717,7 +709,6 @@ void OSD_LockAudio( void )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_UnlockAudio( void )
 {
-	SDL_UnlockAudioDevice( sdl_adev );
 }
 
 
@@ -743,7 +734,7 @@ void OSD_Delay( DWORD tms )
 /////////////////////////////////////////////////////////////////////////////
 DWORD OSD_GetTicks( void )
 {
-	return SDL_GetTicks();
+	return (DWORD)SDL_GetTicks();
 }
 
 
@@ -769,7 +760,7 @@ TIMERID OSD_AddTimer( DWORD interval, CBF_TMR callback, void* param )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_DelTimer( TIMERID id )
 {
-	return SDL_RemoveTimer( (SDL_TimerID)id ) == SDL_TRUE ? true : false;
+	return SDL_RemoveTimer( (SDL_TimerID)id );
 }
 
 
@@ -793,14 +784,11 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	PRINTD( OSD_LOG, "[OSD][OSD_CreateWindow] w:%d h:%d %s(w:%d h:%d)\n", w, h, fsflag ? "Full screen" : "Window", sw, sh );
 	
 	SDL_Renderer* rend;
-	SDL_RendererInfo info;
-	const char* RendSQstr[] = { "nearest", "linear", "best" };	// 0:nearest / 1:linear / 2:best
 	
 	
 	// ウィンドウ作成
 	if( !*hwnd ){
-		*hwnd = (HWINDOW)SDL_CreateWindow( "", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN );
-//		*hwnd = (HWINDOW)SDL_CreateWindow( "", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE );
+		*hwnd = (HWINDOW)SDL_CreateWindow( "", w, h, 0 );
 		if( !*hwnd ){
 			return false;
 		}
@@ -809,14 +797,14 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	// ハードウェアRenderer作成
 	rend = SDL_GetRenderer( (SDL_Window*)*hwnd );
 	if( !rend ){
-		rend = SDL_CreateRenderer( (SDL_Window*)*hwnd, -1, SDLOP_SCREEN );
+		rend = SDL_CreateRenderer( (SDL_Window*)*hwnd, nullptr );
 		if( !rend ){
 			SDL_DestroyWindow( (SDL_Window*)*hwnd );
 			*hwnd = nullptr;
 			return false;
 		}
 	}
-	SDL_RenderSetLogicalSize( rend, w, h );
+	SDL_SetRenderLogicalPresentation( rend, w, h, SDL_LOGICAL_PRESENTATION_LETTERBOX );
 	
 	// 作成済みのTextureは一旦破棄
 	if( sdl_texwx ){ SDL_DestroyTexture( sdl_texwx ); }
@@ -824,9 +812,9 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	if( sdl_texsl ){ SDL_DestroyTexture( sdl_texsl ); }
 	
 	// Renderer,Textureのフォーマットを選定する
-	SDL_GetRendererInfo( rend, &info );
-	for( int i = (int)info.num_texture_formats - 1; i >= 0; i-- ){
-		DWORD tx = info.texture_formats[i];
+	const SDL_PixelFormat* pfmt = (const SDL_PixelFormat*)SDL_GetPointerProperty( SDL_GetRendererProperties( rend ), SDL_PROP_RENDERER_TEXTURE_FORMATS_POINTER, nullptr );
+	while( pfmt && (*pfmt != SDL_PIXELFORMAT_UNKNOWN) ){
+		SDL_PixelFormat tx = *(pfmt++);
 		if( SDL_BYTESPERPIXEL(tx) == 4 && (SDL_BITSPERPIXEL(tx) == 32 || SDL_BITSPERPIXEL(tx) == 24) &&
 			(SDL_PIXELORDER(tx) == SDL_PACKEDORDER_ARGB || SDL_PIXELORDER(tx) == SDL_PACKEDORDER_XRGB) ){
 			sdl_format = tx;
@@ -837,18 +825,21 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	if( fsflag ){
 		SDL_DisplayMode mode;
 		
-		mode.format       = sdl_format;
-		mode.w            = w;
-		mode.h            = h;
-		mode.refresh_rate = 0;
-		mode.driverdata   = 0;
+		mode.displayID                = SDL_GetDisplayForWindow( (SDL_Window*)*hwnd );
+		mode.format                   = sdl_format;
+		mode.w                        = w;
+		mode.h                        = h;
+		mode.pixel_density            = 1;
+		mode.refresh_rate             = 0;
+		mode.refresh_rate_numerator   = 0;
+		mode.refresh_rate_denominator = 0;
 		
-		if( SDL_GetClosestDisplayMode( SDL_GetWindowDisplayIndex( (SDL_Window*)*hwnd ), &mode, &mode ) ){
-			SDL_SetWindowDisplayMode( (SDL_Window*)*hwnd, &mode );
-			SDL_SetWindowFullscreen( (SDL_Window*)*hwnd, SDL_WINDOW_FULLSCREEN_DESKTOP );
+		if( SDL_GetClosestFullscreenDisplayMode( mode.displayID, mode.w, mode.h, mode.refresh_rate, false, &mode ) ){
+			SDL_SetWindowFullscreenMode( (SDL_Window*)*hwnd, &mode );
+			SDL_SetWindowFullscreen( (SDL_Window*)*hwnd, true );
 		}
 	}else{
-		SDL_SetWindowFullscreen( (SDL_Window*)*hwnd, 0 );
+		SDL_SetWindowFullscreen( (SDL_Window*)*hwnd, false );
 		SDL_SetWindowSize( (SDL_Window*)*hwnd, w, h );
 	}
 	
@@ -856,11 +847,13 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	
 	
 	// フィルタリング設定
-	int rendsq = !filter															  ? 0
-			   : (std::strncmp( "direct3d", info.name, std::strlen(info.name) ) >= 0) ? 2
-			   : (std::strncmp( "opengl",   info.name, std::strlen(info.name) ) >= 0) ? 1
-			   :																		0;
-	SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, RendSQstr[rendsq] );
+	SDL_ScaleMode rendsq =
+				 !filter																									? SDL_SCALEMODE_NEAREST
+//			   : (std::strncmp( "direct3d", SDL_GetRendererName( rend ), std::strlen( SDL_GetRendererName( rend ) ) ) >= 0) ? SDL_SCALEMODE_PIXELART
+			   : (std::strncmp( "direct3d", SDL_GetRendererName( rend ), std::strlen( SDL_GetRendererName( rend ) ) ) >= 0) ? SDL_SCALEMODE_LINEAR
+			   : (std::strncmp( "opengl",   SDL_GetRendererName( rend ), std::strlen( SDL_GetRendererName( rend ) ) ) >= 0) ? SDL_SCALEMODE_LINEAR
+//			   :																											  SDL_SCALEMODE_INVALID;
+			   :																											  SDL_SCALEMODE_NEAREST;
 	
 	// 汎用Texture作成
 	sdl_texwx = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_STREAMING, w,  h );
@@ -868,6 +861,7 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	// バックバッファ用Texture作成
 	// SR高解像度に備えて幅は2倍する
 	sdl_texbb = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_STREAMING, sw * 2, sh );
+	SDL_SetTextureScaleMode( sdl_texbb, rendsq );	// フィルタリング設定
 	
 	// スキャンライン用Texture作成
 	sdl_texsl = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_TARGET,    sw, sh * 2 );
@@ -879,7 +873,7 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	SDL_RenderClear( rend );
 	SDL_SetRenderDrawColor( rend, 0, 0, 0, 255 );	// 黒 + alpha
 	for( int yy = 0; yy < sh * 2; yy += 2 ){
-		SDL_RenderDrawLine( rend, 0, yy, sw - 1, yy );
+		SDL_RenderLine( rend, 0, yy, sw - 1, yy );
 	}
 	SDL_SetRenderTarget( rend, nullptr );
 	
@@ -955,9 +949,9 @@ bool OSD_IsFullScreen( HWINDOW hwnd )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_IsFiltering( HWINDOW hwnd )
 {
-	const char* hint = SDL_GetHint( SDL_HINT_RENDER_SCALE_QUALITY );
+	SDL_ScaleMode smode;
 	
-	return ( hint && std::strncmp( hint, "nearest", 7 ) ) ? true : false;
+	return (SDL_GetTextureScaleMode( sdl_texbb, &smode ) && ((smode > SDL_SCALEMODE_NEAREST) ? true : false));
 }
 
 
@@ -969,7 +963,7 @@ bool OSD_IsFiltering( HWINDOW hwnd )
 /////////////////////////////////////////////////////////////////////////////
 void OSD_SetWindowResizable( HWINDOW hwnd, bool resize )
 {
-	SDL_SetWindowResizable( (SDL_Window*)hwnd, (SDL_bool)resize );
+	SDL_SetWindowResizable( (SDL_Window*)hwnd, resize );
 }
 
 
@@ -1029,6 +1023,7 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	PRINTD( OSD_LOG, "[OSD][OSD_BlitToWindow] x:%d y:%d\n", x, y );
 	
 	SDL_Rect src1,drc1;
+	SDL_FRect fdrc1;
 	
 	if( !hwnd || !src ){
 		return;
@@ -1041,7 +1036,7 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 	
 	// 転送元VSurface範囲設定
 	// ウィンドウからはみ出す部分はトリム
-	SDL_RenderGetLogicalSize( rend, &src1.w, &src1.h );
+	SDL_GetRenderLogicalPresentation( rend, &src1.w, &src1.h, nullptr );
 	src1.x = max( 0, -x );
 	src1.y = max( 0, -y );
 	src1.w = min( src->Width()  + x, src1.w) - max( 0, x );
@@ -1076,8 +1071,14 @@ void OSD_BlitToWindow( HWINDOW hwnd, VSurface* src, const int x, const int y )
 		}
 	}
 	
+	// SDL_Rect -> SDL_FRect
+	fdrc1.x = drc1.x;
+	fdrc1.y = drc1.y;
+	fdrc1.w = drc1.w;
+	fdrc1.h = drc1.h;
+	
 	SDL_UnlockTexture( sdl_texwx );
-	SDL_RenderCopy( rend, sdl_texwx, &drc1, &drc1 );
+	SDL_RenderTexture( rend, sdl_texwx, &fdrc1, &fdrc1 );
 }
 
 
@@ -1095,6 +1096,7 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	PRINTD( OSD_LOG, "[OSD][OSD_BlitToWindowEx] x:%d y:%d\n", pos ? pos->x : 0, pos ? pos->y : 0  );
 	
 	SDL_Rect src1;
+	SDL_FRect fsrc1,fpos;
 	
 	if( !hwnd || !src ){
 		return;
@@ -1107,11 +1109,11 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	
 	// 転送元/Texture範囲設定
 	// バックバッファからはみ出す部分はトリム
-	SDL_QueryTexture( sdl_texbb, nullptr, nullptr, &src1.w, &src1.h );
+	SDL_GetTextureSize( sdl_texbb, &fsrc1.w, &fsrc1.h );
 	src1.x = 0;
 	src1.y = 0;
-	src1.w = min( src->Width() , src1.w );
-	src1.h = min( src->Height(), src1.h );
+	src1.w = min( src->Width() , (int)fsrc1.w );
+	src1.h = min( src->Height(), (int)fsrc1.h );
 	
 	if( src1.w <= 0 || src1.h <= 0 ){
 		return;
@@ -1135,12 +1137,23 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 		}
 	}
 	
+	// SDL_Rect -> SDL_FRect
+	fsrc1.x = src1.x;
+	fsrc1.y = src1.y;
+	fsrc1.w = src1.w;
+	fsrc1.h = src1.h;
+	
+	fpos.x = pos->x;
+	fpos.y = pos->y;
+	fpos.w = pos->w;
+	fpos.h = pos->h;
+	
 	SDL_UnlockTexture( sdl_texbb );
-	SDL_RenderCopy( rend, sdl_texbb, &src1, (SDL_Rect*)pos );
+	SDL_RenderTexture( rend, sdl_texbb, &fsrc1, &fpos );
 	
 	if( scanen ){
 		src1.h *= 2;
-		SDL_RenderCopy( rend, sdl_texsl, &src1, (SDL_Rect*)pos );
+		SDL_RenderTexture( rend, sdl_texsl, &fsrc1, &fpos );
 	}
 
 }
@@ -1157,8 +1170,7 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_GetWindowImage( HWINDOW hwnd, std::vector<BYTE>& pixels, VRect* pos, PixelFMT pxfmt )
 {
-	VRect src1;
-	int fmt, dpt;
+	SDL_PixelFormat fmt;
 	
 	if( !hwnd ){
 		return false;
@@ -1169,33 +1181,41 @@ bool OSD_GetWindowImage( HWINDOW hwnd, std::vector<BYTE>& pixels, VRect* pos, Pi
 		return false;
 	}
 	
-	SDL_RenderGetLogicalSize( rend, &src1.w, &src1.h );
-	dpt = ( pos ? pos->w : src1.w );
 	switch( pxfmt ){
 	case PX16RGB:
-		fmt  = SDL_PIXELFORMAT_RGB555;
-		dpt  = ((dpt * 16 + 31) / 32 ) * sizeof(DWORD);
+		fmt  = SDL_PIXELFORMAT_XRGB1555;
 		break;
 		
 	case PX24RGB:
 		fmt  = SDL_PIXELFORMAT_RGB24;
-		dpt  = ((dpt * 24 + 31) / 32 ) * sizeof(DWORD);
 		break;
 		
 	case PX24BGR:
 		fmt  = SDL_PIXELFORMAT_BGR24;
-		dpt  = ((dpt * 24 + 31) / 32 ) * sizeof(DWORD);
 		break;
 		
 	case PX32ARGB:
 	default:
 		fmt  = SDL_PIXELFORMAT_ARGB32;
-		dpt *= sizeof(DWORD);
 	}
 	
-	if( SDL_RenderReadPixels( rend, (SDL_Rect*)pos, fmt, (void*)(&pixels[0]), dpt ) ){
+	// ピクセルデータ取得
+	SDL_Surface* sur1 = SDL_RenderReadPixels( rend, (SDL_Rect*)pos );
+	if( !sur1 ){
 		return false;
 	}
+	
+	// フォーマット変換
+	SDL_Surface* sur2 = SDL_ConvertSurface( sur1, fmt );
+	SDL_DestroySurface( sur1 );
+	if( !sur2 ){
+		return false;
+	}
+	
+	// 保存
+	memcpy( &pixels[0], sur2->pixels, sur2->pitch * sur2->h );
+	
+	SDL_DestroySurface( sur2 );
 	
 	return true;
 }
@@ -1221,9 +1241,9 @@ void OSD_SetIcon( HWINDOW hwnd, int model )
 	case 68: ipix = (BYTE*)p68pix; break;
 	default: ipix = (BYTE*)p60pix;
 	}
-	SDL_Surface* p6icon = SDL_CreateRGBSurfaceFrom( ipix, 32, 32, 32, 32 * 4, RMASK32, GMASK32, BMASK32, AMASK32 );
+	SDL_Surface* p6icon = SDL_CreateSurfaceFrom( 32, 32, SDL_GetPixelFormatForMasks( 32, RMASK32, GMASK32, BMASK32, AMASK32 ), ipix, 32 * 4 );
 	SDL_SetWindowIcon( (SDL_Window*)hwnd, p6icon );
-	SDL_FreeSurface( p6icon );
+	SDL_DestroySurface( p6icon );
 }
 
 
@@ -1254,7 +1274,11 @@ void OSD_ShowCursor( bool disp )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_ShowCursor] %s\n", disp ? "Show" : "Hide" );
 	
-	SDL_ShowCursor( disp ? SDL_ENABLE : SDL_DISABLE );
+	if( disp ){
+		SDL_ShowCursor();
+	}else{
+		SDL_HideCursor();
+	}
 }
 
 
@@ -1266,14 +1290,7 @@ void OSD_ShowCursor( bool disp )
 /////////////////////////////////////////////////////////////////////////////
 void* OSD_GetWindowHandle( HWINDOW hwnd )
 {
-	SDL_SysWMinfo WinInfo;
-	
-	SDL_VERSION( &WinInfo.version );
-	if( SDL_GetWindowWMInfo( (SDL_Window*)hwnd, &WinInfo ) ){
-		return WinInfo.info.win.window;
-	}else{
-		return nullptr;
-	}
+    return SDL_GetPointerProperty( SDL_GetWindowProperties( (SDL_Window*)hwnd ), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr );
 }
 
 
@@ -1286,7 +1303,7 @@ void* OSD_GetWindowHandle( HWINDOW hwnd )
 void OSD_FlushEvents( void )
 {
 	SDL_PumpEvents();
-	SDL_FlushEvents( SDL_FIRSTEVENT, SDL_LASTEVENT );
+	SDL_FlushEvents( SDL_EVENT_FIRST, SDL_EVENT_LAST );
 }
 
 
@@ -1305,49 +1322,49 @@ bool OSD_GetEvent( Event* ev )
 	}
 	
 	switch( event.type ){
-	case SDL_KEYDOWN:
+	case SDL_EVENT_KEY_DOWN:
 		ev->type			= EV_KEYDOWN;
 		ev->key.state		= true;
-		ev->key.sym			= VKMapTable[ event.key.keysym.scancode ];	// 例外防止の為にatは使わない
+		ev->key.sym			= VKMapTable[ event.key.scancode ];	// 例外防止の為にatは使わない
 		ev->key.mod			= (PCKEYmod)(
-							  ( event.key.keysym.mod & KMOD_LSHIFT ? KVM_LSHIFT : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RSHIFT ? KVM_RSHIFT : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LCTRL  ? KVM_LCTRL  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RCTRL  ? KVM_RCTRL  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LALT   ? KVM_LALT   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RALT   ? KVM_RALT   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LGUI   ? KVM_LMETA  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RGUI   ? KVM_RMETA  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_NUM    ? KVM_NUM    : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_CAPS   ? KVM_CAPS   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_MODE   ? KVM_MODE   : KVM_NONE ) );
+							  ( event.key.mod & SDL_KMOD_LSHIFT ? KVM_LSHIFT : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RSHIFT ? KVM_RSHIFT : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LCTRL  ? KVM_LCTRL  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RCTRL  ? KVM_RCTRL  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LALT   ? KVM_LALT   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RALT   ? KVM_RALT   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LGUI   ? KVM_LMETA  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RGUI   ? KVM_RMETA  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_NUM    ? KVM_NUM    : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_CAPS   ? KVM_CAPS   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_MODE   ? KVM_MODE   : KVM_NONE ) );
 		ev->key.unicode		= GetKeyChar( ev->key.sym, ev->key.mod & KVM_SHIFT );
 		break;
 		
-	case SDL_KEYUP:
+	case SDL_EVENT_KEY_UP:
 		ev->type			= EV_KEYUP;
 		ev->key.state		= false;
-		ev->key.sym			= VKMapTable[ event.key.keysym.scancode ];	// 例外防止の為にatは使わない
+		ev->key.sym			= VKMapTable[ event.key.scancode ];	// 例外防止の為にatは使わない
 		ev->key.mod			= (PCKEYmod)(
-							  ( event.key.keysym.mod & KMOD_LSHIFT ? KVM_LSHIFT : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RSHIFT ? KVM_RSHIFT : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LCTRL  ? KVM_LCTRL  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RCTRL  ? KVM_RCTRL  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LALT   ? KVM_LALT   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RALT   ? KVM_RALT   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_LGUI   ? KVM_LMETA  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_RGUI   ? KVM_RMETA  : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_NUM    ? KVM_NUM    : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_CAPS   ? KVM_CAPS   : KVM_NONE )
-							| ( event.key.keysym.mod & KMOD_MODE   ? KVM_MODE   : KVM_NONE ) );
+							  ( event.key.mod & SDL_KMOD_LSHIFT ? KVM_LSHIFT : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RSHIFT ? KVM_RSHIFT : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LCTRL  ? KVM_LCTRL  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RCTRL  ? KVM_RCTRL  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LALT   ? KVM_LALT   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RALT   ? KVM_RALT   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_LGUI   ? KVM_LMETA  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_RGUI   ? KVM_RMETA  : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_NUM    ? KVM_NUM    : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_CAPS   ? KVM_CAPS   : KVM_NONE )
+							| ( event.key.mod & SDL_KMOD_MODE   ? KVM_MODE   : KVM_NONE ) );
 		ev->key.unicode		= GetKeyChar( ev->key.sym, ev->key.mod & KVM_SHIFT );
 		break;
 		
-	case SDL_MOUSEMOTION:
+	case SDL_EVENT_MOUSE_MOTION:
 		ev->type			= EV_MOUSEMOTION;
 		break;
 		
-	case SDL_MOUSEBUTTONDOWN:
+	case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		ev->type			= EV_MOUSEBUTTONDOWN;
 		ev->mousebt.button	= event.button.button == SDL_BUTTON_LEFT      ? MBT_LEFT      :
 							  event.button.button == SDL_BUTTON_MIDDLE    ? MBT_MIDDLE    :
@@ -1360,7 +1377,7 @@ bool OSD_GetEvent( Event* ev )
 		ConvertLogicalToAbsolute( event.button.windowID, &ev->mousebt.x, &ev->mousebt.y );
 		break;
 		
-	case SDL_MOUSEBUTTONUP:
+	case SDL_EVENT_MOUSE_BUTTON_UP:
 		ev->type			= EV_MOUSEBUTTONUP;
 		ev->mousebt.button	= event.button.button == SDL_BUTTON_LEFT      ? MBT_LEFT      :
 							  event.button.button == SDL_BUTTON_MIDDLE    ? MBT_MIDDLE    :
@@ -1373,92 +1390,97 @@ bool OSD_GetEvent( Event* ev )
 		ConvertLogicalToAbsolute( event.button.windowID, &ev->mousebt.x, &ev->mousebt.y );
 		break;
 		
-	case SDL_MOUSEWHEEL:
+	case SDL_EVENT_MOUSE_WHEEL:
 		ev->type			= EV_MOUSEWHEEL;
 		ev->mousewh.x		= event.wheel.direction == SDL_MOUSEWHEEL_NORMAL ? event.wheel.x : -event.wheel.x;
 		ev->mousewh.y		= event.wheel.direction == SDL_MOUSEWHEEL_NORMAL ? event.wheel.y : -event.wheel.y;
 		break;
 		
-	case SDL_JOYHATMOTION:
+	case SDL_EVENT_JOYSTICK_HAT_MOTION:
 		ev->type			= EV_JOYAXISMOTION;
 		ev->joyax.idx		= event.jaxis.which;
 		ev->joyax.axis		= event.jaxis.axis;
 		ev->joyax.value		= event.jaxis.value;
 	break;
 		
-	case SDL_JOYAXISMOTION:
+	case SDL_EVENT_JOYSTICK_AXIS_MOTION:
 		ev->type			= EV_JOYAXISMOTION;
 		ev->joyax.idx		= event.jaxis.which;
 		ev->joyax.axis		= event.jaxis.axis;
 		ev->joyax.value		= event.jaxis.value;
 		break;
 		
-	case SDL_JOYBUTTONDOWN:
+	case SDL_EVENT_JOYSTICK_BUTTON_DOWN:
 		ev->type			= EV_JOYBUTTONDOWN;
 		ev->joybt.idx		= event.jbutton.which;
 		ev->joybt.button	= event.jbutton.button;
 		ev->joybt.state		= true;
 		break;
 		
-	case SDL_JOYBUTTONUP:
+	case SDL_EVENT_JOYSTICK_BUTTON_UP:
 		ev->type			= EV_JOYBUTTONUP;
 		ev->joybt.idx		= event.jbutton.which;
 		ev->joybt.button	= event.jbutton.button;
 		ev->joybt.state		= false;
 		break;
 		
-	case SDL_JOYDEVICEADDED:
+	case SDL_EVENT_JOYSTICK_ADDED:
 		ev->type			= EV_JOYDEVICEADDED;
 		ev->joydev.idx		= event.jdevice.which;
 		break;
 		
-	case SDL_JOYDEVICEREMOVED:
+	case SDL_EVENT_JOYSTICK_REMOVED:
 		ev->type			= EV_JOYDEVICEREMOVED;
 		ev->joydev.idx		= event.jdevice.which;
 		break;
 		
-	case SDL_DROPFILE:
-		ev->type			= event.drop.file ? EV_DROPFILE : EV_NOEVENT;
-		ev->drop.file		= event.drop.file;
-		break;
-		
-	case SDL_WINDOWEVENT:
-		switch( event.window.event ){
-		case SDL_WINDOWEVENT_RESIZED:
-			ev->type		= EV_WINDOWRESIZED;
-			ev->window.w	= event.window.data1;
-			ev->window.h	= event.window.data2;
-			break;
-			
-		case SDL_WINDOWEVENT_SIZE_CHANGED:
-			ev->type		= EV_WINDOWSIZECHANGED;
-			ev->window.w	= event.window.data1;
-			ev->window.h	= event.window.data2;
-			break;
-			
-		case SDL_WINDOWEVENT_MINIMIZED:
-			ev->type		= EV_WINDOWEVENT_MINIMIZED;
-			break;
-			
-		case SDL_WINDOWEVENT_MAXIMIZED:
-			ev->type		= EV_WINDOWEVENT_MAXIMIZED;
-			break;
-			
-		case SDL_WINDOWEVENT_RESTORED:
-			ev->type		= EV_WINDOWEVENT_RESTORED;
-			break;
-			
-		default:
+	case SDL_EVENT_DROP_FILE:
+		if( event.drop.data ){
+			// ファイル名はSDL側で管理されるため後利用のためにコピーする
+			size_t len = strlen( event.drop.data ) + 1;
+			ev->drop.file = new char[len];
+			if( ev->drop.file ){
+				strncpy( ev->drop.file, event.drop.data, len );
+				ev->type	= EV_DROPFILE;
+			}else{
+				ev->type	= EV_NOEVENT;
+			}
+		}else{
 			ev->type		= EV_NOEVENT;
+			ev->drop.file	= nullptr;
 		}
 		break;
 		
-	case SDL_QUIT:
+	case SDL_EVENT_WINDOW_RESIZED:
+		ev->type			= EV_WINDOWRESIZED;
+		ev->window.w		= event.window.data1;
+		ev->window.h		= event.window.data2;
+		break;
+		
+	case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+		ev->type			= EV_WINDOWSIZECHANGED;
+		ev->window.w		= event.window.data1;
+		ev->window.h		= event.window.data2;
+		break;
+		
+	case SDL_EVENT_WINDOW_MINIMIZED:
+		ev->type			= EV_WINDOWEVENT_MINIMIZED;
+		break;
+		
+	case SDL_EVENT_WINDOW_MAXIMIZED:
+		ev->type			= EV_WINDOWEVENT_MAXIMIZED;
+		break;
+		
+	case SDL_EVENT_WINDOW_RESTORED:
+		ev->type			= EV_WINDOWEVENT_RESTORED;
+		break;
+		
+	case SDL_EVENT_QUIT:
 		ev->type			= EV_QUIT;
 		break;
 		
 	default:
-		if( event.type >= UEVnum && event.type < (UEVnum + SDL_QUIT) ){
+		if( event.type >= UEVnum && event.type < (UEVnum + SDL_EVENT_QUIT) ){
 			// ユーザー定義イベント
 			ev->type = (EventType)(event.type - UEVnum);
 			
@@ -1501,7 +1523,7 @@ bool OSD_PushEvent( EventType ev, ... )
 	std::va_list args;
 	
 	event.type = ConvEventOSD2SDL( ev );
-	if( event.type == SDL_FIRSTEVENT ){
+	if( event.type == SDL_EVENT_FIRST ){
 		return false;
 	}
 	
@@ -1518,7 +1540,7 @@ bool OSD_PushEvent( EventType ev, ... )
 	default:;
 	}
 	
-	return SDL_PushEvent( &event ) < 0 ? false : true;
+	return SDL_PushEvent( &event );
 }
 
 
@@ -1530,7 +1552,7 @@ bool OSD_PushEvent( EventType ev, ... )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_HasEvent( EventType ev )
 {
-	return SDL_HasEvent( ConvEventOSD2SDL( ev ) ) == SDL_TRUE ? true : false;
+	return SDL_HasEvent( ConvEventOSD2SDL( ev ) );
 }
 
 
@@ -1543,16 +1565,18 @@ bool OSD_HasEvent( EventType ev )
 /////////////////////////////////////////////////////////////////////////////
 bool OSD_EventState( EventType ev, EventState st )
 {
-	int state;
+	DWORD sev  = ConvEventOSD2SDL( ev );
+	bool state = SDL_EventEnabled( sev );
 	
 	switch( st ){
-	case EVS_QUERY:		state = SDL_QUERY;		break;
-	case EVS_DISABLE:	state = SDL_DISABLE;	break;
-	case EVS_ENABLE:	state = SDL_ENABLE;		break;
-	default:
-		return false;
+	case EVS_QUERY:
+		return state;
+		
+	case EVS_ENABLE:
+	case EVS_DISABLE:
+		SDL_SetEventEnabled( sev, (st == EVS_ENABLE) ? true : false );
+		return state;
 	}
-	
-	return SDL_EventState( ConvEventOSD2SDL( ev ), state ) == SDL_ENABLE  ? true : false;
+	return false;
 }
 

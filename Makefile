@@ -36,7 +36,7 @@ DIRSDL	= SDL
 DIROSD	= Win32
 DIRRES	= Win32
 
-PKGCNFG = sdl2 libpng libavcodec libavformat libswscale libswresample
+PKGCNFG = sdl3 libpng libavcodec libavformat libswscale libswresample
 
 #-----------------------------------------------------------------------------
 ifeq ($(CPPVER), 17)

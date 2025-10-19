@@ -38,8 +38,8 @@ using HJOYINFO   = void*;	// ジョイスティック
 using TIMERID = DWORD;		// タイマID
 
 // OSD関連コールバック関数へのポインタ
-using CBF_SND = void  (*)( void*, BYTE*, int );	// サウンドストリーム
-using CBF_TMR = DWORD (*)( DWORD, void* );		// タイマ
+using CBF_SND = void  (*)( void*, BYTE*, int, int );	// サウンドストリーム
+using CBF_TMR = DWORD (*)( void*, DWORD, DWORD );		// タイマ
 
 // filesystem
 #ifdef	USEFILESYSTEM

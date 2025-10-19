@@ -103,12 +103,10 @@ bool cThread::IsCancel( void )
 /////////////////////////////////////////////////////////////////////////////
 // デフォルトスレッド関数
 /////////////////////////////////////////////////////////////////////////////
-int cThread::ThreadProc( void* lpVoid )
+void cThread::ThreadProc( void* lpVoid )
 {
 	thread_local cThread* lpThis = static_cast<cThread*>( lpVoid );	// 自分自身のオブジェクトポインタ取得
 	lpThis->OnThread( lpThis->m_BeginTheadParam );					// virtual Procedure 
-	
-	return 0;
 }
 
 

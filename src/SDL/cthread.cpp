@@ -10,7 +10,7 @@
 /////////////////////////////////////////////////////////////////////////////
 #include <mutex>
 #include <thread>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "cthread.h"
 
@@ -103,15 +103,13 @@ bool cThread::IsCancel( void )
 /////////////////////////////////////////////////////////////////////////////
 // デフォルトスレッド関数
 /////////////////////////////////////////////////////////////////////////////
-int cThread::ThreadProc( void* lpVoid )
+void cThread::ThreadProc( void* lpVoid )
 {
 	static thread_local cThread* lpThis;
 	
 	if( !lpThis ) lpThis = STATIC_CAST( cThread*, lpVoid );	// 自分自身のオブジェクトポインタ取得
 	lpThis->OnThread( lpThis->m_BeginTheadParam );			// virtual Procedure 
 	lpThis->m_hThread = nullptr;
-	
-	return 0;
 }
 
 

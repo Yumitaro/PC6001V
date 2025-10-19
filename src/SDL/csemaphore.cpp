@@ -8,7 +8,7 @@
 // Mail Address.    ast@qt-space.com
 // Official HP URL. http://ast.qt-space.com/
 /////////////////////////////////////////////////////////////////////////////
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "csemaphore.h"
 
@@ -31,7 +31,7 @@ cMutex::cMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cMutex::~cMutex( void )
 {
-	SDL_DestroyMutex( (SDL_mutex*)mtx );
+	SDL_DestroyMutex( (SDL_Mutex*)mtx );
 }
 
 
@@ -41,7 +41,7 @@ cMutex::~cMutex( void )
 void cMutex::lock( void )
 {
 	if( mtx ){
-		SDL_LockMutex( (SDL_mutex*)mtx );
+		SDL_LockMutex( (SDL_Mutex*)mtx );
 	}
 }
 
@@ -52,7 +52,7 @@ void cMutex::lock( void )
 void cMutex::unlock( void )
 {
 	if( mtx ){
-		SDL_UnlockMutex( (SDL_mutex*)mtx );
+		SDL_UnlockMutex( (SDL_Mutex*)mtx );
 	}
 }
 
@@ -77,7 +77,7 @@ cRecursiveMutex::cRecursiveMutex( void )
 /////////////////////////////////////////////////////////////////////////////
 cRecursiveMutex::~cRecursiveMutex( void )
 {
-	SDL_DestroyMutex( (SDL_mutex*)mtx );
+	SDL_DestroyMutex( (SDL_Mutex*)mtx );
 }
 
 
@@ -87,7 +87,7 @@ cRecursiveMutex::~cRecursiveMutex( void )
 void cRecursiveMutex::lock( void )
 {
 	if( mtx ){
-		SDL_LockMutex( (SDL_mutex*)mtx );
+		SDL_LockMutex( (SDL_Mutex*)mtx );
 	}
 }
 
@@ -98,7 +98,7 @@ void cRecursiveMutex::lock( void )
 void cRecursiveMutex::unlock( void )
 {
 	if( mtx ){
-		SDL_UnlockMutex( (SDL_mutex*)mtx );
+		SDL_UnlockMutex( (SDL_Mutex*)mtx );
 	}
 }
 
@@ -124,7 +124,7 @@ cSemaphore::cSemaphore( void )
 cSemaphore::~cSemaphore( void )
 {
 	if( sem ){
-		SDL_DestroySemaphore( (SDL_sem*)sem );
+		SDL_DestroySemaphore( (SDL_Semaphore*)sem );
 	}
 }
 
@@ -133,11 +133,11 @@ cSemaphore::~cSemaphore( void )
 // セマフォ加算
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-int cSemaphore::Post( void )
+void cSemaphore::Post( void )
 {
-	return SDL_SemPost( (SDL_sem*)sem );
+	SDL_SignalSemaphore( (SDL_Semaphore*)sem );
 }
 
 
@@ -145,9 +145,9 @@ int cSemaphore::Post( void )
 // セマフォ待つ
 //
 // 引数:	なし
-// 返値:	0：成功 -1:失敗
+// 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-int cSemaphore::Wait( void )
+void cSemaphore::Wait( void )
 {
-	return SDL_SemWait( (SDL_sem*)sem );
+	SDL_WaitSemaphore( (SDL_Semaphore*)sem );
 }

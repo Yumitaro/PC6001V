@@ -22,7 +22,7 @@ private:
 	std::mutex mtx;
 	
 	void* m_BeginTheadParam;
-	static int ThreadProc( void* );			// デフォルトスレッド関数
+	static void ThreadProc( void* );		// デフォルトスレッド関数
 	
 protected:
 	virtual void OnThread( void* ) = 0;		// Virtual func. You need overwrite.

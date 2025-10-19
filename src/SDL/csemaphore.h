@@ -54,8 +54,8 @@ public:
 	cSemaphore();		// Constructor
 	~cSemaphore();		// Destructor
 	
-	int Post();			// セマフォ加算
-	int Wait();			// セマフォ待つ
+	void Post();		// セマフォ加算
+	void Wait();		// セマフォ待つ
 };
 
 

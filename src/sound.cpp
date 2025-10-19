@@ -243,7 +243,7 @@ SND6::~SND6( void )
 //			size		バッファサイズ(倍率)
 // 返値:	bool		true:成功 false:失敗
 /////////////////////////////////////////////////////////////////////////////
-bool SND6::Init( void* cbdata, void (*callback)(void*, BYTE*, int ), int rate, int size )
+bool SND6::Init( void* cbdata, CBF_SND callback, int rate, int size )
 {
 	PRINTD( SND_LOG, "[SND6][Init]\n" );
 	
@@ -464,19 +464,20 @@ int SND6::OverflowSamples( void )
 /////////////////////////////////////////////////////////////////////////////
 // サウンド更新関数(Callback)
 //
-// 引数:	stream		ストリーム書込みバッファへのポインタ
-//			samples		サンプル数
+// 引数:	samples		サンプル数
 // 返値:	なし
 /////////////////////////////////////////////////////////////////////////////
-void SND6::Update( BYTE* stream, int samples )
+void SND6::Update( int samples )
 {
-	int16_t* str = (int16_t*)stream;
+	PRINTD( SND_LOG, "[SND6][Update] Samples:%d / %d\n", samples, this->cRing::ReadySize() );
 	
-	PRINTD( SND_LOG, "[SND6][Update] Stream:%p Samples:%d / %d\n", stream, samples, this->cRing::ReadySize() );
+	std::vector<int16_t> stream;
+	stream.reserve( samples );
 	
 	for( int i = 0; i < samples; i++ ){
-		*(str++) = (int16_t)this->cRing::Get();
+		stream.push_back( (int16_t)this->cRing::Get() );
 	}
+	OSD_WriteAudioStream( reinterpret_cast<BYTE*>(stream.data()), stream.size() );
 }
 
 
@@ -506,7 +507,7 @@ void SND6::Update( void )
 	stream.reserve( samples );
 	
 	for( int i = 0; i < samples; i++ ){
-		stream.push_back((int16_t)this->cRing::Get());
+		stream.push_back( (int16_t)this->cRing::Get() );
 	}
 	OSD_WriteAudioStream( reinterpret_cast<BYTE*>(stream.data()), stream.size() );
 }
