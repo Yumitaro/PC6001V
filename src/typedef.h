@@ -81,7 +81,7 @@ using P6VPATH = std::string;
     defined(__m68k__) || defined(mc68000) || defined(_M_M68K) || \
     (defined(__MIPS__) && defined(__MISPEB__)) || \
     defined(__ppc__) || defined(__POWERPC__) || defined(_M_PPC) || \
-    defined(__sparc__)
+    defined(__sparc__) || defined(__ARMEB__)
 #define BYTEORDER		P6V_BIG_ENDIAN
 #else
 #define BYTEORDER		P6V_LIL_ENDIAN
