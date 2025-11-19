@@ -36,7 +36,7 @@ DIRSDL	= SDL
 DIROSD	= Win32
 DIRRES	= Win32
 
-PKGCNFG = sdl3 libpng libavcodec libavformat libswscale libswresample
+PKGCNFG = sdl3 libpng libavcodec libavformat libavutil libswscale libswresample
 
 #-----------------------------------------------------------------------------
 ifeq ($(CPPVER), 17)
@@ -73,9 +73,9 @@ DEPENDS	= $(OBJALL:.o=.d)
 CFLAGS	= -std=c++$(CPPVER) -Wall -Wno-unused-parameter -Wextra -Wno-pmf-conversions -fno-strict-aliasing -mms-bitfields -MMD -MP	\
 	  -finput-charset=utf-8 -fexec-charset=utf-8 $(addprefix -I , $(DIRSRCS))	\
 	  $(shell pkg-config $(PKGCNFG) --cflags)
-LFLAGS	= -static-libgcc -static-libstdc++ --static
+LFLAGS	= -static-libgcc -static-libstdc++ 
 RFLAGS	= -J rc -O coff -I $(DIRSRC)/$(DIROSD)
-LIBS	= $(shell pkg-config $(PKGCNFG) --static --libs) -lcomctl32 -lwinmm -lshlwapi -limm32 -lole32 -loleaut32 -lsetupapi -lversion -lvfw32 -lintl -liconv
+LIBS	= $(shell pkg-config $(PKGCNFG) --libs) -lcomctl32 -lwinmm -lshlwapi -limm32 -lole32 -loleaut32 -lsetupapi -lversion -lvfw32 -lintl -liconv
 
 #-----------------------------------------------------------------------------
 ifeq ($(CPPVER), 17)

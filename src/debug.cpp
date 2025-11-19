@@ -691,7 +691,10 @@ enum MonitorJob{	// ジョブ
 	
 	MONITOR_RESET,
 	MONITOR_REG,
-	MONITOR_DISASM
+	MONITOR_DISASM,	
+	MONITOR_CD,
+	MONITOR_DUMP,
+
 };
 
 struct MonCmd{
@@ -722,7 +725,10 @@ static const std::vector<MonCmd> MonitorCmd = {
 	{ MONITOR_SAVEMEM,	"savemem",	"メモリからファイルに書込む" },
 	{ MONITOR_RESET,	"reset",	"PC6001Vをリセット" },
 	{ MONITOR_REG,		"reg",		"CPUレジスタを参照/設定" },
-	{ MONITOR_DISASM,	"disasm",	"逆アセンブル" }
+	{ MONITOR_DISASM,	"disasm",	"逆アセンブル" },
+	{ MONITOR_CD,		"cd",		"ディレクトリを変更する"},
+	{ MONITOR_DUMP,		"dump",		"ダンプリストを表示する"},
+
 };
 
 
@@ -1753,7 +1759,82 @@ void cWndMon::Exec( int cmd )
 		SaveDisasmAddr = ( addr + pc ) & 0xffff;
 		break;
 	}
-	
+		//-----------------------------------------------------------------------
+	//  cd
+	//  ディレクトリの変更
+	//-----------------------------------------------------------------------
+	case MONITOR_CD: 
+		{
+		P6VPATH fname;
+		if( ArgvIs( ARGV_STR ) ) {
+			fname = STR2P6VPATH( argv.Str );
+			OSD_ChangeDirectory( fname);
+		} else {
+			ZCons::Printf( "%s\n", OSD_CurrentDirectory().string().c_str() );
+		}
+		break;
+		}
+
+
+	//-----------------------------------------------------------------------
+	//  dump [[<addr>]
+	//  ダンプリストの表示
+	//-----------------------------------------------------------------------
+	case MONITOR_DUMP: 
+		{// <addr>
+		static WORD addr =0;
+		if( ArgvIs( ARGV_ADDR ) ) {
+			 addr = argv.Val;
+			}
+		
+		//int rem1 = addr & 0xf;
+
+		// ------ 見出し -------
+		ZCons::Printf("      ");
+		ZCons::SetColor( FC_WHITE4, FC_CYAN2 );
+		for(int j=0;j<8;j++) {
+			ZCons::Printf("%02d ",j);
+		}
+		for(int j=0;j<8;j++) {
+			ZCons::Printf("%d",j);
+		}
+		ZCons::SetColor( FC_WHITE4 ,FC_BLACK );
+		ZCons::Printf("\n");
+
+		// ------ ダンプリスト ------
+		int amari = addr & 7;	// 半端が何個あるか？
+		int amari2 = amari;
+		addr &= 0xfff8;			// アドレスの下位８ビットを、0か7　に丸める
+
+		for(int i=0;i<4;i++) {
+			ZCons::Printf("%04X: ",addr );
+
+			for(int j=0;j<8;j++) {
+				if( amari) {				// カレンダーのようにするために、黒くする
+					ZCons::SetColor(FC_BLACK);
+					amari--;
+				}
+				ZCons::Printf("%02X ",el->vm->mem->Read( addr+j));
+				ZCons::SetColor(FC_WHITE4);
+			}
+			for(int j=0;j<8;j++) {
+				if( amari2) {
+					ZCons::SetColor(FC_BLACK);
+					amari2--;
+				}
+				byte c= el->vm->mem->Read(addr+j);
+				if( c < 0x20) {
+					c = '.';
+				}
+				ZCons::PutCharH(c);
+				ZCons::SetColor(FC_WHITE4);
+			}
+			addr+=8;
+			ZCons::Printf("\n");
+		}
+		break;
+		}	
+
 	}
 }
 
@@ -1945,6 +2026,25 @@ void cWndMon::Help( int cmd )
 			"                     [omit]... PCレジスタアドレス\n"
 			"    #<steps>     ... 逆アセンブルするステップ数\n"
 			"                     [omit]... 16ステップ\n"
+		);
+		break;
+
+	case MONITOR_CD:
+		ZCons::Printf(
+			"  cd [<directory>]\n"
+			"    カレントディレクトリを変更します\n"
+			"    [all omit]   ... カレントディレクトリの表示\n"
+			"    <directory>  ... 変更先ディレクトリ \n"
+		);
+		break;
+		
+
+	case MONITOR_DUMP:
+		ZCons::Printf(
+			"  dump [<address>] \n"
+			"    ダンプリストを表示します \n"
+			"    [all omit] 　　... ダンプリストを表示します\n"
+			"    <address>  　　... 指定アドレス \n"
 		);
 		break;
 		

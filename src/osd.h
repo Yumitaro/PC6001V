@@ -96,8 +96,10 @@ bool OSD_FindFile( const P6VPATH&, const P6VPATH&, std::vector<P6VPATH>&, size_t
 bool OSD_FolderDiaog( HWINDOW, P6VPATH& );
 // 各種ファイル選択
 bool OSD_FileSelect( HWINDOW, FileDlg, P6VPATH&, P6VPATH& );
-
-
+// カレントディレクトリを取得
+P6VPATH OSD_CurrentDirectory( void);
+// カレントディレクトリ変更
+bool OSD_ChangeDirectory( const P6VPATH inPath);
 
 
 /////////////////////////////////////////////////////////////////////////////
