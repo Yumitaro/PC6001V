@@ -2,9 +2,8 @@
 //  P C 6 0 0 1 V
 //  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
-#include "log.h"
 #include "mc6847.h"
-#include "vsurface.h"
+#include "../log.h"
 
 
 #define	P60W		256			// 水平有効表示期間(N60)
