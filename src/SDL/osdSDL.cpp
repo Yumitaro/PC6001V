@@ -409,6 +409,29 @@ void OSD_SetKeyRepeat( int repeat )
 
 
 /////////////////////////////////////////////////////////////////////////////
+// インデックス -> インスタンスID 変換
+//
+// 引数:	int				インデックス
+// 返値:	SDL_JoystickID	インスタンスID(取得できなければ0)
+/////////////////////////////////////////////////////////////////////////////
+static SDL_JoystickID OSD_GetJoyInstanceID( int index )
+{
+	int jnum = 0;
+	SDL_JoystickID id = 0;
+	
+	SDL_JoystickID* jids = SDL_GetJoysticks( &jnum );
+	if( jids ){
+		if( index >= 0 && index < jnum ){
+			id = jids[index];
+		}
+		SDL_free( jids );
+	}
+	
+	return id;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // 利用可能なジョイスティック数取得
 //
 // 引数:	なし
@@ -418,7 +441,9 @@ int OSD_GetJoyNum( void )
 {
 	int jnum = 0;
 	
-	SDL_GetJoysticks( &jnum );
+	SDL_JoystickID* jids = SDL_GetJoysticks( &jnum );
+	if( jids ){ SDL_free( jids ); }
+	
 	return jnum;
 }
 
@@ -431,7 +456,7 @@ int OSD_GetJoyNum( void )
 /////////////////////////////////////////////////////////////////////////////
 const std::string OSD_GetJoyName( int index )
 {
-	const char* name = SDL_GetJoystickNameForID( index );
+	const char* name = SDL_GetJoystickNameForID( OSD_GetJoyInstanceID( index ) );
 	std::string tname = name ? name : "(Unknown)";
 	
 	return tname;
@@ -458,7 +483,7 @@ bool OSD_OpenedJoy( HJOYINFO jinfo )
 /////////////////////////////////////////////////////////////////////////////
 HJOYINFO OSD_OpenJoy( int index )
 {
-	return (HJOYINFO)SDL_OpenJoystick( index );
+	return (HJOYINFO)SDL_OpenJoystick( OSD_GetJoyInstanceID( index ) );
 }
 
 
