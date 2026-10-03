@@ -71,7 +71,7 @@ DEPENDS	= $(OBJALL:.o=.d)
 
 
 CFLAGS	= -std=c++$(CPPVER) -Wall -Wno-unused-parameter -Wextra -Wno-pmf-conversions -fno-strict-aliasing -mms-bitfields -MMD -MP	\
-	  -finput-charset=utf-8 -fexec-charset=utf-8 $(addprefix -I , $(DIRSRCS))	\
+	  -finput-charset=utf-8 -fexec-charset=utf-8 \
 	  $(shell pkg-config $(PKGCNFG) --cflags)
 LFLAGS	= -static-libgcc -static-libstdc++ --static
 RFLAGS	= -J rc -O coff -I $(DIRSRC)/$(DIROSD)

@@ -2,8 +2,8 @@
 //  P C 6 0 0 1 V
 //  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
-#include "log.h"
 #include "ym2203.h"
+#include "../log.h"
 
 
 #define MAX_OUTPUT	(0x7fff)

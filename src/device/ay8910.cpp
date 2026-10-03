@@ -3,7 +3,7 @@
 //  Copyright 1999 Yumitaro
 /////////////////////////////////////////////////////////////////////////////
 #include "ay8910.h"
-#include "log.h"
+#include "../log.h"
 
 
 #define MAX_OUTPUT	(0x7fff)

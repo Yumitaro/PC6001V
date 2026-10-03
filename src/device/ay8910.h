@@ -5,9 +5,7 @@
 #ifndef AY8910_H_INCLUDED
 #define AY8910_H_INCLUDED
 
-#include "ini.h"
 #include "psgbase.h"
-#include "typedef.h"
 
 #ifdef USEFMGEN
 #include "fmgen/types.h"
