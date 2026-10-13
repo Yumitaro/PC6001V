@@ -2196,6 +2196,7 @@ void EL6::UI_AVISaveStart( void )
 	cfg->SetValue( CV_WindowZoom, cfg->GetValue( CV_AviZoom      ) );
 	cfg->SetValue( CV_FrameSkip,  cfg->GetValue( CV_AviFrameSkip ) );
 	cfg->SetValue( CB_ScanLine,   cfg->GetValue( CB_AviScanLine  ) );
+	cfg->SetValue( CV_ScanLineBr, cfg->GetValue( CV_AviScanLineBr ) );
 	graph->ResizeScreen();	// スクリーンサイズ変更
 	graph->DrawScreen();
 	

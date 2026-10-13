@@ -39,7 +39,7 @@
 /////////////////////////////////////////////////////////////////////////////
 static SDL_Texture* sdl_texwx = nullptr;			// 汎用Texture
 static SDL_Texture* sdl_texbb = nullptr;			// バックバッファ用Texture
-static SDL_Texture* sdl_texsl = nullptr;			// スキャンライン用Texture
+static int sdl_scanbr = 0;							// スキャンライン輝度
 static SDL_PixelFormat sdl_format = SDL_PIXELFORMAT_UNKNOWN;	// Renderer,Textureフォーマット
 //static SDL_AudioDeviceID sdl_adev = 0;			// オーディオデバイス
 static SDL_AudioStream* sdl_astr = nullptr;			// オーディオストリーム
@@ -834,7 +834,6 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	// 作成済みのTextureは一旦破棄
 	if( sdl_texwx ){ SDL_DestroyTexture( sdl_texwx ); }
 	if( sdl_texbb ){ SDL_DestroyTexture( sdl_texbb ); }
-	if( sdl_texsl ){ SDL_DestroyTexture( sdl_texsl ); }
 	
 	// Renderer,Textureのフォーマットを選定する
 	const SDL_PixelFormat* pfmt = (const SDL_PixelFormat*)SDL_GetPointerProperty( SDL_GetRendererProperties( rend ), SDL_PROP_RENDERER_TEXTURE_FORMATS_POINTER, nullptr );
@@ -888,19 +887,8 @@ bool OSD_CreateWindow( HWINDOW* hwnd, const int w, const int h, const int sw, co
 	sdl_texbb = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_STREAMING, sw * 2, sh );
 	SDL_SetTextureScaleMode( sdl_texbb, rendsq );	// フィルタリング設定
 	
-	// スキャンライン用Texture作成
-	sdl_texsl = SDL_CreateTexture( rend, sdl_format, SDL_TEXTUREACCESS_TARGET,    sw, sh * 2 );
-	SDL_SetTextureBlendMode( sdl_texsl, SDL_BLENDMODE_BLEND );
-	SDL_SetTextureAlphaMod( sdl_texsl, ((100 - scanbr) * 255) / 100 );
-	
-	SDL_SetRenderTarget( rend, sdl_texsl );
-	SDL_SetRenderDrawColor( rend, 0, 0, 0, 0 );		// 無色透明
-	SDL_RenderClear( rend );
-	SDL_SetRenderDrawColor( rend, 0, 0, 0, 255 );	// 黒 + alpha
-	for( int yy = 0; yy < sh * 2; yy += 2 ){
-		SDL_RenderLine( rend, 0, yy, sw - 1, yy );
-	}
-	SDL_SetRenderTarget( rend, nullptr );
+	// スキャンライン輝度
+	sdl_scanbr = scanbr;
 	
 	return *hwnd ? true : false;
 }
@@ -916,7 +904,6 @@ void OSD_DestroyWindow( HWINDOW hwnd )
 {
 	PRINTD( OSD_LOG, "[OSD][OSD_DestroyWindow]\n" );
 	
-	if( sdl_texsl ){ SDL_DestroyTexture( sdl_texsl );	sdl_texsl = nullptr; }
 	if( sdl_texbb ){ SDL_DestroyTexture( sdl_texbb );	sdl_texbb = nullptr; }
 	if( sdl_texwx ){ SDL_DestroyTexture( sdl_texwx );	sdl_texwx = nullptr; }
 	
@@ -1177,8 +1164,21 @@ void OSD_BlitToWindowEx( HWINDOW hwnd, VSurface* src, const VRect* pos, const bo
 	SDL_RenderTexture( rend, sdl_texbb, &fsrc1, &fpos );
 	
 	if( scanen ){
-		src1.h *= 2;
-		SDL_RenderTexture( rend, sdl_texsl, &fsrc1, &fpos );
+		// 出力先の解像度で、元1ラインごとに上半分を暗くする
+		// (拡大縮小によるフィルタリングで縞が潰れるのを避ける)
+		float lh = fpos.h / fsrc1.h;	// 元1ラインあたりの出力高さ
+		SDL_BlendMode bm;
+		SDL_GetRenderDrawBlendMode( rend, &bm );
+		SDL_SetRenderDrawBlendMode( rend, SDL_BLENDMODE_BLEND );
+		SDL_SetRenderDrawColor( rend, 0, 0, 0, ((100 - sdl_scanbr) * 255) / 100 );
+		for( int yy = 0; yy < src1.h; yy++ ){
+			float y0 = fpos.y + SDL_floorf( yy * lh );
+			float y1 = fpos.y + SDL_floorf( yy * lh + lh * 0.5f );
+			if( y1 <= y0 ){ y1 = y0 + 1; }
+			SDL_FRect fl = { fpos.x, y0, fpos.w, y1 - y0 };
+			SDL_RenderFillRect( rend, &fl );
+		}
+		SDL_SetRenderDrawBlendMode( rend, bm );
 	}
 
 }

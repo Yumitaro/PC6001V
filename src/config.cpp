@@ -948,7 +948,7 @@ void CFG6::PushAviPara( void )
 	tmp_AviZoom       = GetValue( CV_WindowZoom    );
 	tmp_AviFrameSkip  = GetValue( CV_FrameSkip     );
 	tmp_AviScanLine   = GetValue( CB_ScanLine      );
-	tmp_AviScanLineBr = GetValue( CV_AviScanLineBr );
+	tmp_AviScanLineBr = GetValue( CV_ScanLineBr    );
 	tmp_AviDispNTSC   = GetValue( CB_AviDispNTSC   );
 	tmp_AviFiltering  = GetValue( CB_AviFiltering  );
 
@@ -960,7 +960,7 @@ void CFG6::PopAviPara( void )
 	SetValue( CV_WindowZoom,    tmp_AviZoom       );
 	SetValue( CV_FrameSkip,     tmp_AviFrameSkip  );
 	SetValue( CB_ScanLine,      tmp_AviScanLine   );
-	SetValue( CV_AviScanLineBr, tmp_AviScanLineBr );
+	SetValue( CV_ScanLineBr,    tmp_AviScanLineBr );
 	SetValue( CB_AviDispNTSC,   tmp_AviDispNTSC   );
 	SetValue( CB_AviFiltering,  tmp_AviFiltering  );
 }
